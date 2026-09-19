@@ -128,7 +128,12 @@ def test_a_price_round_trips_and_is_never_visible_through_forecasts(
         conn.execute(
             "INSERT INTO market_prices (scenario_id, source, source_ref, cutoff_ts, probability, "
             "observed_at, fetched_at) VALUES (%s, 'polymarket', 'polymarket:x:1', %s, 0.25, %s, %s) "
-            "ON CONFLICT (scenario_id) DO NOTHING",
+            # The table may hold the real row for this scenario; overwrite it
+            # inside the transaction, which is rolled back below.
+            "ON CONFLICT (scenario_id) DO UPDATE SET source = EXCLUDED.source, "
+            "source_ref = EXCLUDED.source_ref, cutoff_ts = EXCLUDED.cutoff_ts, "
+            "probability = EXCLUDED.probability, observed_at = EXCLUDED.observed_at, "
+            "unobtainable_reason = NULL, fetched_at = EXCLUDED.fetched_at",
             (scenario_id, cutoff, observed, datetime.now(UTC)),
         )
         row = conn.execute(

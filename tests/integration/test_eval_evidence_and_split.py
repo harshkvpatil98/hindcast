@@ -17,7 +17,7 @@ import pytest
 
 from cascade.config import Settings
 from cascade.eval.evidence import EVIDENCE_WINDOW_DAYS, tier_of
-from cascade.eval.split import assert_declared, declare_split
+from cascade.eval.split import assert_declared, declare_study_split
 from cascade.eval.store import assert_frozen_split, evidence_counts
 
 pytestmark = pytest.mark.integration
@@ -69,10 +69,11 @@ def test_the_pinned_split_is_the_split_of_the_stored_registry(live_settings: Set
 
     frozen = assert_frozen_split(live_settings)
     registry = load_scenarios(live_settings, role="eval")
-    declared = declare_split(
-        [(item.scenario_id, item.domain) for item in registry],
+    declared = declare_study_split(
+        [(item.scenario_id, item.domain, item.question) for item in registry],
         salt=frozen.study_salt,
         dev_size=live_settings.eval.dev_scenarios,
     )
     assert_declared(declared, pinned_sha256=live_settings.eval.split_sha256)
-    assert declared.n == frozen.n_scenarios
+    # Every sealed scenario is on one side of the split or declared excluded.
+    assert declared.n + len(declared.excluded) == frozen.n_scenarios
