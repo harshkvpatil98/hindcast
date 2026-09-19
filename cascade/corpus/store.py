@@ -118,6 +118,17 @@ def completed_units(settings: Settings, source: str) -> set[str]:
         return {str(row[0]) for row in cur.fetchall()}
 
 
+def stored_chunk_count(settings: Settings) -> int:
+    """Chunks already stored, from the denormalised per-document counts.
+
+    Read once at the start of a build to seed the work ceiling; the pipeline
+    adds what it writes, so the count is never re-queried per unit.
+    """
+    with _connect(settings) as conn, conn.cursor() as cur:
+        cur.execute("SELECT COALESCE(sum(n_chunks), 0) FROM documents")
+        return int((cur.fetchone() or [0])[0])
+
+
 def mark_unit(
     settings: Settings,
     *,

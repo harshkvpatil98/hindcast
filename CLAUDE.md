@@ -156,6 +156,8 @@ make infra-check   # Terraform fmt/validate, offline tests (mock providers), tfl
 make infra-fmt     # format the Terraform
 cascade doctor  # toolchain, pinned stack, service health
 
+cascade db enable-iam      # RDS only: switch the app roles to IAM tokens (disables their passwords; ADR-0034)
+
 cascade retrieval index    # (re)build one HNSW index per chunks partition (ADR-0026)
 cascade retrieval verify   # assert the Chronofence preconditions; exits 3 on drift
 cascade retrieval bench    # p50/p95/p99 + recall@20; exits 3 if a criterion is missed
@@ -1819,9 +1821,42 @@ lint caught it; the image is now pinned by digest), an unused module input
 `terraform destroy` could not remove while its image repository and bucket held
 data (now `disposable`).
 
+**Second pass, same session: the connection code and the ingest's stop rules.**
+CI: ruff, black, mypy strict clean (101 files); **1,264 offline tests pass**,
+1 skipped. Added 18 tests; eight deliberately broken behaviours each caught.
+
+- **TLS and IAM in `DatabaseConfig`.** `sslmode` (always explicit in the URL,
+  so an ambient `PGSSLMODE` cannot weaken it), `sslrootcert`, and
+  `auth: stored|iam` with an explicit `iam_region`. Incoherent settings are
+  refused at load: `verify-full` without a CA bundle, `iam` without a region,
+  and `iam` without server verification (a token is a bearer credential). The
+  Fargate task sets `verify-full` against the RDS bundle baked into the image.
+- **IAM is a two-step operator switch** (`cascade db enable-iam`, then
+  `auth: iam`), never a migration: on RDS, granting `rds_iam` disables the
+  role's password. The admin role never uses a token -- RDS rotates its secret.
+- **Defect: database secrets were on the command line.** `db.py` passed the
+  admin password inside psql's URL argument and the role passwords as
+  `-v name=value` -- readable by any local user through `ps`. Now `PGPASSWORD`
+  and a `\set` preamble on stdin; both mechanisms verified against the live
+  psql 16 before being relied on.
+- **Defect: secrets were interpolated into URLs unescaped.** Harmless for
+  `cascade_sim_local`; an RDS-generated password or an IAM token contains `#`,
+  `?`, `%`, `&`. Now percent-encoded, and tested by parsing the URL with
+  psycopg's own conninfo parser rather than by string comparison.
+- **Defect: `corpus build` had no stopping rule.** `target_chunks` was read
+  only by `corpus verify`; found at M10 when an unbounded run would have put
+  ~140 GB into 27 GB of free disk. Now `corpus.max_chunks` (a ceiling on work,
+  seeded from what is already stored) and `corpus.min_free_disk_gb` (exit 3,
+  so a supervisor cannot read "ran out of room" as "finished"). Both stop
+  *between* units, so nothing is ever half-written (invariant 8).
+- **Defect: `corpus_ingest_state.n_chunks` recorded the source's running
+  total**, not the unit's own count, so every row after the first overstated.
+  `run_ingest` had no unit test at all; it has a database-free harness now.
+- **Not changed, on purpose:** `embed_batch_size` and `fetch_workers`. At M10
+  both were lowered *together* when swap grew, so the observation cannot say
+  which mattered. The defaults stay until that is measured one at a time.
+
 Remaining for M11's gate:
-- **Code**: `sslmode=verify-full` and IAM-token authentication in
-  `DatabaseConfig` (`cascade/config.py`, `db.py`).
 - **Live, blocked on an AWS account**: apply, build and push the image, move
   the corpus (the data-only restore is untested -- Aurora's master user is not
   a true superuser), re-bench at two fixed ACU sizes, and run the partitioning

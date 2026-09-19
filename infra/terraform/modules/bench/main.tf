@@ -306,6 +306,12 @@ resource "aws_ecs_task_definition" "bench" {
       { name = "CASCADE_DATABASE__HOST", value = var.db_endpoint },
       { name = "CASCADE_DATABASE__PORT", value = tostring(var.db_port) },
       { name = "CASCADE_DATABASE__NAME", value = var.db_name },
+      # The server certificate is verified against the RDS bundle baked into
+      # the image; the cluster refuses plaintext from its side (rds.force_ssl).
+      { name = "CASCADE_DATABASE__SSLMODE", value = "verify-full" },
+      { name = "CASCADE_DATABASE__SSLROOTCERT", value = "/etc/ssl/rds/global-bundle.pem" },
+      { name = "CASCADE_DATABASE__AUTH", value = var.db_auth },
+      { name = "CASCADE_DATABASE__IAM_REGION", value = local.region },
       # No .env inside the image: every value arrives from this definition.
       { name = "CASCADE_ENV_FILE", value = "/nonexistent" },
       # The bench and the migrations never call a model.

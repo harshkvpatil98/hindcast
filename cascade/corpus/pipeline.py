@@ -18,13 +18,14 @@ nothing for reasons that look like an empty archive.
 
 from __future__ import annotations
 
+import shutil
 from collections import deque
 from collections.abc import Callable, Iterator, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime
 
-from cascade.config import Settings
+from cascade.config import Settings, repo_root
 from cascade.corpus.chunker import chunk_text
 from cascade.corpus.coverage import demand_profile, order_units
 from cascade.corpus.embed import Embedder
@@ -37,6 +38,7 @@ from cascade.corpus.store import (
     existing_document_ids,
     mark_unit,
     seen_simhashes,
+    stored_chunk_count,
     write_batch,
 )
 
@@ -71,6 +73,10 @@ class IngestReport:
     """The whole run, in the shape the acceptance criteria are stated in."""
 
     sources: list[SourceReport] = field(default_factory=list)
+    # Why the run stopped before exhausting its queue, if it did. `disk` is a
+    # precondition failure (exit 3); `ceiling` is the build finishing its work.
+    stopped: str | None = None
+    stop_detail: str = ""
 
     @property
     def documents_written(self) -> int:
@@ -296,6 +302,11 @@ def _unit_loader(
     return concurrent, max(1, corpus.fetch_workers)
 
 
+def _free_disk_gb() -> float:
+    """Free space on the volume holding the repository, in GB."""
+    return shutil.disk_usage(repo_root()).free / 1_000_000_000
+
+
 def _chunks_for(document: DatedDocument, settings: Settings, embedder: Embedder) -> list[Chunk]:
     """Split one document, counting tokens the way the model does."""
     corpus = settings.corpus
@@ -326,14 +337,21 @@ def run_ingest(
     sources: tuple[str, ...] | None = None,
     max_units_per_source: int | None = None,
     embedder: Embedder | None = None,
+    free_disk_gb: Callable[[], float] | None = None,
 ) -> IngestReport:
     """Run the pipeline for each enabled source.
 
     ``now`` is required rather than read from the clock, for the same reason
     ``as_of`` is (invariant 1): a future-date check that consults the wall
     clock gives different answers on different runs.
+
+    Preserves invariant 8 under both stop rules: a unit is only ever skipped
+    whole, never abandoned half-written, so a stopped build resumes exactly
+    where it left off. ``free_disk_gb`` is injected so the guard is testable
+    without filling a disk.
     """
     corpus = settings.corpus
+    measure_disk = free_disk_gb if free_disk_gb is not None else _free_disk_gb
     selected = sources if sources is not None else corpus.enabled_sources
     report = IngestReport()
 
@@ -345,6 +363,7 @@ def run_ingest(
     index = DedupeIndex()
     index.seed(seen_simhashes(settings))
     known_ids = existing_document_ids(settings)
+    stored_at_start = stored_chunk_count(settings)
 
     fetchers = {
         "govpr": Fetcher(requests_per_second=corpus.requests_per_second, user_agent=corpus.contact),
@@ -404,6 +423,27 @@ def run_ingest(
 
             load, workers = _unit_loader(settings, source, fetchers, wiki_units)
             for unit_key, fetched in _prefetch(pending, workers=workers, load=load):
+                # Checked before a unit is *processed*, so a stop never leaves
+                # one half-written. The unit in hand was already fetched by the
+                # lookahead and is dropped unmarked; the next run fetches it
+                # again, which is the price of never skipping it.
+                stored = stored_at_start + report.chunks_written
+                if stored >= corpus.max_chunks:
+                    report.stopped = "ceiling"
+                    report.stop_detail = (
+                        f"{stored:,} chunks stored, at or above corpus.max_chunks "
+                        f"({corpus.max_chunks:,})"
+                    )
+                    break
+                if corpus.min_free_disk_gb is not None:
+                    free = measure_disk()
+                    if free < corpus.min_free_disk_gb:
+                        report.stopped = "disk"
+                        report.stop_detail = (
+                            f"{free:.1f} GB free, below corpus.min_free_disk_gb "
+                            f"({corpus.min_free_disk_gb:g})"
+                        )
+                        break
                 if isinstance(fetched, Exception):
                     source_report.units_failed += 1
                     mark_unit(
@@ -448,6 +488,7 @@ def run_ingest(
                 # it goes; the unit is still only marked done at the end, so a
                 # crash mid-unit re-does the unit and never skips it.
                 batch_size = max(1, settings.corpus.write_batch_size)
+                unit_chunks = 0
                 for start in range(0, len(documents), batch_size):
                     batch = documents[start : start + batch_size]
                     chunks: list[Chunk] = []
@@ -461,6 +502,7 @@ def run_ingest(
                     )
                     source_report.documents_written += written_documents
                     source_report.chunks_written += written_chunks
+                    unit_chunks += written_chunks
 
                 source_report.units_done += 1
                 mark_unit(
@@ -469,8 +511,12 @@ def run_ingest(
                     unit_key=unit_key,
                     state="done",
                     n_documents=len(documents),
-                    n_chunks=source_report.chunks_written,
+                    # This unit's own chunks. It used to record the source's
+                    # running total, so every row after the first overstated.
+                    n_chunks=unit_chunks,
                 )
+            if report.stopped is not None:
+                break
     finally:
         # Sorted (invariant 7). Close order does not matter today, but the
         # rule is that no mapping is ever walked in insertion order -- and the

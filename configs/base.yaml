@@ -230,6 +230,12 @@ ledger: # scenario registry (spec §3.1)
 
 corpus: # evidence corpus (spec §3.2)
   target_chunks: 1300000
+  # The build stops starting new units here. 2.0M sits just above the largest
+  # corpus this study has measured (1,950,912 chunks, ~6.6 GB with indexes). A
+  # ceiling on work, not a result -- `corpus coverage` still judges the corpus.
+  max_chunks: 2000000
+  # ...and below this much free disk. See CorpusConfig for the incident.
+  min_free_disk_gb: 8
   # SEC EDGAR returns 403 unless the User-Agent carries a contact address in
   # "Name email@domain" form. Replace with a real address before a long run.
   contact: "Cascade Research cascade-research@example.com"
@@ -281,6 +287,17 @@ database:
   admin_user: cascade_admin
   sim_user: cascade_sim
   eval_user: cascade_eval
+  # TLS and authentication (ADR-0034). The local container speaks no TLS, so
+  # the default is libpq's own `prefer`. Aurora refuses plaintext
+  # (rds.force_ssl), and a deployment sets:
+  #   sslmode: verify-full
+  #   sslrootcert: /etc/ssl/rds/global-bundle.pem   # baked into the bench image
+  #   auth: iam                                     # short-lived tokens, no stored password
+  #   iam_region: <the cluster's region>            # explicit, never an ambient AWS_REGION
+  sslmode: prefer
+  sslrootcert: null
+  auth: stored # the role secret from the environment; `iam` = short-lived RDS tokens
+  iam_region: null
 
 langfuse:
   enabled: true

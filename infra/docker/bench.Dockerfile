@@ -27,6 +27,11 @@ RUN apt-get update \
       > /etc/apt/sources.list.d/pgdg.list \
  && apt-get update \
  && apt-get install -y --no-install-recommends "postgresql-client-${PG_MAJOR}" \
+ # The RDS CA bundle, for sslmode=verify-full (ADR-0034). Not digest-pinned:
+ # AWS rotates it, and a pinned stale bundle fails closed at the worst moment.
+ && install -d /etc/ssl/rds \
+ && curl -fsSL https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem \
+      -o /etc/ssl/rds/global-bundle.pem \
  && apt-get purge -y curl gnupg && apt-get autoremove -y \
  && rm -rf /var/lib/apt/lists/*
 

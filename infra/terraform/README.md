@@ -89,6 +89,15 @@ Results land in the task's log group (`terraform output -raw log_group`).
 Record the ACU setting beside every number: it is a condition of the
 measurement, and the experiment runs at two sizes.
 
+**6b. Optional: switch the app roles to IAM tokens.** Two explicit steps, in
+this order — granting `rds_iam` disables the roles' passwords:
+```text
+["cascade","db","enable-iam"]          # as a task; exits 3 anywhere but RDS
+terraform apply -var db_auth=iam       # the next task logs in with tokens
+```
+Untested against a live cluster. To go back: `REVOKE rds_iam FROM cascade_sim,
+cascade_eval` as the admin, then `db_auth=stored`.
+
 **7. Partitioning experiment.** `experiment_clone = true` creates a
 copy-on-write clone; re-partition and bench it by overriding
 `CASCADE_DATABASE__HOST` with `terraform output -raw clone_endpoint`.

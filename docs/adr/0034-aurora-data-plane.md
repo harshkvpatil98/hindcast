@@ -42,14 +42,33 @@ measurement of Aurora, not of anything else.
    its own measurement". A clone shares pages with the source until either
    writes, so the rewrite costs only what it changes and never disturbs the
    baseline.
-6. **Identity and secrets.** TLS is required (`rds.force_ssl = 1`). The master
-   password is RDS-managed and never in Terraform state. IAM database
-   authentication is enabled, and the task role may `rds-db:connect` as the two
-   app roles. Until the CLI switches to IAM tokens, `cascade_sim` and
-   `cascade_eval` keep generated passwords in Secrets Manager, injected as ECS
-   secrets. Those passwords are in state, which is why state is encrypted with
-   its own CMK. Invariant 2 — the simulation cannot read `scenario_labels` —
-   stays a Postgres grant on Aurora exactly as locally.
+6. **Identity and secrets.** Both ends enforce TLS: the cluster refuses
+   plaintext (`rds.force_ssl = 1`), and the client connects with
+   `sslmode=verify-full` against the RDS CA bundle baked into the image — so
+   the connection is not merely encrypted, the server is *verified*. `sslmode`
+   is always written into the connection URL, because an explicit parameter
+   outranks an ambient `PGSSLMODE` (ADR-0028's rule, applied to the database).
+   The master password is RDS-managed and never in Terraform state.
+   **IAM authentication is a deliberate two-step switch**, not a migration: on
+   RDS, granting `rds_iam` to a role *disables its password*, so an automatic
+   grant would lock out every client still configured with one. The operator
+   runs `cascade db enable-iam`, then sets `database.auth: iam`; from then on
+   `cascade_sim` and `cascade_eval` log in with 15-minute tokens signed for an
+   explicitly configured region. The admin role never uses a token — its secret
+   is generated and rotated by RDS, and `rds_iam` would break that rotation.
+   An IAM token is a bearer credential, so `auth: iam` is refused at load
+   without `verify-ca`/`verify-full`. Until the switch, the two roles use
+   generated passwords from Secrets Manager, injected as ECS secrets; those are
+   in state, which is why state has its own CMK. Invariant 2 stays a Postgres
+   grant on Aurora exactly as locally.
+7. **No secret on a command line.** Migrations run through `psql`, and the
+   admin password used to travel inside its URL argument, with the role
+   passwords as `-v name=value` arguments — all readable by any local user via
+   `ps`. The login credential now travels in `PGPASSWORD` and the role
+   passwords in a `\set` preamble on stdin, quoted per psql's rules (verified
+   against psql 16) with line breaks refused. Secrets in URLs are
+   percent-encoded: an RDS-generated password or an IAM token contains `#`,
+   `?`, `%` and `&`, any of which silently re-parses the URL around it.
 
 ## Rationale
 
@@ -69,12 +88,15 @@ the clone experiment measures directly.
 
 ## Not yet done
 
-The CLI still connects with `sslmode=prefer` and passwords: `sslmode=verify-full`
-and IAM tokens in `DatabaseConfig` are M11's code change. Nothing has been
-applied, the image has not been built, and no Aurora number exists.
+Nothing has been applied, the image has not been built, and no Aurora number
+exists. The connection code is tested offline only — URLs parsed by psycopg's
+own conninfo parser, tokens minted by boto3's real signer — and **no
+connection to Aurora has been made**: `verify-full` against a live cluster and
+the `rds_iam` switch are both first exercised at apply.
 
 ## Verified by
 
 `terraform test` (17 runs, mock providers), `tests/unit/test_infra_invariants.py`,
-TFLint and Checkov — see ADR-0033. AWS's pgvector-per-version table, read
+TFLint and Checkov — see ADR-0033. `tests/unit/test_db_connection.py` (12
+tests; four deliberately broken behaviours each caught). AWS's pgvector-per-version table, read
 2026-09-19.

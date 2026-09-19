@@ -79,7 +79,7 @@ plugins = ["pydantic.mypy"]
 # multi-gigabyte download needed only by paths that also require a live
 # Postgres and a built corpus. Every module that uses them imports them lazily,
 # so type-checking must not depend on their presence.
-module = ["langfuse.*", "psycopg.*", "sentence_transformers.*", "torch.*"]
+module = ["boto3.*", "botocore.*", "langfuse.*", "psycopg.*", "sentence_transformers.*", "torch.*"]
 ignore_missing_imports = true
 
 [tool.black]

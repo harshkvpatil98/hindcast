@@ -396,6 +396,41 @@ def db_migrate(
         console.print(f"[green]applied[/green] {migration.name}")
 
 
+@db_app.command("enable-iam")
+def db_enable_iam(config: OverlayOpt = None) -> None:
+    """Switch the two application roles to IAM authentication (ADR-0034).
+
+    An explicit operator step, never a migration: on RDS, granting `rds_iam`
+    to a role **disables its password**, so doing it automatically would lock
+    out every client still configured with one. Run this, then set
+    `database.auth: iam`. To go back: `REVOKE rds_iam FROM <role>`.
+    Exits 3 anywhere `rds_iam` does not exist -- that is, anywhere but RDS.
+    """
+    import psycopg
+    from psycopg import sql
+
+    settings = _settings(config)
+    roles = (settings.database.sim_user, settings.database.eval_user)
+    with (
+        psycopg.connect(settings.database_url("admin"), connect_timeout=10) as conn,
+        conn.cursor() as cur,
+    ):
+        cur.execute("SELECT 1 FROM pg_roles WHERE rolname = 'rds_iam'")
+        if cur.fetchone() is None:
+            _fail(
+                "this server has no `rds_iam` role, so it is not RDS or Aurora; IAM database "
+                "authentication does not exist here",
+                EXIT_PRECONDITION,
+            )
+        for role in roles:
+            cur.execute(sql.SQL("GRANT rds_iam TO {}").format(sql.Identifier(role)))
+        conn.commit()
+    console.print(
+        f"granted rds_iam to {', '.join(roles)}. Their passwords no longer work: set "
+        "database.auth to `iam` (CASCADE_DATABASE__AUTH=iam) before the next connection."
+    )
+
+
 @db_app.command("status")
 def db_status(config: OverlayOpt = None) -> None:
     """Show which migrations are applied and which are pending."""
@@ -523,6 +558,20 @@ def corpus_build(
 
     stats = corpus_stats(settings)
     _print_corpus_stats(stats, settings.corpus.target_chunks)
+
+    if report.stopped == "ceiling":
+        console.print(
+            f"[green]stopped at the work ceiling[/green]: {report.stop_detail}. Judge the corpus "
+            "with `cascade corpus coverage`; raise corpus.max_chunks and re-run to go deeper."
+        )
+    elif report.stopped == "disk":
+        # Exit 3, not 0: a supervising script must not read a build that ran
+        # out of room as a build that finished.
+        _fail(
+            f"stopped before the disk filled: {report.stop_detail}. Nothing is half-written; "
+            "free space and re-run to resume.",
+            EXIT_PRECONDITION,
+        )
 
 
 @corpus_app.command("status")

@@ -279,7 +279,7 @@ def test_secrets_do_not_leak_through_repr_or_dump(monkeypatch: pytest.MonkeyPatc
 def test_database_url_carries_the_role_password(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("CASCADE_DB_SIM_PASSWORD", "simsecret")
     url = Settings().database_url("sim")
-    assert url == "postgresql://cascade_sim:simsecret@localhost:5433/cascade"
+    assert url == "postgresql://cascade_sim:simsecret@localhost:5433/cascade?sslmode=prefer"
 
 
 def test_database_port_is_not_the_default_5432() -> None:

@@ -26,6 +26,7 @@ from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Any, Literal
+from urllib.parse import quote
 
 import yaml
 from pydantic import (
@@ -289,6 +290,9 @@ class ProvidersConfig(_Model):
     claude_code: ClaudeCodeProviderConfig
 
 
+SSLMode = Literal["disable", "allow", "prefer", "require", "verify-ca", "verify-full"]
+
+
 class DatabaseConfig(_Model):
     host: str
     port: int
@@ -296,6 +300,42 @@ class DatabaseConfig(_Model):
     admin_user: str
     sim_user: str
     eval_user: str
+    # Always written into the connection URL, even when it equals libpq's own
+    # default: an explicit parameter outranks an ambient PGSSLMODE, so the
+    # shell cannot weaken a deployment that asked for verify-full (ADR-0034).
+    sslmode: SSLMode
+    # CA bundle for verify-ca / verify-full. For Aurora, the RDS global bundle.
+    sslrootcert: str | None
+    # `iam` replaces the two application roles' stored secrets with short-lived
+    # RDS tokens signed by the ambient IAM principal (ADR-0034). Identity is
+    # ambient; routing -- the region the token is signed for -- is explicit, as
+    # in ADR-0028. The admin role always uses its stored secret: on Aurora that
+    # secret is generated and rotated by RDS itself, and granting rds_iam to a
+    # role disables its password, which would break that rotation.
+    auth: Literal["stored", "iam"]
+    iam_region: str | None
+
+    @model_validator(mode="after")
+    def _coherent(self) -> DatabaseConfig:
+        """Refuse configurations that would fail late or weaken silently."""
+        if self.sslmode in ("verify-ca", "verify-full") and not self.sslrootcert:
+            raise ValueError(
+                f"database.sslmode={self.sslmode!r} needs database.sslrootcert: without a CA "
+                "bundle libpq cannot verify anything and the connection fails at the first use"
+            )
+        if self.auth == "iam":
+            if not self.iam_region:
+                raise ValueError(
+                    "database.auth='iam' needs database.iam_region: the token is signed for a "
+                    "region, and that must not come from an ambient AWS_REGION (ADR-0028)"
+                )
+            if self.sslmode not in ("verify-ca", "verify-full"):
+                raise ValueError(
+                    "database.auth='iam' needs sslmode verify-ca or verify-full: an IAM token "
+                    "is a bearer credential, and sending one to an unverified server hands it "
+                    "to whoever answers"
+                )
+        return self
 
 
 class LangfuseConfig(_Model):
@@ -332,6 +372,29 @@ class CorpusConfig(_Model):
     """Evidence-corpus ingest settings (spec §3.2)."""
 
     target_chunks: int
+    # `target_chunks` is a floor that `corpus verify` asserts; nothing ever made
+    # it a stopping rule, so an unbounded build walks every generated unit --
+    # measured at M10: ~1,460 CC-NEWS files, ~140 GB, against 27 GB of free
+    # disk, on a project whose git store was once destroyed by a full disk.
+    # The build now stops starting new units at this many stored chunks. It is
+    # a ceiling on *work*, not a result: coverage is still judged by
+    # `corpus coverage`, and raising this and re-running resumes where it left.
+    max_chunks: int
+    # Stop starting new units below this much free space on the volume holding
+    # the repository (with Docker Desktop, the same disk the database grows
+    # on). Null disables the check, for a remote database.
+    min_free_disk_gb: float | None
+
+    @model_validator(mode="after")
+    def _ceiling_clears_the_floor(self) -> CorpusConfig:
+        if self.max_chunks < self.target_chunks:
+            raise ValueError(
+                f"corpus.max_chunks ({self.max_chunks:,}) is below corpus.target_chunks "
+                f"({self.target_chunks:,}): the build would stop before `corpus verify` "
+                "could ever pass"
+            )
+        return self
+
     # SEC EDGAR requires a contact address in the User-Agent; see
     # cascade/corpus/fetch.py. Put a real address here before a long ingest.
     contact: str
@@ -571,22 +634,76 @@ class Settings(BaseSettings):
                 f"no budget ceiling configured for phase {phase!r}; known phases: {known}"
             ) from None
 
-    def database_url(self, role: Literal["admin", "sim", "eval"]) -> str:
+    def _database_user(self, role: Literal["admin", "sim", "eval"]) -> str:
+        return {
+            "admin": self.database.admin_user,
+            "sim": self.database.sim_user,
+            "eval": self.database.eval_user,
+        }[role]
+
+    def database_secret(self, role: Literal["admin", "sim", "eval"]) -> str:
+        """The credential ``role`` logs in with: its password, or a fresh IAM token.
+
+        Preserves the invariant that a credential is produced in exactly one
+        place. A token is minted per call and is valid for 15 minutes, which
+        only has to cover the connect: an established session outlives it.
+        """
+        if self.database.auth == "iam" and role != "admin":
+            return _rds_auth_token(
+                host=self.database.host,
+                port=self.database.port,
+                user=self._database_user(role),
+                region=self.database.iam_region or "",
+            )
+        password = {
+            "admin": self.db_admin_password,
+            "sim": self.db_sim_password,
+            "eval": self.db_eval_password,
+        }[role]
+        return password.get_secret_value() if password else ""
+
+    def database_url(
+        self, role: Literal["admin", "sim", "eval"], *, with_secret: bool = True
+    ) -> str:
         """Build a libpq URL for one of the three roles.
 
         Kept here rather than in the DB layer so credentials never need an
-        environment read outside this module.
+        environment read outside this module. The secret is percent-encoded:
+        an RDS-generated password or an IAM token carries ``#``, ``?``, ``%``
+        and ``&``, any of which would silently re-parse the URL around it.
+
+        ``with_secret=False`` is for anything that lands in a process's
+        argument list, where every local user can read it; the caller passes
+        :meth:`database_secret` through ``PGPASSWORD`` instead.
         """
-        user, password = {
-            "admin": (self.database.admin_user, self.db_admin_password),
-            "sim": (self.database.sim_user, self.db_sim_password),
-            "eval": (self.database.eval_user, self.db_eval_password),
-        }[role]
-        secret = password.get_secret_value() if password else ""
+        user = quote(self._database_user(role), safe="")
+        userinfo = user
+        if with_secret:
+            userinfo = f"{user}:{quote(self.database_secret(role), safe='')}"
+        params = [f"sslmode={self.database.sslmode}"]
+        if self.database.sslrootcert:
+            params.append(f"sslrootcert={quote(self.database.sslrootcert, safe='/')}")
         return (
-            f"postgresql://{user}:{secret}@{self.database.host}:"
-            f"{self.database.port}/{self.database.name}"
+            f"postgresql://{userinfo}@{self.database.host}:"
+            f"{self.database.port}/{self.database.name}?{'&'.join(params)}"
         )
+
+
+def _rds_auth_token(*, host: str, port: int, user: str, region: str) -> str:
+    """Mint an RDS IAM authentication token for ``user`` (ADR-0034).
+
+    boto3 is imported lazily -- it lives in the ``aws`` extra, and nothing
+    local needs it. Signing is local computation over the ambient IAM
+    credentials; no request is sent.
+    """
+    try:
+        import boto3
+    except ImportError as exc:
+        raise RuntimeError(
+            "database.auth='iam' needs boto3: install the `aws` extra (uv sync --extra aws)"
+        ) from exc
+    client = boto3.client("rds", region_name=region)
+    return str(client.generate_db_auth_token(DBHostname=host, Port=port, DBUsername=user))
 
 
 @lru_cache(maxsize=8)

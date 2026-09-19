@@ -128,6 +128,10 @@ run "the_task_is_private_fargate_with_secrets_injected" {
     error_message = "The bench task never calls a model."
   }
   assert {
+    condition     = contains([for e in jsondecode(aws_ecs_task_definition.bench.container_definitions)[0].environment : "${e.name}=${e.value}"], "CASCADE_DATABASE__SSLMODE=verify-full")
+    error_message = "The task must verify the database's certificate, not merely encrypt."
+  }
+  assert {
     condition     = jsondecode(aws_ecs_task_definition.bench.container_definitions)[0].readonlyRootFilesystem
     error_message = "The container's root filesystem must be read-only."
   }

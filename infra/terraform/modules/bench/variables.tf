@@ -83,6 +83,22 @@ variable "ephemeral_storage_gib" {
   default     = 50
 }
 
+variable "db_auth" {
+  description = <<-EOT
+    How the application roles log in. "stored" uses the generated role secrets;
+    "iam" uses short-lived RDS tokens and needs `cascade db enable-iam` run
+    first -- on RDS, granting rds_iam disables the role's stored secret, so the
+    switch is an explicit two-step, never automatic (ADR-0034).
+  EOT
+  type        = string
+  default     = "stored"
+
+  validation {
+    condition     = contains(["stored", "iam"], var.db_auth)
+    error_message = "db_auth must be \"stored\" or \"iam\"."
+  }
+}
+
 variable "disposable" {
   description = <<-EOT
     Let `terraform destroy` remove the image repository and the artifacts
