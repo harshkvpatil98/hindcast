@@ -1,0 +1,637 @@
+{
+ "exchanges": [
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "First Position Date"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "Active Month"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2026–27 Gold season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2026 in Gold"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2026 Gold season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2026 Gold"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2025–26 Gold season"
+      },
+      {
+       "lastrevid": 1373621614,
+       "length": 119726,
+       "ns": 0,
+       "pageid": 12240,
+       "title": "Gold"
+      },
+      {
+       "lastrevid": 1294067010,
+       "length": 2329,
+       "ns": 0,
+       "pageid": 277633,
+       "title": "CME"
+      },
+      {
+       "lastrevid": 1370476338,
+       "length": 1604,
+       "ns": 0,
+       "pageid": 288473,
+       "title": "Settlement"
+      },
+      {
+       "lastrevid": 1339997609,
+       "length": 73,
+       "ns": 0,
+       "pageid": 600888,
+       "redirect": true,
+       "title": "Days"
+      },
+      {
+       "lastrevid": 379251138,
+       "length": 25,
+       "ns": 0,
+       "pageid": 28383729,
+       "redirect": true,
+       "title": "Intraday"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "info",
+    "titles": "2025–26 Gold season|2026 Gold|2026 Gold season|2026 in Gold|2026–27 Gold season|Active Month|CME|Days|First Position Date|Gold|Intraday|Settlement"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20260316184623|1343841547"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 12240,
+       "revisions": [
+        {
+         "parentid": 1343841547,
+         "revid": 1343841619,
+         "slots": {
+          "main": {
+           "content": "{{about|the element}}\n{{redirect|Element 79|the anthology|Element 79 (anthology){{!}}''Element 79'' (anthology)}}\n{{pp-vandalism|small=yes}}\n{{pp-move}}\n{{Use dmy dates|date=March 2024}}{{Use American English|date=May 2025}}\n\n{{infobox gold}}\n\n'''Gold''' is a [[chemical element]]; its [[chemical symbol]] is '''Au''' (from [[Latin]] {{lang|la|aurum}}) and [[atomic number]] 79. In its pure form, it is a [[brightness|bright]]-metallic-[[yellow]], dense, soft, [[malleable]], and [[ductile]] [[metal]]. Chemically, gold is a [[transition metal]], a [[group 11 element]], and one of the [[noble metal]]s. It is one of the least [[reactivity (chemistry)|reactive]] chemical elements, being the second lowest in the [[reactivity series]], with only [[platinum]] ranked as less reactive.<ref>{{Cite web |title=The reactivity series of metals - Reactions of metals - AQA - GCSE Combined Science Revision - AQA Trilogy |url=https://www.bbc.co.uk/bitesize/guides/zy7dgdm/revision/1 |access-date=2025-07-02 |website=[[BBC Bitesize]] |language=en-GB |archive-date=2 July 2025 |archive-url=https://web.archive.org/web/20250702022949/https://www.bbc.co.uk/bitesize/guides/zy7dgdm/revision/1 |url-status=dead }}</ref> Gold is solid under [[standard temperature and pressure|standard conditions]].\n\nGold often occurs as the [[free element]] ([[native state (metallurgy)|native state]]), as [[gold nugget|nuggets]] or grains, in [[rock (geology)|rocks]], [[vein (geology)|veins]], and [[alluvial deposit]]s. It occurs in a [[solid solution]] series with the native element [[silver]] (as in [[electrum]]), naturally [[alloy]]ed with other metals such as [[copper]], platinum, and [[palladium]], as well as [[mineral inclusion]]s such as within [[pyrite]]. Less commonly, it occurs in minerals as gold compounds, often with [[tellurium]] ([[gold telluride]]s).\n\nGold is resistant to most acids, though it does dissolve in [[aqua regia]] (a mixture of [[nitric acid]] and [[hydrochloric acid]]), forming a soluble [[tetrachloroaurate]] [[anion]]. Gold is insoluble in nitric acid alone, which dissolves silver and [[base metal]]s, a property long used to [[refining (metallurgy)|refine]] gold and confirm the presence of gold in metallic substances, giving rise to the term \"[[acid test (gold)|acid test]]\". Gold dissolves in [[alkaline]] solutions of [[cyanide]], which are used in [[gold cyanidation|mining]] and [[electroplating]]. Gold also dissolves in [[mercury (element)|mercury]], forming [[amalgam (chemistry)|amalgam]] alloys, and as the gold acts simply as a solute, this is not a [[chemical reaction]].\n\nA relatively rare element when compared to silver<ref>{{cite book |last=Duckenfield |first=Mark |publisher=[[Routledge]] |date=2016 |title=The Monetary History of Gold: A Documentary History, 1660–1999 |url=https://books.google.com/books?id=VeJmDAAAQBAJ&pg=PA4 |page=4 |quote=Its scarcity makes it a useful store of value; however, its relative rarity reduced its utility as a currency, especially for transactions in small denominations. |isbn=978-1-315-47612-4}}</ref><ref>{{cite book |last=Pearce |first=Susan M. |publisher=[[Smithsonian Books]] |date=1993 |title=Museums, Objects, and Collections: A Cultural Study |url=https://books.google.com/books?id=M6aZBwAAQBAJ&pg=PT53 |page=53 |quote=Its scarcity makes it a useful store of value; however, its relative rarity reduced its utility as a currency, especially for transactions in small denominations. ... Rarity is, nevertheless, in itself a source of value, and so is the degree of difficulty which surrounds the winning of the raw material, especially if it is exotic and has to be brought some distance. Gold is, geologically, a relatively rare material on Earth and occurs only in specific places which are remote from most other places. |isbn=978-1-58834-517-2}}</ref> (though thirty times more common than platinum),<ref>{{Cite web |last=Lee |first=Jinjoo |title=Costco Members Are Buying Platinum. Should You? |url=https://www.wsj.com/finance/commodities-futures/costco-members-are-buying-platinum-should-you-0b532204 |access-date=2025-06-24 |website=[[WSJ]] |date=14 October 2024 |language=en-US}}</ref> gold is a [[precious metal]] that has been used for [[gold coin|coinage]], [[jewelry]], and other [[works of art]] throughout [[recorded history]]. In the past, a [[gold standard]] was often implemented as a [[monetary policy]]. Most gold coins ceased to be minted as a circulating currency in the 1930s, and the world gold standard was abandoned for a [[fiat currency]] system after the [[Nixon shock]] measures of 1971.\n\nIn 2023, the [[list of countries by gold production|world's largest gold producer]] was China, followed by Russia and Australia.<ref name=\"Gold Production-2023\">{{cite web |title=Gold Production & Mining Data by Country |date=7 June 2023 |url=https://www.gold.org/goldhub/data/gold-production-by-country|website=[[World Gold Council]]}}</ref> {{as of|2020}}, a total of around 201,296 [[tonne]]s of gold exist above ground.<ref>{{cite web |title=Above-ground stocks |url=https://www.gold.org/goldhub/data/above-ground-stocks |publisher=gold.org |website=[[World Gold Council]]|access-date=18 October 2021}}</ref> If all of this gold were put together into a cube shape, each of its sides would measure {{convert|21.7|m|ft|sp=us}}. The world's consumption of new gold produced is about 50% in jewelry, 40% in [[Gold as an investment|investments]], and 10% in [[Manufacturing|industry]].<ref name=\"Soos-2011\">{{cite news |last=Soos |first=Andy |title=Gold Mining Boom Increasing Mercury Pollution Risk |date=6 January 2011 |publisher=[[Oilprice.com]] |url=http://oilprice.com/Metals/Gold/Gold-Mining-Boom-Increasing-Mercury-Pollution-Risk.html |work=Advanced Media Solutions, Inc. |access-date=26 March 2011}}</ref> Gold's high malleability, ductility, resistance to corrosion and most other chemical reactions, as well as conductivity of electricity have led to its continued use in corrosion-resistant [[electrical connector]]s in all types of computerized devices (its chief industrial use). Gold is also used in [[infrared]] shielding, the production of [[colored glass]], [[gold leaf]]ing, and [[restorative dentistry|tooth restoration]]. [[Auranofin]] is a gold-containing drug used to treat [[rheumatoid arthritis]].\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2026-03-16T18:46:58Z"
+        }
+       ],
+       "title": "Gold"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-03-30T03:58:25Z",
+    "titles": "Gold"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20240516072806|1224100869"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 277633,
+       "revisions": [
+        {
+         "parentid": 1224100869,
+         "revid": 1294067010,
+         "slots": {
+          "main": {
+           "content": "'''CME'''. or '''cme''', can refer to any of the following:\n\n{{TOC right}}\n\n== Organizations ==\n* [[Canadian Military Engineers]], the military engineer branch of the Canadian Forces\n* [[Central European Media Enterprises]]\n* [[Central Music Company]] (CME), Beijing, China\n* [[Christian Methodist Episcopal Church]], a historically black denomination of Methodism, formerly called \"Colored Methodist Episcopal Church\" \n* [[CME Group]], a financial securities exchange services and information firm\n** [[Chicago Mercantile Exchange]], a financial and commodity derivative exchange, owned by CME Group\n* [[College of Military Engineering, Pune]], a training institution of the Indian Army Corps of Engineers\n* Columbia Music Entertainment, former name for [[Nippon Columbia]], a record label in Tokyo, Japan\n* [[Conseil Mondial de l'Eau]], the World Water Council, an international think-tank focused on water issues\n* [[Creighton Manning Engineering]], a civil engineering firm in Albany, New York\n\n== Physiology and medicine ==\n* [[Chief medical examiner]], common official title of a coroner\n* [[Continuing medical education]]\n* Clathrin-mediated endocytosis, another name for [[receptor-mediated endocytosis]] (RME)\n* [[Cystoid macular edema]], an eye disorder also known as [[Irvine–Gass syndrome]]\n\n== Science and technology ==\n* [[Chiral magnetic effect]], generation of electric current along an external magnetic field induced by [[chirality]] imbalance\n* Concurrent Machine Environment, a computing environment supporting [[ICL Direct Machine Environment]]\n* [[Coronal mass ejection]], a massive burst of stellar wind and other ejecta from a star\n* Clathrin mediated endocytosis\n\n== Transport ==\n* [[Chief mechanical engineer]], the chief officer of a railway responsible for locomotives and rolling stock\n*[[Castlemaine railway station]], Australia\n*[[Ciudad del Carmen International Airport]] (IATA code), Campeche, Mexico\n*[[Combe railway station]] (National Rail code) in the county of Oxfordshire, UK\n*[[Prince Edward Air]] (ICAO code), a defunct airline based on Prince Edward Island, Canada\n\n== Other uses ==\n* cme, the ISO 639-3 code for the [[Cerma language]] spoken in Burkina Faso\n* CME, the ITU country code for [[Cameroon]]\n\n== See also ==\n* {{intitle}}\n* {{Lookfrom|CME}}\n* {{Lookfrom|Cme}}\n\n{{disambig}}",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-06-05T11:08:27Z"
+        }
+       ],
+       "title": "CME"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-03-30T03:58:25Z",
+    "titles": "CME"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20250830150913|1308623108"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 600888,
+       "revisions": [
+        {
+         "parentid": 1308623108,
+         "revid": 1339997609,
+         "slots": {
+          "main": {
+           "content": "#REDIRECT [[Day]]\n\n{{Rcat shell|\n{{R unprintworthy}}\n{{R from plural}}\n}}",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2026-02-23T10:23:49Z"
+        }
+       ],
+       "title": "Days"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-03-30T03:58:25Z",
+    "titles": "Days"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20260324222003|1345206700"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 8376,
+       "revisions": [
+        {
+         "parentid": 1345206700,
+         "revid": 1345206751,
+         "slots": {
+          "main": {
+           "content": "{{pp-semi|small=yes}}\n{{Short description|Time of one rotation around a planet axis}}\n{{For-multi|the part of the day when there is daylight|Daytime|other uses}}\n{{pp-move}}\n{{Multiple image\n| direction         = vertical\n| total_width       = 400\n| image1            = Midtown Manhattan from Weehawken September 2021 panorama 1.jpg\n| alt1              = Midtown Manhattan at afternoon\n| image2            = Midtown Manhattan from Weehawken September 2021 panorama 2.jpg\n| image3            = Midtown Manhattan from Weehawken September 2021 HDR panorama.jpg\n| alt2              = Midtown Manhattan at sunset\n| alt3              = Midtown Manhattan at evening\n| footer            = A quarter-day cycle at [[Midtown Manhattan]], from afternoon to dusk\n}}\n\nA '''day''' is the [[time]] [[rotation period|period]] of a full [[Earth's rotation|rotation of the Earth]] with respect to the [[Sun]].  On average, this is 24 [[hour]]s (86,400 [[second]]s). As a day passes at a given location it experiences [[morning]], [[afternoon]], [[evening]], and [[night]]. This daily cycle drives [[circadian rhythm]]s in many organisms, which are vital to many [[life]] processes.\n\nA collection of sequential days is organized into [[calendar]]s as [[Calendar date|dates]], almost always into [[week]]s, [[month]]s and [[year]]s. A [[solar calendar]] organizes dates based on the Sun's annual cycle, giving consistent start dates for the [[season|four seasons]] from year to year. A [[lunar calendar]] organizes dates based on the [[Moon]]'s [[lunar phase]].\n\nIn common usage, a day starts at [[midnight]], written as 00:00 or [[12 am|12:00{{nbsp}}am]] in [[24-hour clock|24-]] or [[12-hour clock]]s, respectively. Because the time of midnight varies between locations, [[time zone]]s are set up to facilitate the use of a uniform [[standard time]]. Other conventions exist for marking the beginning and end of days, such as the [[Hebrew calendar|Jewish religious calendar]] which counts days beginning at sunset, or in [[astronomy]], in which a day begins at [[noon]] so that observations throughout a single night are recorded as happening on the same day.\n\nIn specific applications, the definition of a day is slightly modified, such as in the [[International System of Units|SI]] day (exactly 86,400 [[second]]s) used for [[computer]]s and [[Time metrology|standards keeping]], [[local mean time]] accounting of the [[Day length fluctuations|Earth's natural fluctuation of a solar day]], and [[stellar day]] and [[Sidereal time|sidereal day]] (using the [[celestial sphere]]) used for [[astronomy]].  In some countries outside of the [[tropics]], [[daylight saving time]] is practiced, and each year there will be one 23-hour civil day and one 25-hour civil day.  Due to slight variations in the rotation of the Earth, there are rare times when a [[leap second]] will get inserted at the end of a [[Coordinated Universal Time|UTC]] day, and so while almost all days have a duration of 86,400 seconds, there are these exceptional cases of a day with 86,401 seconds (in the half-century spanning 1972 through 2022, there have been a total of 27 leap seconds that have been inserted, so roughly once every other year). It is a [[Non-SI units mentioned in the SI|non-SI unit that is accepted for use with SI]].<ref>{{cite web|url=https://www.bipm.org/utils/common/pdf/si-brochure/SI-Brochure-9-EN.pdf|archive-url=https://web.archive.org/web/20200316121104/https://www.bipm.org/utils/common/pdf/si-brochure/SI-Brochure-9-EN.pdf|url-status=dead|archive-date=2020-03-16|work=Bureau International de Poids et Mesures|title=Non-SI units accepted for use with the SI, and units based on fundamental constants|pages=145–146}}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2026-03-24T22:20:24Z"
+        }
+       ],
+       "title": "Day"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-03-30T03:58:25Z",
+    "titles": "Day"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20100816162938|379241137"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 28383729,
+       "revisions": [
+        {
+         "parentid": 379241137,
+         "revid": 379251138,
+         "slots": {
+          "main": {
+           "content": "#REDIRECT [[Day trading]]",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2010-08-16T17:28:31Z"
+        }
+       ],
+       "title": "Intraday"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-03-30T03:58:25Z",
+    "titles": "Intraday"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20260226182121|1340618174"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 228796,
+       "revisions": [
+        {
+         "parentid": 1340618174,
+         "revid": 1340618275,
+         "slots": {
+          "main": {
+           "content": "{{Multiple issues|{{Unreliable sources|date=January 2024}} \n{{Update|date=January 2024}}}} \n{{short description|Buying and selling financial instruments within the same trading day}}\n[[File:Day of stock price changes.png|thumb|upright=1.2|A stock's price changes over the course of a trading day]]\n'''Day trading''' is a form of [[speculation]] in [[Security (finance)|securities]] in which a [[Trader (finance)|trader]] buys and sells a [[financial instrument]] within the same [[trading day]]. This means that all [[Position (finance)|positions]] are closed before the market closes for the trading day to avoid unmanageable risks and negative price gaps between one day's close and the next day's price at the open. Traders who trade in this capacity are generally classified as [[speculator]]s. Day trading contrasts with the long-term trades underlying [[buy-and-hold]] and [[value investing]] strategies.<ref>{{cite news | url=https://www.thebalance.com/the-striking-similarities-between-trading-and-gambling-1345200 | title=The Similarities Between Day Trading and Gambling | first=Tyler | last=Yell | work=[[The Balance (website)|The Balance]] | date=October 3, 2019 | archive-date=June 17, 2021 | access-date=September 26, 2020 | archive-url=https://web.archive.org/web/20210617020813/https://www.thebalance.com/the-striking-similarities-between-trading-and-gambling-1345200 | url-status=dead }}</ref><ref>{{cite news | url=https://www.fool.com/investing/general/2015/10/09/why-day-trading-stocks-is-not-the-way-to-invest.aspx | title=Why Day Trading Stocks Is Not the Way to Invest | first=Matthew | last=Frankel | work=[[The Motley Fool]] | date=August 24, 2017}}</ref> Day trading may require fast trade execution, sometimes as fast as milli-seconds in scalping, therefore direct-access [[day trading software]] is often needed.<ref name=\":2\">{{Cite web |last=Seth |first=Shobhit |date=August 17, 2019 |title=Choosing the Right Day-Trading Software |url=https://www.investopedia.com/articles/active-trading/100714/vital-importance-choosing-right-day-trading-software.asp |work=[[Investopedia]]}}</ref>\n\nDay trading is a strategy of buying and selling securities within the same trading day. According to [[Financial Industry Regulatory Authority|FINRA]], a \"day trade\" involves the purchase and sale (or sale and purchase) of the same security on the same day in a margin account, covering a range of securities including options. An individual is considered a \"pattern day trader\" if they execute four or more day trades within five business days, given these trades make up over six percent of their total trades in the margin account during that period.<ref>{{Cite web |title=SEC.gov {{!}} Margin Rules for Day Trading |url=https://www.sec.gov/oiea/investor-alerts-and-bulletins/margin-rules-day-trading |archive-url=https://web.archive.org/web/20240425010604/https://www.sec.gov/oiea/investor-alerts-and-bulletins/margin-rules-day-trading |archive-date=2024-04-25 |access-date=2025-10-19 |website=www.sec.gov |language=en |url-status=live }}</ref> Pattern day traders must adhere to specific margin requirements, notably maintaining a minimum equity of $25,000 in their trading account before engaging in day trading activities.<ref>Bulkowski, T. N. (2013). Swing and day trading evolution of a trader. In Swing and day trading evolution of a trader (1st edition). Wiley.</ref>\n\nDay traders generally use [[Leverage (finance)|leverage]] such as [[Margin (finance)|margin]] loans. In the United States, [[Regulation T]] permits an initial maximum leverage of 2:1, but many brokers will permit 4:1 intraday leverage as long as the leverage is reduced to 2:1 or less by the end of the trading day. In other countries margin rates of 30:1 or higher are available. In the United States, based on rules by the [[Financial Industry Regulatory Authority]], people who make more than three day trades per one five-trading-day period are termed [[pattern day trader]]s and are required to maintain $25,000 in equity in their accounts.<ref>{{cite web | url=https://www.finra.org/investors/highlights/day-traders-mind-your-margin | title=Day Traders: Mind Your Margin | publisher=[[Financial Industry Regulatory Authority]] | access-date=2019-03-17 | archive-date=2019-03-15 | archive-url=https://web.archive.org/web/20190315224215/http://www.finra.org/investors/highlights/day-traders-mind-your-margin | url-status=dead }}</ref> However, a day trader with the legal minimum of $25,000 in their account can buy $100,000 (4× leverage) worth of stock during the day, as long as half of those positions are exited before the market close. Because of the high risk of margin use, and of other day trading practices, a day trader will often have to exit a losing position very quickly, in order to prevent a greater, unacceptable loss, or even a disastrous loss, much larger than their original investment, or even larger than their account value.<ref>{{cite web | url=http://www.finra.org/investors/day-trading-margin-requirements-know-rules | title=Day-Trading Margin Requirements: Know the Rules | publisher=[[Financial Industry Regulatory Authority]] | access-date=2017-09-06 | archive-date=2019-04-16 | archive-url=https://web.archive.org/web/20190416184929/http://www.finra.org/investors/day-trading-margin-requirements-know-rules | url-status=dead }}</ref>\n\nDay trading was once an activity that was exclusive to financial firms and professional speculators. Many day traders are [[bank]] or investment firm employees working as specialists in [[Equity (finance)|equity]] investment and [[investment management]]. Day trading gained popularity after the deregulation of commissions in the United States in 1975, the advent of [[electronic trading platform]]s in the 1990s, and with the stock price [[volatility (finance)|volatility]] during the [[dot-com bubble]].<ref>{{cite news | url=https://www.bizjournals.com/portland/stories/1999/08/23/editorial3.html | title=Daytrading: Wall Street's latest, riskiest get-rich scheme | first=Gunther | last=Karger | work=[[American City Business Journals]] | date=August 22, 1999}}</ref> Recent 2020 pandemic lockdowns and following market volatility has caused a significant number of retail traders to enter the market.<ref>{{Cite web |last=Davis |first=Anthony A. |date=2021 |title=The life of a pandemic day trader |url=https://www.macleans.ca/economy/the-life-of-a-pandemic-day-trader/}}</ref>\n\nDay traders may be professionals that work for large financial institutions, are trained by other professionals or mentors, do not use their own capital, or receive a base salary of approximately $50,000 to $70,000 as well as the possibility for bonuses of 10%–30% of the profits realized.<ref>{{cite news | url=https://www.forbes.com/sites/nealegodfrey/2017/07/16/day-trading-smart-or-stupid/ | title=Day Trading: Smart Or Stupid? | first=Neale | last=Godfrey | work=[[Forbes]] | date=July 16, 2017}}</ref> Individuals can day trade with as little as $100.<ref>{{cite web | url=https://www.benzinga.com/money/how-to-become-a-day-trader-with-100/ | title=How to Become a Day Trader with $100 | first=Damyan | last=Diamandiev | work=Benzinga | date=May 26, 2020}}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2026-02-26T18:22:09Z"
+        }
+       ],
+       "title": "Day trading"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-03-30T03:58:25Z",
+    "titles": "Day trading"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20260116091940|1333202341"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 288473,
+       "revisions": [
+        {
+         "parentid": 1333202341,
+         "revid": 1333215501,
+         "slots": {
+          "main": {
+           "content": "{{Wiktionary}}\n\n'''Settlement''' may refer to:\n*[[Human settlement]], a community where people live\n*[[Settlement (structural)]], downward movement of a structure's foundation\n*[[Settlement (finance)]], where securities are delivered against payment of money\n*[[Settlement (litigation)]], a resolution between disputing parties about a legal case\n*[[Settlement (trust)]], a deed whereby property is given by a settlor into trust\n*[[Thomson Bay Settlement, Rottnest Island]], Western Australia, also known as simply The Settlement\n*[[Closing (real estate)]], the final step in executing a real estate transaction\n\n==See also==\n*{{look from}}\n*{{in title}}\n*[[Act of Settlement (disambiguation)]], various legislation\n*Settlement Act, or [[Poor Relief Act 1662]]\n*[[Collective settlement]], another name for an intentional community\n*[[Collective settlement (litigation)]], a legal term\n*[[Sedentism]], the practice of living in one place for a long time\n*[[Settlement geography]], investigating the part of the Earth's surface settled by humans\n*[[Settlement movement]], a Victorian era reformist social movement\n*[[Settlement school]], social reform institutions established in rural Appalachia in the early 20th century\n*[[Settler colonialism]], replacing the original population with a new society of settlers\n*[[Soil consolidation]], a process by which soils decrease in volume\n*[[Squatting]], occupying an abandoned building\n*[[Structured settlement]], a negotiated financial or insurance arrangement \n\n{{Disambiguation}}",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2026-01-16T11:57:59Z"
+        }
+       ],
+       "title": "Settlement"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-03-30T03:58:25Z",
+    "titles": "Settlement"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20260307140541|1342178640"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 5659,
+       "revisions": [
+        {
+         "parentid": 1342178640,
+         "revid": 1343770811,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Chemical substance not composed of simpler ones}}\n{{pp-vandalism|small=yes}}\n{{Use Oxford spelling|date=July 2025}}\n{{Use dmy dates|date=August 2021}}\n[[File:32-column periodic table.png|thumb|upright=1.33|The chemical elements ordered in the [[periodic table]], as shown in the 32-column format{{clarify|reason=the 12 distinct colours are not described or defined on the image page, either|date=January 2026}}]]\n{{Sidebar periodic table}}\nA '''chemical element''' is a [[Chemical species|species]] of [[atom]] defined by its number of [[proton]]s. The number of protons is called the [[atomic number]] of that element. For example, oxygen has an atomic number of 8: each oxygen atom has 8 protons in its [[atomic nucleus|nucleus]]. Atoms of the same element can have different numbers of [[neutron]]s in their nuclei, known as [[isotope]]s of the element. Atoms of one element can be transformed into atoms of a different element in [[nuclear reaction]]s, which change an atom's atomic number. Almost all [[baryonic matter]] in the universe is composed of elements (among rare exceptions are [[neutron star]]s).\n\nThe term \"chemical element\" is also widely used to mean a pure [[chemical substance]] consisting of a single element. For example, oxygen gas consists only of atoms of oxygen.\n\nHistorically, the term \"chemical element\" meant a substance that cannot be broken down into constituent substances by chemical reactions, and for most practical purposes this definition still has validity. There was some controversy in the 1920s over whether isotopes deserved to be recognised as separate elements if they could be separated by chemical means.<ref>{{cite journal | first=Helge | last=Kragh | year=2000 | title=Conceptual Changes in Chemistry: The Notion of a Chemical Element, ca. 1900-1925 | journal=  Studies in History and Philosophy of Science Part B: Studies in History and Philosophy of Modern Physics| volume=31 | issue=4 | page=435 | doi=10.1016/S1355-2198(00)00025-3 | bibcode=2000SHPMP..31..435K }}</ref> By November 2016, the [[International Union of Pure and Applied Chemistry]] (IUPAC) recognized a total of 118 elements. The first 94 occur naturally on [[Earth]], and the remaining 24 are [[synthetic element]]s produced in nuclear reactions. Save for unstable radioactive elements (radioelements) which [[radioactive decay|decay]] quickly, nearly all elements are available industrially in varying amounts. The [[timeline of chemical element discoveries|discovery and synthesis of further new elements]] is an ongoing area of scientific study.\n\nThe history of the discovery and use of elements began with early [[society|human societies]] that discovered native minerals such as [[carbon]], [[sulfur]], [[copper|copper,]] and gold (though the modern concept of an element was not yet understood). Attempts to classify materials such as these resulted in the concepts of [[classical element]]s, [[alchemy]], and similar theories throughout history. Much of the modern understanding of elements developed from the work of [[Dmitri Mendeleev]], a Russian chemist who published the first recognizable [[periodic table]] in 1869. This table organizes the elements by increasing atomic number into rows (\"[[period (periodic table)|periods]]\") in which the columns (\"[[group (periodic table)|groups]]\") share recurring (\"periodic\") [[physical property|physical]] and [[chemical property|chemical properties]]. The periodic table summarizes various properties of the elements, allowing chemists to derive relationships between them and to make predictions about exceedingly transient [[nuclides]] not yet observed, and the potential compounds these unknown elements might form. \n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2026-03-16T07:47:53Z"
+        }
+       ],
+       "title": "Chemical element"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-03-30T03:58:25Z",
+    "titles": "Chemical element"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20260203154754|1336398647"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 63243,
+       "revisions": [
+        {
+         "parentid": 1336398647,
+         "revid": 1344351291,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Abbreviations used in chemistry}}\n{{More citations needed|date=April 2024}}\n[[File:Simple Periodic Table Chart-blocks.svg|thumb|upright=2.2|The [[periodic table]], elements being denoted by their symbols]]\n\n'''Chemical symbols''' are the abbreviations used in [[chemistry]], mainly for [[chemical element]]s, but also for [[functional group]]s, chemical compounds, and other entities. '''Element symbols''' for chemical elements, also known as '''atomic symbols''', normally consist of one or two letters from the [[Latin alphabet]] and are written with the first letter capitalised.\n\n==History==\nEarlier symbols for chemical elements stem from classical [[Latin]] and [[Greek language|Greek]] words. For some elements, this is because the material was known in ancient times, while for others, the name is a more recent invention. For example, Pb is the symbol for [[lead]] (''plumbum'' in Latin); Hg is the symbol for [[mercury (element)|mercury]] (''hydrargyrum'' in Greek); and He is the symbol for [[helium]] (a [[Neo-Latin]] name) because helium was not known in [[ancient Roman]] times. Some symbols come from other sources, like W for [[tungsten]] (''Wolfram'' in German) which was not known in Roman times.\n\nA three-letter [[Systematic element name|temporary symbol]] may be assigned to a newly synthesized (or not yet synthesized) element. For example, \"Uno\" was the temporary symbol for [[hassium]] (element 108) which had the temporary name of ''unniloctium'', based on the digits of its atomic number. There are also some historical symbols that are no longer officially used.\n\n==Extension of the symbol==\n[[File:Atomic Symbol Mg.svg|thumb|upright=1.5|Annotated example of an atomic symbol]]\nIn addition to the letters for the element itself, additional details may be added to the symbol as [[subscript and superscript|superscripts or subscripts]] a particular [[isotope]], [[ionization]], or [[oxidation state]], or other atomic detail.<ref>{{cite report |url= http://old.iupac.org/reports/provisional/abstract04/RB-prs310804/Chap3-3.04.pdf |title= IUPAC Provisional Recommendations: IR-3: Elements and Groups of Elements |date= March 2004 |publisher= [[IUPAC]]}}</ref> A few isotopes have their own specific symbols rather than just an isotopic detail added to their element symbol.\n\nAttached subscripts or superscripts specifying a nuclide or molecule have the following meanings and positions:\n\n*The [[nucleon]] number ([[mass number]]) is shown in the left superscript position (e.g., <sup>14</sup>N). This number defines the specific isotope. Various letters, such as \"m\" and \"f\" may also be used here to indicate a [[nuclear isomer]] (e.g., [[technetium-99m|<sup>99m</sup>Tc]]). Alternately, the number here can represent a specific [[quantum state|spin state]] (e.g., [[singlet oxygen|<sup>1</sup>O<sub>2</sub>]]). These details can be omitted if not relevant in a certain context.\n*The proton number ([[atomic number]]) may be indicated in the left subscript position (e.g., <sub>64</sub>Gd). The atomic number is redundant to the chemical element, but is sometimes used to emphasize the change of numbers of nucleons in a nuclear reaction.\n*If necessary, a state of [[ionization]] or an [[excited state]] may be indicated in the right superscript position (e.g., state of ionization Ca<sup>2+</sup>).\n*The number of atoms of an element in a [[molecule]] or [[chemical compound]] is shown in the right subscript position (e.g., N<sub>2</sub> or Fe<sub>2</sub>O<sub>3</sub>). If this number is one, it is normally omitted: the number one is implicitly understood if unspecified.\n*A [[radical (chemistry)|radical]] is indicated by a dot on the right side (e.g., Cl<sup>•</sup> for a neutral chlorine atom). This is often omitted unless relevant to a certain context because it is already deducible from the charge and atomic number, as generally true for nonbonded valence electrons in [[skeletal structure]]s.\n\nMany [[functional group]]s also have their own chemical symbol, e.g. Ph for the [[phenyl group]], and Me for the [[methyl group]].\n\nA list of current, dated, as well as proposed and historical signs and symbols is included here with its [[definition|signification]]. Also given is each element's [[atomic number]], [[atomic weight]], or the [[atomic mass]] of the most stable [[isotope]], group and period numbers on the [[periodic table]], and [[etymology]] of the symbol.\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2026-03-19T22:51:59Z"
+        }
+       ],
+       "title": "Chemical symbol"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-03-30T03:58:25Z",
+    "titles": "Chemical symbol"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20260315173556|1343660019"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 17730,
+       "revisions": [
+        {
+         "parentid": 1343660019,
+         "revid": 1345443501,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Indo-European language of the Italic branch}}\n{{hatnote group|\n{{Distinguish|Ladin (disambiguation){{!}}Ladin}}\n{{Other uses}}\n}}\n{{pp-protected|small=yes}}\n{{Use dmy dates|date=January 2024}}\n{{Use British English|date=September 2025}}\n{{Infobox language\n| states           = {{ublist|[[Latium]]|[[Ancient Rome]]}}\n| ethnicity        = {{ublist|[[Latins (Italic tribe)|Latins]]|[[Roman people|Romans]]}}\n| era              = As a native language, {{circa|7th century&nbsp;BC <!-- [[Praeneste fibula]] -->|8th century&nbsp;AD}}\n| familycolor      = Indo-European\n| fam2             = [[Italic languages|Italic]]\n| fam3             = [[Latino-Faliscan]]\n| ancestor         = [[Old Latin]]\n| script           = [[Latin script|Latin]] ([[Latin alphabet]])\n| agency           = [[Pontifical Academy for Latin]]\n| iso1             = la\n| iso2             = lat\n| iso3             = lat\n| glotto           = impe1234\n| glottorefname    = Imperial Latin\n| glotto2          = lati1261\n| glottorefname2   = Latin\n| lingua           = 51-AAB-aa, -ab, -ac\n| image            = Rome Colosseum inscription 2.jpg\n| imagecaption     = Latin inscription on a stone inside the [[Colosseum]] in [[Rome]], Italy\n| mapscale         = 1\n| map              = Roman Empire Trajan 117AD.png\n| mapcaption       = Greatest extent of the Roman Empire under Emperor [[Trajan]] ({{circa|117&nbsp;AD}}) and the area governed by Latin speakers. Many languages other than Latin were spoken within the empire.\n| notice           = IPA\n| name             = Latin\n| nativename       = {{lang|la|lingua Latina}}, {{lang|la|Latinum}}{{efn-ur|name=IPA|{{IPA|la|ˈlɪŋɡʷa ɫaˈtiːna}}, {{IPA|la|ɫaˈtiːnʊ̃|label=}}}}\n| pronunciation    = {{IPA|la|ɫaˈtiːnʊ̃}}\n| nation           = {{VAT}}\n}}\n\n'''Latin''' ({{lang|la|lingua Latina}} or {{lang|la|Latinum}}{{efn-ur|name=IPA}}) is a [[classical language]] belonging to the [[Italic languages|Italic branch]] of the [[Indo-European languages]]. Latin was originally spoken by the [[Latins (Italic tribe)|Latins]] in [[Latium]] (now known as [[Lazio]]), the lower [[Tiber]] area around [[Rome]], Italy.<ref>{{cite book |title=A companion to Latin studies |first=John Edwin |last=Sandys |publisher=[[University of Chicago Press]] |year=1910 |pages=811–812}}</ref> Through the expansion of the [[Roman Republic]], it became the dominant language in the [[Italian Peninsula]] and subsequently throughout the [[Roman Empire]]. It has greatly influenced many languages, [[Latin influence in English|including English]], having contributed [[List of Latin words with English derivatives|many words]] to the English [[lexicon]], particularly after the [[Christianity in Anglo-Saxon England|Christianisation of the Anglo-Saxons]] and the [[Norman Conquest]]. Latin [[Root (linguistics)|roots]] appear frequently in the technical vocabulary used by fields such as [[theology]], [[List of Latin and Greek words commonly used in systematic names|the sciences]], [[List of medical roots, suffixes and prefixes|medicine]], and [[List of Latin legal terms|law]].\n\nBy the late [[Roman Republic]], [[Old Latin]] had evolved into standardised [[Classical Latin]]. [[Vulgar Latin]] refers to the less prestigious [[colloquial register]]s, attested in inscriptions and some literary works such as those of the comic playwrights [[Plautus]] and [[Terence]]<ref>{{harvnb|Clark|1900|pp=1–3}}</ref> and the author [[Petronius]]. While often called a \"dead language\",<ref>{{Cite web |title=Why is Latin a dead language? |url=https://www.britannica.com/question/Why-is-Latin-a-dead-language |access-date=2024-08-05 |website=Encyclopædia Britannica}}</ref> Latin did not undergo [[language death]]. Between the 6th and 9th centuries, natural [[language change]] in the vernacular Latin of different regions evolved into distinct [[Romance languages]]. After the [[fall of the Western Roman Empire]], Latin remained the [[common language]] of [[international communication]], science, scholarship and academia in Europe into the early 19th century, by which time modern languages had supplanted it in common academic and political usage.\n\n[[Late Latin]] is the literary form of the language from the 3rd century AD onward. No longer spoken as a native language, [[Medieval Latin]] was used across Western and [[Catholic Europe]] during the [[Middle Ages]] as a working and literary language from the 9th century to the [[Renaissance]], which then developed a classicising form, called [[Renaissance Latin]]. This was the basis for [[Neo-Latin]], which evolved during the [[early modern period]]. Latin was taught to be written and spoken at least until the late seventeenth century, when spoken skills began to erode; [[Contemporary Latin]] is generally studied to be read rather than spoken. [[Ecclesiastical Latin]] remains the [[official language]] of the [[Holy See]] and the [[Roman Rite]] of the [[Catholic Church]].\n\n[[Latin grammar]] is highly [[fusional language|fusional]], with classes of inflections for [[noun case|case]], [[Grammatical number|number]], [[Grammatical person|person]], [[grammatical gender|gender]], [[Latin tenses|tense]], [[Grammatical mood|mood]], [[voice (grammar)|voice]], and [[Grammatical aspect|aspect]]. The [[Latin alphabet]] is directly derived from the [[Etruscan alphabet|Etruscan]] and [[Greek alphabet]]s.\n\n{{TOC limit}}\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2026-03-26T03:19:10Z"
+        }
+       ],
+       "title": "Latin"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-03-30T03:58:25Z",
+    "titles": "Latin"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20260308165453|1342378655"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 673,
+       "revisions": [
+        {
+         "parentid": 1342378655,
+         "revid": 1342378746,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Number of protons found in the nucleus of an atom}}\n\n{{Distinguish|Atomic mass|Mass number|Atomic weight}}\n\n{{Use dmy dates|date=July 2018}}\n\nThe '''atomic number''' or '''nuclear charge number''' (symbol '''''Z''''') of a [[chemical element]] is the [[charge number]] of its [[atomic nucleus]]. For ordinary nuclei composed of [[proton]]s and [[neutron]]s, this is equal to the '''proton number''' ('''''n''<sub>p</sub>''') or the number of protons found in the nucleus of every [[atom]] of that element. The atomic number can be used to uniquely identify ordinary [[chemical elements]]. In an ordinary [[electric charge|uncharged]] atom, the atomic number is also equal to the number of [[electron]]s.\n\nFor an ordinary atom which contains protons, neutrons and [[electron]]s, the sum of the atomic number ''Z'' and the [[neutron number]] ''N'' gives the atom's [[atomic mass number]] ''A''. Since protons and neutrons have approximately the same mass (and the mass of the electrons is negligible for many purposes) and the [[Binding energy#Mass change|mass defect]] of the [[nucleon]] binding is always small compared to the nucleon mass, the [[atomic mass]] of any atom, when expressed in [[dalton (unit)|daltons]] (making a quantity called the \"[[atomic mass|relative isotopic mass]]\"), is within 1% of the whole number ''A''.\n\nAtoms with the same atomic number but different neutron numbers, and hence different mass numbers, are known as [[isotope]]s. A little more than three-quarters of naturally occurring elements exist as a mixture of isotopes (see [[monoisotopic element]]s), and the average isotopic mass of an isotopic mixture for an element (called the relative atomic mass) in a defined environment on Earth determines the element's standard [[atomic weight]]. Historically, it was these atomic weights of elements (in comparison to hydrogen) that were the quantities measurable by chemists in the 19th century.\n\nThe conventional symbol ''Z'' comes from the German word {{lang|de|Zahl}} 'number', which, before the modern synthesis of ideas from chemistry and physics, merely denoted an element's numerical place in the [[periodic table]], whose order was then approximately, but not completely, consistent with the order of the elements by atomic weights. Only after 1915, with the suggestion and evidence that this ''Z'' number was also the nuclear charge and a physical characteristic of atoms, did the word {{lang|de|Atomzahl}} (and its English equivalent ''atomic number'') come into common use in this context.\n\nThe rules above do not always apply to [[exotic atom]]s which contain short-lived elementary particles other than protons, neutrons and electrons.\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2026-03-08T16:55:14Z"
+        }
+       ],
+       "title": "Atomic number"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-03-30T03:58:25Z",
+    "titles": "Atomic number"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20251220183642|1328584624"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 40818,
+       "revisions": [
+        {
+         "parentid": 1328584624,
+         "revid": 1338914116,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Perception of light level}}\n{{Other uses}}\n[[File:LightningVolt Deep Blue Sea.jpg|thumb|Decreasing brightness with depth (underwater photo as example)]]\n\n'''Brightness''' is an attribute of [[visual perception]] in which a source appears to be radiating/reflecting [[light]].<ref>\"[http://www.merriam-webster.com/dictionary/bright Bright Definition & Meaning]\", Merriam-Webster Dictionary.</ref> In other words, brightness is the [[perception]] dictated by the [[luminance]] of a visual target. The perception is not linear to luminance, and relies on the context of the viewing environment (for example, see [[White's illusion]]).\n\nBrightness is a subjective sensation of an object being observed and one of the [[Color appearance model#Color appearance parameters|color appearance parameters]] of many [[color appearance model]]s, typically denoted as <math>Q</math>. Brightness refers to how much light ''appears to shine'' from something. This is a different perception than [[lightness]], which is how light something appears ''compared to'' a similarly lit white object.<ref>Robert William Gainer Hunt: ''Some comments on using the CIECAM97s colour-appearance model''</ref>\n\nThe adjective  ''[[:wikt:bright|bright]]'' derives from an Old English ''[[beorht]]'' with the same meaning via metathesis giving Middle English ''briht''. The word is from a [[Proto-Germanic]] {{lang|gem-x-proto|berhtaz}}, ultimately from a [[Proto-Indo-European language|PIE]] root with a closely related meaning, {{lang|ine-x-proto|bhereg-}} \"white, bright\".\n\"Brightness\" was formerly used as a synonym for the [[photometry (optics)|photometric]] term ''luminance'' and (incorrectly) for the [[radiometric]] term ''[[radiance]]''. As defined by the US ''Federal Glossary of Telecommunication Terms'' ([[Federal Standard 1037C|FS-1037C]]), \"brightness\" should now be used only for non-quantitative references to physiological sensations and perceptions of light.<ref>“[http://www.its.bldrdoc.gov/fs-1037/dir-005/_0719.htm Brightness]” in Federal Standard 1037C, the ''Federal Glossary of Telecommunication Terms'' (1996)</ref>\nBrightness is an antonym of \"[[:wikt:dimness|dimness]]\" or \"[[:wikt:dullness|dullness]]\".\n\nWith regard to [[star]]s, brightness is quantified as [[apparent magnitude]] and [[absolute magnitude]].\n\nTwo [[Solar symbol|pictograms resembling the Sun]] with rays are used to represent the settings of luminance in [[Electronic visual display|display devices]]. They have been encoded in [[Unicode]] since version&nbsp;6.0 (October 2010) in the Miscellaneous Symbols and Pictographs block under U+1F505 as \"low brightness symbol\" (🔅) and U+1F506 as \"high brightness symbol\" (🔆).<ref>{{cite web |url=https://unicode.org/charts/PDF/U1F300.pdf |title=Miscellaneous Symbols and Pictographs |publisher=Unicode Consortium |year=2023}}</ref>\n\nThe United States [[Federal Trade Commission]] (FTC) has assigned an unconventional meaning to ''brightness'' when applied to [[Electric light|lamps]]: on light bulb packages, ''brightness'' means [[luminous flux]], while in other contexts it means luminance.<ref name=\"ftc\">{{cite web |title=Shopping for Light Bulbs |publisher=United States [[Federal Trade Commission]] |url=https://www.consumer.ftc.gov/articles/0164-shopping-light-bulbs |access-date=March 13, 2017}}</ref>  Luminous flux is the total amount of light coming from a source while luminance is the amount of light per unit solid angle per unit of area on the source's surface.  The table below shows the standard ways of indicating the amount of light.\n\n{{SI light units}}\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2026-02-18T00:01:59Z"
+        }
+       ],
+       "title": "Brightness"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-03-30T03:58:25Z",
+    "titles": "Brightness"
+   },
+   "status": 200
+  }
+ ],
+ "note": "'Will Gold (GC) settle at $3,800-$4,200 in June?' (cutoff 2026-03-30T03:58:25.278761Z; registry party_names ['Active Month', 'CME', 'Days', 'First Position Date', 'Intraday', 'Only', 'Settlement']) at depth 1. 'Gold' is a capitalised word the registry does not list; the only other name the question uses is 'GC', too short to count.",
+ "recorded": "2026-09-19",
+ "source": "https://en.wikipedia.org/w/api.php"
+}

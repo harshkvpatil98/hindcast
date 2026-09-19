@@ -430,7 +430,14 @@ class CorpusConfig(_Model):
     ccnews_max_records_per_file: int
     coverage_lookback_months: int
     coverage_min_chunks: int
-    wikipedia_max_articles_per_scenario: int
+    # Snapshot passes planned per scenario. Depth 1 is the articles the
+    # scenario's own text names; each further depth is the next window of
+    # links from their as-of leads. Depth is in the unit key, so raising this
+    # adds units and never reopens a finished one. The width of a pass is a
+    # constant of the key scheme (`wikipedia.PASS_TITLES`), not a setting --
+    # a setting would change what a `done` key had covered.
+    wikipedia_depth: int = Field(ge=1, le=99)
+    wikipedia_requests_per_second: float = Field(gt=0, le=5.0)
 
 
 class PathsConfig(_Model):

@@ -1,0 +1,122 @@
+{
+ "exchanges": [
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "lastrevid": 1374705871,
+       "length": 91227,
+       "ns": 0,
+       "pageid": 6206236,
+       "title": "Anthropic"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "info",
+    "titles": "Anthropic"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20260129211237|1335551489"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 6206236,
+       "revisions": [
+        {
+         "parentid": 1335551489,
+         "revid": 1335800699,
+         "slots": {
+          "main": {
+           "content": "{{Short description|American artificial intelligence research company}}\n{{about|the company|other uses|Anthropic (disambiguation)}}\n{{Use mdy dates|date=September 2025}}\n{{Infobox company\n| name = Anthropic PBC\n| logo = Anthropic logo.svg{{!}}class=skin-invert-image\n| logo_caption = \n| type = [[Privately held company|Private]]\n| industry = [[Artificial intelligence]]\n| founded = {{Start date and age|2021}}\n| founders = {{Unbulleted list|\n| [[Dario Amodei]]\n| [[Daniela Amodei]]\n| [[Jared Kaplan]]<ref name=\"wsj1\" />\n| Jack Clark<ref>{{cite news |title=Alphabet-backed Anthropic outlines the moral values behind its AI bot |url=https://www.reuters.com/technology/alphabet-backed-anthropic-outlines-moral-values-behind-its-ai-bot-2023-05-09/ |website=[[Reuters]] |date=9 May 2023 |access-date=4 June 2023 |last1=Nellis |first1=Stephen |archive-date=5 June 2023 |archive-url=https://web.archive.org/web/20230605051105/https://www.reuters.com/technology/alphabet-backed-anthropic-outlines-moral-values-behind-its-ai-bot-2023-05-09/ |url-status=live }}</ref>\n| Ben Mann<ref name=\"Roose\" />\n}}\n| key_people = {{Unbulleted list|\n| Dario Amodei ([[Chief executive officer|CEO]])\n| Daniela Amodei ([[President (corporate title)|President]])\n| [[Mike Krieger]] ([[Chief product officer|CPO]])\n}}\n| hq_location = [[Foundry Square|500 Howard Street]],<ref>{{Cite news |last=Waxmann |first=Laura |date=September 22, 2025 |title=Growing tech firm Anthropic expands S.F. presence with large office lease in SoMa |url=https://www.sfchronicle.com/realestate/article/athropic-office-21059924.php |work=[[San Francisco Chronicle]] |archive-url=https://archive.today/20250922214755/https://www.sfchronicle.com/realestate/article/athropic-office-21059924.php |archive-date=September 22, 2025 |url-status=live}}</ref><br />[[San Francisco]], [[California]], U.S.\n| products = [[Claude (language model)|Claude]]<br>Claude Code<br>Claude Cowork\n| num_employees = 2,500 (2026)<ref>{{Cite web |last=Waxmann |first=Laura |date=January 30, 2026 |title=Emerging tech titan Anthropic to take over an entire office building in downtown S.F. |url=https://www.sfchronicle.com/realestate/article/anthropic-downtown-building-lease-21324597.php |work=[[San Francisco Chronicle]] |access-date=January 31, 2026 |archive-date=January 30, 2026 |archive-url=https://archive.today/20260130183046/https://www.sfchronicle.com/realestate/article/anthropic-downtown-building-lease-21324597.php |url-status=live }}</ref>\n| website = {{URL|https://www.anthropic.com/|anthropic.com}}\n}}\n\n'''Anthropic PBC''' is an American [[artificial intelligence]] (AI) company headquartered in [[San Francisco]]. It has developed a family of [[large language model]]s (LLMs) named [[Claude (language model)|Claude]]. The company researches and develops AI to \"study their safety properties at the technological frontier\" and use this research to deploy [[AI safety|safe models]] for the public.<ref>{{Cite web |date=5 February 2023 |title=ChatGPT must be regulated and A.I. 'can be used by bad actors,' warns OpenAI's CTO |url=https://finance.yahoo.com/news/artificial-intelligence-must-regulated-warns-204546351.html |url-status=live |archive-url=https://web.archive.org/web/20230206075725/https://finance.yahoo.com/news/artificial-intelligence-must-regulated-warns-204546351.html |archive-date=2023-02-06 |access-date=2023-02-06 |work=Fortune |language=en-US |via=finance.yahoo.com}}</ref>\n\nAnthropic was founded in 2021 by former members of [[OpenAI]], including siblings [[Daniela Amodei]] and [[Dario Amodei]], who serve as president and CEO, respectively.<ref>{{Cite web |title=Anthropic {{!}} Company Overview & News |url=https://www.forbes.com/companies/anthropic/ |access-date=2024-04-11 |website=Forbes |language=en |archive-date=April 10, 2024 |archive-url=https://web.archive.org/web/20240410003346/https://www.forbes.com/companies/anthropic/ |url-status=live }}</ref> In September 2023, [[Amazon (company)|Amazon]] announced an investment of up to $4 billion. Google committed $2 billion the next month.<ref name=\"amazon\">{{Cite news |last=Dastin |first=Jeffrey |date=September 28, 2023 |title=Amazon steps up AI race with Anthropic investment |url=https://www.reuters.com/markets/deals/amazon-steps-up-ai-race-with-up-4-billion-deal-invest-anthropic-2023-09-25/ |url-status=live |archive-url=https://web.archive.org/web/20231105110524/https://www.reuters.com/markets/deals/amazon-steps-up-ai-race-with-up-4-billion-deal-invest-anthropic-2023-09-25/ |archive-date=2023-11-05 |access-date=2023-10-02 |work=Reuters}}</ref><ref>{{Cite web |last=Coldewey |first=Devin |date=2024-03-27 |title=Amazon doubles down on Anthropic, completing its planned $4B investment |url=https://techcrunch.com/2024/03/27/amazon-doubles-down-on-anthropic-completing-its-planned-4b-investment/ |access-date=2024-03-28 |website=TechCrunch |language=en-US |archive-date=March 27, 2024 |archive-url=https://web.archive.org/web/20240327234047/https://techcrunch.com/2024/03/27/amazon-doubles-down-on-anthropic-completing-its-planned-4b-investment/ |url-status=live }}</ref><ref name=\"google\">{{Cite news |last=Hu |first=Krystal |date=October 27, 2023 |title=Google agrees to invest up to $2 billion in OpenAI rival Anthropic |url=https://www.reuters.com/technology/google-agrees-invest-up-2-bln-openai-rival-anthropic-wsj-2023-10-27/ |url-status=live |archive-url=https://web.archive.org/web/20231102122701/https://www.reuters.com/technology/google-agrees-invest-up-2-bln-openai-rival-anthropic-wsj-2023-10-27/ |archive-date=2023-11-02 |access-date=2023-10-30 |work=Reuters}}</ref> {{As of|2025|11|post=,}} Anthropic has an estimated value of $350 billion.<ref>{{Cite web |last=Sigalos |first=Ashley Capoot,MacKenzie |date=2025-11-18 |title=Anthropic valued in range of $350 billion following investment deal with Microsoft, Nvidia |url=https://www.cnbc.com/2025/11/18/anthropic-ai-azure-microsoft-nvidia.html |access-date=2025-11-18 |website=CNBC |language=en |archive-date=November 18, 2025 |archive-url=https://web.archive.org/web/20251118183014/https://www.cnbc.com/2025/11/18/anthropic-ai-azure-microsoft-nvidia.html |url-status=live }}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2026-01-31T07:52:52Z"
+        }
+       ],
+       "title": "Anthropic"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-01-31T10:04:07Z",
+    "titles": "Anthropic"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20260219023140|1339132489"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 6206236,
+       "revisions": [
+        {
+         "parentid": 1339132489,
+         "revid": 1339147529,
+         "slots": {
+          "main": {
+           "content": "{{Short description|American artificial intelligence research company}}\n{{about|the company|other uses|Anthropic (disambiguation)}}\n{{Use mdy dates|date=September 2025}}\n{{Infobox company\n| name = Anthropic PBC\n| logo = [[File:Anthropic logo.svg|frameless|upright=1.2|class=skin-invert-image]]\n| logo_caption = Logo\n| type = [[Benefit corporation|Public benefit corporation]]\n| industry = [[Artificial intelligence]]\n| founded = {{Start date and age|2021}}\n| founders = {{Unbulleted list|\n| [[Dario Amodei]]\n| [[Daniela Amodei]]\n| [[Jared Kaplan]]<ref name=\"wsj1\" />\n| [[Jack Clark (AI policy expert)|Jack Clark]]<ref>{{cite news |title=Alphabet-backed Anthropic outlines the moral values behind its AI bot |url=https://www.reuters.com/technology/alphabet-backed-anthropic-outlines-moral-values-behind-its-ai-bot-2023-05-09/ |website=[[Reuters]] |date=9 May 2023 |access-date=4 June 2023 |last1=Nellis |first1=Stephen |archive-date=5 June 2023 |archive-url=https://web.archive.org/web/20230605051105/https://www.reuters.com/technology/alphabet-backed-anthropic-outlines-moral-values-behind-its-ai-bot-2023-05-09/ |url-status=live }}</ref>\n| [[Chris Olah]]<ref name=CNBC>{{cite web|url=https://www.cnbc.com/2025/06/10/anthropic-cnbc-disruptor-50.html|title=CNBC Disruptor 50|website=CNBC|date=June 10, 2025|author=Ian Thomas|access-date=February 16, 2026}}</ref>\n| Ben Mann<ref name=\"Roose\" />\n| Sam McCandlish<ref name=CNBC/>\n| Tom Brown<ref name=CNBC/>\n}}\n| key_people = {{Unbulleted list|\n| [[Dario Amodei]] ([[Chief executive officer|CEO]])\n| [[Daniela Amodei]] ([[President (corporate title)|president]])\n| [[Mike Krieger]] ([[Chief product officer|CPO]])\n}}\n| hq_location = [[Foundry Square|500 Howard Street]],<ref>{{Cite news |last=Waxmann |first=Laura |date=September 22, 2025 |title=Growing tech firm Anthropic expands S.F. presence with large office lease in SoMa |url=https://www.sfchronicle.com/realestate/article/athropic-office-21059924.php |work=[[San Francisco Chronicle]] |archive-url=https://archive.today/20250922214755/https://www.sfchronicle.com/realestate/article/athropic-office-21059924.php |archive-date=September 22, 2025 |url-status=live}}</ref><br />[[San Francisco]], [[California]], U.S.\n| products = [[Claude (language model)|Claude]]<br>[[Claude Code]]<br>[[Claude Cowork]]\n| num_employees = 2,500 (2026)<ref>{{Cite web |last=Waxmann |first=Laura |date=January 30, 2026 |title=Emerging tech titan Anthropic to take over an entire office building in downtown S.F. |url=https://www.sfchronicle.com/realestate/article/anthropic-downtown-building-lease-21324597.php |work=[[San Francisco Chronicle]] |access-date=January 31, 2026 |archive-date=January 30, 2026 |archive-url=https://archive.today/20260130183046/https://www.sfchronicle.com/realestate/article/anthropic-downtown-building-lease-21324597.php |url-status=live }}</ref>\n| revenue = {{increase}} $14 billion (2025)\n| website = {{URL|https://www.anthropic.com/|anthropic.com}}\n}}\n\n'''Anthropic PBC''' is an American [[artificial intelligence]] (AI) company headquartered in [[San Francisco]]. It has developed a family of [[large language model]]s (LLMs) named [[Claude (language model)|Claude]]. Anthropic operates as a [[Benefit corporation|public benefit corporation]], which researches and develops AI to \"study their safety properties at the technological frontier\" and use this research to deploy [[AI safety|safe models]] for the public.<ref>{{Cite web |date=6 February 2023 |title=ChatGPT must be regulated and A.I. 'can be used by bad actors,' warns OpenAI's CTO |url=https://finance.yahoo.com/news/artificial-intelligence-must-regulated-warns-204546351.html |url-status=live |archive-url=https://web.archive.org/web/20230206075725/https://finance.yahoo.com/news/artificial-intelligence-must-regulated-warns-204546351.html |archive-date=2023-02-06 |access-date=2023-02-06 |work=Fortune |language=en-US |via=finance.yahoo.com|last=Mollman|first=Steve}}</ref><ref>{{Cite web |title=Company \\ Anthropic |url=https://www.anthropic.com/company |archive-url=http://web.archive.org/web/20260210225713/https://www.anthropic.com/company |archive-date=2026-02-10 |access-date=2026-02-16 |website=Anthropic |language=en}}</ref>\n\nAnthropic was founded in 2021 by former members of [[OpenAI]], including siblings [[Daniela Amodei]] and [[Dario Amodei]], who serve as president and CEO, respectively.<ref>{{Cite web |title=Anthropic {{!}} Company Overview & News |url=https://www.forbes.com/companies/anthropic/ |access-date=2024-04-11 |website=Forbes |language=en-US |archive-date=April 10, 2024 |archive-url=https://web.archive.org/web/20240410003346/https://www.forbes.com/companies/anthropic/ |url-status=live }}</ref> {{As of|2026|02|post=,}} Anthropic has an estimated value of $380 billion.<ref>{{Cite web |title=Anthropic raises $30 billion in Series G funding at $380 billion post-money valuation |url=https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation |access-date=2026-02-12 |website=www.anthropic.com |language=en-US |archive-url=https://web.archive.org/web/20260212202141/https://www.anthropic.com/news/anthropic-raises-30-billion-series-g-funding-380-billion-post-money-valuation |archive-date=February 12, 2026 |url-status=live|date=February 12, 2026}}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2026-02-19T04:15:45Z"
+        }
+       ],
+       "title": "Anthropic"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-02-19T08:38:19Z",
+    "titles": "Anthropic"
+   },
+   "status": 200
+  }
+ ],
+ "note": "Two registry scenarios name Anthropic, with cutoffs 2026-01-31T10:04:07.982085Z and 2026-02-19T08:38:19.117Z.",
+ "recorded": "2026-09-19",
+ "source": "https://en.wikipedia.org/w/api.php"
+}

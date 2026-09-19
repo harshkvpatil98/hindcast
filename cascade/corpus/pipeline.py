@@ -6,8 +6,8 @@ document is usable lives in ``normalize.py``, everything that decides how it is
 split lives in ``chunker.py``, and neither can reach a network or a clock.
 
 Resumability is per unit (invariant 8). A unit is an EDGAR quarter, a Federal
-Register month, a CC-NEWS WARC file, a GDELT month-query, or one scenario's
-Wikipedia snapshots. Units are marked done only after their rows are
+Register month, a CC-NEWS WARC file, a GDELT month-query, or one depth of one
+scenario's Wikipedia snapshots. Units are marked done only after their rows are
 committed, so a crash mid-unit re-does that unit and nothing else.
 
 Rate limits are **per source**, because they are properties of the upstream:
@@ -104,28 +104,37 @@ class IngestReport:
         return self.collapsed / total if total else 0.0
 
 
-def _wikipedia_requests(settings: Settings) -> dict[str, list[wikipedia.SnapshotRequest]]:
-    """Build one snapshot unit per scenario, anchored at that scenario's cutoff.
+def _wikipedia_requests(settings: Settings) -> dict[str, wikipedia.SnapshotUnit]:
+    """Plan ``corpus.wikipedia_depth`` snapshot units per scenario, each anchored at its cutoff.
 
     This is the source's whole point: the article as it stood at the cutoff.
     Anchoring to the scenario that will be forecast from it is what makes the
     snapshot honest -- a single global "as of" would be too late for early
     scenarios and needlessly early for late ones.
 
-    Reads ``scenarios`` only. The parties come from the registry's own
-    ``party_names``, and no outcome is touched (invariant 2).
+    Preserves additivity (ADR-0023's lesson, applied here): depth is part of
+    the unit key, so raising ``wikipedia_depth`` adds keys and never changes
+    what an existing key means. A unit keyed by the bare scenario id is the
+    previous adapter's and is not planned any more; its `done` row stays valid
+    and simply matches nothing, so it is neither re-run nor in the way.
+
+    Reads ``scenarios`` only. Titles come from the question, the registry's
+    own ``party_names`` and the cutoff, and no outcome is touched (invariant 2).
     """
     from cascade.ledger.store import load_scenarios
 
-    limit = settings.corpus.wikipedia_max_articles_per_scenario
-    units: dict[str, list[wikipedia.SnapshotRequest]] = {}
+    units: dict[str, wikipedia.SnapshotUnit] = {}
     for scenario in load_scenarios(settings, role="admin"):
-        titles = [name for name in scenario.party_names if len(name) > 2][:limit]
-        if not titles:
-            continue
-        units[scenario.scenario_id] = [
-            wikipedia.SnapshotRequest(title, scenario.cutoff_ts) for title in titles
-        ]
+        for depth in range(1, settings.corpus.wikipedia_depth + 1):
+            unit = wikipedia.plan_unit(
+                question=scenario.question,
+                party_names=scenario.party_names,
+                cutoff=scenario.cutoff_ts,
+                depth=depth,
+            )
+            if unit.titles or unit.hop_sources:
+                key = wikipedia.unit_key(scenario.scenario_id, scenario.cutoff_ts, depth)
+                units[key] = unit
     return units
 
 
@@ -167,7 +176,7 @@ def _documents_for(
     source: str,
     unit_key: str,
     fetchers: dict[str, Fetcher],
-    wiki_units: dict[str, list[wikipedia.SnapshotRequest]],
+    wiki_units: dict[str, wikipedia.SnapshotUnit],
 ) -> Iterator[RawDocument]:
     corpus = settings.corpus
     limit = corpus.max_documents_per_unit
@@ -183,7 +192,7 @@ def _documents_for(
             max_records=corpus.gdelt_max_records,
         )
     if source == "wikipedia":
-        return wikipedia.load_snapshots(fetchers["wikipedia"], wiki_units.get(unit_key, []))
+        return wikipedia.load_snapshots(fetchers["wikipedia"], wiki_units[unit_key])
     if source == "ccnews":
         return _ccnews_unit(settings, unit_key, fetchers["ccnews"])
     raise ValueError(f"unknown corpus source: {source}")
@@ -274,7 +283,7 @@ def _unit_loader(
     settings: Settings,
     source: str,
     fetchers: dict[str, Fetcher],
-    wiki_units: dict[str, list[wikipedia.SnapshotRequest]],
+    wiki_units: dict[str, wikipedia.SnapshotUnit],
 ) -> tuple[Callable[[str], list[RawDocument]], int]:
     """Return a thread-safe loader for ``source`` and how many may run at once.
 
@@ -493,7 +502,14 @@ def run_ingest(
         "govpr": Fetcher(requests_per_second=corpus.requests_per_second, user_agent=corpus.contact),
         "edgar": Fetcher(requests_per_second=corpus.requests_per_second, user_agent=corpus.contact),
         "wikipedia": Fetcher(
-            requests_per_second=corpus.requests_per_second, user_agent=corpus.contact
+            # Its own, slower budget: Wikimedia asks automated readers to go
+            # serially and gently, and the whole pass is a few thousand requests.
+            requests_per_second=corpus.wikipedia_requests_per_second,
+            user_agent=corpus.contact,
+            # MediaWiki reports `maxlag` and rate limits under HTTP 200. Read
+            # as answers they say "no such article", and the unit is marked
+            # done -- for good -- with nothing in it.
+            classify_body=wikipedia.classify_body,
         ),
         "ccnews": Fetcher(
             requests_per_second=corpus.requests_per_second, user_agent=corpus.contact

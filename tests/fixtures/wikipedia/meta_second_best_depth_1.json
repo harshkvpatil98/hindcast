@@ -1,0 +1,399 @@
+{
+ "exchanges": [
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "Arena Score"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2025–26 Meta season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2025 in Meta"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2025 Meta season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2025 Meta"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2024–25 Meta season"
+      },
+      {
+       "lastrevid": 1375484647,
+       "length": 273430,
+       "ns": 0,
+       "pageid": 1092923,
+       "title": "Google"
+      },
+      {
+       "lastrevid": 1372043554,
+       "length": 3010,
+       "ns": 0,
+       "pageid": 5761991,
+       "title": "Meta"
+      },
+      {
+       "lastrevid": 976604236,
+       "length": 387,
+       "ns": 0,
+       "pageid": 42624160,
+       "title": "Leaderboard"
+      },
+      {
+       "lastrevid": 1345900134,
+       "length": 107,
+       "ns": 0,
+       "pageid": 55086373,
+       "redirect": true,
+       "title": "Results"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "info",
+    "titles": "2024–25 Meta season|2025 Meta|2025 Meta season|2025 in Meta|2025–26 Meta season|Arena Score|Google|Leaderboard|Meta|Results"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20250709171953|1299657576"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 5761991,
+       "revisions": [
+        {
+         "parentid": 1299657576,
+         "revid": 1299691346,
+         "slots": {
+          "main": {
+           "content": "{{wiktionarypar|meta|meta-|Meta|META}}\n'''Meta''' most commonly refers to:\n* [[Meta (prefix)]], a common affix and word in English ({{lit|beyond}} in Greek)\n* [[Meta Platforms]], an American multinational technology conglomerate (formerly ''Facebook, Inc.'')\n\n'''Meta''' or '''META''' may also refer to:\n{{TOC right}}\n==Businesses==\n* [[Meta (academic company)]], performing analysis of scientific literature (2009–2022)\n* [[Meta (augmented reality company)]], a maker of digital eyewear (2013–2019)\n* [[Meta Linhas Aéreas]], a Brazilian airline (1991–2011; formerly ''META'')\n* [[MetaBank]], an American bank (founded 1954; now ''Pathward'')\n\n==Computing==\n* [[Meta element]] (<code>&lt;meta … &gt;</code>), an (X)HTML tag giving a webpage's metadata\n* [[Metadata]], data about data\n* [[META II]], a compiler-writing language\n* [[Meta key]], a modifier key on 1970s/80s workstations\n* [[FF Meta]], a typeface\n* [[Metasequoia (software)]], a 3D graphics package\n* [[Metaverse]], social 3D virtual worlds\n* [[Imagination META]], a microprocessor\n* [[Meta-Wiki]], a co-ordinating Wikimedia wiki\n\n==Entertainment==\n* [[Meta (Assemblage 23 album)|''Meta'' (Assemblage 23 album)]], 2007\n* [[Meta (Car Bomb album)|''Meta'' (Car Bomb album)]], 2016\n* [[Meta (Thy Catafalque album)]], 2016\n* [[Meta (Roman circus)]], a pole marking racetrack turns\n* [[Metagame]] (clipped to ''meta''), an approach to gaming outside prescribed rules\n\n==People==\n* [[Meta (name)]], list of people with the given name or surname\n* Pseudonym of contemporary artist [[Margaret Kilgallen]] (1967&ndash;2001)\n\n==Places==\n\n=== Colombia ===\n* [[Meta Department]]\n* [[Meta River]], an Orinoco tributary\n\n=== Italy ===\n* [[Meta, Campania]], in Naples province\n* [[Monti della Meta]], an Apennine massif\n**[[Monte Meta]] (or ''La Meta''), its main peak\n\n=== United States ===\n\n*[[Meta, Kentucky]], an unincorporated community\n* [[Meta, Missouri]], a city\n\n=== Elsewhere ===\n* [[Meta (district)]], Oromia, Ethiopia\n* [[1050 Meta]], a stony main-belt asteroid\n* Meta River, a tributary of the [[Desna (river)|Desna]] in Ukraine\n\n==Science and technology==\n* [[Meta (chemistry)]], a nomenclature prefix for substituents or dehydration\n* [[Meta (spider)|''Meta'' (spider)]], a long-jawed orb-weaver genus\n* [[1050 Meta]], a stony main-belt asteroid<!--intentional duplicate: bodies aren't strictly places but readers might check there first-->\n* [[Megachannel ExtraTerrestrial Assay]], a predecessor to the SETI project\n* [[META fuel]], a solid fuel\n\n==Other uses==\n* [[Meta (mythology)]], first wife of Aegeus, mythical king of Athens\n* [[Meta' language]], spoken in Cameroon\n* [[Middle East Theatre Academy]], Sharjah, United Arab Emirates\n\n== See also ==\n{{canned search|meta}}\n* {{srt|1}}\n* [[Mata (disambiguation)]]\n* [[Metta (disambiguation)]]\n* [[Metalanguage (disambiguation)]]\n* [[Hyper (disambiguation)]]\n* [[Super (disambiguation)]]\n* [[Metanoia (theology)]]\n* [[Metastasis]], in medicine\n{{disambiguation|geo}}",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-07-09T21:21:19Z"
+        }
+       ],
+       "title": "Meta"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-10-06T10:10:43Z",
+    "titles": "Meta"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20250823002009|1307328822"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 1018814,
+       "revisions": [
+        {
+         "parentid": 1307328822,
+         "revid": 1307330705,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Productive prefix in English derived from Greek}}\n{{use dmy dates|date=August 2025}}\n\n'''''Meta''''' ({{etymology|grc|''{{wikt-lang|grc|μετά}}'' ({{grc-transl|[[wikt:meta-|μετά]]}})|after, beyond}}) is an adjective meaning 'more comprehensive' or 'transcending'.<ref>{{cite Merriam-Webster|meta |access-date=2019-12-01}}</ref>\n\nIn modern nomenclature, the prefix \nmeta can also serve as a prefix meaning self-referential, as a field of study or endeavor ([[metatheory]]: theory about a theory; [[metamathematics]]: mathematical theories about mathematics; meta-axiomatics or meta-axiomaticity: axioms about axiomatic systems; metahumor: joking about the ways humor is expressed; etc.).<ref>{{Cite web |url=https://merriam-webster.com/words-at-play/meta-adjective-self-referential |title=That's So Meta: Things are about to get meta |access-date=2022-11-02 }}</ref>\n\n==Original Greek meaning==\n{{Unreferenced section|date=August 2022}}\nIn [[Ancient Greek|Greek]], the prefix ''meta-'' is generally less esoteric than in [[English language|English]]; Greek ''meta-'' is equivalent to the [[Latin language|Latin]] words ''post-'' or ''ad-''. The use of the prefix in this sense occurs occasionally in [[English language|scientific English]] terms derived from [[Greek (language)|Greek]]. For example, the term ''[[Metatheria]]'' (the name for the [[clade]] of [[marsupial]] [[mammals]]) uses the prefix ''meta-'' in the sense that the ''[[Metatheria]]'' occur on the tree of life adjacent to the ''[[Theria]]'' (the [[placental mammals]]).\n\n==Epistemology==\n{{anchor|About}}\nIn [[epistemology]], and often in common use, the prefix ''meta-'' is used to mean 'about (its own category)'. For example, [[metadata]] is data about data (who has produced them, when, what format the data are in and so on). In a database, metadata is also data about data stored in a data dictionary, describing information (data) about database tables such as the table name, table owner, details about columns, etc. – essentially describing the table. In psychology, [[metamemory]] refers to an individual's [[knowledge]] about whether or not they would remember something if they concentrated on recalling it. The modern sense of \"an X about X\" has given rise to concepts like \"[[meta-cognition]]\" (cognition about cognition), \"[[meta-emotion]]\" (emotion about emotion), \"[[meta-discussion]]\" (discussion about discussion), \"[[meta-joke]]\" (joke about jokes), and \"[[metaprogramming]]\" (writing programs about writing programs). In a [[rule-based system]], a [[wiktionary:metarule|metarule]] is a rule governing the application of other rules.<ref>{{Cite conference |last1=Schild |first1=Uri J. |last2=Herzog |first2=Shai |date=1993 |title=The Use of Meta-rules in Rule Based Legal Computer Systems |series=ICAIL '93 |location=Amsterdam, the Netherlands |publisher=[[Association for Computing Machinery|ACM]] |pages=100–109 |doi=10.1145/158976.158989 |isbn=0897916069 |work=Proceedings of the 4th International Conference on Artificial Intelligence and Law}}</ref>\n\n\"[[Metagaming]]\", accordingly, refers to games about games. However, it has a different meaning depending on the context. In [[Role-playing game|role-playing games]], this means that someone with a higher level of knowledge is playing; that is, that the player incorporates factors that are outside the actual framework of the game – the player has knowledge that was not acquired through experiencing the game, but through external sources. This type of metagaming is often frowned upon in many role-playing game communities because it impairs game balance and equality of opportunity.<ref>{{Cite web|title=METAGAME {{!}} What Does METAGAME Mean in Gaming?|url=https://www.cyberdefinitions.com/definitions/METAGAME.html|access-date=2021-11-19|website=www.cyberdefinitions.com}}</ref> Metagaming can also refer to a game that is used to create or change the rules while playing a game. One can play this type of metagame and choose which rules apply during the game itself, potentially changing the level of difficulty. Such metagames include campaign role-playing games like ''[[Halo 3]]''.<ref>Metagames, paragames and orthogames: a new vocabulary. M. Carter, M. Gibbs, and M. Harrop. FDG, pages 11–17. ACM, (2012 ).\n\n[https://people.eng.unimelb.edu.au/mharrop/pdf/metagames.pdf https://people.eng.unimelb.edu.au/mharrop/pdf/metagames.pdf.]</ref> Complex card or board games, e.g. [[poker]] or [[chess]], are also often referred to as metagames. According to Nigel Howard, this type of metagame is defined as a decision-making process that is derived from the analysis of possible outcomes in relation to external variables that change a problem.<ref>{{Cite book|last=Howard|first=Nigel|title=Paradoxes of rationality: theory of metagames and political behavior.|date=1971|publisher=MIT Press|isbn=0-262-08046-X|location=Cambridge|oclc=277215}}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-08-23T00:41:02Z"
+        }
+       ],
+       "title": "Meta (prefix)"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-10-06T10:10:43Z",
+    "titles": "Meta (prefix)"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20250920222912|1312481421"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 62420226,
+       "revisions": [
+        {
+         "parentid": 1312481421,
+         "revid": 1314287176,
+         "slots": {
+          "main": {
+           "content": "{{Short description|American multinational technology conglomerate}}\n{{Redirect|Facebook, Inc.|the social media service|Facebook}}\n{{Redirect|Meta (company)|other companies of the same name|Meta (disambiguation)#Businesses}}\n{{pp-vandalism|small=yes}}\n{{Use mdy dates|date=February 2023}}\n{{Use American English|date=July 2021}}\n{{Infobox company\n| former_name = {{Indented plainlist|\n* TheFacebook, Inc. (2004{{nbndash}}2005)\n* Facebook, Inc. (2005–2021)\n}}\n| name = Meta Platforms, Inc.\n| logo = [[File:Meta Platforms Inc. logo.svg|frameless|upright=1.15]]\n| image = Meta HQ 2023.png\n| image_upright = 1.15\n| image_caption = Headquarters in [[Menlo Park, California]]\n| trading_name = Meta\n| type = [[Public company|Public]]\n| traded_as = {{ubl|{{NASDAQ|META}} (Class A)|[[Nasdaq-100]] component|[[S&P 100]] component|[[S&P 500]] component}}\n| products = {{hlist|[[Facebook]]|[[Instagram]]|[[Facebook Messenger|Messenger]]|[[Threads (social network)|Threads]]|[[WhatsApp]]|[[Workplace (software)|Workplace]]}}\n| industry = {{ubl|[[Social media]]|[[Advertising industry|Advertising]]}}\n| founded = {{Start date and age|2004|01|04}} in [[Cambridge, Massachusetts]], U.S.\n| founders = {{plainlist|\n* [[Mark Zuckerberg]]\n* [[Eduardo Saverin]]\n* [[Andrew McCollum]]\n* [[Dustin Moskovitz]]\n* [[Chris Hughes]]\n}}\n| hq_location = <!-- reserve hq_location for the building, address, or business park, if these are themselves notable. -->\n| hq_location_city = [[Menlo Park, California]]\n| hq_location_country = U.S.\n| area_served = Worldwide\n| key_people = {{Indented plainlist|\n* [[Mark Zuckerberg]] ([[chairman]] and [[Chief executive officer|CEO]])\n* [[Javier Oliván]] ([[Chief operating officer|COO]])\n* [[Andrew Bosworth]] ([[Chief technology officer|CTO]])\n* [[Chris Cox (manager)|Chris Cox]] ([[Chief product officer|CPO]])\n}}\n| revenue = {{increase}} {{US$|164.5 billion|link=yes}}\n| revenue_year = 2024\n| operating_income = {{increase}} {{US$|69.4 billion}}\n| income_year = 2024\n| net_income = {{increase}} {{US$|62.4 billion}}\n| net_income_year = 2024\n| assets = {{increase}} {{US$|276.1 billion}}\n| assets_year = 2024\n| equity = {{increase}} {{US$|182.6 billion}}\n| equity_year = 2024\n| num_employees = 75,945\n| num_employees_year = June 2025\n| owner = Mark Zuckerberg (13.68% equity; 61.2% voting)<ref>{{cite web | url=https://www.sec.gov/ixviewer/ix.html?doc=/Archives/edgar/data/1326801/000132680123000050/meta-20230414.htm#id8aff64984c64035b3e93501af472b14_52 | title=Inline XBRL Viewer | access-date=February 6, 2024 | archive-date=February 6, 2024 | archive-url=https://web.archive.org/web/20240206215150/https://www.sec.gov/ixviewer/ix.html?doc=/Archives/edgar/data/1326801/000132680123000050/meta-20230414.htm#id8aff64984c64035b3e93501af472b14_52 | url-status=live }}</ref>\n| divisions = {{hlist|[[Reality Labs]]|[[Mapillary]]|[[Meta Superintelligence Labs|Superintelligence Labs]]}}\n| subsid = \n| website = {{URL|https://www.meta.com/|meta.com}}\n| footnotes = <ref>{{Cite news |url=https://www.theverge.com/2020/6/11/21288127/facebook-chief-product-officer-chris-cox-return-ceo |title=Chris Cox is returning to Facebook as chief product officer |work=[[The Verge]] |date=June 11, 2020 |access-date=June 11, 2020 |archive-date=October 5, 2021 |archive-url=https://web.archive.org/web/20211005004244/https://www.theverge.com/2020/6/11/21288127/facebook-chief-product-officer-chris-cox-return-ceo |url-status=live }}</ref><ref>{{Cite news |url=https://www.theverge.com/2020/8/11/21363642/facebook-pay-mobile-payments-financial-david-marcus-instagram-whatsapp |title=Facebook is getting more serious about becoming your go-to for mobile payments |work=[[The Verge]] |date=August 11, 2020 |access-date=August 11, 2020 |archive-date=October 5, 2021 |archive-url=https://web.archive.org/web/20211005011040/https://www.theverge.com/2020/8/11/21363642/facebook-pay-mobile-payments-financial-david-marcus-instagram-whatsapp |url-status=live }}</ref><ref>{{cite web |title=Company Info |url=https://newsroom.fb.com/company-info/ |website=Facebook |access-date=November 7, 2018 |archive-date=November 15, 2015 |archive-url=https://web.archive.org/web/20151115110456/https://newsroom.fb.com/company-info/ |url-status=live}}</ref><ref>{{cite news |last=Shaban |first=Hamza |title=Digital advertising to surpass print and TV for the first time, report says |url=https://www.washingtonpost.com/technology/2019/02/20/digital-advertising-surpass-print-tv-first-time-report-says |newspaper=[[The Washington Post]] |access-date=June 2, 2019 |date=January 20, 2019 |archive-date=February 9, 2021 |archive-url=https://web.archive.org/web/20210209195301/https://www.washingtonpost.com/technology/2019/02/20/digital-advertising-surpass-print-tv-first-time-report-says/ |url-status=live}}</ref><ref>{{cite web |url=https://investor.fb.com/financials/default.aspx |title=Facebook – Financials |website=investor.fb.com |access-date=January 30, 2020 |archive-date=December 14, 2021 |archive-url=https://web.archive.org/web/20211214213657/https://investor.fb.com/financials/default.aspx |url-status=live }}</ref><ref name=Annual10K2024>{{cite web |title= Meta Platforms, Inc. 2024 Annual Report (Form 10-K) |url= https://www.sec.gov/ix?doc=/Archives/edgar/data/1326801/000132680125000017/meta-20241231.htm |date= January 30, 2025 |publisher= [[U.S. Securities and Exchange Commission]] |access-date= January 30, 2025 }}</ref><ref name=\"zuck ownership\">{{cite news |url=https://www.forbes.com/sites/dereksaul/2024/02/01/meta-earnings-zuckerbergs-year-of-efficiency-nets-greatest-profits-ever/ |title=Meta Earnings: Zuckerberg's 'Year Of Efficiency' Nets Greatest Profits Ever |date=February 1, 2024 |last=Saul |first=Derek |work=Forbes |access-date=February 5, 2024 |archive-date=February 5, 2024 |archive-url=https://web.archive.org/web/20240205020748/https://www.forbes.com/sites/dereksaul/2024/02/01/meta-earnings-zuckerbergs-year-of-efficiency-nets-greatest-profits-ever/ |url-status=live }}</ref>\n| module = {{infobox network service provider|child=yes|asn=32934}}\n}}\n\n'''Meta Platforms, Inc.''' is an American multinational technology company headquartered in [[Menlo Park, California]]. Meta owns and operates several prominent [[social media]] platforms and communication services, including [[Facebook]], [[Instagram]], [[WhatsApp]], [[Messenger (Meta)|Messenger]] and [[Threads (social network)|Threads]]. The company also operates an [[advertising network]] for its own sites and third parties; {{As of|2023|lc=y}}, advertising accounted for 97.8 percent of its total revenue.<ref>{{cite web |date=February 1, 2024 |title=Meta Reports Fourth Quarter and Full Year 2023 Results; Initiates Quarterly Dividend |url=https://investor.fb.com/investor-news/press-release-details/2024/Meta-Reports-Fourth-Quarter-and-Full-Year-2023-Results-Initiates-Quarterly-Dividend/default.aspx |url-status=live |archive-url=https://web.archive.org/web/20240202004957/https://investor.fb.com/investor-news/press-release-details/2024/Meta-Reports-Fourth-Quarter-and-Full-Year-2023-Results-Initiates-Quarterly-Dividend/default.aspx |archive-date=February 2, 2024 |access-date=February 2, 2024 |website=Facebook Investor Relations}}</ref> Meta is considered part of the [[Big Tech]] group, alongside [[Nvidia]], [[Microsoft]], [[Apple Inc.|Apple]], [[Alphabet Inc.|Alphabet]], and [[Amazon (company)|Amazon]].\n\nThe company was originally established in 2004 as '''TheFacebook, Inc.''',<ref>{{cite magazine |title=Facebook's Very First SEC Filing |first=Alexis C. |last=Madrigal |magazine=[[The Atlantic]] |date=January 31, 2012 |url=https://www.theatlantic.com/technology/archive/2012/01/facebooks-very-first-sec-filing/252282/ |access-date=November 3, 2021 |archive-date=November 17, 2021 |archive-url=https://web.archive.org/web/20211117130121/https://www.theatlantic.com/technology/archive/2012/01/facebooks-very-first-sec-filing/252282/ |url-status=live }}</ref> and was renamed '''Facebook, Inc.''' in 2005.<ref>{{cite web |date=September 1, 2020 |title=Facebook Inc. Certificate of Incorporation |url=https://s21.q4cdn.com/399680738/files/doc_downloads/governance_documents/FB_CertificateOfIncorporation.pdf |access-date=October 28, 2021 |archive-date=September 23, 2021 |archive-url=https://web.archive.org/web/20210923202624/https://s21.q4cdn.com/399680738/files/doc_downloads/governance_documents/FB_CertificateOfIncorporation.pdf |url-status=live }}</ref> In 2021, it rebranded as Meta Platforms, Inc. to reflect a strategic shift toward developing the [[metaverse]]—an interconnected digital ecosystem spanning [[virtual reality|virtual]] and [[augmented reality]] technologies.<ref name=\"theverge20211019\"/><ref name=\"meta-blog\"/><ref>{{cite news |last=Dwoskin |first=Elizabeth |date=October 28, 2021 |title=Facebook is changing its name to Meta as it focuses on the virtual world |url=https://www.washingtonpost.com/technology/2021/10/28/facebook-meta-name-change/ |url-status=live |archive-url=https://web.archive.org/web/20211028182314/https://www.washingtonpost.com/technology/2021/10/28/facebook-meta-name-change/ |archive-date=October 28, 2021 |access-date=October 28, 2021 |newspaper=[[The Washington Post]]}}</ref><ref>{{cite web |date=October 28, 2021 |title=Facebook announces name change to Meta in rebranding effort |url=https://www.theguardian.com/technology/2021/oct/28/facebook-name-change-rebrand-meta |url-status=live |archive-url=https://web.archive.org/web/20211028183343/https://www.theguardian.com/technology/2021/oct/28/facebook-name-change-rebrand-meta |archive-date=October 28, 2021 |access-date=October 29, 2021 |website=[[The Guardian]]}}</ref>\n\nIn 2023, Meta was ranked 31st on the ''[[Forbes Global 2000|Forbes]]'' [[Forbes Global 2000|Global 2000]] list of the world's largest public companies.<ref>{{cite web|url=https://www.forbes.com/lists/global2000/?sh=51d599675ac0|title=The Global 2000 2023|website=[[Forbes]]|access-date=2024-02-07|archive-date=2024-01-29|archive-url=https://web.archive.org/web/20240129031905/https://www.forbes.com/lists/global2000/?sh=4f5ab07e5ac0}}</ref> As of 2022, it was the world's third-largest spender on [[research and development]], with R&D expenses totaling US$35.3 billion.<ref>{{cite web |last=Irwin-Hunt |first=Alex |title=Top 100 global innovation leaders |url=https://www.fdiintelligence.com/content/feature/global-innovation-leaders-2022-edition-82527 |access-date=2024-06-16 |website=[[fDi Intelligence]] |date=June 19, 2023}}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-09-30T16:49:43Z"
+        }
+       ],
+       "title": "Meta Platforms"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-10-06T10:10:43Z",
+    "titles": "Meta Platforms"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20251005120419|1315206937"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 1092923,
+       "revisions": [
+        {
+         "parentid": 1315206937,
+         "revid": 1315272592,
+         "slots": {
+          "main": {
+           "content": "{{Short description|American multinational technology company}}\n{{About|the company|the search engine provided by the company|Google Search|the parent company with the stock tickers GOOG and GOOGL|Alphabet Inc.|the number|Googol|other uses}}\n{{pp-vandalism|small=yes}}\n{{pp-move}}\n{{Use American English|date=July 2022}}\n{{Use mdy dates|date=April 2025}}\n{{Infobox company\n| name = Google LLC\n| logo = Google 2015 logo.svg\n| logo_upright = 1.1\n| logo_caption = The [[Google logo]] used since 2015\n| logo_alt = Each letter of \"Google\" is colored (from left to right) in blue, red, yellow, blue, green, and red.\n| image = Googleplex HQ (cropped).jpg\n| image_upright = 1.1\n| image_caption = Google's headquarters, the [[Googleplex]]\n| former_name = Google Inc. (1998–2017)\n| type = [[Subsidiary]]\n| traded_as = {{Ubl|{{NASDAQ was|GOOGL}}|{{NASDAQ was|GOOG}}}}\n| industry = {{Unbulleted list\n| [[Internet]]\n| [[Cloud computing]]\n| [[Computer software]]\n| [[Computer hardware]]\n| [[Artificial intelligence]]\n| [[Advertising]]\n}}\n| founded = {{Start date and age|1998|09|04}}{{efn|Google was incorporated on September 4, 1998; however, since 2002, the company has celebrated its anniversaries on various days in September, most frequently on September 27.<ref>{{Cite magazine |last=Fitzpatrick |first=Alex |date=September 4, 2014 |title=Google Used to Be the Company That Did 'Nothing But Search' |url=https://time.com/3250807/google-anniversary/ |magazine=[[Time (magazine)|Time]] |access-date=September 27, 2019 |archive-date=October 16, 2019 |archive-url=https://web.archive.org/web/20191016175103/https://time.com/3250807/google-anniversary/ |url-status=live }}</ref><ref>{{Cite web |date=September 27, 2019 |title=When is Google's birthday – and why are people confused? |url=https://www.telegraph.co.uk/technology/2019/09/27/when-is-googles-21st-birthday-doodle/ |archive-url=https://ghostarchive.org/archive/20220110/https://www.telegraph.co.uk/technology/2019/09/27/when-is-googles-21st-birthday-doodle/ |archive-date=January 10, 2022 |url-access=subscription |url-status=live |work=[[The Daily Telegraph]]}}{{cbignore}}</ref><ref>{{Cite web |last=Griffin |first=Andrew |date=September 27, 2019 |title=Google birthday: The one big problem with the company's celebratory doodle |url=https://www.independent.co.uk/life-style/gadgets-and-tech/google-birthday-surprise-spinner-date-problem-start-company-a7968951.html |website=[[The Independent]] |access-date=September 27, 2019 |archive-date=January 12, 2021 |archive-url=https://web.archive.org/web/20210112103548/https://www.independent.co.uk/life-style/gadgets-and-tech/google-birthday-surprise-spinner-date-problem-start-company-a7968951.html |url-status=live }}</ref> The shift in dates reportedly happened to celebrate index-size milestones in tandem with the birthday.<ref>{{Cite web |last=Wray |first=Richard |date=September 5, 2008 |title=Happy birthday Google |url=https://www.theguardian.com/business/2008/sep/05/google.mediabusiness |website=[[The Guardian]] |access-date=September 27, 2019 |archive-date=January 12, 2021 |archive-url=https://web.archive.org/web/20210112103550/https://www.theguardian.com/business/2008/sep/05/google.mediabusiness |url-status=live }}</ref>}} in [[Menlo Park, California|Menlo Park]], [[California]], United States\n| founders = {{Unbulleted list\n| [[Larry Page]]\n| [[Sergey Brin]]\n}}\n| hq_location = [[Googleplex]]\n| hq_location_city = [[Mountain View, California]]\n| hq_location_country = U.S.\n| area_served = Worldwide\n| key_people = {{Ubl\n| [[Sundar Pichai]] ([[Chief executive officer|CEO]])\n| [[Ruth Porat]] ([[President (corporate title)|President]] and [[Chief investment officer|CIO]])\n| [[Anat Ashkenazi]] ([[Chief financial officer|CFO]])\n| [[Thomas Kurian]] ([[CEO]] of [[Google Cloud Platform|Google Cloud]])\n}}\n| products = {{Ubl\n| [[Google Search]]\n| [[Android (operating system)|Android]]\n| [[Google Nest|Nest]]\n| [[Google Pixel|Pixel]]\n| [[Google Workspace|Workspace]]\n| [[Fitbit]]\n| [[Waze]]\n| [[YouTube]]\n| [[Gemini (chatbot)|Gemini]]\n| [[List of Google products|Full list]]\n}}\n| parent = [[Alphabet Inc.]]\n| subsid = {{Ubl\n| [[Adscape]]\n| [[Cameyo]]\n| [[Charleston Road Registry]]\n| [[Endoxon]]\n| [[FeedBurner]]\n| [[ImageAmerica]]\n| [[Kaltix]]\n| [[Google Nest|Nest Labs]]\n| [[reCAPTCHA]]\n| [[X Development]]\n| [[YouTube]]\n| [[ZipDash]]\n}}\n| website = {{URL|https://about.google/}}\n| footnotes = <ref>{{Cite web |date=January 16, 2015 |title=Company – Google |url=https://www.google.com/intl/en/about/company/ |url-status=dead |archive-url=https://web.archive.org/web/20150116073513/https://www.google.com/intl/en/about/company/ |archive-date=January 16, 2015 |access-date=September 13, 2018}}</ref><ref>{{Cite web |last=Claburn |first=Thomas |date=September 24, 2008 |title=Google Founded By Sergey Brin, Larry Page... And Hubert Chang?!? |url=https://www.informationweek.com/applications/google-founded-by-sergey-brin-larry-page-and-hubert-chang!/d/d-id/1072309 |url-status=live |archive-url=https://web.archive.org/web/20110628231125/http://www.informationweek.com/news/internet/google/210603678 |archive-date=June 28, 2011 |access-date=January 22, 2017 |website=[[InformationWeek]] |publisher=[[UBM plc]]}}</ref><ref>{{Cite web |title=Locations – Google Jobs |url=https://www.google.com/about/jobs/locations/ |url-status=live |archive-url=https://web.archive.org/web/20130930200600/http://www.google.com/about/jobs/locations/ |archive-date=September 30, 2013 |access-date=September 27, 2013}}</ref><ref name=\"Wakabayashi2019\" />\n| module = {{infobox network service provider|child=yes|asn=15169}}\n}}\n\n'''Google LLC''' ({{IPAc-en|ˈ|ɡ|uː|ɡ|əl|audio=en-us-googol.ogg}}, {{respell|GOO|gəl}}) is an American [[multinational corporation|multinational]] [[technology company|technology corporation]] focused on [[information technology]], [[online advertising]], [[search engine]] technology, [[email]], [[cloud computing]], [[software]], [[quantum computing]], [[e-commerce]], [[consumer electronics]], and [[artificial intelligence]] (AI).<ref>{{Cite web |last=Condon |first=Stephanie |date=May 7, 2019 |title=Google I/O: From 'AI first' to AI working for everyone |url=https://www.zdnet.com/article/google-io-from-ai-first-to-ai-working-for-everyone/ |url-status=live |archive-url=https://web.archive.org/web/20220402134913/https://www.zdnet.com/article/google-io-from-ai-first-to-ai-working-for-everyone/ |archive-date=April 2, 2022 |access-date=April 2, 2022 |website=ZDNet |language=en-US}}</ref> It has been referred to as \"the most powerful company in the world\" by the [[BBC]],<ref>{{Cite news |last=Jack |first=Simon |date=November 21, 2017 |title=Google – powerful and responsible? |language=en-GB |work=[[BBC News]] |url=https://www.bbc.com/news/business-42060091 |url-status=live |access-date=March 29, 2022 |archive-date=March 29, 2022 |archive-url=https://web.archive.org/web/20220329031631/https://www.bbc.com/news/business-42060091}}</ref> and is one of the world's [[List of most valuable brands|most valuable brands]].<ref>{{Cite web |last=McCormick |first=Rich |date=June 2, 2016 |title=Elon Musk: There's only one AI company that worries me |url=https://www.theverge.com/2016/6/2/11837566/elon-musk-one-ai-company-that-worries-me |url-status=live |access-date=March 29, 2022 |website=[[The Verge]] |language=en |archive-date=March 29, 2022 |archive-url=https://web.archive.org/web/20220329031133/https://www.theverge.com/2016/6/2/11837566/elon-musk-one-ai-company-that-worries-me }}</ref><ref>{{Cite web |date=October 20, 2020 |title=Justice Department Sues Monopolist Google For Violating Antitrust Laws |url=https://www.justice.gov/opa/pr/justice-department-sues-monopolist-google-violating-antitrust-laws |access-date=March 29, 2022 |website=U.S. Department of Justice |language=en |archive-date=January 20, 2021 |archive-url=https://web.archive.org/web/20210120170848/https://www.justice.gov/opa/pr/justice-department-sues-monopolist-google-violating-antitrust-laws |url-status=live }}</ref><ref>{{Cite web |title=Land of the Giants: The Titans of Tech |url=https://plus.cnn.com/plus/title-2244411 |access-date=April 18, 2022 |website=CNN+ |language=en |archive-date=April 17, 2022 |archive-url=https://web.archive.org/web/20220417230628/https://plus.cnn.com/plus/title-2244411 |url-status=live }}</ref> Google's parent company, [[Alphabet Inc.]], is considered part of the [[Big Tech]] group, alongside [[Nvidia]], [[Microsoft]], [[Apple Inc.|Apple]], [[Amazon (company)|Amazon]], and [[Meta Platforms|Meta]]. <!-- END Brief introduction; do not overload this section -->\n\n<!-- Brief corporate history -->Google was founded on September 4, 1998, by American computer scientists [[Larry Page]] and [[Sergey Brin]]. Together, they own about 14% of its publicly listed shares and control 56% of its stockholder voting power through [[super-voting stock]]. The company went [[public company|public]] via an [[initial public offering]] (IPO) in 2004. In 2015, Google was reorganized as a wholly owned [[subsidiary]] of Alphabet Inc. Google is Alphabet's largest subsidiary and is a [[holding company]] for Alphabet's internet properties and interests. [[Sundar Pichai]] was appointed CEO of Google on October 24, 2015, replacing Larry Page, who became the CEO of Alphabet. On December 3, 2019, Pichai also became the CEO of Alphabet.<ref>{{Cite web |last=Feiner |first=Lauren |date=December 3, 2019 |title=Larry Page steps down as CEO of Alphabet, Sundar Pichai to take over |url=https://www.cnbc.com/2019/12/03/larry-page-steps-down-as-ceo-of-alphabet.html |access-date=June 16, 2021 |website=[[CNBC]] |language=en |archive-date=August 24, 2020 |archive-url=https://web.archive.org/web/20200824015937/https://www.cnbc.com/2019/12/03/larry-page-steps-down-as-ceo-of-alphabet.html |url-status=live }}</ref><!-- END Brief corporate history -->\n\n<!-- Brief description of products -->After the success of its original service, [[Google Search]] (often known simply as \"Google\"), the company has rapidly grown to offer [[List of Google products|a multitude of products]] and [[List of Google services|services]]. These products address a wide range of use cases, including <!-- Notable products only! -->email ([[Gmail]]), navigation and mapping ([[Waze]], [[Google Maps|Maps]], and [[Google Earth|Earth]]), cloud computing ([[Google Cloud Platform|Cloud]]), [[web navigation]] ([[Google Chrome|Chrome]]), video sharing ([[YouTube]]), productivity ([[Google Workspace|Workspace]]), [[operating system]]s ([[Android (operating system)|Android]] and [[ChromeOS]]), [[cloud storage]] ([[Google Drive|Drive]]), language translation ([[Google Translate|Translate]]), photo storage ([[Google Photos|Photos]]), [[videotelephony]] ([[Google Meet|Meet]]), [[Home automation|smart home]] ([[Google Nest|Nest]]), [[smartphone]]s ([[Google Pixel|Pixel]]), [[wearable technology]] ([[Pixel Watch]] and [[Fitbit]]), music streaming ([[YouTube Music]]), video on demand ([[YouTube TV]]), AI ([[Google Assistant]] and [[Gemini (chatbot)|Gemini]]), [[machine learning]] APIs ([[TensorFlow]]), AI chips ([[Tensor Processing Unit|TPU]]), and more. Many of these products and services are dominant in their respective industries, as is Google Search. [[List of Google products#Discontinued products and services|Discontinued Google products]] include [[Video game|gaming]] ([[Google Stadia|Stadia]]),<ref>{{cite web | title= Google is shutting down Stadia in January 2023 - The Verge | first1= Jay | last1= Peters | first2= Alex | last2= Cranz | date= September 30, 2022 | url= https://www.theverge.com/2022/9/29/23378713/google-stadia-shutting-down-game-streaming-january-2023 | accessdate= October 15, 2024 | archive-url= https://web.archive.org/web/20241010060211/https://www.theverge.com/2022/9/29/23378713/google-stadia-shutting-down-game-streaming-january-2023 | archive-date= October 10, 2024}}</ref> [[Google Glass|Glass]], [[Google+]], [[Google Reader|Reader]], [[Google Play Music|Play Music]], [[Google Nexus|Nexus]], [[Google Hangouts|Hangouts]], and [[Inbox by Gmail]]<!-- Notable products only! -->.<ref>{{cite web | title= The Google Graveyard | first1= Heather | last1= Brady | first2= Chris | last2= Kirk | date= March 15, 2013 | url= http://www.slate.com/articles/technology/map_of_the_week/2013/03/google_reader_joins_graveyard_of_dead_google_products.html | magazine= [[Slate (magazine)|Slate]] | access-date= March 16, 2013 | archive-url= https://web.archive.org/web/20130316085610/http://www.slate.com/articles/technology/map_of_the_week/2013/03/google_reader_joins_graveyard_of_dead_google_products.html | archive-date= March 16, 2013 | url-status= live }}</ref><ref>{{cite web |last1=Booker |first1=Logan |date=March 17, 2013 |title=Google Graveyard Does Exist |url=https://www.gizmodo.com.au/2013/03/google-graveyard-does-exist-you-can-even-place-flowers-on-your-deceased-favourites/ |url-status=live |archive-url=https://web.archive.org/web/20180518055717/https://www.gizmodo.com.au/2013/03/google-graveyard-does-exist-you-can-even-place-flowers-on-your-deceased-favourites/ |archive-date=May 18, 2018 |access-date=May 17, 2018 |website=gizmodo }}</ref> Google's other ventures outside of internet services and consumer electronics include [[quantum computing]] ([[Willow processor|Willow]]), [[self-driving car]]s ([[Waymo]]), smart cities ([[Sidewalk Labs]]), and [[Transformer (deep learning architecture)|transformer models]] ([[Google DeepMind]]).<ref>{{Cite magazine |title=Inside X, Google's top-secret moonshot factory |language=en-GB |magazine=Wired UK |url=https://www.wired.co.uk/article/ten-years-of-google-x |access-date=May 17, 2022 |issn=1357-0978 |archive-date=May 19, 2022 |archive-url=https://web.archive.org/web/20220519211935/https://www.wired.co.uk/article/ten-years-of-google-x |url-status=live }}</ref><!-- END Brief description of products -->\n\n<!-- Current status -->Google Search and YouTube are the two [[List of most-visited websites|most-visited websites]] worldwide, followed by [[Facebook]], [[Instagram]], and [[ChatGPT]]. Google is the largest provider of search engines, mapping and navigation applications, [[Mailbox provider|email services]], [[Productivity software#Office suite|office suite]]s, [[online video platform]]s, photo and [[cloud storage]], [[mobile operating system]]s, [[web browser]]s, machine learning frameworks, and AI [[virtual assistant]]s in the world as measured by market share.<ref>{{Cite web |last=Hanief |first=Mohammad |date=April 7, 2023 |title=How Google has made our life easy |url=https://www.greaterkashmir.com/op-ed-2/how-google-has-made-our-life-easy/ |access-date=December 23, 2023 |website=Greater Kashmir |language=en-US |archive-date=December 23, 2023 |archive-url=https://web.archive.org/web/20231223193822/https://www.greaterkashmir.com/op-ed-2/how-google-has-made-our-life-easy/ |url-status=live }}</ref> On the list of most valuable brands, Google is ranked second by ''[[Forbes]]'' as of \n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-10-05T19:38:09Z"
+        }
+       ],
+       "title": "Google"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-10-06T10:10:43Z",
+    "titles": "Google"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20200903111145|976515927"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 42624160,
+       "revisions": [
+        {
+         "parentid": 976515927,
+         "revid": 976604236,
+         "slots": {
+          "main": {
+           "content": "{{wiktionary}}\n'''Leaderboard''' may refer to:\n\n* ''[[Leader Board]]'', a golf video game series\n* [[Game ladder]] or ladder tournament, a form of tournament for games and sports\n* High [[score (game)|score]], in a video game\n* Leaderboard, a standard [[Web banner#Standard sizes|web banner size]]\n* [[League table]], a chart or table listing leaders in a competition\n\n{{disambiguation}}",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2020-09-03T22:32:38Z"
+        }
+       ],
+       "title": "Leaderboard"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-10-06T10:10:43Z",
+    "titles": "Leaderboard"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20170830175839|798050025"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 55086373,
+       "revisions": [
+        {
+         "parentid": 798050025,
+         "revid": 871196925,
+         "slots": {
+          "main": {
+           "content": "#REDIRECT [[Result (disambiguation)]]\n\n{{R from plural}}\n{{R from ambiguous}}",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2018-11-29T16:01:13Z"
+        }
+       ],
+       "title": "Results"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-10-06T10:10:43Z",
+    "titles": "Results"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20241003150526|1249162673"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 42796494,
+       "revisions": [
+        {
+         "parentid": 1249162673,
+         "revid": 1249171636,
+         "slots": {
+          "main": {
+           "content": "{{wiktionary|result|results}}\nA '''[[result]]''' is the outcome of an event.\n\n'''Result''' or '''Results''' may also refer to:\n==Music==\n* [[Results (album)|''Results'' (album)]], a 1989 album by Liza Minnelli\n* ''Results'', a 2012 album by [[Murder Construct]]\n* \"The Result\", a single by [[The Upsetters]]\n* \"The Result\", a song by Ennio Morricone from ''[[A Fistful of Dollars]]'' O.S.T.\n* \"Results\", a track from the soundtrack of the 2014 Indian film [[Jigarthanda (2014 film)|''Jigarthanda'']]\n\n==Other uses==\n* [[Result (schooner)|''Result'' (schooner)]], a schooner built in Carrickfergus in 1893\n* [[Result, New York]], a populated place in Greene County\n* [[Result (cricket)]], final outcome (win, tie, or draw) in the bat-and-ball game of cricket\n* [[Results (film)|''Results'' (film)]], a 2015 film starring Guy Pearce and Cobie Smulders\n* [[Results (organisation)]], a US poverty advocacy organization founded 1980\n\n==See also==\n* Result merchant, see [[Glossary of contract bridge terms#R]]\n* ''[[Results May Vary]]'', an album by Limp Bizkit 2003\n* [[Causality]]\n* [[Find (disambiguation)]]\n* [[Negative result (disambiguation)]]\n\n\n{{disambiguation}}",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2024-10-03T16:03:44Z"
+        }
+       ],
+       "title": "Result (disambiguation)"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-10-06T10:10:43Z",
+    "titles": "Result (disambiguation)"
+   },
+   "status": 200
+  }
+ ],
+ "note": "'Will Meta have the second best AI model on October 31?' (cutoff 2025-10-06T10:10:43.984017Z; registry party_names ['Arena Score', 'Google', 'Leaderboard', 'Meta', 'PM ET', 'Results']) at depth 1. At its cutoff 'Meta' was a disambiguation page declaring Meta (prefix) and Meta Platforms primary. Neither entry line nor either as-of lead shares a word with the question or its parties.",
+ "recorded": "2026-09-19",
+ "source": "https://en.wikipedia.org/w/api.php"
+}
