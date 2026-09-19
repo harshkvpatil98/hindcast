@@ -204,7 +204,7 @@ cascade trace cost         # §12.4: reconcile the run ledger against Langfuse
 
 ## 7. Architecture decisions
 
-Thirty-four ADRs in `docs/adr/` on this branch; 0032 (live mode, proposed) lives on `m13/live-mode`. Fifteen correct defects found in the spec,
+Thirty-five ADRs in `docs/adr/` on this branch; 0032 (live mode, proposed) lives on `m13/live-mode`. Fifteen correct defects found in the spec,
 and 0023, 0025 and 0026 correct defects found in **this build** -- an ingest order
 that satisfied every criterion while covering the wrong years, and two ablation
 factors that were configured, documented and inert. The rest record choices the
@@ -246,6 +246,7 @@ spec left open.
 | 0033 | Terraform 1.16.3 pinned and run in Docker (the system has 1.5.7, which predates `terraform test`); gated offline by mock-provider tests, TFLint and Checkov triaged skip by skip; no AWS account needed | M11 |
 | 0034 | Aurora 16.11 so pgvector stays 0.8.0 as locally (16.13 moves it to 0.8.1), minor upgrades off; an isolated VPC with no internet path; the bench as a Fargate task inside it; fixed ACU per measurement; a copy-on-write clone for the partitioning experiment | M11 |
 | 0035 | One dedicated account, because Marketplace billing defeats tag-based budgets; the budget is *derived* from `configs/base.yaml`, never restated; SCP guardrails bound to nothing until targets are named; the event lake makes invariant 6 two independent controls (Object Lock + an explicit Deny); recovery tiers follow cost-to-lose, set by this project's own data-loss incident | M12 |
+| 0036 | CC-NEWS files are chosen by their distance from each scenario's cutoff, not by month: ADR-0023's demand counted a month 17 months before a cutoff like the month of it, and its twelve files per month all came from the month's first two days. A floor phase, then closeness with a 14-day half-life, every scenario equal; a function of cutoffs and listings only, never an outcome. Amends 0023 | M12 (amends M2) |
 
 ---
 
@@ -1956,6 +1957,36 @@ the first time the `infra` job ran anywhere but the development machine.
   runs to completion today. The ingest fetches from the public internet and the
   VPC has no egress by design; the study's task is pinned to `replay` with no
   model access; the LLM cache and report files live on task scratch.
+
+**Third pass: the owner's question about the ingest order, and an A/B.**
+
+- **Multi-threading the ingest bought nothing here, measured.** Sampling showed
+  the loop alternating strictly between the tokenizer and GPU embedding, so an
+  agent overlapped them and chunked on a pool (byte-identical output, tested;
+  it also fixed a real race -- counting tokens while another thread embedded
+  raised `Already borrowed` on every call). The A/B ran on two real units with
+  the decision rule fixed beforehand: serial **55.9 chunks/s**, four workers
+  **52.5**, against a 13-unit baseline of 48.8 +/- 4.0. No gain: the Rust
+  tokenizer already spreads a call over ~3 cores. `chunk_workers` defaults to 1.
+- **The owner asked why the ingest did not start from the latest cutoff and work
+  backwards. It should have** (ADR-0036). The queue ranked months by how many
+  scenarios *may* use them, so mid-2025 background outranked the final weeks
+  before the largest cluster of cutoffs, and a month's twelve files all came
+  from its first two days. Coverage passed throughout: it cannot see *when* in
+  the window the evidence falls. 82 of 180 scenarios had under 1,000 chunks from
+  their final thirty days; 7 had none.
+- **Measured, for the 18 files left in a 2.0M-chunk budget:** scenarios with a
+  file within a day of cutoff **4 -> 34**, within a week **42 -> 91**, within
+  thirty days **164 -> 170**, median gap **15.9 -> 6.9 days**.
+- **Two of my own claims were wrong and the measurements said so.** I told the
+  owner the run had to reach all 51 units "because the last units cover the
+  early-cutoff scenarios": coverage already passed at 859k chunks, and the stale
+  scenarios were the *most recent* ones, not the earliest. And my first
+  weighting was hyperbolic, whose tail made fifteen stale files count as "well
+  served" -- the first plan skipped the four most recent months.
+- The owner set the corpus budget at **2.0M chunks**, which is the shipped
+  `max_chunks`. About ten early-cutoff scenarios, alone in their months, get no
+  file of their own inside it; that is the cost of the budget, not of the rule.
 
 Remaining for M12's gate, each listed under its pillar in
 `docs/architecture/well-architected.md`: a fetch path that lets the ingest chain
