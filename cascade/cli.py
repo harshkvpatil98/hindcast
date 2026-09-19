@@ -1603,7 +1603,7 @@ def _scorable(scenarios: Sequence[Any], *, what: str) -> list[Any]:
     the report is bound to discard. Scoring does not depend on this filter --
     the split declaration drops them from every scored figure regardless.
     """
-    from cascade.eval.exclusions import exclusions
+    from cascade.ledger.exclusions import exclusions
 
     excluded = {
         item.scenario_id

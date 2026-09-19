@@ -101,7 +101,7 @@ from typing import Literal, Protocol
 from pydantic import BaseModel, ConfigDict
 
 from cascade.canonical import canonical_json
-from cascade.eval.exclusions import ExcludedScenario, exclusions
+from cascade.ledger.exclusions import ExcludedScenario, exclusions
 
 __all__ = [
     "PARTITIONS",
@@ -204,7 +204,7 @@ class SplitDeclaration(_Frozen):
     sha256: str
     excluded: tuple[ExcludedScenario, ...] = ()
     """Sealed scenarios on neither side: declared unscoreable before any
-    forecast (``cascade/eval/exclusions.py``). Part of the fingerprint."""
+    forecast (``cascade/ledger/exclusions.py``). Part of the fingerprint."""
 
     @property
     def excluded_ids(self) -> tuple[str, ...]:

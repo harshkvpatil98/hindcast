@@ -16,7 +16,6 @@ import json
 import pytest
 
 from cascade.config import load_settings, repo_root
-from cascade.eval.exclusions import exclusions, is_placeholder
 from cascade.eval.schema import ScoredForecast
 from cascade.eval.split import (
     ExcludedFromScoring,
@@ -29,6 +28,7 @@ from cascade.eval.split import (
     require_dev_only,
     select,
 )
+from cascade.ledger.exclusions import exclusions, is_placeholder
 
 STUDY: list[tuple[str, str, str]] = [
     (scenario_id, domain, question)

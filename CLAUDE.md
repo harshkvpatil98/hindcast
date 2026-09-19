@@ -214,7 +214,7 @@ cascade trace cost         # §12.4: reconcile the run ledger against Langfuse
 
 ## 7. Architecture decisions
 
-Forty-one ADRs in `docs/adr/` on this branch; 0032 (live mode, proposed) lives on `m13/live-mode`. Fifteen correct defects found in the spec,
+Forty-two ADRs in `docs/adr/` on this branch; 0032 (live mode, proposed) lives on `m13/live-mode`. Fifteen correct defects found in the spec,
 and 0023, 0025 and 0026 correct defects found in **this build** -- an ingest order
 that satisfied every criterion while covering the wrong years, and two ablation
 factors that were configured, documented and inert. The rest record choices the
@@ -261,6 +261,7 @@ spec left open.
 | 0038 | A dev/test split (40 / 125) declared before any forecast, pinned, checked on every eval path; the headline is test; the evidence-tier analysis and S01 (12 chunks) declared in advance, S01 in its own Holm family | M14 |
 | 0039 | The market's own price strictly before the cutoff is a benchmark and only a benchmark: never imputed, stale prices excluded and counted, unreadable by `cascade_sim` | M14 |
 | 0040 | Hybrid retrieval: time-locked vector and keyword pools, rank fusion with recency, story diversity by SimHash, one switch for every evidence site; off until measured | M14 |
+| 0041 | **Found here.** The Wikipedia adapter rendered old revisions through today's templates, so text dated before a cutoff carried post-cutoff facts (a 2025 season article showing the 2026 final standings). Now raw wikitext strictly before the cutoff, titles from the question, depth in the unit key | M14 |
 | 0042 | An opt-in egress tier for the ingest, model access and an EFS-backed LLM cache for the study, GuardDuty to the alerts topic, both caches in the recovery plan | M12 |
 | 0043 | **Found here.** 15 of 180 sealed scenarios are exchange placeholder legs; the owner kept the sealed set, and they are excluded from scoring before the split is drawn, inside its pin | M14 |
 

@@ -53,7 +53,7 @@ exclude the stand-ins from every scored figure. **The owner chose the second.**
    branch reproduces it byte for byte from the source cache (checked: a dry
    rebuild gives the same manifest with 0 fetches).
 2. **Fifteen stand-ins are excluded from scoring and counted.**
-   `cascade/eval/exclusions.py::is_placeholder` — "placeholder", or a role noun
+   `cascade/ledger/exclusions.py::is_placeholder` — "placeholder", or a role noun
    (candidate, company, person, player, team, …) followed by one or two capital
    letters, case-sensitive on the letters so "Team USA" and "Company 3M" are
    names. It reads the question's wording and nothing else. Stand-ins almost

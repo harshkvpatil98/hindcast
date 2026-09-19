@@ -1,4 +1,8 @@
-"""Scenarios declared unscoreable before any forecast existed (M14, ADR-0043).
+"""Sealed scenarios declared unscoreable before any forecast existed (M14, ADR-0043).
+
+Here, beside the registry, because it is a property of the registry that more
+than one layer needs: the split and the report exclude these scenarios from
+scoring, and the corpus and every model-spending command skip them.
 
 The sealed registry is kept exactly as sealed: its manifest, its YES rate and
 its frozen split are the study's and do not move. What this module declares is

@@ -870,3 +870,22 @@ def test_a_429_is_retried_and_counted(monkeypatch: pytest.MonkeyPatch) -> None:
     cutoff = datetime(2026, 2, 17, 17, 10, 13, tzinfo=UTC)
     found = wikipedia.revision_before(fetcher, title="Anthropic", as_of=cutoff)
     assert found is not None and fetcher.throttled == 1
+
+
+def test_stand_ins_excluded_from_scoring_get_no_wikipedia_units(
+    settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A scenario about "Candidate B" is excluded from every scored figure
+    (ADR-0043); a request to Wikimedia on its behalf is spent on nothing."""
+    import cascade.ledger.store as ledger_store
+
+    stand_in = _scenario(
+        "polymarket:busan-mayor:1",
+        "Will Candidate B win the 2026 Busan Mayoral Election?",
+        ["Busan", "Democratic Party of Korea", "People Power Party"],
+        ts("2026-02-22T00:00:00Z"),
+    )
+    registry = (BRONCOS_SCENARIO, stand_in)
+    monkeypatch.setattr(ledger_store, "load_scenarios", lambda settings, role: registry)
+    planned = pipeline._units_for(with_corpus(settings, wikipedia_depth=1), "wikipedia")
+    assert planned == ["d01.20250829.polymarket:afc-west-winner-1:540281"]

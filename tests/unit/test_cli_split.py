@@ -24,11 +24,11 @@ import cascade.cli as cli_module
 from cascade.cli import app
 from cascade.config import load_settings, repo_root
 from cascade.eval.ablation import cell_by_id, grid_scenarios
-from cascade.eval.exclusions import exclusions
 from cascade.eval.schema import ScoredForecast
 from cascade.eval.split import HeldOutViolation, declare_study_split
 from cascade.eval.store import FrozenSplit
 from cascade.eval.supplementary import supplementary_by_id
+from cascade.ledger.exclusions import exclusions
 from cascade.version import EXIT_OK, EXIT_PRECONDITION
 
 runner = CliRunner()

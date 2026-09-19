@@ -121,10 +121,22 @@ def _wikipedia_requests(settings: Settings) -> dict[str, wikipedia.SnapshotUnit]
     Reads ``scenarios`` only. Titles come from the question, the registry's
     own ``party_names`` and the cutoff, and no outcome is touched (invariant 2).
     """
+    from cascade.ledger.exclusions import exclusions
     from cascade.ledger.store import load_scenarios
 
+    scenarios = load_scenarios(settings, role="admin")
+    # Stand-ins ("Will Candidate B win ...") are excluded from scoring
+    # (ADR-0043); an article about nobody is not worth a request to Wikimedia.
+    excluded = {
+        item.scenario_id
+        for item in exclusions(
+            [(scenario.scenario_id, scenario.question) for scenario in scenarios]
+        )
+    }
     units: dict[str, wikipedia.SnapshotUnit] = {}
-    for scenario in load_scenarios(settings, role="admin"):
+    for scenario in scenarios:
+        if scenario.scenario_id in excluded:
+            continue
         for depth in range(1, settings.corpus.wikipedia_depth + 1):
             unit = wikipedia.plan_unit(
                 question=scenario.question,

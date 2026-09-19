@@ -16,7 +16,6 @@ import pytest
 
 from cascade.config import load_settings, repo_root
 from cascade.eval.evidence import evidence_finding
-from cascade.eval.exclusions import exclusions
 from cascade.eval.metrics import brier
 from cascade.eval.report import StudyArtifact, write_report
 from cascade.eval.schema import BootstrapInterval, Comparison, ScoredForecast
@@ -28,6 +27,7 @@ from cascade.eval.score import (
     split_halves,
 )
 from cascade.eval.split import PartitionInteraction, declare_study_split, select
+from cascade.ledger.exclusions import exclusions
 
 # The sealed registry's (id, domain, question) -- no outcome. The question is
 # there because the study split excludes exchange stand-ins by their wording

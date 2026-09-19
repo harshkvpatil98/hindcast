@@ -90,7 +90,7 @@ class TestOutcomeIndependenceByConstruction:
         fields = set(type(_declared()).model_fields)
         assert fields == {"purpose", "dev_size", "dev", "test", "domains", "sha256", "excluded"}
         # And the excluded entries carry an id and a reason, nothing else.
-        from cascade.eval.exclusions import ExcludedScenario
+        from cascade.ledger.exclusions import ExcludedScenario
 
         assert set(ExcludedScenario.model_fields) == {"scenario_id", "reason"}
 
@@ -115,7 +115,7 @@ class TestOutcomeIndependenceByConstruction:
             "typing",
             "pydantic",
             "cascade.canonical",
-            "cascade.eval.exclusions",
+            "cascade.ledger.exclusions",
         }
         touched = (
             {node.attr for node in ast.walk(tree) if isinstance(node, ast.Attribute)}
