@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="#status-what-is-measured-and-what-is-not"><img alt="status" src="https://img.shields.io/badge/status-M8%20of%20M9-blue"></a>
-  <a href=".github/workflows/ci.yml"><img alt="ci" src="https://github.com/harshkvpatil98/cascade/actions/workflows/ci.yml/badge.svg"></a>
+  <a href=".github/workflows/ci.yml"><img alt="ci" src="https://github.com/utkarsh430/cascade/actions/workflows/ci.yml/badge.svg"></a>
   <a href="#engineering-contract"><img alt="tests" src="https://img.shields.io/badge/tests-1%2C331%20passing-success"></a>
   <a href="#engineering-contract"><img alt="mypy" src="https://img.shields.io/badge/mypy-strict-success"></a>
   <img alt="python" src="https://img.shields.io/badge/python-3.12-blue">
@@ -130,7 +130,7 @@ Eight subsystems, each with one job:
 No Anthropic key is needed for anything on this page.
 
 ```bash
-git clone https://github.com/harshkvpatil98/cascade.git
+git clone https://github.com/utkarsh430/cascade.git
 cd cascade
 
 make install          # uv sync --extra dev --extra kernel
