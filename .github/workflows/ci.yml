@@ -76,3 +76,56 @@ jobs:
             tests/unit/test_ablation_factors_are_read.py \
             tests/unit/test_eval_report.py \
             tests/unit/test_prompt_cache_floor.py
+
+  infra:
+    name: terraform · offline tests · tflint · checkov
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Every step runs offline: `terraform test` uses mock providers, so the
+    # infrastructure is gated without an AWS account or credentials (ADR-0033).
+    defaults:
+      run:
+        working-directory: infra/terraform
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.16.3
+          terraform_wrapper: false
+
+      - name: fmt
+        run: terraform fmt -recursive -check
+
+      - name: validate
+        run: |
+          for root in envs/bootstrap envs/sandbox; do
+            terraform -chdir=$root init -backend=false -input=false
+            terraform -chdir=$root validate
+          done
+
+      - name: offline tests (mock providers)
+        run: terraform -chdir=envs/sandbox test
+
+      - uses: terraform-linters/setup-tflint@v6
+        with:
+          tflint_version: v0.64.0
+
+      - name: tflint
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tflint --init --config="$PWD/.tflint.hcl"
+          for dir in envs/sandbox envs/bootstrap modules/network modules/database modules/bench; do
+            tflint --chdir="$dir" --config="$PWD/.tflint.hcl"
+          done
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: checkov
+        run: uvx checkov==3.3.19 -d . --framework terraform --compact --quiet --skip-path .terraform
+
+      - name: bench Dockerfile lint
+        working-directory: .
+        run: docker buildx build --check -f infra/docker/bench.Dockerfile .

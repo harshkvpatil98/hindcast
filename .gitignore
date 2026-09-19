@@ -23,3 +23,12 @@ htmlcov/
 
 # macOS
 .DS_Store
+
+# Terraform: providers, local state and machine-local config
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+infra/terraform/**/backend.hcl
+infra/terraform/**/terraform.tfvars
+.tf-plugin-cache/

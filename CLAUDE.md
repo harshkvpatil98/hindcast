@@ -91,6 +91,12 @@ Code CLI locally under a subscription; it is **not** the pinned configuration,
 because the CLI cannot set `temperature` or `max_tokens`, and its results must
 be labelled as such.
 
+Infrastructure (ADR-0033, M11): Terraform **1.16.3**, AWS provider **6.65.0**,
+random **3.9.1** (locked for darwin_arm64, linux_amd64, linux_arm64), TFLint
+**0.64.0** + AWS ruleset **0.48.0**, Checkov **3.3.19**. Run through Docker and
+`uvx` at exactly these versions, locally and in CI; the system Terraform is
+never consulted. Container base images are pinned by digest.
+
 `cascade doctor` asserts this list (`cascade/version.py`). If you believe a
 substitution is warranted, write an ADR in `docs/adr/` and **ask**. Do not swap
 silently.
@@ -146,6 +152,8 @@ make ci         # ruff + black + mypy strict + pytest
 make test       # pytest, excluding tests needing live services
 make test-all   # includes integration and leakage tests (needs `make up`)
 make test-leakage  # the M3 time-lock probes alone
+make infra-check   # Terraform fmt/validate, offline tests (mock providers), tflint, checkov -- no AWS account
+make infra-fmt     # format the Terraform
 cascade doctor  # toolchain, pinned stack, service health
 
 cascade retrieval index    # (re)build one HNSW index per chunks partition (ADR-0026)
@@ -191,7 +199,7 @@ cascade trace cost         # §12.4: reconcile the run ledger against Langfuse
 
 ## 7. Architecture decisions
 
-Thirty-one ADRs in `docs/adr/`. Fifteen correct defects found in the spec,
+Thirty-three ADRs in `docs/adr/` on this branch; 0032 (live mode, proposed) lives on `m13/live-mode`. Fifteen correct defects found in the spec,
 and 0023, 0025 and 0026 correct defects found in **this build** -- an ingest order
 that satisfied every criterion while covering the wrong years, and two ablation
 factors that were configured, documented and inert. The rest record choices the
@@ -230,6 +238,8 @@ spec left open.
 | 0029 | The three API providers share one cache namespace — the key carries the logical model, the wire id is rendered at the boundary — *conditional* on `cascade eval equivalence`, which bootstraps cross-provider against within-provider disagreement | M10 |
 | 0030 | Bedrock Knowledge Bases rejected: a managed KB cannot enforce the `as_of` time lock the leakage suite verifies. Bedrock Guardrails deferred: the SDK's Bedrock client has no guardrail parameter, and `ApplyGuardrail` would be a second door | M10 |
 | 0031 | A Claude Code CLI provider for local runs under a subscription, keyed apart because it cannot honour `temperature` or `max_tokens`; measured 448-token harness overhead, thinking on by default, and a working-directory guard against auto-loading this file into every call | M10 |
+| 0033 | Terraform 1.16.3 pinned and run in Docker (the system has 1.5.7, which predates `terraform test`); gated offline by mock-provider tests, TFLint and Checkov triaged skip by skip; no AWS account needed | M11 |
+| 0034 | Aurora 16.11 so pgvector stays 0.8.0 as locally (16.13 moves it to 0.8.1), minor upgrades off; an isolated VPC with no internet path; the bench as a Fargate task inside it; fixed ACU per measurement; a copy-on-write clone for the partitioning experiment | M11 |
 
 ---
 
@@ -1763,3 +1773,56 @@ Deferred, with reasons:
 - **M11 and M12** → their own sessions, per §5.
 - **The parent-directory copy of this file** (`~/Downloads/CLAUDE.md`) is
   outside the repository and was not edited; it now lags this one.
+
+
+### M11 — Aurora and the retrieval criterion · *in progress: infrastructure written and gated offline; nothing applied*
+
+Started in the same session as M10's gate, at the owner's explicit request,
+while the corpus rebuilt; kept on its own branch and worktree
+(`../cascade-m11`) so the running ingest's tree was never touched.
+
+Shipped so far: `infra/terraform/` -- `modules/network` (private subnets only,
+four interface endpoints, an S3 gateway endpoint whose policy names its
+buckets, flow logs), `modules/database` (Aurora PostgreSQL 16.11 Serverless v2,
+KMS, `rds.force_ssl`, IAM auth, RDS-managed master secret, generated role
+secrets, an opt-in copy-on-write clone), `modules/bench` (ECR, a Fargate task
+with a read-only root and injected secrets, the artifacts bucket,
+least-privilege roles), `envs/sandbox`, `envs/bootstrap`;
+`infra/docker/bench.Dockerfile`; `tests/unit/test_infra_invariants.py`;
+`make infra-check` and CI's `infra` job; ADRs 0033 and 0034; a runbook.
+
+**The plan's hard gate was checked before any design:** Aurora PostgreSQL
+16.8-16.11 ship pgvector 0.8.0, 16.13 ships 0.8.1, 16.14 ships 0.8.2 (AWS
+extension table, 2026-09-19). 16.11 is pinned, with minor upgrades off, so the
+Aurora numbers compare against the local 0.8.0 ones; the Terraform refuses any
+engine without pgvector >= 0.8.0.
+
+**Offline gates, measured:**
+
+| Gate | Result |
+|---|---|
+| `terraform fmt -check`, `validate` (both roots, AWS provider 6.65.0) | clean, valid |
+| `terraform test`, mock providers | **17 passed, 0 failed** -- including the gate rejecting 16.6 and min > max ACU |
+| TFLint + AWS ruleset 0.48.0 | clean (one real finding fixed: an unused module input) |
+| Checkov 3.3.19 | first run **260 passed, 18 failed**; 2 real and fixed (read-only container root; explicit state-key policy), 16 justified in place; now **270 passed, 0 failed, 27 skipped** |
+| `test_infra_invariants.py` | **11 passed** |
+| Dockerfile (`buildx --check`) | no warnings |
+
+Checked by mutation, not inspection: storage unencrypted, the pgvector gate
+widened to 0.7.4, plaintext connections allowed and a password dropped from
+the injected secrets each failed a test; a planted internet gateway with an
+unjustified skip failed exactly the two static tests meant to catch it.
+
+**Defects found while writing it:** a base-image tag that does not exist (the
+lint caught it; the image is now pinned by digest), an unused module input
+(TFLint), a restore command that never set `PGPASSWORD`, and a sandbox that
+`terraform destroy` could not remove while its image repository and bucket held
+data (now `disposable`).
+
+Remaining for M11's gate:
+- **Code**: `sslmode=verify-full` and IAM-token authentication in
+  `DatabaseConfig` (`cascade/config.py`, `db.py`).
+- **Live, blocked on an AWS account**: apply, build and push the image, move
+  the corpus (the data-only restore is untested -- Aurora's master user is not
+  a true superuser), re-bench at two fixed ACU sizes, and run the partitioning
+  experiment on the clone. No Aurora number exists yet.

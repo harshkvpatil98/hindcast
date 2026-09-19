@@ -101,6 +101,39 @@ test-leakage: ## The M3 time-lock probes alone (requires `make up` and a built c
 ci: lint typecheck test ## Everything CI runs
 
 # ---------------------------------------------------------------------------
+# Infrastructure (M11) -- every gate runs offline, with no AWS account.
+# Toolchain versions are pinned and run in Docker, the same versions CI pins,
+# so a developer's system Terraform never decides what "valid" means.
+# ---------------------------------------------------------------------------
+
+TF_IMAGE ?= hashicorp/terraform:1.16.3
+TFLINT_IMAGE ?= ghcr.io/terraform-linters/tflint:v0.64.0
+CHECKOV_VERSION ?= 3.3.19
+TF_ROOTS := envs/bootstrap envs/sandbox
+TF_LINT_DIRS := envs/sandbox envs/bootstrap modules/network modules/database modules/bench
+DOCKER_TF = docker run --rm -v $(CURDIR):/work -e TF_PLUGIN_CACHE_DIR=/work/.tf-plugin-cache -e TF_IN_AUTOMATION=1
+
+.PHONY: infra-fmt
+infra-fmt: ## Format the Terraform
+	$(DOCKER_TF) -w /work/infra/terraform $(TF_IMAGE) fmt -recursive
+
+.PHONY: infra-check
+infra-check: ## Terraform fmt/validate, offline tests (mock providers), tflint, checkov, Dockerfile lint
+	@mkdir -p .tf-plugin-cache/tflint
+	$(DOCKER_TF) -w /work/infra/terraform $(TF_IMAGE) fmt -recursive -check
+	@for root in $(TF_ROOTS); do \
+		$(DOCKER_TF) -w /work/infra/terraform/$$root $(TF_IMAGE) init -backend=false -input=false >/dev/null && \
+		$(DOCKER_TF) -w /work/infra/terraform/$$root $(TF_IMAGE) validate || exit 1; \
+	done
+	$(DOCKER_TF) -w /work/infra/terraform/envs/sandbox $(TF_IMAGE) test
+	$(DOCKER_TF) -w /work/infra/terraform -e TFLINT_PLUGIN_DIR=/work/.tf-plugin-cache/tflint --entrypoint tflint $(TFLINT_IMAGE) --init --config=/work/infra/terraform/.tflint.hcl
+	@for dir in $(TF_LINT_DIRS); do \
+		$(DOCKER_TF) -w /work/infra/terraform/$$dir -e TFLINT_PLUGIN_DIR=/work/.tf-plugin-cache/tflint --entrypoint tflint $(TFLINT_IMAGE) --config=/work/infra/terraform/.tflint.hcl || exit 1; \
+	done
+	uvx --quiet checkov==$(CHECKOV_VERSION) -d infra/terraform --framework terraform --compact --quiet --skip-path .terraform
+	docker buildx build --check -f infra/docker/bench.Dockerfile .
+
+# ---------------------------------------------------------------------------
 # Study
 # ---------------------------------------------------------------------------
 

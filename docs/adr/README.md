@@ -1,6 +1,6 @@
 # Architecture decision records
 
-Thirty-one records. Each states the decision, the evidence behind it, and
+Thirty-three records here, plus 0032 (live mode, proposed), which lives on the `m13/live-mode` branch. Each states the decision, the evidence behind it, and
 what it costs. They exist because this project's specification is detailed
 enough to be wrong in specific, checkable ways — and when it was, the record
 says so with the measurement that showed it.
@@ -41,3 +41,6 @@ this build. The rest record a choice the specification left open.
 | [0029](0029-api-providers-share-one-cache-namespace.md) | The API providers share one cache namespace — conditional on a measured equivalence probe | M10 |
 | [0030](0030-knowledge-bases-rejected-guardrails-deferred.md) | Bedrock Knowledge Bases rejected: a managed KB cannot enforce the time lock. Guardrails deferred: no path through the one door | M10 |
 | [0031](0031-claude-code-cli-provider.md) | A Claude Code CLI provider under a subscription, keyed apart because it cannot honour `temperature` or `max_tokens` | M10 |
+| 0032 | *Live mode (proposed) — on branch `m13/live-mode`* | M13 |
+| [0033](0033-infrastructure-as-code-terraform.md) | Terraform, pinned and run in Docker; gated offline with mock-provider tests, TFLint and triaged Checkov — no AWS account needed | M11 |
+| [0034](0034-aurora-data-plane.md) | Aurora 16.11 with pgvector pinned at 0.8.0, an isolated VPC, the bench as a Fargate task inside it, fixed capacity, and a copy-on-write clone for the partitioning experiment | M11 |

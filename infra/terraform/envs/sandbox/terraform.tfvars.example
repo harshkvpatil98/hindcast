@@ -1,0 +1,4 @@
+# Copy to terraform.tfvars (gitignored). Every routing value is explicit.
+region             = "us-east-1"
+availability_zones = ["us-east-1a", "us-east-1b"]
+acu                = 8
