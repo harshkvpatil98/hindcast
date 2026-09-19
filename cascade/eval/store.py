@@ -28,6 +28,8 @@ __all__ = [
     "assert_frozen_split",
     "available_configs",
     "config_policies",
+    "evidence_counts",
+    "forecast_scenarios",
     "load_market_prices",
     "prompt_revision_audit",
     "record_prompt_revision_brier",
@@ -181,6 +183,70 @@ def _policy_literal(value: str) -> Literal["agent", "heuristic", "mixed", "none"
     if value in ("agent", "heuristic", "mixed", "none"):
         return value  # type: ignore[return-value]
     raise ValueError(f"unknown forecast policy {value!r}; expected agent, heuristic, mixed or none")
+
+
+def evidence_counts(settings: Settings, *, window_days: int, role: Role = "eval") -> dict[str, int]:
+    """Chunks published in the final ``window_days`` before each scenario's cutoff.
+
+    The input to the accuracy-by-evidence table (``eval/evidence.py``). Reads
+    ``scenarios`` and ``chunks`` and **no label**: the count is a property of
+    the corpus and the cutoff, fixed before any forecast, so the tiers built
+    from it cannot depend on an outcome.
+
+    The window is half-open, ``cutoff - window <= published_at < cutoff``.
+    The upper bound is Chronofence's own admissibility rule (strictly before
+    the cutoff), so the count is of chunks an agent could have been shown and
+    never of one it could not.
+
+    Exact, not the day-resolution histogram ``corpus.store.scenario_coverage``
+    uses: that one feeds a warning and errs toward under-reporting, while this
+    one is compared against fixed thresholds, where a day's rounding moves a
+    scenario across a tier boundary. ``LATERAL`` makes each scenario's bounds
+    runtime constants, so the executor prunes to the one or two quarterly
+    partitions the window touches rather than scanning all of them per
+    scenario (the same reason migration 006 uses it).
+
+    Every sealed scenario is returned, with 0 where the window is empty -- a
+    measured zero, which is a different thing from a missing row and is tiered
+    differently.
+    """
+    if window_days <= 0:
+        raise ValueError(f"window_days must be positive, got {window_days}")
+    with _connect(settings, role) as conn, conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT s.scenario_id, w.n
+            FROM scenarios s
+            CROSS JOIN LATERAL (
+                SELECT count(*) AS n
+                FROM chunks c
+                WHERE c.published_at >= s.cutoff_ts - make_interval(days => %s::int)
+                  AND c.published_at <  s.cutoff_ts
+            ) w
+            ORDER BY s.scenario_id
+            """,
+            (window_days,),
+        )
+        rows = cur.fetchall()
+    return {str(row[0]): int(row[1]) for row in rows}
+
+
+def forecast_scenarios(
+    settings: Settings, *, config_id: str, role: Role = "eval"
+) -> tuple[str, ...]:
+    """Which scenarios one configuration holds forecasts for. Ids only, sorted.
+
+    What the tuning guard checks a stored variant against. It joins nothing:
+    the question "did this variant touch a held-out scenario" is answered
+    without reading a forecast's value or an outcome, so asking it is not
+    itself a look at the test partition.
+    """
+    with _connect(settings, role) as conn, conn.cursor() as cur:
+        cur.execute(
+            "SELECT scenario_id FROM forecasts WHERE config_id = %s ORDER BY scenario_id",
+            (config_id,),
+        )
+        return tuple(str(row[0]) for row in cur.fetchall())
 
 
 def available_configs(settings: Settings, *, role: Role = "eval") -> tuple[tuple[str, int], ...]:

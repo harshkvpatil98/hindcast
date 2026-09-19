@@ -29,11 +29,14 @@ from cascade.eval.schema import (
     AblationCell,
     CalibrationReport,
     Comparison,
+    ComparisonFamily,
     DispersionFinding,
     DomainMetrics,
+    EvidenceFinding,
     MetricSet,
     ScoredForecast,
 )
+from cascade.eval.split import Partition, PartitionInteraction, SplitDeclaration
 
 __all__ = [
     "FIGURE_FORMAT",
@@ -124,6 +127,24 @@ class StudyArtifact:
     blocked: tuple[str, ...] = ()
     """Quantities that could not be produced, and why. Printed prominently."""
 
+    split: SplitDeclaration | None = None
+    """The declared dev/test split. ``None`` only for an artifact assembled
+    without one, which the report then says in so many words."""
+    partition: Partition = "all"
+    """The partition every figure in ``metrics``, ``calibration``,
+    ``per_domain``, ``comparisons``, ``dispersion`` and ``evidence`` was
+    measured on. The CLI writes ``test``; ``dev`` is a tuning report."""
+    headline_partitions: tuple[tuple[Partition, MetricSet | None], ...] = ()
+    """The headline configuration on test, all and dev, so the all-scenario
+    figure is printed beside the headline and labelled, not left to be
+    recomputed by a reader who will not label it."""
+    split_interactions: tuple[PartitionInteraction, ...] = ()
+    evidence: EvidenceFinding | None = None
+    withheld_configs: tuple[str, ...] = ()
+    """Stored configurations that are not declared study configurations and
+    were therefore not scored on this partition (see
+    ``split.require_declared_config``)."""
+
     def headline_metrics(self) -> MetricSet | None:
         for item in self.metrics:
             if item.config_id == self.headline_config:
@@ -161,6 +182,7 @@ def _metric_payload(item: MetricSet) -> dict[str, Any]:
         "ece": item.ece,
         "mce": item.mce,
         "bss_vs_climatology": item.bss_vs_climatology,
+        "climatology_brier_on_these_scenarios": item.climatology_brier,
         "bss_vs_single_direct": item.bss_vs_direct,
         "brier_recalibrated_holdout": item.brier_recalibrated,
         "murphy": {
@@ -194,6 +216,7 @@ def _headline_markdown(artifact: StudyArtifact) -> str:
         f"{artifact.climatology_brier:.6f}",
         f"- Agent model: `{artifact.models.get('agent', 'unknown')}` · "
         f"compiler: `{artifact.models.get('compiler', 'unknown')}`",
+        f"- Dev/test split: {_split_bullet(artifact)}",
         "",
         "Every number in this report is measured. Where a quantity could not be "
         "produced it is absent and named below, never substituted.",
@@ -205,7 +228,10 @@ def _headline_markdown(artifact: StudyArtifact) -> str:
         lines += [f"- {item}" for item in artifact.blocked]
         lines += [""]
 
+    lines += _split_section(artifact)
+
     lines += ["## Headline", ""]
+    lines += _partition_banner(artifact)
     if head is not None and head.provisional:
         lines += [
             f"> **These forecasts were produced by "
@@ -225,13 +251,18 @@ def _headline_markdown(artifact: StudyArtifact) -> str:
     else:
         lines += [
             f"**Brier {head.brier:.6f}** over {head.n} scenarios "
+            f"{_PARTITION_PHRASE[artifact.partition]} "
             f"(`{head.config_id}`). Mean forecast {head.mean_p_hat:.4f} against a "
             f"base rate of {head.base_rate:.4f}.",
             "",
+        ]
+        lines += _partition_table(artifact)
+        lines += [
             f"**Brier skill score vs climatology: "
-            f"{_fmt(head.bss_vs_climatology, '{:.4f}')}** — climatology scores "
-            f"{artifact.climatology_brier:.6f} on this set. Beating it is necessary, "
-            "not impressive.",
+            f"{_fmt(head.bss_vs_climatology, '{:.4f}')}** — climatology, the sealed "
+            "base rate issued as a constant forecast, scores "
+            f"{_fmt(head.climatology_brier, '{:.6f}')} on these scenarios. Beating it "
+            "is necessary, not impressive.",
             "",
             f"**Brier skill score vs the single-model baseline: "
             f"{_fmt(head.bss_vs_direct, '{:.4f}')}** — the reference §10.2 asks the "
@@ -275,27 +306,47 @@ def _headline_markdown(artifact: StudyArtifact) -> str:
         "here rather than left for a reader to compute.",
         "",
     ]
-    if artifact.comparisons:
-        # n is the paired count, per row: the capped cells pair on 90 scenarios
-        # and the market benchmark on however many markets had a usable price,
-        # so one table holds deltas over different populations and must say so.
-        lines += [
-            "| Comparison | n paired | delta Brier | 95% CI | p | Holm p* |",
-            "|---|---|---|---|---|---|",
-        ]
-        for item in artifact.comparisons:
-            lines.append(
-                f"| {item.name} | {item.n_paired} | {item.interval.point:+.6f} | "
-                f"[{item.interval.lo:+.6f}, {item.interval.hi:+.6f}] | "
-                f"{item.interval.p_value:.4g} | {_fmt(item.p_adjusted, '{:.4g}')} |"
-            )
-        lines += [""]
-        for item in artifact.comparisons:
-            reading = artifact.comparison_readings.get(item.name)
-            if reading:
-                lines += [f"- **{item.name}** — {reading}", ""]
+    main = _family(artifact, "appendix_c")
+    if main:
+        lines += _comparison_table(artifact, main)
     else:
         lines += ["No cell pair had forecasts on both sides, so no delta was computed.", ""]
+
+    lines += ["## Supplementary comparisons", ""]
+    lines += [
+        "Declared in `cascade/eval/supplementary.py` before any forecast existed, and "
+        "**not part of Appendix C's twelve-cell family**. They are Holm-adjusted in a "
+        "family of their own, so their presence changes none of the adjusted p-values "
+        "above; each family is controlled at its own alpha, and a reader who wants one "
+        "family-wise rate across both should adjust the raw p-values together. A "
+        "favourable supplementary delta is a finding to report. Changing the headline "
+        "configuration because of one measured on the test partition would be tuning "
+        "on test: that decision belongs to the dev partition.",
+        "",
+    ]
+    supplementary = _family(artifact, "supplementary")
+    if supplementary:
+        lines += _comparison_table(artifact, supplementary)
+    else:
+        lines += [
+            "No supplementary cell has forecasts on both sides. Run "
+            "`cascade eval grid --supplementary`.",
+            "",
+        ]
+
+    exploratory = _family(artifact, "exploratory_dev")
+    if exploratory:
+        lines += [
+            "## Exploratory comparisons (dev partition)",
+            "",
+            "Tuning variants against the headline configuration, on dev scenarios only. "
+            "These inform decisions. None of them is a result, and none was computed "
+            "on a held-out scenario.",
+            "",
+        ]
+        lines += _comparison_table(artifact, exploratory)
+
+    lines += _evidence_section(artifact)
 
     if artifact.dispersion is not None:
         finding = artifact.dispersion
@@ -329,6 +380,7 @@ def _headline_markdown(artifact: StudyArtifact) -> str:
         "| `ablation_grid.csv` | the twelve Appendix C cells, per scenario |",
         "| `calibration.csv` | 10 bins: count, mean_pred, obs_freq, Wilson bounds |",
         "| `per_domain.csv` | Brier by domain with counts |",
+        "| `per_evidence_tier.csv` | Brier by evidence tier with counts |",
         "| `significance.json` | paired bootstrap CIs, Holm-adjusted p-values |",
         "| `leakage_report.json` | poison-pill hits and memorisation scores |",
         "| `cost_ledger.json` | per-phase spend |",
@@ -341,6 +393,248 @@ def _headline_markdown(artifact: StudyArtifact) -> str:
 def _fmt(value: float | None, pattern: str) -> str:
     """Format a measurement, or say plainly that there is not one."""
     return "not measured" if value is None else pattern.format(value)
+
+
+_PARTITION_PHRASE: dict[Partition, str] = {
+    "test": "of the held-out **test partition**",
+    "dev": "of the **dev partition** (the tuning set)",
+    "all": "-- **every scored scenario, dev and test together**",
+}
+
+_PARTITION_SCOPE: dict[Partition, str] = {
+    "test": "test-partition",
+    "dev": "dev-partition",
+    "all": "dev and test",
+}
+
+_PARTITION_NOTE: dict[Partition, str] = {
+    "test": (
+        "Held out. No tuning decision was ever informed by these scenarios, so this "
+        "is the figure the study reports."
+    ),
+    "all": (
+        "Every sealed scenario, dev included. Printed for comparison only and **not "
+        "the headline**: it contains the scenarios the system was tuned on, and is "
+        "optimistic by however much that tuning fitted them."
+    ),
+    "dev": (
+        "The tuning partition. Optimistic by construction once anything has been "
+        "tuned on it; never quote it as a result."
+    ),
+}
+
+
+def _family(artifact: StudyArtifact, family: ComparisonFamily) -> list[Comparison]:
+    return [item for item in artifact.comparisons if item.family == family]
+
+
+def _comparison_table(artifact: StudyArtifact, rows: Sequence[Comparison]) -> list[str]:
+    """One Holm family as a table, with its size stated and its readings below.
+
+    The family size is printed with the table because it is the multiplier
+    behind every adjusted p-value in it, and a reader comparing two tables
+    needs to know they were corrected separately.
+    """
+    lines = [
+        f"Holm-Bonferroni family of {len(rows)}, each comparison paired on the "
+        f"{_PARTITION_SCOPE[artifact.partition]} scenarios both sides scored.",
+        "",
+        "| Comparison | delta Brier | 95% CI | n paired | p | Holm p* |",
+        "|---|---|---|---|---|---|",
+    ]
+    for item in rows:
+        lines.append(
+            f"| {item.name} | {item.interval.point:+.6f} | "
+            f"[{item.interval.lo:+.6f}, {item.interval.hi:+.6f}] | {item.n_paired} | "
+            f"{item.interval.p_value:.4g} | {_fmt(item.p_adjusted, '{:.4g}')} |"
+        )
+    lines += [""]
+    for item in rows:
+        reading = artifact.comparison_readings.get(item.name)
+        if reading:
+            lines += [f"- **{item.name}** — {reading}", ""]
+    return lines
+
+
+def _split_bullet(artifact: StudyArtifact) -> str:
+    split = artifact.split
+    if split is None:
+        return "none supplied to this report"
+    return (
+        f"`{split.sha256}` -- {len(split.dev)} dev / {len(split.test)} test; "
+        f"this report is written on **{artifact.partition}**"
+    )
+
+
+def _split_section(artifact: StudyArtifact) -> list[str]:
+    """State the split: what it is, when it was fixed, and what it applies to.
+
+    Written into every report rather than into documentation, because the
+    report is what gets quoted and the claim "this number was held out" is
+    worth exactly as much as a reader's ability to check it from the artifact.
+    """
+    split = artifact.split
+    lines = ["## Dev/test split", ""]
+    if split is None:
+        return [
+            *lines,
+            "No dev/test split was supplied to this report. Nothing in it may be read "
+            "as a held-out figure.",
+            "",
+        ]
+    lines += [
+        f"The {split.n} sealed scenarios are partitioned into **{len(split.dev)} dev** "
+        f"and **{len(split.test)} test**. The partition was declared before any "
+        "forecast existed: membership is a keyed hash of the scenario id under the "
+        f"study salt (purpose `{split.purpose}`), stratified by domain, and it takes "
+        "no outcome, forecast or error as input. Its fingerprint is pinned in "
+        "`configs/base.yaml` and every evaluation path refuses to run if the "
+        "recomputed split differs.",
+        "",
+        f"- Split sha256: `{split.sha256}`",
+        f"- Applies to scenario manifest: `{artifact.manifest_sha256}`",
+        f"- This report's figures are measured on: **{artifact.partition}**",
+        "",
+        "**Tuning is only ever legitimate on dev.** Every choice made by looking at "
+        "accuracy -- evidence chunks per agent, a prompt edit, a blend weight -- is "
+        "made on the dev scenarios, and the headline below is computed on test "
+        "scenarios alone, so none of those choices can inflate it.",
+        "",
+        "| Domain | n | dev | test |",
+        "|---|---|---|---|",
+    ]
+    lines += [f"| {row.domain} | {row.n} | {row.dev} | {row.test} |" for row in split.domains]
+    lines += [""]
+    if artifact.split_interactions:
+        lines += [
+            "Two other subsets of the scenarios are drawn by keyed hash, each "
+            "independently of this split. Their overlap with it sets the paired n of "
+            "every capped-cell comparison and the fitting n of every recalibrated "
+            "figure, so it is stated:",
+            "",
+            "| Partition | n | in the ablation subsample | recalibration fit / held-out |",
+            "|---|---|---|---|",
+        ]
+        lines += [
+            f"| {row.partition} | {row.n} | {row.ablation_subsample} | "
+            f"{row.recalibration_fit} / {row.recalibration_held} |"
+            for row in artifact.split_interactions
+        ]
+        lines += [
+            "",
+            "Isotonic recalibration is fitted and scored inside one partition at a "
+            "time; a fit never crosses the dev/test boundary.",
+            "",
+        ]
+    if artifact.withheld_configs:
+        lines += [
+            f"{len(artifact.withheld_configs)} stored configuration(s) are not declared "
+            "study configurations and were **not scored on this partition**: "
+            f"{', '.join(artifact.withheld_configs)}. A tuning variant is scored on dev "
+            "only; declaring it in code is the price of reporting it on test.",
+            "",
+        ]
+    return lines
+
+
+def _partition_banner(artifact: StudyArtifact) -> list[str]:
+    """Say loudly when the lead figure is not a held-out one."""
+    if artifact.split is None or artifact.partition == "test":
+        return []
+    if artifact.partition == "dev":
+        return [
+            "> **This report is written on the DEV partition.** These are the numbers "
+            "tuning is allowed to look at. They are optimistic by construction and "
+            "none of them is a result about Cascade; the result is `cascade report` "
+            "on the test partition.",
+            "",
+        ]
+    return [
+        "> **This report is written on ALL scenarios, dev and test together.** The "
+        "lead figure contains the scenarios the system was tuned on. The held-out "
+        "figure is the `test` row of the table below.",
+        "",
+    ]
+
+
+def _partition_table(artifact: StudyArtifact) -> list[str]:
+    """The headline configuration on every partition, each row labelled."""
+    if not artifact.headline_partitions:
+        return []
+    lines = ["| Partition | n | Brier | What it is |", "|---|---|---|---|"]
+    for partition, measured in artifact.headline_partitions:
+        label = f"**{partition}**" if partition == artifact.partition else partition
+        lines.append(
+            f"| {label} | {'-' if measured is None else measured.n} | "
+            f"{_fmt(None if measured is None else measured.brier, '{:.6f}')} | "
+            f"{_PARTITION_NOTE[partition]} |"
+        )
+    return [*lines, ""]
+
+
+def _evidence_section(artifact: StudyArtifact) -> list[str]:
+    """Accuracy by evidence quality: the table, the one test, and the caveat."""
+    finding = artifact.evidence
+    if finding is None:
+        return []
+    lines = [
+        "## Accuracy by evidence quality",
+        "",
+        f"Scenarios tiered by the number of corpus chunks published in the final "
+        f"{finding.window_days} days before their cutoff. The tiers are fixed chunk "
+        "thresholds declared before any forecast existed, not quantiles, so a "
+        "scenario's tier cannot move unless its evidence does. Measured on the "
+        f"{artifact.partition} partition, {finding.n} scenarios.",
+        "",
+        "| Tier | chunks in window | n | base rate | Brier |",
+        "|---|---|---|---|---|",
+    ]
+    for row in finding.tiers:
+        bounds = f"{row.lo:,}+" if row.hi is None else f"{row.lo:,}-{row.hi:,}"
+        if row.lo == row.hi:
+            bounds = f"{row.lo:,}"
+        lines.append(
+            f"| {row.tier} | {bounds} | {row.n} | {_fmt(row.base_rate, '{:.4f}')} | "
+            f"{_fmt(row.brier, '{:.6f}')} |"
+        )
+    lines += [
+        "",
+        f"The one pre-declared test: Spearman rho between the chunk count and the "
+        f"per-scenario squared error is {_fmt(finding.spearman_rho, '{:.4f}')} "
+        f"(permutation p {_fmt(finding.spearman_p, '{:.4g}')}). Negative means more "
+        "evidence went with smaller error.",
+        "",
+        "Evidence volume is not assigned at random: it rises with the cutoff year and "
+        "differs by domain, and both move forecast difficulty too. This table "
+        "describes where the system does well. It does not estimate what more "
+        "evidence would do.",
+        "",
+    ]
+    return lines
+
+
+def _split_payload(artifact: StudyArtifact) -> dict[str, Any] | None:
+    """The split, machine-readable, with the dev ids so it can be re-derived.
+
+    Ids and counts only. Listing the dev scenarios discloses nothing about an
+    outcome, and it is what lets someone holding only the artifact confirm that
+    the scenarios tuned on are the ones this report excluded.
+    """
+    split = artifact.split
+    if split is None:
+        return None
+    return {
+        "sha256": split.sha256,
+        "purpose": split.purpose,
+        "declared_before_any_forecast": True,
+        "applies_to_manifest_sha256": artifact.manifest_sha256,
+        "n_dev": len(split.dev),
+        "n_test": len(split.test),
+        "dev_scenario_ids": list(split.dev),
+        "domains": [row.model_dump(mode="json") for row in split.domains],
+        "interactions": [row.model_dump(mode="json") for row in artifact.split_interactions],
+        "configs_withheld_from_this_partition": list(artifact.withheld_configs),
+    }
 
 
 def write_report(artifact: StudyArtifact, *, root: Path) -> Path:
@@ -378,6 +672,8 @@ def write_report(artifact: StudyArtifact, *, root: Path) -> Path:
                 ),
                 "replicate_policy": artifact.replicate_policy,
                 "not_produced": list(artifact.blocked),
+                "partition": artifact.partition,
+                "split": _split_payload(artifact),
             }
         ),
         encoding="utf-8",
@@ -388,6 +684,18 @@ def write_report(artifact: StudyArtifact, *, root: Path) -> Path:
     (directory / "metrics.json").write_text(
         _json(
             {
+                "partition": artifact.partition,
+                "headline_by_partition": [
+                    {
+                        "partition": partition,
+                        "is_headline": partition == artifact.partition,
+                        "metrics": None if measured is None else _metric_payload(measured),
+                    }
+                    for partition, measured in artifact.headline_partitions
+                ],
+                "evidence": (
+                    None if artifact.evidence is None else artifact.evidence.model_dump(mode="json")
+                ),
                 "configs": [_metric_payload(item) for item in artifact.metrics],
                 "baselines": [
                     {
@@ -482,14 +790,40 @@ def write_report(artifact: StudyArtifact, *, root: Path) -> Path:
         encoding="utf-8",
     )
 
+    (directory / "per_evidence_tier.csv").write_text(
+        _csv(
+            [
+                [
+                    row.tier,
+                    row.lo,
+                    "" if row.hi is None else row.hi,
+                    row.n,
+                    "" if row.base_rate is None else f"{row.base_rate:.6f}",
+                    "" if row.brier is None else f"{row.brier:.6f}",
+                ]
+                for row in (artifact.evidence.tiers if artifact.evidence is not None else ())
+            ],
+            ["tier", "chunks_lo", "chunks_hi", "n", "base_rate", "brier"],
+        ),
+        encoding="utf-8",
+    )
+
     (directory / "significance.json").write_text(
         _json(
             {
                 "method": {
                     "bootstrap": "paired percentile over scenarios",
                     "resample_unit": "scenario",
-                    "multiple_comparison": "Holm-Bonferroni across the reported family",
-                    "family_size": len(artifact.comparisons),
+                    "multiple_comparison": (
+                        "Holm-Bonferroni within each family; families are adjusted "
+                        "separately and every comparison names its own"
+                    ),
+                    "family_size": len(_family(artifact, "appendix_c")),
+                    "family_sizes": {
+                        family: len(_family(artifact, family))
+                        for family in ("appendix_c", "exploratory_dev", "supplementary")
+                    },
+                    "partition": artifact.partition,
                 },
                 "comparisons": [
                     {
@@ -527,9 +861,10 @@ def _write_figures(artifact: StudyArtifact, figures: Path) -> None:
             ),
             encoding="utf-8",
         )
-    if artifact.comparisons:
+    ablation_rows = _family(artifact, "appendix_c")
+    if ablation_rows:
         (figures / f"ablation_forest.{FIGURE_FORMAT}").write_text(
-            forest_svg(artifact.comparisons, title="Ablation effect sizes (paired bootstrap)"),
+            forest_svg(ablation_rows, title="Ablation effect sizes (paired bootstrap)"),
             encoding="utf-8",
         )
     if artifact.convergence:

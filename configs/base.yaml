@@ -149,6 +149,35 @@ dossier: # the per-scenario situation report (ADR-0037)
   prompt_chars: 3600 # ~900 tokens in the compiler prompt and each agent prefix
   max_tokens: 4000
 
+eval: # the declared dev/test split (cascade/eval/split.py)
+  # How many of the sealed scenarios tuning may look at. Everything else is the
+  # test partition, and the report's headline is computed on test alone.
+  #
+  # Why 40. The only interval this project has measured is M7's: a paired
+  # bootstrap over 40 scenarios gave C10 - C09 a 95% CI of [-0.019230,
+  # +0.011589], a half-width of 0.0154. Paired half-widths scale with
+  # 1/sqrt(n), so from that one measurement:
+  #
+  #   dev size   dev resolves   test n   test half-width   vs all 180 (0.0073)
+  #      30        +-0.0178       150        0.0080             +9.5%
+  #      40        +-0.0154       140        0.0082            +13.4%
+  #      60        +-0.0126       120        0.0089            +22.5%
+  #
+  # 40 is where the dev set is as precise as the one measurement this project
+  # already treats as informative, for a headline interval 13% wider. At 30
+  # the dev set cannot separate variants the M7 harness could; at 60 the
+  # headline pays 22% to make tuning comfortable. The capped ablation cells run
+  # 90 scenarios of which 74 are test, so their half-widths go from about
+  # 0.0103 to about 0.0113. Caveat, stated rather than assumed away: the M7
+  # figure is from stand-in deciders, and real agents may spread differently.
+  dev_scenarios: 40
+  # sha256 of the exact dev/test membership the line above produces under
+  # study.salt, over the sealed 180. Declared before any forecast existed.
+  # Every `cascade eval` path and `cascade report` recomputes the split and
+  # exits 3 on a mismatch. Never edit this to make a mismatch go away: a split
+  # re-drawn after forecasts exist is a split chosen after looking.
+  split_sha256: "4b8dad2f36865985948f36308214532f1e8a92203ae7cd19e7f0a8d6db1d226d"
+
 budget:
   phase_ceiling_usd:
     compile: 40.0

@@ -23,10 +23,13 @@ from rich.console import Console
 from rich.table import Table
 
 from cascade.config import Settings, env_file_path, load_settings, repo_root
+from cascade.eval.split import SplitError
 from cascade.llm.types import BudgetExceeded, CacheMiss, PromptTooShortToCache, ProviderNotReady
 
 if TYPE_CHECKING:  # pragma: no cover -- types only, never imported at startup
+    from cascade.eval.ablation import CellSpec
     from cascade.eval.schema import MetricSet, ScoredForecast
+    from cascade.eval.split import Partition, SplitDeclaration
     from cascade.eval.store import FrozenSplit
 
 from cascade.trace.replay import CHILD_HASH_SEED
@@ -2747,59 +2750,159 @@ def _frozen_split(settings: Settings) -> FrozenSplit:
         _fail(str(exc), EXIT_PRECONDITION)
 
 
-def _paired_direct_brier(
-    settings: Settings, scored: Sequence[ScoredForecast], config_id: str
-) -> float | None:
-    """The single-model baseline's Brier **on the scenarios this config scored**.
+PartitionOpt = Annotated[
+    str,
+    typer.Option(
+        "--partition",
+        help=(
+            "Which side of the declared dev/test split to measure on: dev, test or all. "
+            "Tuning is only ever legitimate on dev."
+        ),
+    ),
+]
 
-    §10.2 makes the direct baseline the reference the headline skill score is
-    stated against. The headline runs all 180 scenarios, so for it the paired
-    and unpaired references coincide -- but a §10.3-capped cell runs 90, and
-    comparing its Brier over 90 scenarios against the baseline's over 180 would
-    be a skill score between two different populations, reported as if it were
-    one. Restricting the reference to the overlap makes the ratio mean what it
-    says.
 
-    ``None`` when the baseline has not been produced, or when the overlap is
-    empty -- both are "not measured", never zero.
+def _partition(value: str) -> Partition:
+    """Validate a `--partition` value; exits 3 on anything else."""
+    from cascade.eval.split import PARTITIONS
+
+    if value not in PARTITIONS:
+        _fail(
+            f"unknown partition {value!r}; expected one of {', '.join(PARTITIONS)}",
+            EXIT_PRECONDITION,
+        )
+    return value
+
+
+def _declared_split(settings: Settings, split: FrozenSplit) -> SplitDeclaration:
+    """Re-derive the dev/test split and check it against its pin, or exit 3.
+
+    The second half of the frozen-split discipline. `_frozen_split` establishes
+    that the registry is the sealed one; this establishes that the partition of
+    it is the declared one -- from the whole registry (never from whichever
+    scenarios happen to be scored), through a loader that joins no label, and
+    before any number is computed. Every `cascade eval` path that measures
+    anything goes through here.
     """
-    from cascade.eval.baselines import DIRECT_CONFIG_ID
-    from cascade.eval.metrics import brier
-    from cascade.eval.store import scored_forecasts
+    from cascade.eval.split import assert_declared, declare_split
+    from cascade.ledger.store import load_scenarios
 
-    if config_id == DIRECT_CONFIG_ID:
-        return None
-    reference = {
-        item.scenario_id: item for item in scored_forecasts(settings, config_id=DIRECT_CONFIG_ID)
-    }
-    shared = sorted({item.scenario_id for item in scored} & set(reference))
-    if not shared:
-        return None
-    return brier(
-        [reference[key].p_hat for key in shared], [reference[key].outcome for key in shared]
+    registry = load_scenarios(settings, role="eval")
+    if len(registry) != split.n_scenarios:
+        _fail(
+            f"the registry holds {len(registry)} scenarios but the seal covers "
+            f"{split.n_scenarios}; the dev/test split is only defined over the sealed set",
+            EXIT_PRECONDITION,
+        )
+    try:
+        declaration = declare_split(
+            [(item.scenario_id, item.domain) for item in registry],
+            salt=split.study_salt,
+            dev_size=settings.eval.dev_scenarios,
+        )
+        assert_declared(declaration, pinned_sha256=settings.eval.split_sha256)
+    except (SplitError, ValueError) as exc:
+        _fail(str(exc), EXIT_PRECONDITION)
+    return declaration
+
+
+def _declared_configs() -> frozenset[str]:
+    """Every configuration named in code before it was run.
+
+    The twelve cells, the five baselines, the supplementary cells, and `base`
+    -- what `cascade simulate all` stores the headline configuration under when
+    it is run without an overlay. Anything else with forecasts behind it is a
+    tuning variant, and is scored on dev alone.
+    """
+    from cascade.eval.ablation import CELLS
+    from cascade.eval.baselines import BASELINES
+    from cascade.eval.supplementary import supplementary_ids
+
+    return frozenset(
+        {cell.cell_id for cell in CELLS}
+        | {spec.config_id for spec in BASELINES}
+        | set(supplementary_ids())
+        | {"base"}
     )
 
 
+def _appendix_c_configs() -> frozenset[str]:
+    """§10.4's Holm family: "twelve cells plus five baselines", and `base`."""
+    from cascade.eval.supplementary import supplementary_ids
+
+    return _declared_configs() - set(supplementary_ids())
+
+
+def _guard(action: Any) -> Any:
+    """Run a split guard, turning its refusal into exit 3 at this boundary."""
+    try:
+        return action()
+    except SplitError as exc:
+        _fail(str(exc), EXIT_PRECONDITION)
+
+
 def _metrics_for_config(
-    settings: Settings, config_id: str, split: FrozenSplit
+    settings: Settings,
+    config_id: str,
+    split: FrozenSplit,
+    *,
+    declaration: SplitDeclaration,
+    partition: Partition,
+    direct: Sequence[ScoredForecast] | None = None,
 ) -> tuple[MetricSet | None, tuple[ScoredForecast, ...]]:
-    """Score one configuration, or return ``(None, ())`` when it has none."""
-    from cascade.eval.score import metrics_for
+    """Score one configuration **on one partition**, or ``(None, ())`` for none.
+
+    The forecasts are restricted to the partition before anything is computed
+    from them, so everything returned -- and everything a caller derives from
+    the returned rows: calibration, domains, dispersion, the per-scenario CSVs
+    -- is a function of that partition alone. Both references are paired on
+    the same scenarios (`score.measure`): §10.2's single-model baseline, because
+    a capped cell runs 90 scenarios and a partition fewer, and the climatology
+    floor for the same reason.
+    """
+    from cascade.eval.baselines import DIRECT_CONFIG_ID
+    from cascade.eval.score import measure
+    from cascade.eval.split import select
     from cascade.eval.store import scored_forecasts
 
-    scored = scored_forecasts(settings, config_id=config_id)
-    if not scored:
-        return None, ()
+    scored = _guard(
+        lambda: select(scored_forecasts(settings, config_id=config_id), declaration, partition)
+    )
+    if config_id == DIRECT_CONFIG_ID:
+        reference: Sequence[ScoredForecast] = ()
+    elif direct is not None:
+        reference = direct
+    else:
+        reference = scored_forecasts(settings, config_id=DIRECT_CONFIG_ID)
     return (
-        metrics_for(
+        measure(
             scored,
             config_id=config_id,
-            climatology_brier=split.climatology_brier,
-            direct_brier=_paired_direct_brier(settings, scored, config_id),
+            base_rate=split.base_rate,
+            direct=reference,
             salt=split.study_salt,
         ),
         scored,
     )
+
+
+def _print_partition(declaration: SplitDeclaration, partition: Partition) -> None:
+    """Say which partition a number is from, every time one is printed."""
+    console.print(
+        f"dev/test split [bold]{declaration.sha256[:16]}...[/bold] "
+        f"({len(declaration.dev)} dev / {len(declaration.test)} test) -- measuring on "
+        f"[bold]{partition}[/bold]"
+    )
+    if partition == "dev":
+        console.print(
+            "[dim]dev is the tuning partition: look as often as you like, and never "
+            "quote it. The reported figure is `cascade report`, on test.[/dim]"
+        )
+    else:
+        console.print(
+            f"[yellow]{partition} includes held-out scenarios.[/yellow] A decision made "
+            "after looking at this number is a decision tuned on test."
+        )
 
 
 def _print_metrics(metrics: Any, *, title: str) -> None:
@@ -2816,7 +2919,7 @@ def _print_metrics(metrics: Any, *, title: str) -> None:
     )
     table.add_row("base rate", f"{metrics.base_rate:.4f}", "of the scored subset")
     table.add_row("mean forecast", f"{metrics.mean_p_hat:.4f}", "")
-    table.add_row("Brier", f"{metrics.brier:.6f}", "headline; lower is better")
+    table.add_row("Brier", f"{metrics.brier:.6f}", "lower is better")
     table.add_row(
         "BSS vs climatology",
         (
@@ -2863,30 +2966,46 @@ def eval_score(
     config_id: Annotated[
         str | None, typer.Option("--config-id", help="Which stored config to score.")
     ] = None,
+    partition: PartitionOpt = "dev",
 ) -> None:
     """Score one configuration's stored forecasts against the sealed labels.
 
     Runs as `cascade_eval` and asserts the frozen split first (§1.3). Exits 3
     when the configuration has no forecasts -- a Brier over nothing is not a
     small number, it is not a number.
+
+    Measures on **dev by default**. This is the command a tuning loop calls,
+    and the default of a command run fifty times a day must be the partition it
+    is safe to look at fifty times a day; the held-out figure takes an explicit
+    `--partition test`. A configuration that is not a declared study
+    configuration is refused on anything but dev (exit 3).
     """
+    from cascade.eval.split import require_declared_config
+
     settings = _settings(config)
     split = _frozen_split(settings)
+    declaration = _declared_split(settings, split)
     target = config_id or config or "C01"
-    metrics, scored = _metrics_for_config(settings, target, split)
+    chosen = _partition(partition)
+    _guard(lambda: require_declared_config(target, partition=chosen, declared=_declared_configs()))
+    metrics, scored = _metrics_for_config(
+        settings, target, split, declaration=declaration, partition=chosen
+    )
     if metrics is None:
         from cascade.eval.store import available_configs
 
         stored = ", ".join(f"{name} ({count})" for name, count in available_configs(settings))
         _fail(
-            f"no stored forecasts for config {target!r}; stored configs are: {stored or 'none'}",
+            f"no stored forecasts for config {target!r} on the {chosen} partition; "
+            f"stored configs are: {stored or 'none'}",
             EXIT_PRECONDITION,
         )
     console.print(
         f"frozen split [bold]{split.manifest_sha256[:16]}...[/bold] "
         f"({split.n_scenarios} scenarios, base rate {split.base_rate:.4f})"
     )
-    _print_metrics(metrics, title=f"Metrics -- {target} (spec §10.1)")
+    _print_partition(declaration, chosen)
+    _print_metrics(metrics, title=f"Metrics -- {target} on {chosen} (spec §10.1)")
     _print_calibration(scored)
     _print_domains(scored)
 
@@ -3345,8 +3464,31 @@ def eval_grid(
         list[str] | None, typer.Option("--cell", help="Restrict to these cell ids. Repeatable.")
     ] = None,
     limit: Annotated[int | None, typer.Option("--limit")] = None,
+    supplementary: Annotated[
+        bool,
+        typer.Option(
+            "--supplementary",
+            help="Also run the declared supplementary cells (S01...). Never run by default.",
+        ),
+    ] = False,
+    variants: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--variant",
+            help="Run a tuning variant from configs/tuning/ -- on dev scenarios only. Repeatable.",
+        ),
+    ] = None,
+    partition: PartitionOpt = "all",
 ) -> None:
     """Execute Appendix C's 12-cell grid and collapse each cell (spec §10.3).
+
+    `--supplementary` adds the cells declared in `cascade/eval/supplementary.py`.
+    They are not Appendix C's and are never run unless asked for. `--variant`
+    runs a tuning variant instead of the grid, and the dev/test guard applies:
+    a variant is simulated on dev scenarios and nothing else, so there is no
+    test-partition forecast of it to be tempted by. `--partition dev` restricts
+    any cell to dev the same way, which is how the headline configuration gets
+    dev forecasts to tune against before the study is run.
 
     Resumable in exactly the way the fan-out is: a run row exists only for a
     run that finished, so a re-run plans the difference. Cells are executed in
@@ -3361,17 +3503,30 @@ def eval_grid(
     from cascade.ensemble.aggregate import collapse
     from cascade.ensemble.runner import EnsembleRunner
     from cascade.ensemble.store import collapse_inputs, write_forecast
-    from cascade.eval.ablation import CELLS, cell_by_id, grid_replicates, grid_scenarios
+    from cascade.eval.ablation import grid_replicates
 
     base = _settings(config)
     split = _frozen_split(base)
+    declaration = _declared_split(base, split)
     if replicate_policy not in {"budget_capped", "design"}:
         _fail(
             f"unknown replicate policy {replicate_policy!r}; expected "
             "'budget_capped' or 'design'",
             EXIT_PRECONDITION,
         )
-    selected = [cell_by_id(cell_id) for cell_id in cells] if cells else list(CELLS)
+    chosen = _partition(partition)
+    if variants and chosen == "all":
+        # `all` is the option's default, not a request: a variant has exactly
+        # one legitimate partition, so asking for a variant is asking for dev.
+        chosen = "dev"
+    selected = _grid_cells(cells, supplementary=supplementary, variants=variants or [])
+    tuning = {cell.cell_id for cell in selected} - _declared_configs()
+    if tuning and chosen != "dev":
+        _fail(
+            f"{sorted(tuning)} are tuning variants and run on the dev partition only; "
+            f"--partition {chosen} was asked for",
+            EXIT_PRECONDITION,
+        )
 
     from cascade.ledger.store import load_scenarios
 
@@ -3410,16 +3565,16 @@ def eval_grid(
                 "no compiled graph",
             )
             continue
-        scenario_ids = list(
-            grid_scenarios(
-                pool,
-                cell=cell,
-                salt=split.study_salt,
-                cap=base.ensemble.ablation_scenarios,
-            )
+        scenario_ids = _cell_scenarios(
+            cell,
+            pool,
+            salt=split.study_salt,
+            cap=base.ensemble.ablation_scenarios,
+            declaration=declaration,
+            partition=chosen,
+            is_variant=cell.cell_id in tuning,
+            limit=limit,
         )
-        if limit is not None:
-            scenario_ids = scenario_ids[:limit]
 
         loom_for, on_complete, _ = _fanout_wiring(
             settings, policy=policy, scenario_ids=scenario_ids
@@ -3468,6 +3623,117 @@ def eval_grid(
     console.print(summary)
 
 
+def _cell_scenarios(
+    cell: CellSpec,
+    pool: Sequence[str],
+    *,
+    salt: str,
+    cap: int | None,
+    declaration: SplitDeclaration,
+    partition: Partition,
+    is_variant: bool,
+    limit: int | None,
+) -> list[str]:
+    """The scenarios one grid cell is about to simulate. Exits 3 on a leak.
+
+    A declared cell draws §10.3's subsample and is then *intersected* with the
+    requested partition -- never re-split, so a scenario's side does not depend
+    on which pool the cell drew from. A tuning variant skips the 90-scenario
+    cap, which is a property of the declared cells: applied to a variant it
+    would leave 16 of the 40 dev scenarios, and dev is already the small side.
+
+    The guard runs last, on the list that will actually be simulated, so no
+    later edit to the filters above it can let a held-out scenario through.
+    """
+    from cascade.eval.ablation import grid_scenarios
+    from cascade.eval.split import require_dev_only
+
+    scenario_ids = list(grid_scenarios(pool, cell=cell, salt=salt, cap=None if is_variant else cap))
+    if partition != "all":
+        keep = set(declaration.ids(partition))
+        scenario_ids = [scenario_id for scenario_id in scenario_ids if scenario_id in keep]
+    if limit is not None:
+        scenario_ids = scenario_ids[:limit]
+    if is_variant:
+        scenario_ids = list(
+            _guard(
+                lambda: require_dev_only(
+                    scenario_ids, declaration, what=f"tuning variant {cell.cell_id!r}"
+                )
+            )
+        )
+    return scenario_ids
+
+
+def _grid_cells(
+    cells: Sequence[str] | None, *, supplementary: bool, variants: Sequence[str]
+) -> list[CellSpec]:
+    """Which cells a grid invocation runs. Exits 3 on anything undeclared.
+
+    Three kinds, kept apart. Appendix C's twelve are the default. Supplementary
+    cells are declared in code and join only under `--supplementary`, so a
+    routine grid run neither pays for them nor reports them. A tuning variant
+    is whatever overlay sits in `configs/tuning/` -- built into a cell from its
+    own flags so it runs through the same driver -- and naming one replaces the
+    grid rather than adding to it: a tuning run is not a study run.
+    """
+    from cascade.config import overlay_kind
+    from cascade.eval.ablation import CELLS, CellSpec
+    from cascade.eval.supplementary import SUPPLEMENTARY_CELLS, supplementary_ids
+
+    if variants:
+        if cells or supplementary:
+            _fail(
+                "--variant runs tuning variants on dev and cannot be combined with "
+                "--cell or --supplementary; run the study cells separately",
+                EXIT_PRECONDITION,
+            )
+        built: list[CellSpec] = []
+        for name in sorted(set(variants)):
+            if name in _declared_configs() or overlay_kind(name) != "tuning":
+                _fail(
+                    f"{name!r} is not a tuning variant: expected configs/tuning/{name}.yaml "
+                    "and a name no declared configuration uses",
+                    EXIT_PRECONDITION,
+                )
+            variant = _settings(name)
+            built.append(
+                CellSpec(
+                    name,
+                    variant.flags.causal_decomposition,
+                    variant.flags.information_asymmetry,
+                    variant.flags.grounding,
+                    variant.ensemble.replicates,
+                    "Tuning variant -- dev partition only, never a result",
+                )
+            )
+        return built
+
+    known = {cell.cell_id: cell for cell in CELLS}
+    extra = {cell.cell_id: cell for cell in SUPPLEMENTARY_CELLS}
+    if not cells:
+        return [*CELLS, *(SUPPLEMENTARY_CELLS if supplementary else ())]
+    chosen: list[CellSpec] = []
+    for cell_id in cells:
+        if cell_id in known:
+            chosen.append(known[cell_id])
+        elif cell_id in extra and supplementary:
+            chosen.append(extra[cell_id])
+        elif cell_id in extra:
+            _fail(
+                f"{cell_id} is a supplementary cell, not one of Appendix C's twelve; "
+                "pass --supplementary to run it",
+                EXIT_PRECONDITION,
+            )
+        else:
+            _fail(
+                f"{cell_id!r} is not a cell; the grid is {sorted(known)} and the "
+                f"supplementary cells are {list(supplementary_ids())}",
+                EXIT_PRECONDITION,
+            )
+    return chosen
+
+
 def _completed_for(settings: Settings) -> Any:
     """Bind one cell's settings into its resume lookup.
 
@@ -3490,6 +3756,14 @@ def eval_significance(
     headline: Annotated[
         str, typer.Option("--headline", help="Configuration every other cell is compared against.")
     ] = "C01",
+    partition: PartitionOpt = "dev",
+    versus: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--versus",
+            help="A tuning variant to compare against the headline. Dev only. Repeatable.",
+        ),
+    ] = None,
 ) -> None:
     """Paired bootstrap CIs with Holm-Bonferroni adjustment (spec §10.4).
 
@@ -3497,16 +3771,33 @@ def eval_significance(
     the paired count is printed: the 11 capped cells run 90 scenarios against
     the headline's 180, so an unpaired comparison would silently compare two
     different sets.
+
+    Measures on dev by default, for the reason `eval score` does. Three Holm
+    families are adjusted separately and labelled: Appendix C's, the declared
+    supplementary comparisons, and -- under `--versus`, on dev only -- tuning
+    variants against the headline.
     """
     settings = _settings(config)
     split = _frozen_split(settings)
-    comparisons = _build_comparisons(settings, split, headline=headline)
+    declaration = _declared_split(settings, split)
+    chosen = _partition(partition)
+    comparisons = _build_comparisons(
+        settings,
+        split,
+        headline=headline,
+        declaration=declaration,
+        partition=chosen,
+        exploratory=versus or [],
+    )
     if not comparisons:
         _fail(
-            "no comparison had forecasts on both sides; run `cascade eval grid` first",
+            f"no comparison had forecasts on both sides on the {chosen} partition; "
+            "run `cascade eval grid` first",
             EXIT_PRECONDITION,
         )
-    table = Table(title="Ablation significance (spec §10.4)")
+    _print_partition(declaration, chosen)
+    table = Table(title=f"Significance on {chosen} (spec §10.4) -- Holm within each family")
+    table.add_column("family", style="magenta", overflow="fold")
     table.add_column("comparison", style="cyan", overflow="fold")
     table.add_column("A - B", justify="right")
     table.add_column("delta Brier", justify="right")
@@ -3516,6 +3807,7 @@ def eval_significance(
     table.add_column("Holm p*", justify="right")
     for item in comparisons:
         table.add_row(
+            item.family,
             item.name,
             f"{item.config_a} - {item.config_b}",
             f"{item.interval.point:+.6f}",
@@ -3532,58 +3824,206 @@ def eval_significance(
     )
 
 
-def _build_comparisons(settings: Settings, split: Any, *, headline: str = "C01") -> list[Any]:
-    """Pair every comparison in the family on the scenarios both sides scored.
+def _build_comparisons(
+    settings: Settings,
+    split: Any,
+    *,
+    headline: str = "C01",
+    declaration: SplitDeclaration,
+    partition: Partition,
+    exploratory: Sequence[str] = (),
+) -> list[Any]:
+    """Every reported comparison on one partition, Holm-adjusted per family.
 
-    Pairing is on the intersection, and the intersection size travels with the
-    result: the 11 capped cells run 90 scenarios against the headline's 180, so
-    a comparison that ignored the overlap would be comparing two different sets
-    and calling the difference an effect.
+    The arithmetic is `score.significance_families`; this loads what it needs
+    and nothing more. Only declared configurations are loaded on `test` and
+    `all`: a tuning variant's held-out forecasts are never joined to a label,
+    let alone compared, and asking for one off dev exits 3.
     """
-    from cascade.eval.ablation import comparison_family
-    from cascade.eval.metrics import brier
-    from cascade.eval.schema import Comparison
-    from cascade.eval.stats import adjust_family, bootstrap_seed, paired_bootstrap
+    from cascade.eval.score import significance_families
+    from cascade.eval.split import require_declared_config, select
     from cascade.eval.store import available_configs, scored_forecasts
 
-    cache: dict[str, dict[str, Any]] = {}
-
-    def load(config_id: str) -> dict[str, Any]:
-        if config_id not in cache:
-            cache[config_id] = {
-                item.scenario_id: item for item in scored_forecasts(settings, config_id=config_id)
-            }
-        return cache[config_id]
-
-    built: list[Any] = []
-    stored = [name for name, _ in available_configs(settings)]
-    for spec in comparison_family(available=stored, headline=headline):
-        left, right = load(spec.config_a), load(spec.config_b)
-        shared = sorted(set(left) & set(right))
-        if len(shared) < 2:
-            continue
-        pa = [left[key].p_hat for key in shared]
-        pb = [right[key].p_hat for key in shared]
-        outcomes = [left[key].outcome for key in shared]
-        interval = paired_bootstrap(
-            pa,
-            pb,
-            outcomes,
-            seed=bootstrap_seed(split.study_salt, spec.config_a, spec.config_b),
-            b_resamples=settings.ensemble.bootstrap_b,
+    declared = _declared_configs()
+    for name in sorted(set(exploratory)):
+        _guard(
+            lambda name=name: require_declared_config(name, partition=partition, declared=declared)
         )
-        built.append(
-            Comparison(
-                name=spec.name,
-                config_a=spec.config_a,
-                config_b=spec.config_b,
-                brier_a=brier(pa, outcomes),
-                brier_b=brier(pb, outcomes),
-                n_paired=len(shared),
-                interval=interval,
+        if name in declared:
+            _fail(
+                f"{name!r} is a declared study configuration and is already compared in its "
+                "own family; --versus is for a tuning variant",
+                EXIT_PRECONDITION,
+            )
+    wanted = declared | set(exploratory)
+    scored_by_config = {
+        name: _guard(
+            lambda name=name: select(
+                scored_forecasts(settings, config_id=name), declaration, partition
             )
         )
-    return list(adjust_family(built))
+        for name, _ in available_configs(settings)
+        if name in wanted
+    }
+    return list(
+        _guard(
+            lambda: significance_families(
+                scored_by_config,
+                headline=headline,
+                salt=split.study_salt,
+                b_resamples=settings.ensemble.bootstrap_b,
+                eligible=_appendix_c_configs(),
+                exploratory=tuple(sorted(set(exploratory))),
+                declaration=declaration,
+            )
+        )
+    )
+
+
+def _split_interactions(settings: Settings, split: Any, declaration: SplitDeclaration) -> Any:
+    """How the dev/test split overlaps the study's two other keyed subsets.
+
+    Computed from ids alone. The ablation subsample is the one a capped cell
+    draws from the whole registry; a cell whose pool is smaller (not every
+    scenario compiled) draws a different 90, and the report's paired counts --
+    which are measured, not predicted -- are what to trust then.
+    """
+    from cascade.eval.ablation import cell_by_id, grid_scenarios
+    from cascade.eval.score import recalibration_half
+    from cascade.eval.split import interactions
+
+    everyone = declaration.ids("all")
+    return interactions(
+        declaration,
+        ablation_subsample=grid_scenarios(
+            everyone,
+            cell=cell_by_id("C05"),
+            salt=split.study_salt,
+            cap=settings.ensemble.ablation_scenarios,
+        ),
+        recalibration_fit=[
+            scenario_id
+            for scenario_id in everyone
+            if recalibration_half(scenario_id, salt=split.study_salt) == "fit"
+        ],
+    )
+
+
+@eval_app.command("split")
+def eval_split(
+    config: OverlayOpt = None,
+    ids: Annotated[
+        str | None,
+        typer.Option("--ids", help="Also list one partition's scenario ids: dev or test."),
+    ] = None,
+) -> None:
+    """Print the declared dev/test split: sizes, domains, overlaps, fingerprint.
+
+    Reads scenario ids and domains, never a label. Exits 3 when the recomputed
+    split is not the pinned one -- the same check every measuring command makes,
+    so this is also how to find out *why* one of them refused.
+    """
+    settings = _settings(config)
+    split = _frozen_split(settings)
+    declaration = _declared_split(settings, split)
+
+    console.print(
+        f"dev/test split [bold]{declaration.sha256}[/bold]\n"
+        f"  purpose {declaration.purpose} · applies to manifest "
+        f"{split.manifest_sha256[:16]}... · pinned in configs/base.yaml (eval.split_sha256)"
+    )
+    table = Table(title=f"{len(declaration.dev)} dev / {len(declaration.test)} test, by domain")
+    table.add_column("domain", style="cyan")
+    table.add_column("n", justify="right")
+    table.add_column("dev", justify="right")
+    table.add_column("test", justify="right")
+    for row in declaration.domains:
+        table.add_row(row.domain, str(row.n), str(row.dev), str(row.test))
+    console.print(table)
+
+    overlap = Table(title="Overlap with the other keyed subsets")
+    overlap.add_column("partition", style="cyan")
+    overlap.add_column("n", justify="right")
+    overlap.add_column("in ablation subsample", justify="right")
+    overlap.add_column("recalibration fit / held", justify="right")
+    for item in _split_interactions(settings, split, declaration):
+        overlap.add_row(
+            item.partition,
+            str(item.n),
+            str(item.ablation_subsample),
+            f"{item.recalibration_fit} / {item.recalibration_held}",
+        )
+    console.print(overlap)
+    console.print(
+        "[dim]Tuning is only ever legitimate on dev. The report's headline is test.[/dim]"
+    )
+    if ids is not None:
+        if ids not in {"dev", "test"}:
+            _fail(f"--ids takes 'dev' or 'test', got {ids!r}", EXIT_PRECONDITION)
+        # One id per line through plain echo: this output is for scripts, and
+        # the rich console would wrap a long id at the terminal width.
+        for scenario_id in declaration.ids(ids):  # type: ignore[arg-type]
+            typer.echo(scenario_id)
+
+
+@eval_app.command("tune-guard")
+def eval_tune_guard(
+    config: OverlayOpt = None,
+    scenarios: Annotated[
+        list[str] | None,
+        typer.Option("--scenario", help="A scenario id a tuning step is about to use. Repeatable."),
+    ] = None,
+    config_ids: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--config-id",
+            help="A stored configuration: every scenario it holds a forecast for is checked.",
+        ),
+    ] = None,
+) -> None:
+    """Refuse (exit 3) any scenario set that touches the held-out partition.
+
+    The check a tuning script runs before it looks at anything. It exists as a
+    command so that tuning done outside this CLI -- a notebook, a sweep, a
+    shell loop -- has one line to call and an exit status to trust, instead of
+    re-implementing the split and getting the purpose string wrong.
+
+    `--config-id` checks a stored configuration by the scenarios it has
+    forecasts for. It reads ids only: asking whether a variant touched test is
+    not itself a look at test.
+    """
+    from cascade.eval.split import require_dev_only
+    from cascade.eval.store import forecast_scenarios
+
+    if not scenarios and not config_ids:
+        _fail("nothing to check: pass --scenario and/or --config-id", EXIT_PRECONDITION)
+    settings = _settings(config)
+    split = _frozen_split(settings)
+    declaration = _declared_split(settings, split)
+
+    checked = 0
+    if scenarios:
+        checked += len(
+            _guard(lambda: require_dev_only(scenarios, declaration, what="--scenario list"))
+        )
+    for name in sorted(set(config_ids or [])):
+        held = forecast_scenarios(settings, config_id=name)
+        if not held:
+            _fail(
+                f"config {name!r} holds no forecasts, so there is nothing to vouch for",
+                EXIT_PRECONDITION,
+            )
+        checked += len(
+            _guard(
+                lambda held=held, name=name: require_dev_only(
+                    held, declaration, what=f"config {name!r}"
+                )
+            )
+        )
+    console.print(
+        f"[bold green]dev only[/bold green]: {checked} scenario reference(s) checked against "
+        f"split {declaration.sha256[:16]}..., none held out"
+    )
 
 
 @eval_app.command("status")
@@ -3630,6 +4070,25 @@ def eval_status(config: OverlayOpt = None) -> None:
             cell.role,
         )
     console.print(cells)
+
+    from cascade.eval.supplementary import SUPPLEMENTARY_CELLS
+
+    extra = Table(
+        title="Supplementary cells (declared; own Holm family; `eval grid --supplementary`)"
+    )
+    extra.add_column("cell", style="cyan")
+    extra.add_column("forecasts", justify="right")
+    extra.add_column("role", overflow="fold")
+    for cell in SUPPLEMENTARY_CELLS:
+        extra.add_row(cell.cell_id, f"{stored.get(cell.cell_id, 0):,}", cell.role)
+    console.print(extra)
+
+    variants = sorted(set(stored) - _declared_configs())
+    if variants:
+        console.print(
+            f"{len(variants)} stored configuration(s) are tuning variants, scoreable on "
+            f"dev only: {', '.join(variants)}"
+        )
 
     baselines = Table(title="Baselines (spec §10.2)")
     baselines.add_column("baseline", style="cyan")
@@ -3730,6 +4189,7 @@ def eval_prompt_audit(
     subsystem: Annotated[str, typer.Option("--subsystem")] = "compiler",
     before: Annotated[float | None, typer.Option("--before")] = None,
     after: Annotated[float | None, typer.Option("--after")] = None,
+    partition: PartitionOpt = "dev",
 ) -> None:
     """Record §1.3's before/after Brier for a prompt revision.
 
@@ -3738,15 +4198,24 @@ def eval_prompt_audit(
     visible in the record rather than hidden." With no `--after`, the headline
     configuration's measured Brier is used -- the number the revision has to be
     judged against, taken from the measurement rather than typed in.
+
+    That number is the **dev** Brier by default. A prompt revision is a tuning
+    decision, and the figure a tuning decision is judged against has to be one
+    it was allowed to see: measuring the audit on all scenarios would make
+    running the audit the very look at test it exists to expose.
     """
     from cascade.eval.store import record_prompt_revision_brier
 
     settings = _settings(config)
     split = _frozen_split(settings)
+    declaration = _declared_split(settings, split)
+    chosen = _partition(partition)
     rev = prompt_rev or settings.llm.prompt_rev
     measured = after
     if measured is None:
-        metrics, _ = _metrics_for_config(settings, "C01", split)
+        metrics, _ = _metrics_for_config(
+            settings, "C01", split, declaration=declaration, partition=chosen
+        )
         measured = None if metrics is None else metrics.brier
     updated = record_prompt_revision_brier(
         settings,
@@ -3765,6 +4234,7 @@ def eval_prompt_audit(
         f"recorded prompt revision {rev!r}/{subsystem}: before="
         f"{'null' if before is None else f'{before:.6f}'}, after="
         f"{'null' if measured is None else f'{measured:.6f}'}"
+        + ("" if after is not None else f" (C01 on the {chosen} partition)")
     )
 
 
@@ -3860,8 +4330,16 @@ def report(
     out: Annotated[
         str | None, typer.Option("--out", help="Report root; default paths.reports.")
     ] = None,
+    partition: PartitionOpt = "test",
 ) -> None:
     """Write `reports/study_{ts}/` from whatever has been measured (Appendix D).
+
+    **The headline is the test partition.** Every figure in the report --
+    metrics, calibration, domains, deltas, dispersion, evidence tiers -- is
+    measured on the held-out scenarios alone; the all-scenario figure is
+    printed beside the headline, labelled as not being it. `--partition dev`
+    writes a tuning report, which says on its face that it is one. Stored
+    configurations that were never declared are not scored off dev.
 
     Writes what exists and names what does not. A quantity that could not be
     produced appears as null in the JSON and in a "Not produced" section in
@@ -3883,25 +4361,54 @@ def report(
         grid_replicates,
         missing_cells,
     )
-    from cascade.eval.baselines import BASELINES
+    from cascade.eval.baselines import BASELINES, DIRECT_CONFIG_ID
+    from cascade.eval.evidence import EVIDENCE_WINDOW_DAYS, evidence_finding
     from cascade.eval.report import StudyArtifact, git_sha, report_id, write_report
     from cascade.eval.schema import AblationCell
-    from cascade.eval.score import calibration_of, dispersion_finding, domains_of
+    from cascade.eval.score import (
+        calibration_of,
+        dispersion_finding,
+        domains_of,
+        headline_by_partition,
+    )
     from cascade.eval.stats import bootstrap_seed
-    from cascade.eval.store import available_configs, write_study_report
+    from cascade.eval.store import (
+        available_configs,
+        evidence_counts,
+        scored_forecasts,
+        write_study_report,
+    )
+    from cascade.eval.supplementary import supplementary_family
 
     settings = _settings(config)
     split = _frozen_split(settings)
+    declaration = _declared_split(settings, split)
+    chosen = _partition(partition)
     stored = dict(available_configs(settings))
     now = datetime.now(UTC)
     identifier = report_id(now=now)
     blocked: list[str] = []
 
     # -- per-config metrics -------------------------------------------------
+    # A configuration nobody declared is a tuning variant. Off dev it is not
+    # scored at all: its held-out forecasts are never joined to a label, so a
+    # report cannot become the place variants get compared on test.
+    declared = _declared_configs()
+    withheld = sorted(name for name in stored if name not in declared) if chosen != "dev" else []
+    direct_rows = scored_forecasts(settings, config_id=DIRECT_CONFIG_ID)
     metrics: list[MetricSet] = []
     scored_by_config: dict[str, tuple[ScoredForecast, ...]] = {}
     for config_id in sorted(stored):
-        measured, scored = _metrics_for_config(settings, config_id, split)
+        if config_id in withheld:
+            continue
+        measured, scored = _metrics_for_config(
+            settings,
+            config_id,
+            split,
+            declaration=declaration,
+            partition=chosen,
+            direct=direct_rows,
+        )
         if measured is not None:
             metrics.append(measured)
             scored_by_config[config_id] = scored
@@ -3911,9 +4418,25 @@ def report(
     if head_metrics is None:
         blocked.append(
             f"Headline Brier, skill scores, calibration and per-domain table: the "
-            f"headline configuration {headline!r} has no stored forecasts. Run "
-            "`cascade compile build`, `cascade simulate all` and "
-            "`cascade ensemble collapse`."
+            f"headline configuration {headline!r} has no stored forecasts on the "
+            f"{chosen} partition. Run `cascade compile build`, `cascade simulate all` "
+            "and `cascade ensemble collapse`."
+        )
+
+    # The headline configuration on every partition, so the all-scenario figure
+    # sits beside the headline with a label on it. Only for a declared
+    # headline: a variant has no business being measured off dev even here.
+    headline_partitions: tuple[tuple[Partition, MetricSet | None], ...] = ()
+    if headline in declared and headline in stored:
+        headline_partitions = _guard(
+            lambda: headline_by_partition(
+                scored_forecasts(settings, config_id=headline),
+                declaration,
+                config_id=headline,
+                base_rate=split.base_rate,
+                direct=() if headline == DIRECT_CONFIG_ID else direct_rows,
+                salt=split.study_salt,
+            )
         )
 
     # -- the twelve cells ---------------------------------------------------
@@ -3966,10 +4489,17 @@ def report(
             blocked.append(f"Baseline {spec.name!r} ({spec.config_id}): no stored forecasts.")
 
     # -- significance -------------------------------------------------------
-    comparisons = _build_comparisons(settings, split, headline=headline)
+    comparisons = _build_comparisons(
+        settings, split, headline=headline, declaration=declaration, partition=chosen
+    )
     readings = {
         spec.name: spec.reading
-        for spec in comparison_family(available=sorted(stored), headline=headline)
+        for spec in (
+            *comparison_family(
+                available=sorted(stored), headline=headline, eligible=_appendix_c_configs()
+            ),
+            *supplementary_family(available=sorted(stored), headline=headline),
+        )
     }
     if not comparisons:
         blocked.append(
@@ -3998,6 +4528,19 @@ def report(
             "Convergence curve (§9.3): no scenario has enough replicates to reach "
             "the first rung."
         )
+
+    # -- accuracy by evidence quality (declared in advance) ------------------
+    evidence = None
+    if head_scored:
+        try:
+            counts = evidence_counts(settings, window_days=EVIDENCE_WINDOW_DAYS)
+            evidence = evidence_finding(
+                head_scored,
+                counts,
+                seed=bootstrap_seed(split.study_salt, "evidence", headline),
+            )
+        except Exception as exc:  # noqa: BLE001 -- a missing table is reported, never fatal
+            blocked.append(f"Accuracy by evidence tier: {type(exc).__name__}: {exc}")
 
     # -- per-scenario CSV rows ----------------------------------------------
     baseline_ids = {spec.config_id for spec in BASELINES}
@@ -4046,6 +4589,12 @@ def report(
         leakage=_leakage_snapshot(settings),
         cost_ledger=_cost_snapshot(settings),
         blocked=tuple(blocked),
+        split=declaration,
+        partition=chosen,
+        headline_partitions=headline_partitions,
+        split_interactions=_split_interactions(settings, split, declaration),
+        evidence=evidence,
+        withheld_configs=tuple(withheld),
     )
 
     root = Path(out) if out else repo_root() / settings.paths.reports
@@ -4060,13 +4609,15 @@ def report(
         headline_brier=None if head_metrics is None else head_metrics.brier,
         notes=(
             f"{len(CELLS) - len(absent)}/{len(CELLS)} cells scored; "
-            f"{len(blocked)} quantities not produced"
+            f"{len(blocked)} quantities not produced; headline_brier is the {chosen} "
+            f"partition of split {declaration.sha256[:16]}"
         ),
     )
 
     console.print(f"report written to [bold]{directory}[/bold]")
+    _print_partition(declaration, chosen)
     if head_metrics is not None:
-        _print_metrics(head_metrics, title=f"Headline -- {headline}")
+        _print_metrics(head_metrics, title=f"Headline -- {headline} on {chosen}")
     if blocked:
         console.print(f"[yellow]{len(blocked)} quantity/quantities not produced:[/yellow]")
         for message in blocked:
@@ -4535,6 +5086,13 @@ def main() -> int:
         return EXIT_PRECONDITION
     except ProviderNotReady as exc:
         err_console.print(f"[bold red]model provider not ready[/bold red] {exc}")
+        return EXIT_PRECONDITION
+    except SplitError as exc:
+        # The dev/test guard. A refusal to touch a held-out scenario, or to run
+        # against a split that is not the declared one, is a precondition
+        # failure wherever it is raised from -- including from a tuning path
+        # that did not think to catch it.
+        err_console.print(f"[bold red]dev/test split[/bold red] {exc}")
         return EXIT_PRECONDITION
     except KeyboardInterrupt:  # pragma: no cover
         err_console.print("[yellow]interrupted[/yellow]")

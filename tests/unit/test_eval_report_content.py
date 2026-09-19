@@ -94,8 +94,11 @@ class TestTheDeltasAreReadCorrectly:
         artifact = _artifact(comparisons=(_comparison("LOO information asymmetry", 0.02),))
         directory = write_report(artifact, root=tmp_path)
         headline = (directory / "headline.md").read_text()
-        assert "| Comparison | n paired |" in headline
-        assert "| LOO information asymmetry | 90 |" in headline
+        assert "| Comparison | delta Brier | 95% CI | n paired |" in headline
+        row = next(
+            line for line in headline.splitlines() if "| LOO information asymmetry |" in line
+        )
+        assert row.split("|")[4].strip() == "90"
 
     def test_every_comparison_carries_its_reading(self, tmp_path: Path) -> None:
         readings = {spec.name: spec.reading for spec in headline_comparisons()}

@@ -51,6 +51,9 @@ REPORT_PATH_MODULES = (
     # Decides which market prices are scored, so it is on the path to a
     # reported Brier like everything above.
     "cascade/eval/market.py",
+    "cascade/eval/split.py",
+    "cascade/eval/evidence.py",
+    "cascade/eval/supplementary.py",
 )
 
 
