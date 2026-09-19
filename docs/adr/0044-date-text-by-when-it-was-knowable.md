@@ -85,5 +85,19 @@ meant.
   and the leakage probe `tests/leakage/test_update_stamps.py`: only update
   stamps count, never a future date in prose, which is scheduled-event evidence.
   Measured before the repair: **381 chunks** carried a stamp later than their
-  date (the largest gap 1,383 days); among the 1,147 stamp-bearing chunks of the
-  first re-dated file, none did.
+  date (the largest gap 1,383 days). After it: **4**, and all four are stamps
+  later than the moment the page was fetched — publisher typos ("Published
+  Dec 31, 2025" on a page fetched 2025-01-01) that the fetched text cannot
+  have. Where the fetch time is known it bounds every real stamp, and the probe
+  says so.
+
+## The repair, measured (2026-09-19)
+
+All 29 finished files re-read. Of the **204,355** CC-NEWS documents they hold,
+**200,122 moved to their fetch time** (median move 1.5 hours). **11,237 (5.5%)
+had been fetched more than 180 days after the date they state**, 14,124 more
+than 30 days, 26,247 more than a day. 5,000 documents (29,878 chunks) from
+interrupted units matched no finished file and were deleted; their units
+re-fetch them under the new rule. Common
+Crawl answered HTTP 503 intermittently throughout; the pass resumed from its
+per-file records each time.
