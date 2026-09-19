@@ -296,10 +296,12 @@ class TestModeIsAMechanism:
         assert calls.count("retrieve") == 4, calls
         assert "search" not in calls and "search_hybrid" not in calls, calls
 
-    def test_the_shipped_default_is_vector(self) -> None:
-        """Hybrid is unmeasured on the real corpus; it must be switched on, not
-        discovered to be on."""
-        assert Settings().retrieval.mode == "vector"
+    def test_the_shipped_mode_is_the_one_that_was_measured(self) -> None:
+        """`hybrid` since 2026-09-19, set on `bench --relevance` over the
+        rebuilt corpus and before anything was compiled (ADR-0040). The value
+        decides what every prompt in the study contains, so it is asserted
+        here rather than left to whoever last edited the config."""
+        assert Settings().retrieval.mode == "hybrid"
 
 
 # ---------------------------------------------------------------------------

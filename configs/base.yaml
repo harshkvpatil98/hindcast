@@ -125,10 +125,19 @@ retrieval:
   # -- Hybrid retrieval (M14, migration 018) ---------------------------------
   # `vector` ranks by embedding distance alone. `hybrid` adds a time-locked
   # keyword pool, fuses the two with a recency ranking, and suppresses
-  # near-duplicates. `vector` stays the default until `cascade retrieval bench
-  # --relevance` has been read: retrieved evidence is part of every agent
-  # prompt, so changing this invalidates recorded decisions and compiled graphs.
-  mode: vector
+  # near-duplicates. Retrieved evidence is part of every agent prompt, so
+  # changing this invalidates recorded decisions and compiled graphs -- which
+  # is why it was changed *before* anything was compiled.
+  #
+  # Set to `hybrid` on 2026-09-19 by the project owner, on `cascade retrieval
+  # bench --relevance` over the rebuilt corpus: chunks naming a registry party
+  # 0.5508 -> 0.6452 for the compiler and 0.7676 -> 0.8257 for the baselines,
+  # median evidence age 183 -> 139 and 141 -> 70 days, distinct documents
+  # 42.9 -> 49.4 and 4.55 -> 4.86, every paired interval excluding zero; the
+  # cost is a looser semantic match (mean embedding distance +0.023). Those
+  # are label-free properties of what retrieval returns, not evidence about
+  # forecast accuracy (ADR-0040).
+  mode: hybrid
   # Literals in migration 018, mirrored here and asserted equal statically.
   # Each entity term contributes at most this many of its most recent matches
   # to the keyword pool; the cap bounds how many bodies are re-parsed for

@@ -1,8 +1,8 @@
 # ADR-0040 — Hybrid retrieval: keyword and vector pools, fused by rank, with recency and story diversity
 
-- **Status:** accepted as a mechanism; **`retrieval.mode` stays `vector`**
-  until `cascade retrieval bench --relevance` has been run on the rebuilt
-  corpus and the owner has seen it (2026-09-19)
+- **Status:** accepted, and **`retrieval.mode: hybrid`** — set by the project
+  owner on 2026-09-19 on the measured bench below, before anything was
+  compiled, so no recorded decision or graph was invalidated
 - **Milestone:** M14 (an M3 mechanism)
 
 ## Context
