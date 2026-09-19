@@ -15,7 +15,16 @@ modules/bench    ECR, ECS/Fargate task, artifacts bucket, least-privilege roles
 modules/governance  budget derived from configs/base.yaml, anomaly detection, alerts
 modules/guardrails  service control policies; attached to nothing until targets are named
 modules/eventlake   Object-Locked event log, Glue catalog, Athena workgroup, writer/analyst roles
+modules/recovery    tier-0 recovery bucket: locked, replicated cross-region, closed to the simulation
+modules/audit       CloudTrail (locked bucket, data events for the lake and recovery buckets), GuardDuty, Config
+modules/cicd        GitHub OIDC roles: read-only plan from pull requests, apply from a reviewed environment
 ```
+
+**Destroying the platform root:** the Config bucket denies `s3:DeleteObjectVersion`
+to every principal, and the trail, lake and recovery buckets are under Object
+Lock. `terraform destroy` cannot empty them; that is the point. Remove the
+Config bucket's policy and wait out (or, under GOVERNANCE, explicitly bypass)
+the retention before deleting them by hand.
 
 ## What is verified, and what is not
 

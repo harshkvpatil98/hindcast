@@ -68,6 +68,11 @@ locals {
 }
 
 data "aws_iam_policy_document" "key" {
+  # CloudTrail and CloudWatch Logs must be able to use this key for the audit
+  # trail. The statements come from the module that knows what it needs, so the
+  # key policy cannot fall out of step with the trail it serves.
+  source_policy_documents = [module.audit.required_key_policy_statements_json]
+
   #checkov:skip=CKV_AWS_111:A KMS key policy's "kms:*" for the account root is AWS's default key policy: it delegates to IAM, and Resource "*" in a key policy means this key only.
   #checkov:skip=CKV_AWS_356:Resource "*" in a key policy refers to the key itself, not to all resources.
   #checkov:skip=CKV_AWS_109:As above -- the account-root statement is the standard delegation to IAM.
@@ -132,6 +137,19 @@ module "recovery" {
   bucket_suffix             = local.account
   kms_key_arn               = aws_kms_key.platform.arn
   simulation_principal_arns = var.simulation_principal_arns
+}
+
+module "audit" {
+  source        = "../../modules/audit"
+  name          = var.name
+  bucket_suffix = "${local.account}-${var.region}"
+  kms_key_arn   = aws_kms_key.platform.arn
+  # The lake and the recovery bucket deliberately have no S3 access logging:
+  # these data events, written to a locked trail, are their access record.
+  data_event_bucket_arns = [
+    "arn:${data.aws_partition.current.partition}:s3:::${module.eventlake.events_bucket}",
+    "arn:${data.aws_partition.current.partition}:s3:::${module.recovery.bucket}",
+  ]
 }
 
 module "guardrails" {
