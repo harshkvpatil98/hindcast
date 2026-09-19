@@ -259,6 +259,7 @@ class TestTheSplitIsStated:
         assert "**40 dev**" in section and f"**{n_test} test**" in section
         assert f"**{len(EXCLUDED)} of the 180 sealed scenarios" in section
         assert "placeholder" in section and "ADR-0043" in section
+        assert "per-domain breakdown indicative only" in section
         assert "declared before any" in section and "forecast existed" in section
         assert artifact.split is not None and artifact.split.sha256 in section
         assert f"Applies to scenario manifest: `{'a' * 64}`" in section

@@ -379,7 +379,7 @@ def _headline_markdown(artifact: StudyArtifact) -> str:
         "| `baselines.csv` | the §10.2 baselines and the market at the cutoff, per scenario |",
         "| `ablation_grid.csv` | the twelve Appendix C cells, per scenario |",
         "| `calibration.csv` | 10 bins: count, mean_pred, obs_freq, Wilson bounds |",
-        "| `per_domain.csv` | Brier by domain with counts |",
+        "| `per_domain.csv` | Brier by domain with counts (sealed labels; see ADR-0043) |",
         "| `per_evidence_tier.csv` | Brier by evidence tier with counts |",
         "| `significance.json` | paired bootstrap CIs, Holm-adjusted p-values |",
         "| `leakage_report.json` | poison-pill hits and memorisation scores |",
@@ -492,6 +492,12 @@ def _split_section(artifact: StudyArtifact) -> list[str]:
             "question's wording alone, was fixed before any forecast existed, and the "
             "excluded ids are part of the pinned fingerprint below (ADR-0043). The sealed "
             "registry and its manifest are unchanged.",
+            "",
+            "Kept as sealed, and so to be read with care: the domain labels were "
+            "keyword-matched over each question *and* its resolution boilerplate, so "
+            "some are wrong -- the `health` label in particular was assigned on the "
+            'pronoun "who" -- which loosens the 25% domain cap and makes the '
+            "per-domain breakdown indicative only. ADR-0043 lists both kept defects.",
             "",
         ]
     lines += [
