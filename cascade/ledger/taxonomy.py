@@ -557,7 +557,10 @@ _DOMAIN_PATTERNS: tuple[tuple[Domain, re.Pattern[str]], ...] = (
         re.compile(
             r"\b(?:war|ceasefire|truce|invade|invasion|missile|troops|"
             r"military|air ?strike|nuclear test|hostage|armistice|peace deal|"
-            r"occupation)\b",
+            r"occupation)\b"
+            # "Iran strike on Israel" is an attack, not a walkout: checked here,
+            # before `labor`, which would otherwise take it on "strike".
+            r"|\bstrikes? (?:on|against)\b|\battacks? (?:on|against)\b",
             re.IGNORECASE,
         ),
     ),

@@ -487,3 +487,8 @@ def test_who_is_the_organisation_only_in_capitals(text: str, expected: str) -> N
 def test_a_player_prop_is_a_single_quantity() -> None:
     assert is_single_quantity("Max Christie: Points O/U 16.5")
     assert is_single_quantity("Will the over/under on total goals be hit?")
+
+
+def test_a_military_strike_is_not_a_labour_dispute() -> None:
+    assert classify_domain("Iran Strike on Israel by February 28?") == "conflict"
+    assert classify_domain("Will the dockworkers' union strike in October?") == "labor"
