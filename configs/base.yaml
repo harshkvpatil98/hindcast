@@ -234,6 +234,19 @@ corpus: # evidence corpus (spec §3.2)
   # corpus this study has measured (1,950,912 chunks, ~6.6 GB with indexes). A
   # ceiling on work, not a result -- `corpus coverage` still judges the corpus.
   max_chunks: 2000000
+  # CC-NEWS file choice (ADR-0036): files nearest each scenario's cutoff first.
+  # A floor phase takes the file that gives the most scenarios their first
+  # evidence from the final `anchor_floor_days`, while one file still rescues
+  # `anchor_floor_min_rescued` of them; the rest of the budget maximises
+  # closeness, a file's worth halving every `anchor_half_life_days`. Chosen from
+  # how evidence is distributed over scenarios -- never from an outcome -- and
+  # not to be tuned against a forecast (§1). `sweep` is ADR-0023's old queue.
+  ccnews_planning: anchored
+  anchor_half_life_days: 14
+  anchor_floor_days: 30
+  anchor_floor_min_rescued: 2
+  anchor_equity: 2.0
+  anchor_plan_files: 60
   # ...and below this much free disk. See CorpusConfig for the incident.
   min_free_disk_gb: 8
   # SEC EDGAR returns 403 unless the User-Agent carries a contact address in
@@ -264,16 +277,14 @@ corpus: # evidence corpus (spec §3.2)
   # tests/unit/test_corpus_pipeline_parallel.py), so this is a speed setting
   # and nothing else.
   #
-  # What it buys end to end is NOT measured: it shipped while the production
-  # ingest held the GPU, and the embedding stage could not be run beside it.
-  # Measured without the model, the tokenizer already spreads one batched call
-  # over several cores, so the gain to expect is the overlap with embedding
-  # rather than the thread count. 4 is therefore a judgement, not a tuned
-  # value: enough threads that chunking should stay the shorter of the two
-  # overlapped stages, few enough to leave cores for fetch_workers, Postgres
-  # and the thread feeding the GPU, which needs the GIL these threads share.
-  # A/B one CC-NEWS unit against `chunk_workers: 1` before trusting it.
-  chunk_workers: 4
+  # Threads that chunk one write batch ahead of the embedder. 1 is the serial
+  # loop. Measured on two real CC-NEWS units (M12, 16 GB Apple Silicon, MPS):
+  # serial 55.9 chunks/s, 4 workers 52.5 -- no gain, inside the unit-to-unit
+  # spread (48.8 +/- 4.0 over 13 units). The Rust tokenizer already spreads a
+  # batched call over ~3 cores, so extra threads mostly contend with it. The
+  # knob stays for hardware where the GPU stage dominates; the default is what
+  # was measured to be no worse.
+  chunk_workers: 1
   # A CC-NEWS unit is one WARC file (ADR-0023); this is how many files per
   # month the queue generates, i.e. the maximum depth a month can reach. The
   # queue sweeps depth-major, so raising it adds a later pass rather than

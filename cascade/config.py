@@ -380,6 +380,18 @@ class CorpusConfig(_Model):
     # a ceiling on *work*, not a result: coverage is still judged by
     # `corpus coverage`, and raising this and re-running resumes where it left.
     max_chunks: int
+    # How CC-NEWS files are chosen (ADR-0036). `anchored` picks files by their
+    # crawl time relative to each scenario's cutoff; `sweep` is ADR-0023's
+    # month-by-month queue, kept because it needs no listings and is what
+    # every corpus before M12 was built with.
+    ccnews_planning: Literal["sweep", "anchored"]
+    anchor_half_life_days: float = Field(gt=0)
+    anchor_floor_days: float = Field(gt=0)
+    anchor_floor_min_rescued: int = Field(ge=1)
+    anchor_equity: float = Field(ge=1.0)
+    # Files planned per run. The chunk ceiling normally stops a run first; this
+    # bounds the plan, since file sizes vary two-fold and cannot be known ahead.
+    anchor_plan_files: int = Field(ge=0)
     # Stop starting new units below this much free space on the volume holding
     # the repository (with Docker Desktop, the same disk the database grows
     # on). Null disables the check, for a remote database.

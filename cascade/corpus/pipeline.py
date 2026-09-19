@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import shutil
 from collections import deque
-from collections.abc import Callable, Generator, Iterator, Sequence
+from collections.abc import Callable, Generator, Iterable, Iterator, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from contextlib import closing
 from dataclasses import dataclass, field
@@ -28,6 +28,7 @@ from datetime import datetime
 from functools import partial
 
 from cascade.config import Settings, repo_root
+from cascade.corpus.anchored import CrawlFile, parse_listing, plan_anchored
 from cascade.corpus.chunker import chunk_text
 from cascade.corpus.coverage import demand_profile, order_units
 from cascade.corpus.embed import Embedder
@@ -304,6 +305,49 @@ def _unit_loader(
     return concurrent, max(1, corpus.fetch_workers)
 
 
+def _listing_months(cutoffs: Sequence[datetime], done: Iterable[str]) -> list[str]:
+    """Months whose listings the anchored planner needs. Pure.
+
+    Each cutoff's own month and the two before it -- beyond that a file is worth
+    under 2% at a 14-day half-life -- plus every month already ingested, so what
+    is held counts as evidence.
+    """
+    months = {unit.split("#")[0] for unit in done}
+    for cutoff in cutoffs:
+        year, month = cutoff.year, cutoff.month
+        for _ in range(3):
+            if (year, month) >= (ccnews.FIRST_YEAR, ccnews.FIRST_MONTH):
+                months.add(f"{year:04d}/{month:02d}")
+            year, month = (year, month - 1) if month > 1 else (year - 1, 12)
+    return sorted(months)
+
+
+def _anchored_units(settings: Settings, fetcher: Fetcher, done: Iterable[str]) -> list[str]:
+    """The cutoff-anchored CC-NEWS plan, already in ingest order (ADR-0036).
+
+    A listing that cannot be fetched raises: planning around a month nobody
+    could list would silently drop the scenarios that month serves, and the run
+    is resumable, so failing loudly costs a retry and nothing else.
+    """
+    corpus = settings.corpus
+    held = sorted(set(done))
+    cutoffs = _scenario_cutoffs(settings)
+    listings: dict[str, list[CrawlFile]] = {}
+    for month in _listing_months(cutoffs, held):
+        listings[month] = parse_listing(month, ccnews.month_paths(fetcher, unit_key=month))
+    return plan_anchored(
+        cutoffs,
+        listings,
+        done=held,
+        max_files=corpus.anchor_plan_files,
+        half_life_days=corpus.anchor_half_life_days,
+        lookback_days=corpus.coverage_lookback_months * 30.5,
+        floor_days=corpus.anchor_floor_days,
+        floor_min_rescued=corpus.anchor_floor_min_rescued,
+        equity=corpus.anchor_equity,
+    )
+
+
 def _free_disk_gb() -> float:
     """Free space on the volume holding the repository, in GB."""
     return shutil.disk_usage(repo_root()).free / 1_000_000_000
@@ -497,7 +541,17 @@ def run_ingest(
                 }
             pending = [unit for unit in units if unit not in done]
             source_report.units_skipped = len(units) - len(pending)
-            pending = [plan.unit_key for plan in order_units(pending, demand=demand)]
+            if source == "ccnews" and corpus.ccnews_planning == "anchored":
+                # The plan is already ordered, and already excludes what is
+                # held; the swept unit list above is kept only for the skipped
+                # count. A listing failure is reported like any source failure.
+                try:
+                    pending = _anchored_units(settings, fetchers["ccnews"], done)
+                except Exception as exc:  # noqa: BLE001 -- reported per source, never fatal
+                    source_report.detail = f"{type(exc).__name__}: {exc}"[:200]
+                    continue
+            else:
+                pending = [plan.unit_key for plan in order_units(pending, demand=demand)]
             if max_units_per_source is not None:
                 pending = pending[:max_units_per_source]
 

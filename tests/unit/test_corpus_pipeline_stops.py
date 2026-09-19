@@ -182,3 +182,75 @@ def test_a_ceiling_below_the_target_is_refused_at_load(settings: Settings) -> No
 
     with pytest.raises(ValidationError, match="could ever pass"):
         CorpusConfig(**{**settings.corpus.model_dump(), "max_chunks": 1_000})
+
+
+# ---------------------------------------------------------------------------
+# Anchored planning in the loop (ADR-0036)
+# ---------------------------------------------------------------------------
+
+
+def test_ccnews_is_ingested_in_the_anchored_plans_order_not_the_sweeps(
+    settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    plan = ["2026/03#339", "2026/04#194", "2024/07#171"]
+    harness = Harness(monkeypatch, units=["2026/03#0", "2026/03#1"])
+    monkeypatch.setattr(pipeline, "_anchored_units", lambda settings, fetcher, done: list(plan))
+    report = pipeline.run_ingest(
+        with_corpus(settings, ccnews_planning="anchored"),
+        now=NOW,
+        sources=("ccnews",),
+        embedder=FakeEmbedder(),  # type: ignore[arg-type]
+        free_disk_gb=lambda: 500.0,
+    )
+    assert report.stopped is None
+    assert harness.loaded == plan, "files are fetched in plan order, by their listing index"
+
+
+def test_sweep_planning_is_still_available_and_never_asks_for_listings(
+    settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    harness = Harness(monkeypatch, units=["2026/03#0", "2026/03#1"])
+
+    def must_not_be_called(*args: object) -> list[str]:
+        raise AssertionError("the sweep needs no listings")
+
+    monkeypatch.setattr(pipeline, "_anchored_units", must_not_be_called)
+    pipeline.run_ingest(
+        with_corpus(settings, ccnews_planning="sweep"),
+        now=NOW,
+        sources=("ccnews",),
+        embedder=FakeEmbedder(),  # type: ignore[arg-type]
+        free_disk_gb=lambda: 500.0,
+    )
+    assert sorted(harness.loaded) == ["2026/03#0", "2026/03#1"]
+
+
+def test_a_listing_that_cannot_be_fetched_fails_the_source_loudly(
+    settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    harness = Harness(monkeypatch, units=["2026/03#0"])
+
+    def unreachable(*args: object) -> list[str]:
+        raise ConnectionError("data.commoncrawl.org unreachable")
+
+    monkeypatch.setattr(pipeline, "_anchored_units", unreachable)
+    report = pipeline.run_ingest(
+        with_corpus(settings, ccnews_planning="anchored"),
+        now=NOW,
+        sources=("ccnews",),
+        embedder=FakeEmbedder(),  # type: ignore[arg-type]
+        free_disk_gb=lambda: 500.0,
+    )
+    assert "ConnectionError" in report.sources[0].detail
+    assert harness.loaded == [], "nothing is ingested around a month nobody could list"
+
+
+def test_the_listing_months_are_each_cutoffs_last_three_plus_what_is_held() -> None:
+    from datetime import UTC, datetime
+
+    months = pipeline._listing_months(
+        [datetime(2026, 1, 15, tzinfo=UTC), datetime(2016, 9, 2, tzinfo=UTC)],
+        ["2025/08#0"],
+    )
+    # 2016/07 predates the collection (it starts 2016/08) and is not requested.
+    assert months == ["2016/08", "2016/09", "2025/08", "2025/11", "2025/12", "2026/01"]
