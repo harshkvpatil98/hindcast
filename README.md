@@ -64,25 +64,35 @@ compiling needs the corpus, which is not rebuilt on this machine. See
 | Backtest scenarios | **180**, YES rate **0.5000**, no domain above **25.0%** | M1 |
 | Frozen split | sealed at `91ccd314…` (re-fetched 2026-09-18, see below), re-hashed and asserted before any label is read | M1 / M10 |
 | Climatology floor | Brier **0.250000** over the sealed set | M1 |
-| Evidence corpus | **1,950,912** chunks across **492,270** documents, 0 NULL/future dates, 100% embedding coverage | M2 |
-| Evidence coverage | every scenario covered at its own cutoff; median **67,590** admissible chunks in an 18-month window, median staleness **1 day** | M2 |
-| Retrieval recall@20 | **0.9675** vs exhaustive search (criterion > 0.92) | M3 / M8 |
+| Evidence corpus | **1,998,127** chunks across **317,780** documents (ccnews 1,985,516 / wikipedia 12,611), 0 NULL/future dates, 100% embedding coverage | M2 / M14 |
+| Evidence coverage | **180/180** covered at their own cutoffs; median **1,236,969** admissible chunks in an 18-month window, minimum 327; newest evidence within a day of the cutoff for **155 of the 165 scored** scenarios, none over 30 days stale | M2 / M14 |
+| Retrieval recall@20 | **0.9675** vs exhaustive search (criterion > 0.92), measured on the previous 1.95M-chunk corpus under vector-only retrieval | M3 / M8 |
+| Retrieval relevance | hybrid over vector, 180 scenarios, paired bootstrap, every interval excluding zero: chunks naming a registry party **0.5508 → 0.6452** (compiler) and **0.7676 → 0.8257** (baselines); median evidence age **183 → 139** and **141 → 70** days | M14 |
+| Market at the cutoff | **143** usable prices of 180 (6 stale, 21 without history, 9 not markets, 1 market created after its own cutoff) — excluded and counted, never imputed | M14 |
+| Dated-text leaks found | Wikipedia renders and CC-NEWS re-crawls both carried post-cutoff text under pre-cutoff dates; **200,122** documents re-dated to their fetch time, **11,237** of them fetched over 180 days after the date they state; the update-stamp scan went **381 → 4** flagged chunks (all four publisher typos) | M14 |
 | Retrieval p95 | **90.92 ms** over 10,000 queries (criterion < 15 ms — **not met**, see [Limitations](#limitations)) | M3 / M8 |
 | Poison-pill leakage | **0 of 500** planted post-cutoff documents retrieved, across all 180 cutoffs | M3 |
 | Arbiter properties | bounded, conserving, permutation-invariant, monotone — all pass under Hypothesis | M5 |
 | Replay determinism | **25/25** runs byte-identical across processes, 24.3 s; re-measured **25/25 in 8.4 s** on the rebuilt environment | M8 / M10 |
 | Parametric memorization | **180/180** answers parsed; median confidence **0.70**; direction correct on **97/180** — not distinguishable from chance (two-sided p ≈ 0.33); probe Brier **0.2616** against climatology's 0.2500. Measured through `claude_code`, **not the pinned configuration** | M3 / M10 |
 | Provenance chain | complete to a root cause in **0.27 s** | M8 |
-| Test suite | **1,235 passing** offline, 1 skipped; ruff, black and mypy strict clean over 101 modules. With live services: 1,298 passed, 75 skipped and 1 failed, all 76 because the corpus is not rebuilt here | all |
+| Test suite | **1,998 passing** offline, 1 skipped; ruff, black and mypy strict clean over 117 modules. Against the rebuilt corpus: **150 integration** and **74 leakage/property** tests pass, including the poison pill planted for every scenario and never returned through the new keyword pool | all |
 
-> **The local environment was rebuilt on 2026-09-18**, and it changed what can
-> be claimed from this machine. The Postgres volume was lost, taking the corpus,
+> **The local environment was rebuilt on 2026-09-18**, and the corpus was
+> rebuilt on 2026-09-19. The Postgres volume had been lost, taking the corpus,
 > the sealed registry and every stored run with it. The registry was re-fetched
 > and re-sealed: 180 scenarios, YES rate 0.5000, max domain share 0.2500, at
 > `91ccd314…` — a **new frozen split**, because the markets resolved since M1
-> change the pool. The M1 split `30d9c61d…` is gone. The corpus, retrieval and
-> replay figures above were measured against the previous environment and have
-> not been re-measured here; rebuilding the corpus is hours of ingest.
+> change the pool. The M1 split `30d9c61d…` is gone. The corpus figures above
+> are from the rebuild; **retrieval p95 and recall have not been re-measured
+> on it**, and the replay figures are from the previous environment.
+>
+> **15 of the 180 sealed scenarios are exchange placeholder legs** ("Will
+> Candidate B win …"), which passed every registry rule because the volume
+> screen read a leg's zero as missing. The sealed set is kept as sealed and
+> they are excluded from every scored figure and counted, so the dev/test split
+> is drawn over the remaining 165 — 40 dev, 125 test
+> ([ADR-0043](docs/adr/0043-registry-placeholder-legs.md)).
 
 ### Not measured, and why
 

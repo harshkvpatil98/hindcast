@@ -9,6 +9,57 @@ package index.
 
 ---
 
+## M14 — Forecast quality: a benchmark, a held-out split, better evidence
+
+In progress. The corpus, retrieval and evaluation mechanisms are done and
+measured; the study numbers still need a batch-capable model provider.
+
+- **The market's own price at each cutoff is now the benchmark**
+  ([ADR-0039](docs/adr/0039-market-price-benchmark.md)). 143 usable prices of
+  180: stale, missing and non-market scenarios are excluded and counted, never
+  imputed, and `cascade_sim` cannot read the table.
+- **A dev/test split declared before any forecast existed**
+  ([ADR-0038](docs/adr/0038-dev-test-split-and-declared-analyses.md)): 40 dev /
+  125 test, pinned and re-checked on every evaluation path, with the headline
+  computed on test alone. Two analyses were declared with it: accuracy by
+  evidence quality, and 12 evidence chunks per agent instead of 6, in its own
+  Holm family. Three ways a tuned number could have reached the headline were
+  closed, including a Holm family open to any stored configuration.
+- **Two time-lock leaks found, both with honest dates and later text.** The
+  Wikipedia adapter rendered old revisions through today's templates — a 2025
+  article carried the 2026 final standings
+  ([ADR-0041](docs/adr/0041-wikipedia-as-of-wikitext.md)) — and CC-NEWS pages
+  were dated by what they state while the stored text is the later fetch, which
+  for 5.5% of documents was more than 180 days later
+  ([ADR-0044](docs/adr/0044-date-text-by-when-it-was-knowable.md)). The stored
+  corpus was repaired in place: 200,122 documents re-dated, 340 Wikipedia
+  documents purged, and a new scan for update stamps later than a document's
+  date went from 381 flagged chunks to 4 — all four publisher typos.
+- **Hybrid retrieval** — a time-locked keyword pool fused with vector distance
+  and recency, and near-duplicate suppression
+  ([ADR-0040](docs/adr/0040-hybrid-retrieval.md)). Switched on after measuring
+  it: chunks naming a scenario's own parties rose from 0.55 to 0.65 for the
+  compiler and 0.77 to 0.83 for the baselines, and median evidence age at the
+  cutoff fell from 183 to 139 days and 141 to 70 days.
+- **Deeper, time-locked Wikipedia evidence**: titles chosen from the question
+  rather than from party names used as page titles, revisions read as they
+  stood before the cutoff, redirects and page moves followed as they read then.
+  Scenarios with at least one on-topic article rose from 127 to 147.
+- **A cited situation report per scenario**
+  ([ADR-0037](docs/adr/0037-scenario-dossier.md)), built from ~100 pre-cutoff
+  chunks, every claim machine-checked against the excerpts it cites so the
+  writer's memory of the outcome cannot reach the agents as evidence. Off until
+  it can be judged on the dev partition.
+- **15 sealed scenarios are exchange placeholder legs** and are excluded from
+  scoring and counted ([ADR-0043](docs/adr/0043-registry-placeholder-legs.md));
+  the sealed set itself is unchanged.
+- **An adversarial-document probe** for prompt injection through the corpus
+  (threat T3), and a blend whose weight is fitted on dev and scored on test.
+- **Platform follow-ups**: an opt-in egress tier for the ingest, model access
+  and a durable LLM cache for the study task, GuardDuty findings routed to the
+  alerts topic, and both caches in the recovery plan
+  ([ADR-0042](docs/adr/0042-ingest-egress-model-access-and-durable-caches.md)).
+
 ## M10 — Model providers on AWS
 
 Four providers behind the one call site, and the first model-produced number
