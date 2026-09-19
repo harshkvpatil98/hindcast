@@ -1909,9 +1909,58 @@ the smallest datasets were the irreplaceable ones -- the sealed registry and the
 2.9 GB source cache that reproduces it -- while the 1.95M-chunk corpus was
 merely slow to rebuild. The recovery tiers are set by cost-to-lose, not size.
 
+**Second pass: a team of agents, and what they found.** At the owner's request
+four agents worked in parallel, each in its own worktree and branch off M12,
+each owning only new files; shared files (Makefile, CI, root wiring) stayed
+with the integrator, so there was nothing to conflict. Integrated:
+`modules/audit` (CloudTrail to a locked bucket with data events for the lake
+and recovery buckets, GuardDuty, Config), `modules/pipeline` (Step Functions
+chains for the ingest and the study), `modules/observability` (task alerts that
+keep the exit code, Aurora alarms, a dashboard), plus `modules/cicd` (GitHub
+OIDC), `modules/recovery` and `cascade ledger export|restore` written directly.
+Gates: `terraform test` **21 + 73**; Checkov **742 passed, 0 failed, 61
+skipped**; **1,289 offline tests**; CI green on GitHub for M10, M11 and M12 --
+the first time the `infra` job ran anywhere but the development machine.
+
+- **Two briefs were wrong, and the agents were right to depart from them.** AWS
+  Config cannot deliver to a bucket with a default Object Lock retention
+  (verified against the AWS Config developer guide) -- a mock-provider test
+  cannot see that, and it would have failed at the first apply. And with
+  capacity pinned for measurement, the two Serverless capacity alarms would
+  have fired for the cluster's whole life.
+- **Defect: the budget ceiling belonged to the process, not the phase.** Found
+  by the pipeline agent while designing retries. Every `CostMeter` started at
+  zero and nothing read a checkpoint back -- a checkpoint was only ever written
+  on a breach -- so re-running a phase that aborted at its ceiling re-granted
+  the whole ceiling: a retry loop around `simulate all` would have spent $240
+  per attempt. A meter now starts from the phase's recorded spend and records
+  progress at every percent of the ceiling, so a crash loses at most that much
+  accounting; an unreadable checkpoint is an error, never a zero. No money had
+  ever been spent, so nothing was lost. M0 code, found at M12.
+- **A gap `terraform test` cannot cover.** A mutant that added an invented
+  default to a deliberately required threshold survived: omitting a required
+  variable is a run error, not an `expect_failures` target. A static pytest now
+  lists the inputs that are decisions or unmeasured quantities and fails if any
+  gains a default. It caught this root's own `allowed_regions` on its first run.
+- **A Terraform limit:** `validate` rejects a test run that loads a module
+  needing an aliased provider, though `terraform test` runs it. The recovery
+  module is tested through the root instead.
+- **An incident in the process itself.** The agents had separate worktrees but
+  shared one scratchpad directory; two wrote a `mutate.py` there, and one ran
+  the other's, leaving a mutation in the wrong agent's module for about four
+  minutes. Both affected agents noticed independently, restored from their own
+  knowledge of the file rather than from a stale backup, and re-ran every gate
+  before reporting. The fix is procedural: a private scratch directory per
+  agent, stated in the brief.
+- **What the chains cannot do, by the pipeline module's own account:** neither
+  runs to completion today. The ingest fetches from the public internet and the
+  VPC has no egress by design; the study's task is pinned to `replay` with no
+  model access; the LLM cache and report files live on task scratch.
+
 Remaining for M12's gate, each listed under its pillar in
-`docs/architecture/well-architected.md`: Step Functions for the ingest and the
-simulation fan-out; an `audit` module (CloudTrail, GuardDuty, Config); the
-tier-0 recovery export at `ledger seal`; dashboards and alarms; a deployment
-pipeline; and an adversarial-document probe for prompt injection through the
-corpus (threat T3), which nothing measures today.
+`docs/architecture/well-architected.md`: a fetch path that lets the ingest chain
+run inside the isolated VPC; a study task with model access and durable cache
+storage; a workflow that uses the OIDC roles; GuardDuty findings routed to the
+alerts topic; the two caches synced to the recovery bucket; and an
+adversarial-document probe for prompt injection through the corpus (threat T3),
+which nothing measures today.

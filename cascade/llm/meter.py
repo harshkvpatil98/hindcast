@@ -7,6 +7,16 @@ spare for accumulated representation error over ~378,000 calls.
 
 A breach is never a warning. The meter writes a resumable checkpoint and
 raises :class:`BudgetExceeded`, which the CLI boundary maps to exit code 2.
+
+**The ceiling belongs to the phase, not to the process.** Until M12 a meter
+started every process at zero and nothing read a checkpoint back, so a phase
+that aborted at its ceiling and was re-run got the whole ceiling again -- a
+retry loop around `simulate all` would have spent $240 per attempt. A meter now
+starts from the phase's recorded spend, and records it as it goes (at every
+percent of the ceiling, so a crash loses at most that much accounting). Re-
+running a breached phase therefore breaches again at its first paid call;
+going further takes a deliberate act -- raising the ceiling in configuration,
+or deleting the checkpoint to declare a new study.
 """
 
 from __future__ import annotations
@@ -142,10 +152,44 @@ class CostMeter:
         default_factory=lambda: Usage(input_tokens=0, output_tokens=0), init=False
     )
     _resume_state: dict[str, Any] = field(default_factory=dict, init=False)
+    # What earlier processes already spent on this phase, read from its
+    # checkpoint. `total_usd` stays this process's own spend, so per-run
+    # reporting is unchanged; the ceiling is enforced on the sum.
+    carried_usd: Decimal = field(default=Decimal(0), init=False)
+    _recorded_usd: Decimal = field(default=Decimal(0), init=False)
 
     def __post_init__(self) -> None:
         if self.ceiling_usd is None:
             self.ceiling_usd = self.settings.phase_ceiling(self.phase)
+        self.carried_usd = self._read_carried()
+        self._recorded_usd = self.carried_usd
+
+    def _read_carried(self) -> Decimal:
+        """The phase's recorded spend, or zero when it has none.
+
+        A checkpoint that exists and cannot be read is an error, not a zero:
+        treating it as zero is exactly the re-granted ceiling this exists to
+        prevent, and it would happen silently.
+        """
+        path = self.checkpoint_path()
+        if not path.is_file():
+            return Decimal(0)
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            # The exact figure when present; checkpoints written before it
+            # existed carry only the six-decimal one.
+            return Decimal(str(payload.get("spent_usd_exact", payload["spent_usd"])))
+        except (OSError, ValueError, KeyError, ArithmeticError) as exc:
+            raise ValueError(
+                f"cannot read the recorded spend for phase {self.phase!r} from {path}: "
+                f"{type(exc).__name__}: {exc}. Refusing to start the phase at zero -- repair or "
+                "delete the checkpoint deliberately."
+            ) from exc
+
+    @property
+    def phase_usd(self) -> Decimal:
+        """Everything spent on this phase, by this process and those before it."""
+        return self.carried_usd + self.total_usd
 
     # -- resumability -------------------------------------------------------
 
@@ -168,7 +212,10 @@ class CostMeter:
         body = json.dumps(
             {
                 "phase": self.phase,
-                "spent_usd": str(quantize_usd(self.total_usd)),
+                # Cumulative for the phase: this is what the next process
+                # starts from.
+                "spent_usd": str(quantize_usd(self.phase_usd)),
+                "spent_usd_exact": str(self.phase_usd),
                 "ceiling_usd": str(quantize_usd(self._ceiling())),
                 "calls": self.calls,
                 "cached_calls": self.cached_calls,
@@ -221,7 +268,20 @@ class CostMeter:
         self.calls += 1
         self.usage = self.usage + usage
         self._enforce()
+        self._record_progress()
         return cost
+
+    def _record_progress(self) -> None:
+        """Checkpoint whenever spend has advanced by a percent of the ceiling.
+
+        Bounds what a crash can lose to one percent of the ceiling without an
+        fsync per call: at most a hundred writes per phase, against hundreds of
+        thousands of calls.
+        """
+        step = self._ceiling() / Decimal(100)
+        if step > 0 and self.phase_usd - self._recorded_usd >= step:
+            self.write_checkpoint()
+            self._recorded_usd = self.phase_usd
 
     def record_cache_hit(self, *, model: str, usage: Usage) -> None:
         """Book a cache hit as a zero-cost call.
@@ -238,12 +298,12 @@ class CostMeter:
         if not self.settings.budget.abort_on_breach:
             return
         ceiling = self._ceiling()
-        if self.total_usd <= ceiling:
+        if self.phase_usd <= ceiling:
             return
         path = self.write_checkpoint()
         raise BudgetExceeded(
             phase=self.phase,
-            spent=quantize_usd(self.total_usd),
+            spent=quantize_usd(self.phase_usd),
             ceiling=quantize_usd(ceiling),
             checkpoint=str(path),
         )
@@ -268,5 +328,7 @@ class CostMeter:
             "cache_read_input_tokens": self.usage.cache_read_input_tokens,
             "cache_creation_input_tokens": self.usage.cache_creation_input_tokens,
             "total_usd": str(quantize_usd(self.total_usd)),
+            "carried_usd": str(quantize_usd(self.carried_usd)),
+            "phase_usd": str(quantize_usd(self.phase_usd)),
             "ceiling_usd": str(quantize_usd(self._ceiling())),
         }
