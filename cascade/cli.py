@@ -1641,8 +1641,11 @@ def _chronofence_hits(settings: Settings) -> tuple[Any, Any]:
     fence.__enter__()
 
     def search(query: str, as_of: Any, k: int) -> list[Hit]:
+        # Through the mode switch like every other evidence site: a dossier
+        # pooled one way and agent evidence retrieved another would make the
+        # report and the excerpts disagree about what the corpus holds.
         vector = embedder.encode([query])[0]
-        result = fence.search(vector, as_of=as_of, k=k)
+        result = fence.retrieve(vector, text=query, as_of=as_of, k=k)
         return [
             Hit(
                 chunk_id=chunk.chunk_id,
@@ -4375,8 +4378,9 @@ def eval_injection(
     retrieved: dict[str, tuple[tuple[str, str, str], ...]] = {}
     with Chronofence(settings, role="sim") as fence:
         for scenario in chosen:
-            vector = embedder.encode([f"{scenario.question} {scenario.resolution_criterion}"])[0]
-            found = fence.search(vector, as_of=scenario.cutoff_ts, k=settings.retrieval.k_agent)
+            # The direct baseline's own evidence, so the clean arm is its
+            # request byte for byte and a recorded B2 serves it.
+            found = _baseline_evidence(settings, fence, embedder, scenario)
             retrieved[scenario.scenario_id] = tuple(
                 (chunk.published_at.isoformat(), chunk.source, chunk.body) for chunk in found.chunks
             )

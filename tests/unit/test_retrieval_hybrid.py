@@ -289,7 +289,10 @@ class TestModeIsAMechanism:
             and isinstance(node.func.value, ast.Name)
             and node.func.value.id == "fence"
         ]
-        assert calls.count("retrieve") == 3, calls
+        # The compiler, the agents' prefixes, the single-model baselines (one
+        # helper shared by both baseline commands and the injection probe), and
+        # the dossier writer's pool (ADR-0037).
+        assert calls.count("retrieve") == 4, calls
         assert "search" not in calls and "search_hybrid" not in calls, calls
 
     def test_the_shipped_default_is_vector(self) -> None:
