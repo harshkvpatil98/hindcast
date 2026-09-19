@@ -1084,6 +1084,31 @@ def _print_index_report(report: Any) -> None:
     )
 
 
+def _print_fts_report(report: Any) -> None:
+    """Print what the full-text index pass did, per partition."""
+    table = Table(title="Full-text (GIN) index pass")
+    table.add_column("Partition", style="cyan")
+    table.add_column("rows", justify="right")
+    table.add_column("index")
+    table.add_column("action")
+    table.add_column("reason", overflow="fold")
+    colour = {"create": "green", "keep": "dim", "skip-empty": "dim"}
+    for plan in report.plans:
+        style = colour.get(plan.action, "")
+        table.add_row(
+            plan.partition,
+            f"{plan.rows:,}",
+            plan.index_name,
+            f"[{style}]{plan.action}[/{style}]" if style else plan.action,
+            plan.reason,
+        )
+    console.print(table)
+    console.print(
+        f"created [bold]{report.created}[/bold] · kept [bold]{report.kept}[/bold] · "
+        f"skipped empty [bold]{report.skipped_empty}[/bold] in {report.elapsed_s:.1f}s"
+    )
+
+
 @retrieval_app.command("index")
 def retrieval_index(
     config: OverlayOpt = None,
@@ -1095,8 +1120,22 @@ def retrieval_index(
         bool,
         typer.Option("--drop-legacy", help="Drop IVFFlat indexes after the HNSW pass."),
     ] = False,
+    fts: Annotated[
+        bool | None,
+        typer.Option(
+            "--fts/--no-fts",
+            help="Also build the full-text GIN indexes hybrid retrieval needs "
+            "(default: only when retrieval.mode is hybrid).",
+        ),
+    ] = None,
 ) -> None:
     """Create one HNSW index per non-empty chunks partition (ADR-0012, ADR-0026).
+
+    `--fts` also builds the expression GIN index the hybrid keyword pool reads
+    (migration 018). It is opt-in while `retrieval.mode` is `vector`, because
+    it is the long build -- tens of minutes over the full corpus -- and an
+    operator re-running the HNSW pass should not start it by accident. It
+    blocks writes to each partition while it builds: run it after ingest.
 
     Idempotent, and -- unlike the IVFFlat pass this replaces -- a partition
     that has merely grown needs nothing. HNSW has no row-dependent build
@@ -1107,11 +1146,19 @@ def retrieval_index(
     It runs last on purpose: dropping first would leave the corpus unindexed
     for the length of the build.
     """
-    from cascade.retrieval.index import apply_plans, drop_legacy_ivfflat, measure, plan_all
-    from cascade.retrieval.schema import IndexReport
+    from cascade.retrieval.index import (
+        apply_fts_plans,
+        apply_plans,
+        drop_legacy_ivfflat,
+        measure,
+        plan_all,
+        plan_fts,
+    )
+    from cascade.retrieval.schema import FtsIndexReport, IndexReport
 
     settings = _settings(config)
     retrieval = settings.retrieval
+    build_fts = fts if fts is not None else retrieval.mode == "hybrid"
 
     partitions = measure(settings)
     plans = plan_all(
@@ -1119,8 +1166,19 @@ def retrieval_index(
         m=retrieval.hnsw_m,
         ef_construction=retrieval.hnsw_ef_construction,
     )
+    fts_plans = plan_fts(partitions) if build_fts else ()
 
     if dry_run:
+        if build_fts:
+            _print_fts_report(
+                FtsIndexReport(
+                    plans=fts_plans,
+                    created=sum(1 for plan in fts_plans if plan.action == "create"),
+                    kept=sum(1 for plan in fts_plans if plan.action == "keep"),
+                    skipped_empty=sum(1 for plan in fts_plans if plan.action == "skip-empty"),
+                    elapsed_s=0.0,
+                )
+            )
         _print_index_report(
             IndexReport(
                 plans=plans,
@@ -1135,6 +1193,8 @@ def retrieval_index(
         return
 
     _print_index_report(apply_plans(settings, plans))
+    if build_fts:
+        _print_fts_report(apply_fts_plans(settings, fts_plans))
     if drop_legacy:
         dropped = drop_legacy_ivfflat(settings)
         console.print(
@@ -1208,6 +1268,80 @@ def _print_bench_result(result: Any, settings: Settings) -> None:
     console.print(f"bench wall time: {result.elapsed_s:.1f}s")
 
 
+def _print_relevance_report(report: Any, settings: Settings) -> None:
+    """Print the vector-against-hybrid comparison. Measured, never targeted."""
+
+    def number(value: float | None, metric: str) -> str:
+        if value is None:
+            return "-"
+        return (
+            f"{value:.4f}" if metric in {"party_mention_rate", "mean_distance"} else f"{value:.2f}"
+        )
+
+    for kind in report.kinds:
+        table = Table(
+            title=(
+                f"{kind.kind} evidence · k={kind.k} · {kind.scenarios} scenarios · "
+                f"{kind.queries:,} queries"
+            )
+        )
+        table.add_column("Metric", style="cyan")
+        table.add_column("names")
+        table.add_column("vector", justify="right")
+        table.add_column("hybrid", justify="right")
+        table.add_column("hybrid - vector", justify="right")
+        table.add_column("95% CI", justify="right")
+        table.add_column("p", justify="right")
+        table.add_column("n", justify="right")
+        table.add_column("n/a", justify="right")
+        for item in kind.comparisons:
+            interval = item.interval
+            table.add_row(
+                item.label,
+                item.names,
+                number(item.vector_mean, item.metric),
+                number(item.hybrid_mean, item.metric),
+                "-" if interval is None else f"{interval.point:+.4f}",
+                "-" if interval is None else f"[{interval.lo:+.4f}, {interval.hi:+.4f}]",
+                "-" if interval is None else f"{interval.p_value:.4f}",
+                str(item.n_paired),
+                str(item.unmeasurable),
+            )
+        console.print(table)
+        console.print(
+            f"  overlap of the two arms' chunks (Jaccard): [bold]{kind.mean_overlap:.4f}[/bold] · "
+            f"hybrid queries with no entity term: [bold]{kind.queries_without_terms:,}[/bold]"
+            f"/{kind.queries:,}"
+        )
+        console.print(
+            f"  latency p50/p95: vector {kind.vector_latency.p50:.1f}/"
+            f"{kind.vector_latency.p95:.1f} ms · hybrid {kind.hybrid_latency.p50:.1f}/"
+            f"{kind.hybrid_latency.p95:.1f} ms"
+        )
+
+    console.print(
+        f"scenarios [bold]{report.scenarios}[/bold] · compiled graphs [bold]{report.graphs}[/bold] "
+        f"(agent rows cover only these) · paired bootstrap B={report.bootstrap_b:,}, "
+        "resampling scenarios, seeded from the study salt"
+    )
+    console.print(
+        f"registry names: [bold]{report.distinct_names}[/bold] distinct, "
+        f"[bold]{len(report.generic)}[/bold] screened as generic (mentioned by more than "
+        f"{settings.retrieval.relevance_generic_name_rate:.0%} of chunks retrieved for scenarios "
+        f"that do not list them); [bold]{report.scenarios_without_informative_names}[/bold] "
+        "scenario(s) left with none"
+    )
+    if report.generic:
+        shown = ", ".join(report.generic[:24])
+        console.print(f"  generic: {shown}{'...' if len(report.generic) > 24 else ''}")
+    console.print(
+        "[dim]These are properties the hybrid path was built to move, so they show "
+        "whether its mechanisms work on this corpus and what they cost in embedding "
+        "distance. They are not evidence about forecast quality.[/dim]"
+    )
+    console.print(f"bench wall time: {report.elapsed_s:.1f}s")
+
+
 @retrieval_app.command("bench")
 def retrieval_bench(
     config: OverlayOpt = None,
@@ -1215,15 +1349,41 @@ def retrieval_bench(
         int | None,
         typer.Option("--queries", help="Override the configured query count."),
     ] = None,
+    relevance: Annotated[
+        bool,
+        typer.Option(
+            "--relevance",
+            help="Compare vector and hybrid retrieval on the study's own queries, "
+            "outcome-blind. Decides nothing by itself; exits 3 if hybrid is not built.",
+        ),
+    ] = False,
+    limit: Annotated[
+        int | None,
+        typer.Option("--limit", help="With --relevance: only the first N scenarios by id."),
+    ] = None,
 ) -> None:
     """Benchmark time-locked retrieval: p50/p95/p99 and recall@k (M3).
 
     Exits 3 when a measured value misses its acceptance criterion, so a
     regression cannot pass as success in CI.
+
+    `--relevance` is a different measurement (M14): both retrieval modes over
+    the compiler's, the agents' and the baselines' real queries, scored on
+    properties of the retrieved set alone -- no label is read, and it runs as
+    `cascade_sim`, which could not read one. It reports; it has no pass mark,
+    because which mode to run is a decision and not a criterion. It exits 3
+    only when the hybrid path is not there to be measured.
     """
-    from cascade.retrieval.bench import run_bench
+    from cascade.retrieval.bench import HybridNotReady, run_bench, run_relevance
 
     settings = _settings(config)
+    if relevance:
+        try:
+            report = run_relevance(settings, limit=limit)
+        except HybridNotReady as exc:
+            _fail("; ".join(exc.reasons), EXIT_PRECONDITION)
+        _print_relevance_report(report, settings)
+        return
     result = run_bench(settings, count=queries)
     _print_bench_result(result, settings)
 
@@ -1242,6 +1402,7 @@ def retrieval_verify(config: OverlayOpt = None) -> None:
     correctly sized index, and `cascade_sim` cannot reach the corpus except
     through `chronofence_search`. Exits 3 on any violation.
     """
+    from cascade.retrieval.bench import hybrid_readiness
     from cascade.retrieval.index import measure, plan_all
     from cascade.retrieval.search import Chronofence
 
@@ -1251,6 +1412,8 @@ def retrieval_verify(config: OverlayOpt = None) -> None:
 
     with Chronofence(settings, role="admin") as fence:
         deployed = fence.ef_search()
+        hybrid_deployed = fence.hybrid_deployed()
+        hybrid_ef = fence.ef_search("chronofence_search_hybrid") if hybrid_deployed else None
     if deployed != retrieval.hnsw_ef_search:
         failures.append(
             f"chronofence_search pins hnsw.ef_search={deployed} but config says "
@@ -1280,9 +1443,40 @@ def retrieval_verify(config: OverlayOpt = None) -> None:
     row("non-empty partitions", str(non_empty), True)
     row("correctly sized indexes", f"{indexed}/{non_empty}", not stale)
 
+    # The hybrid path is a precondition only of the mode that uses it. Under
+    # `vector` its state is printed and cannot fail the command: an unbuilt
+    # optional index is not drift.
+    hybrid_required = retrieval.mode == "hybrid"
+    hybrid_reasons = list(hybrid_readiness(deployed=hybrid_deployed, partitions=partitions))
+    if hybrid_ef is not None and hybrid_ef != retrieval.hnsw_ef_search:
+        hybrid_reasons.append(
+            f"chronofence_search_hybrid pins hnsw.ef_search={hybrid_ef} but config says "
+            f"{retrieval.hnsw_ef_search}; add a migration rather than editing 018"
+        )
+    with_fts = sum(1 for item in partitions if item.rows > 0 and item.fts_index_name)
+    row("retrieval.mode", retrieval.mode, True)
+    row(
+        "hybrid function deployed",
+        "yes" if hybrid_deployed else "no",
+        hybrid_deployed or not hybrid_required,
+    )
+    row(
+        "full-text indexes",
+        f"{with_fts}/{non_empty}",
+        with_fts == non_empty or not hybrid_required,
+    )
+
     leak_ok, leak_detail = _sim_role_is_fenced(settings)
     row("cascade_sim fenced from chunks", leak_detail, leak_ok)
     console.print(table)
+
+    if hybrid_required:
+        failures.extend(hybrid_reasons)
+    elif hybrid_reasons:
+        console.print(
+            "[dim]hybrid retrieval is not built (not required while retrieval.mode is "
+            "vector): " + "; ".join(hybrid_reasons) + "[/dim]"
+        )
 
     if stale:
         failures.append(
@@ -1420,8 +1614,13 @@ def _lathe(settings: Settings) -> Any:
     fence.__enter__()
 
     def retrieve(question: str, as_of: Any, k: int) -> list[tuple[str, str, str]]:
-        vector = embedder.encode([question])[0]
-        result = fence.search(vector, as_of=as_of, k=k)
+        from cascade.retrieval.queries import compiler_evidence_query
+
+        query = compiler_evidence_query(question)
+        vector = embedder.encode([query.text])[0]
+        result = fence.retrieve(
+            vector, text=query.keyword_text, entities=query.entities, as_of=as_of, k=k
+        )
         return [
             (chunk.published_at.isoformat(), chunk.source, chunk.body) for chunk in result.chunks
         ]
@@ -1854,6 +2053,26 @@ def _load_simulation(settings: Settings, scenario_id: str, *, policy: str) -> An
     return Loom(settings=settings, graph=graph, policies=policies, decider=decider), graph
 
 
+def _baseline_evidence(settings: Settings, fence: Any, embedder: Any, scenario: Any) -> Any:
+    """The single-model baselines' evidence, under the configured retrieval mode.
+
+    §10.2 gives a baseline "the same Chronofence evidence an agent gets": were
+    the agents moved to hybrid retrieval and the baselines left on vector, the
+    headline comparison would measure retrieval rather than architecture.
+    """
+    from cascade.retrieval.queries import baseline_evidence_query
+
+    query = baseline_evidence_query(scenario.question, scenario.resolution_criterion)
+    vector = embedder.encode([query.text])[0]
+    return fence.retrieve(
+        vector,
+        text=query.keyword_text,
+        entities=query.entities,
+        as_of=scenario.cutoff_ts,
+        k=settings.retrieval.k_agent,
+    )
+
+
 @contextmanager
 def _maybe_chronofence(settings: Settings, *, enabled: bool) -> Iterator[Any]:
     """Open a Chronofence, or yield ``None`` under `grounding: parametric_only`.
@@ -1895,6 +2114,7 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
     """
     from cascade.aperture.policy import counterparties, derive_policies, levers_by_actor
     from cascade.llm.client import LLMClient
+    from cascade.retrieval.queries import agent_evidence_query
     from cascade.sim.agent import LLMAgents, prepare_actor
     from cascade.sim.prompts import brief_from
 
@@ -1923,10 +2143,14 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
                 if fence is None or embedder is None:
                     evidence: tuple[tuple[str, str, str], ...] = ()
                 else:
-                    query = f"{scenario.question} {actor.name} {actor.objective}"
-                    vector = embedder.encode([query])[0]
-                    found = fence.search(
-                        vector, as_of=scenario.cutoff_ts, k=settings.retrieval.k_agent
+                    query = agent_evidence_query(scenario.question, actor.name, actor.objective)
+                    vector = embedder.encode([query.text])[0]
+                    found = fence.retrieve(
+                        vector,
+                        text=query.keyword_text,
+                        entities=query.entities,
+                        as_of=scenario.cutoff_ts,
+                        k=settings.retrieval.k_agent,
                     )
                     evidence = tuple(
                         (chunk.published_at.isoformat(), chunk.source, chunk.body)
@@ -2897,8 +3121,7 @@ def eval_baselines(
     retrieved: dict[str, tuple[tuple[str, str, str], ...]] = {}
     with Chronofence(settings, role="eval") as fence:
         for scenario in scenarios:
-            vector = embedder.encode([f"{scenario.question} {scenario.resolution_criterion}"])[0]
-            found = fence.search(vector, as_of=scenario.cutoff_ts, k=settings.retrieval.k_agent)
+            found = _baseline_evidence(settings, fence, embedder, scenario)
             retrieved[scenario.scenario_id] = tuple(
                 (chunk.published_at.isoformat(), chunk.source, chunk.body) for chunk in found.chunks
             )
@@ -2983,8 +3206,7 @@ def eval_estimate(
     retrieved: dict[str, tuple[tuple[str, str, str], ...]] = {}
     with Chronofence(settings, role="eval") as fence:
         for scenario in sample:
-            vector = embedder.encode([f"{scenario.question} {scenario.resolution_criterion}"])[0]
-            found = fence.search(vector, as_of=scenario.cutoff_ts, k=settings.retrieval.k_agent)
+            found = _baseline_evidence(settings, fence, embedder, scenario)
             retrieved[scenario.scenario_id] = tuple(
                 (chunk.published_at.isoformat(), chunk.source, chunk.body) for chunk in found.chunks
             )

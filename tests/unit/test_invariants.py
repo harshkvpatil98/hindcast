@@ -295,6 +295,11 @@ PURE_MODULES = (
     PACKAGE_ROOT / "sim" / "dynamics.py",
     PACKAGE_ROOT / "decompose" / "validator.py",
     PACKAGE_ROOT / "retrieval" / "metrics.py",
+    # M14: what ranks the hybrid candidates, and what chooses the keyword
+    # terms. Both decide which evidence an agent sees, so both must be a
+    # function of their arguments or a replayed run retrieves differently.
+    PACKAGE_ROOT / "retrieval" / "fusion.py",
+    PACKAGE_ROOT / "retrieval" / "keywords.py",
 )
 
 # Roots that can only be there to do something impure.

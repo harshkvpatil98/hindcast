@@ -12,18 +12,25 @@ crossing out of this package is a bug.
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 __all__ = [
+    "FtsIndexPlan",
+    "FtsIndexReport",
+    "HybridCandidate",
     "IndexAction",
     "IndexPlan",
     "IndexReport",
     "LatencySummary",
     "PartitionIndex",
+    "RetrievalMode",
     "RetrievedChunk",
     "SearchResult",
 ]
+
+RetrievalMode = Literal["vector", "hybrid"]
 
 
 class _Frozen(BaseModel):
@@ -49,6 +56,57 @@ class RetrievedChunk(_Frozen):
     url: str
     title: str
     distance: float
+    # Why this chunk was chosen, on the hybrid path; all None on the vector
+    # path, where `distance` is the whole story. Carried for the same reason
+    # `published_at` is: §11.2 walks from an outcome back to its evidence, and
+    # "it was the keyword pool's first hit and the vector pool never saw it"
+    # is a different explanation from "it was nearest".
+    vector_rank: int | None = None
+    keyword_rank: int | None = None
+    recency_rank: int | None = None
+    fused_score: float | None = None
+
+
+class HybridCandidate(_Frozen):
+    """One row of ``chronofence_search_hybrid``: a candidate, not yet a result.
+
+    ``vector_rank`` and ``keyword_rank`` are the 1-based position each pool
+    gave the row, ``None`` where that pool did not supply it. At least one is
+    always set -- a row in neither pool has no reason to be in the union, and
+    accepting one would let a malformed result be fused as though it were
+    evidence.
+
+    ``simhash`` is the parent document's fingerprint in Postgres's signed
+    ``bigint`` form (migration 003); only its bit pattern is ever compared.
+    """
+
+    chunk_id: str
+    document_id: str
+    ordinal: int
+    body: str
+    published_at: datetime
+    source: str
+    url: str
+    title: str
+    distance: float
+    vector_rank: int | None = Field(default=None, ge=1)
+    keyword_rank: int | None = Field(default=None, ge=1)
+    terms_matched: int | None = Field(default=None, ge=1)
+    simhash: int
+
+    @model_validator(mode="after")
+    def _belongs_to_a_pool(self) -> HybridCandidate:
+        if self.vector_rank is None and self.keyword_rank is None:
+            raise ValueError(
+                f"candidate {self.chunk_id!r} carries neither a vector rank nor a keyword "
+                "rank; the union holds only rows a pool supplied"
+            )
+        if self.published_at.tzinfo is None:
+            raise ValueError(
+                f"candidate {self.chunk_id!r} has a naive published_at; recency cannot "
+                "be ranked across naive and aware timestamps"
+            )
+        return self
 
 
 class SearchResult(_Frozen):
@@ -58,6 +116,13 @@ class SearchResult(_Frozen):
     k: int
     chunks: tuple[RetrievedChunk, ...]
     elapsed_ms: float
+    mode: RetrievalMode = "vector"
+    # Hybrid only: the entity terms the keyword pool was asked for, and how
+    # many candidates the two pools supplied between them. A result that says
+    # "hybrid" with no terms was, in effect, the vector pool re-ranked by
+    # recency -- worth being able to see afterwards.
+    terms: tuple[str, ...] = ()
+    candidates: int | None = None
 
     @property
     def chunk_ids(self) -> tuple[str, ...]:
@@ -84,6 +149,10 @@ class PartitionIndex(_Frozen):
     index_name: str | None
     m: int | None
     ef_construction: int | None
+    # The full-text GIN index the hybrid keyword pool needs (migration 018).
+    # Defaulted so the HNSW planning rule, which does not read it, can be
+    # exercised without restating it.
+    fts_index_name: str | None = None
 
 
 IndexAction = str  # one of: "create", "rebuild", "keep", "skip-empty"
@@ -112,6 +181,33 @@ class IndexReport(_Frozen):
     plans: tuple[IndexPlan, ...]
     created: int
     rebuilt: int
+    kept: int
+    skipped_empty: int
+    elapsed_s: float
+
+
+class FtsIndexPlan(_Frozen):
+    """What ``cascade retrieval index --fts`` intends for one partition.
+
+    There is no ``rebuild``: a GIN index over ``to_tsvector('english', body)``
+    has no build parameter this project sets, so an index that exists is the
+    index that is wanted. Changing the text-search configuration would change
+    the *expression*, and the partition view matches on the expression, so
+    such an index would simply read as absent and plan as ``create``.
+    """
+
+    partition: str
+    rows: int
+    index_name: str
+    action: IndexAction  # "create", "keep" or "skip-empty"
+    reason: str
+
+
+class FtsIndexReport(_Frozen):
+    """What the full-text pass actually did."""
+
+    plans: tuple[FtsIndexPlan, ...]
+    created: int
     kept: int
     skipped_empty: int
     elapsed_s: float
