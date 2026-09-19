@@ -71,7 +71,7 @@ def event(**overrides: Any) -> dict[str, Any]:
 
 def test_polymarket_event_becomes_one_question() -> None:
     """Sixty markets under one event are sixty views of one event."""
-    parsed = parse_event(event(), salt=SALT)
+    parsed = parse_event(event(), salt=SALT, min_volume=5000.0)
     assert parsed is not None
     assert parsed.source == "polymarket"
     assert parsed.event_group == "polymarket:presidential-election-winner-2024"
@@ -80,7 +80,7 @@ def test_polymarket_event_becomes_one_question() -> None:
 
 def test_polymarket_parses_both_timestamp_dialects() -> None:
     """Gamma mixes ISO-8601 with a Postgres-style ``... +00``."""
-    parsed = parse_event(event(), salt=SALT)
+    parsed = parse_event(event(), salt=SALT, min_volume=5000.0)
     assert parsed is not None
     assert parsed.resolved_at == datetime(2024, 11, 6, 15, 17, 41, tzinfo=UTC)
     assert parsed.open_ts == datetime(2024, 1, 4, 22, 58, tzinfo=UTC)
@@ -92,15 +92,15 @@ def test_polymarket_representative_choice_is_outcome_independent() -> None:
     That would destroy the base-rate control by construction, in a way the
     downstream base-rate check could not distinguish from a real pool.
     """
-    parsed = parse_event(event(), salt=SALT)
-    again = parse_event(event(), salt=SALT)
+    parsed = parse_event(event(), salt=SALT, min_volume=5000.0)
+    again = parse_event(event(), salt=SALT, min_volume=5000.0)
     assert parsed is not None and again is not None
     assert parsed.source_ref == again.source_ref  # deterministic
 
     flipped = event()
     flipped["markets"][0]["outcomePrices"] = '["0", "1"]'
     flipped["markets"][1]["outcomePrices"] = '["1", "0"]'
-    swapped = parse_event(flipped, salt=SALT)
+    swapped = parse_event(flipped, salt=SALT, min_volume=5000.0)
     assert swapped is not None
     # The same market is chosen regardless of how the legs resolved.
     assert swapped.source_ref == parsed.source_ref
@@ -112,11 +112,11 @@ def test_polymarket_rejects_unresolved_prices(prices: str) -> None:
     payload = event()
     for market in payload["markets"]:
         market["outcomePrices"] = prices
-    assert parse_event(payload, salt=SALT) is None
+    assert parse_event(payload, salt=SALT, min_volume=5000.0) is None
 
 
 def test_polymarket_rejects_an_event_with_no_markets() -> None:
-    assert parse_event(event(markets=[]), salt=SALT) is None
+    assert parse_event(event(markets=[]), salt=SALT, min_volume=5000.0) is None
 
 
 def test_polymarket_rejects_a_missing_timestamp() -> None:
@@ -125,7 +125,7 @@ def test_polymarket_rejects_a_missing_timestamp() -> None:
     for market in payload["markets"]:
         market.pop("closedTime", None)
         market.pop("endDate", None)
-    assert parse_event(payload, salt=SALT) is None
+    assert parse_event(payload, salt=SALT, min_volume=5000.0) is None
 
 
 # ---------------------------------------------------------------------------
@@ -317,3 +317,131 @@ def test_the_shipped_curated_set_loads_and_satisfies_the_template() -> None:
         assert entry.provenance
         assert entry.explicit_cutoff is not None
         assert entry.open_ts < entry.explicit_cutoff < entry.resolved_at
+
+
+# ---------------------------------------------------------------------------
+# Placeholder legs and leg-level volume (found at M14 by the market benchmark:
+# 20 of 165 sealed Polymarket scenarios were untraded stand-ins)
+# ---------------------------------------------------------------------------
+
+
+def leg(
+    leg_id: str, question: str, *, volume: Any, yes: bool = False, **extra: Any
+) -> dict[str, Any]:
+    base = {
+        "id": leg_id,
+        "question": question,
+        "description": "Resolves YES if so.",
+        "outcomes": '["Yes", "No"]',
+        "outcomePrices": '["1", "0"]' if yes else '["0", "1"]',
+        "startDate": "2024-01-04T22:58:00Z",
+        "endDate": "2024-11-05T12:00:00Z",
+        "closedTime": "2024-11-06 15:17:41+00",
+        "umaResolutionStatus": "resolved",
+    }
+    if volume is not None:
+        base["volumeNum"] = volume
+    base.update(extra)
+    return base
+
+
+def test_an_untraded_leg_does_not_inherit_its_events_volume() -> None:
+    """`volumeNum or event.volume` read a leg's honest zero as missing, so every
+    untraded leg of a busy event cleared the volume screen on the event's
+    figure. The leg's own volume is what the screen must see."""
+    payload = event(markets=[leg("1", "Will Alpha win the 2024 election?", volume=0)])
+    parsed = parse_event(payload, salt=SALT, min_volume=5000.0)
+    assert parsed is not None
+    assert parsed.volume == 0.0
+
+
+def test_a_leg_with_no_volume_figure_at_all_still_falls_back_to_the_event() -> None:
+    payload = event(markets=[leg("1", "Will Alpha win the 2024 election?", volume=None)])
+    parsed = parse_event(payload, salt=SALT, min_volume=5000.0)
+    assert parsed is not None
+    assert parsed.volume == pytest.approx(1531479284.5)
+
+
+def test_the_representative_is_never_a_stand_in_whatever_the_hash_says() -> None:
+    markets = [leg("real", "Will Alpha win the 2024 election?", volume=250_000.0, yes=True)]
+    markets += [
+        leg(f"p{index}", f"Will Candidate {letter} win the 2024 election?", volume=0)
+        for index, letter in enumerate("BCDEFGH")
+    ]
+    markets.append(leg("named-untraded", "Will Omega win the 2024 election?", volume=12.0))
+    chosen = set()
+    for salt in [f"salt-{index}" for index in range(40)]:
+        parsed = parse_event(event(markets=markets), salt=salt, min_volume=5000.0)
+        assert parsed is not None
+        assert "Candidate" not in parsed.question
+        # Every leg still counts as a party to the event.
+        assert parsed.event_sibling_count == len(markets)
+        chosen.add(parsed.question)
+    # Both named legs are reachable: the traded one is not preferred.
+    assert chosen == {"Will Alpha win the 2024 election?", "Will Omega win the 2024 election?"}
+
+
+def test_volume_does_not_choose_the_representative() -> None:
+    """A leg's final volume accumulates after the cutoff and tracks the eventual
+    winner. Choosing by it would let the outcome lean on the selection, so the
+    choice must not move when only the volumes do."""
+
+    def markets(first: float, second: float) -> list[dict[str, Any]]:
+        return [
+            leg("a", "Will Alpha win the 2024 election?", volume=first, yes=True),
+            leg("b", "Will Omega win the 2024 election?", volume=second),
+        ]
+
+    for salt in [f"salt-{index}" for index in range(20)]:
+        one = parse_event(event(markets=markets(900_000.0, 0.0)), salt=salt, min_volume=5000.0)
+        two = parse_event(event(markets=markets(0.0, 900_000.0)), salt=salt, min_volume=5000.0)
+        assert one is not None and two is not None
+        assert one.question == two.question
+
+
+def test_an_event_of_only_stand_ins_is_returned_to_be_rejected_and_counted() -> None:
+    markets = [
+        leg(f"p{index}", f"Will Company {letter} be the largest by market cap?", volume=0)
+        for index, letter in enumerate("ABC")
+    ]
+    parsed = parse_event(event(markets=markets), salt=SALT, min_volume=5000.0)
+    assert parsed is not None
+    assert parsed.volume == 0.0
+
+
+def test_a_leg_listed_late_opens_when_it_was_listed() -> None:
+    """A leg added to a running event inherits the event's start date. Its life
+    -- and so its cutoff -- must be measured from when it existed."""
+    late = leg(
+        "late",
+        "Will Alpha win the 2024 election?",
+        volume=90_000.0,
+        createdAt="2024-06-01T00:00:00Z",
+    )
+    parsed = parse_event(event(markets=[late]), salt=SALT, min_volume=5000.0)
+    assert parsed is not None
+    assert parsed.open_ts.isoformat() == "2024-06-01T00:00:00+00:00"
+
+    early = leg(
+        "early",
+        "Will Alpha win the 2024 election?",
+        volume=90_000.0,
+        createdAt="2023-12-01T00:00:00Z",
+    )
+    parsed = parse_event(event(markets=[early]), salt=SALT, min_volume=5000.0)
+    assert parsed is not None
+    assert parsed.open_ts.isoformat() == "2024-01-04T22:58:00+00:00"
+
+
+def test_a_traded_stand_in_still_cannot_represent_the_event() -> None:
+    """Speculators do trade "Candidate B" before the name is known. Volume makes
+    it a market; it does not make it a question about anyone."""
+    markets = [leg("real", "Will Alpha win the 2024 election?", volume=250_000.0, yes=True)]
+    markets += [
+        leg(f"p{index}", f"Will Candidate {letter} win the 2024 election?", volume=800_000.0)
+        for index, letter in enumerate("BCDEFGH")
+    ]
+    for salt in ("a", "b", "c", "d", "e", "f"):
+        parsed = parse_event(event(markets=markets), salt=salt, min_volume=5000.0)
+        assert parsed is not None
+        assert parsed.question == "Will Alpha win the 2024 election?"

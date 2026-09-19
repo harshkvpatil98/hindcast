@@ -102,6 +102,7 @@ def _load_sources(
                 salt=salt,
                 pages=ledger.polymarket_pages,
                 page_size=ledger.polymarket_page_size,
+                min_volume=ledger.min_volume,
             ),
         ),
         (

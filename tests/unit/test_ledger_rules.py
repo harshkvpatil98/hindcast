@@ -378,3 +378,112 @@ def test_merger_review_questions_now_resolve_their_parties() -> None:
     )
     assert len(actors) >= MIN_PARTIES
     assert "Microsoft" in actors
+
+
+# ---------------------------------------------------------------------------
+# Placeholder legs (M14)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Will Placeholder V be the #1 searched song on Google this year?",
+        "Will Candidate B win the 2026 Busan Mayoral Election?",
+        "Will Company K be the largest company in the world by market cap on June 30?",
+        "Will Person C be the 2025 Drivers Champion?",
+        "Will Player BI win the 2026 TOUR Championship?",
+        "Will player L record the most assists in the 2025-26 UEFA Champions League?",
+        "Will Team B make the first pick of the 2025 NFL Draft?",
+    ],
+)
+def test_a_stand_in_is_not_a_party(question: str) -> None:
+    """Each of these was in the sealed set. None is a question about anything."""
+    from cascade.ledger.rules import is_placeholder
+
+    assert is_placeholder(question)
+    assert reason(raw(question=question, event_sibling_count=12)) == "placeholder_leg"
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Will NVIDIA be the largest company in the world by market cap on July 31?",
+        "Will Team USA win the most gold medals at the Games?",
+        "Will company 3M be acquired by the United States, Iran or Israel?",
+        "Will another player win the HLTV Player of the Year award?",
+        "Will the company in question be fined by the European Commission?",
+    ],
+)
+def test_real_names_are_not_mistaken_for_stand_ins(question: str) -> None:
+    from cascade.ledger.rules import is_placeholder
+
+    assert not is_placeholder(question)
+
+
+def test_the_placeholder_rule_reads_the_question_and_nothing_else() -> None:
+    """Outcome-independent by signature: it is handed only the text."""
+    import inspect
+
+    from cascade.ledger.rules import is_placeholder
+
+    assert list(inspect.signature(is_placeholder).parameters) == ["question"]
+
+
+def test_curated_questions_are_not_screened_for_stand_ins() -> None:
+    """The curated file is authored; "Party A" there would be an author's
+    choice, reviewed with the rest of the entry, not an exchange's pre-listing."""
+    outcome = run(
+        raw(
+            source="curated",
+            question="Will Party A, the United States and Iran sign the accord?",
+            curated_parties=("Party A", "United States", "Iran"),
+        )
+    )
+    assert not isinstance(outcome, Rejected) or outcome.reason != "placeholder_leg"
+
+
+def test_the_domain_comes_from_the_question_not_the_criterions_boilerplate() -> None:
+    """Classifying question + criterion put an NFL draft pick under `health`,
+    because the criterion said "the player who is selected" -- and would still
+    put it under `regulation` on "ruling", which is checked before `sports`."""
+    outcome = run(
+        raw(
+            question="Will Jeremiyah Love be the third pick in the 2026 NFL draft?",
+            resolution_criterion=(
+                "Resolves YES if the player who is selected third is Love, per the "
+                "league's official ruling on the draft order."
+            ),
+            event_sibling_count=12,
+        )
+    )
+    assert not isinstance(outcome, Rejected)
+    assert outcome.scenario.domain == "sports"
+
+
+def test_the_criterion_still_classifies_a_question_that_says_nothing() -> None:
+    outcome = run(
+        raw(
+            question="Nothing Ever Happens: Iran, Israel and the United States edition",
+            resolution_criterion="Resolves YES if no ceasefire is announced.",
+            event_sibling_count=12,
+        )
+    )
+    assert not isinstance(outcome, Rejected)
+    assert outcome.scenario.domain == "conflict"
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("Will the WHO declare a pandemic?", "health"),
+        ("Will the candidate who wins form a government?", "other"),
+    ],
+)
+def test_who_is_the_organisation_only_in_capitals(text: str, expected: str) -> None:
+    assert classify_domain(text) == expected
+
+
+def test_a_player_prop_is_a_single_quantity() -> None:
+    assert is_single_quantity("Max Christie: Points O/U 16.5")
+    assert is_single_quantity("Will the over/under on total goals be hit?")
