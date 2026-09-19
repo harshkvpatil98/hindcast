@@ -45,7 +45,12 @@ def _scenario(scenario_id: str = "s1") -> Scenario:
 
 class TestTheFiveAreAllPresent:
     def test_there_are_exactly_five(self) -> None:
-        assert len(BASELINES) == 5
+        """§10.2's list stays checkable as a list; a benchmark added beyond it
+        is marked as such rather than quietly making it six."""
+        assert len([spec for spec in BASELINES if spec.in_spec]) == 5
+
+    def test_the_one_beyond_the_spec_is_the_market(self) -> None:
+        assert [spec.baseline_id for spec in BASELINES if not spec.in_spec] == ["market"]
 
     def test_two_of_them_are_grid_cells_and_are_not_re_run(self) -> None:
         """Running them twice would put two differently-seeded copies of one

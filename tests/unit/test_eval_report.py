@@ -48,6 +48,9 @@ REPORT_PATH_MODULES = (
     "cascade/eval/score.py",
     "cascade/eval/ablation.py",
     "cascade/eval/figures.py",
+    # Decides which market prices are scored, so it is on the path to a
+    # reported Brier like everything above.
+    "cascade/eval/market.py",
 )
 
 

@@ -2940,6 +2940,9 @@ def _print_domains(scored: Any) -> None:
 
 
 BASELINE_CHOICES = ("climatology", "direct", "self_consistency")
+# Selectable, never in the default set: it asks two public APIs rather than a
+# model, and it writes `market_prices`, not `forecasts` (migration 017).
+MARKET_BASELINE_CHOICE = "market"
 
 
 @eval_app.command("baselines")
@@ -2949,7 +2952,10 @@ def eval_baselines(
         list[str] | None,
         typer.Option(
             "--baseline",
-            help=f"Which to produce: {', '.join(BASELINE_CHOICES)}. Repeatable; default all.",
+            help=(
+                f"Which to produce: {', '.join(BASELINE_CHOICES)}. Repeatable; default all "
+                f"three. `{MARKET_BASELINE_CHOICE}` is `cascade eval market-prices`, on request."
+            ),
         ),
     ] = None,
     samples: Annotated[
@@ -2986,12 +2992,15 @@ def eval_baselines(
     settings = _settings(config)
     split = _frozen_split(settings)
     wanted = tuple(baseline) if baseline else BASELINE_CHOICES
-    unknown = sorted(set(wanted) - set(BASELINE_CHOICES))
+    unknown = sorted(set(wanted) - set(BASELINE_CHOICES) - {MARKET_BASELINE_CHOICE})
     if unknown:
         _fail(
-            f"unknown baseline(s) {unknown}; choose from {list(BASELINE_CHOICES)}",
+            f"unknown baseline(s) {unknown}; choose from "
+            f"{[*BASELINE_CHOICES, MARKET_BASELINE_CHOICE]}",
             EXIT_PRECONDITION,
         )
+    if MARKET_BASELINE_CHOICE in wanted:
+        _market_prices(settings, refresh=False, offline=False, write=True, limit=limit)
     scenarios = sorted(load_scenarios(settings, role="admin"), key=lambda s: s.scenario_id)
     if limit is not None:
         scenarios = scenarios[:limit]
@@ -3190,6 +3199,134 @@ def eval_estimate(
             EXIT_BUDGET_BREACH,
         )
     console.print("[bold green]projection is within the baseline ceiling[/bold green]")
+
+
+@eval_app.command("market-prices")
+def eval_market_prices(
+    config: OverlayOpt = None,
+    refresh: Annotated[
+        bool,
+        typer.Option(
+            "--refresh",
+            help="Re-ask the sources for everything. Recordings are otherwise replayed.",
+        ),
+    ] = False,
+    offline: Annotated[
+        bool,
+        typer.Option("--offline", help="Never touch the network; replay recordings only."),
+    ] = False,
+    write: Annotated[
+        bool,
+        typer.Option("--write/--no-write", help="Store the rows in `market_prices` (admin role)."),
+    ] = True,
+    limit: Annotated[
+        int | None, typer.Option("--limit", help="Use at most N scenarios (smoke runs).")
+    ] = None,
+) -> None:
+    """Fetch each scenario's market probability strictly before its cutoff (M14).
+
+    Prints the coverage: how many scenarios have a usable price, how many are
+    stale, how many were unobtainable and why, and the staleness distribution.
+    A scenario without a usable price is excluded from the market baseline and
+    counted -- never imputed -- so every comparison against it runs on the
+    intersection.
+
+    Reads no label and needs none. Exits 3 when any price is missing for a
+    reason that is not a fact about its market (`fetch_failed`, `not_recorded`),
+    so an interrupted fetch cannot pass as a finished one; re-running resumes
+    from the recordings.
+    """
+    if refresh and offline:
+        _fail("--refresh and --offline contradict each other", EXIT_PRECONDITION)
+    _market_prices(_settings(config), refresh=refresh, offline=offline, write=write, limit=limit)
+
+
+def _market_prices(
+    settings: Settings, *, refresh: bool, offline: bool, write: bool, limit: int | None
+) -> None:
+    """Fetch, optionally store, and print the coverage of the market benchmark."""
+    from datetime import timedelta
+
+    from cascade.eval.market import coverage_summary
+    from cascade.eval.market_fetch import MarketFetcher, fetch_market_prices
+    from cascade.eval.store import write_market_prices
+    from cascade.ledger.store import load_scenarios
+
+    scenarios = sorted(load_scenarios(settings, role="admin"), key=lambda s: s.scenario_id)
+    if limit is not None:
+        scenarios = scenarios[:limit]
+    if not scenarios:
+        _fail("scenario registry is empty; run `cascade ledger build`", EXIT_PRECONDITION)
+
+    fetcher = MarketFetcher(
+        # Beside the registry's recordings, not among them: that directory is
+        # what the manifest hash is rebuildable from.
+        cache_root=settings.source_cache_path() / "market",
+        config=settings.market_baseline,
+        refresh=refresh,
+        offline=offline,
+    )
+    try:
+        prices = fetch_market_prices(scenarios, fetcher)
+    finally:
+        fetcher.close()
+    console.print(
+        f"{fetcher.requests:,} request(s) sent, {fetcher.replays:,} recording(s) replayed"
+    )
+
+    bound = timedelta(hours=settings.market_baseline.max_staleness_hours)
+    summary = coverage_summary(prices, max_staleness=bound)
+    table = Table(title="Market price at the cutoff -- coverage")
+    table.add_column("", style="cyan")
+    table.add_column("scenarios", justify="right")
+    table.add_column("note", overflow="fold")
+    table.add_row("asked", f"{summary.n_scenarios:,}", "every scenario lands in one row below")
+    table.add_row(
+        "usable",
+        f"[bold]{summary.n_usable:,}[/bold]",
+        f"observed strictly before the cutoff and at most "
+        f"{settings.market_baseline.max_staleness_hours:g} h old; the baseline's denominator",
+    )
+    table.add_row("stale", f"{summary.n_stale:,}", "priced, older than the bound; excluded")
+    for reason, count in summary.unobtainable:
+        table.add_row(f"unobtainable: {reason}", f"{count:,}", "excluded, never imputed")
+    console.print(table)
+
+    sources = Table(title="By source")
+    sources.add_column("source", style="cyan")
+    sources.add_column("scenarios", justify="right")
+    sources.add_column("usable", justify="right")
+    sources.add_column("stale", justify="right")
+    for source, total, usable, stale in summary.by_source:
+        sources.add_row(source, f"{total:,}", f"{usable:,}", f"{stale:,}")
+    console.print(sources)
+
+    if summary.staleness is not None:
+        age = summary.staleness
+        console.print(
+            f"staleness over {age.n:,} priced scenario(s), stale ones included: "
+            f"min {age.minimum:,.0f} s, p50 {age.p50:,.0f} s, p90 {age.p90:,.0f} s, "
+            f"p99 {age.p99:,.0f} s, max {age.maximum:,.0f} s"
+        )
+    for price in prices:
+        if price.unobtainable_reason in ("fetch_failed", "market_created_after_cutoff"):
+            console.print(f"  [dim]{price.scenario_id}: {price.detail}[/dim]")
+
+    if write:
+        written = write_market_prices(settings, prices)
+        console.print(f"[green]stored[/green] {written:,} row(s) in `market_prices`")
+
+    unfinished = sum(
+        count
+        for reason, count in summary.unobtainable
+        if reason in ("fetch_failed", "not_recorded")
+    )
+    if unfinished:
+        _fail(
+            f"{unfinished} price(s) are missing because a source did not answer, not because "
+            "of anything about the market; re-run to resume from the recordings",
+            EXIT_PRECONDITION,
+        )
 
 
 @eval_app.command("grid")

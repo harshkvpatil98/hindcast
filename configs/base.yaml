@@ -246,6 +246,36 @@ ledger: # scenario registry (spec §3.1)
   # CASCADE_METACULUS_TOKEN carries the Metaculus credential (single
   # underscore: it is a top-level Settings field, see `database` below).
 
+market_baseline: # the market's own probability at each cutoff (M14)
+  # The benchmark price is the last observation strictly before `cutoff_ts`.
+  # One older than this is stored and reported but never scored. 24 hours,
+  # because: (1) Polymarket's series is sampled every minute (measured: ~1,440
+  # points per day, the last one 11-80 s before the cutoff), so an older price
+  # means the series has a hole spanning the cutoff -- the market was not
+  # quoting when the forecast is dated; (2) agents see evidence right up to the
+  # cutoff, so a price from days earlier hands the system an information head
+  # start over its benchmark, and that bias runs in the system's favour --
+  # the direction that must never be silent; (3) the shortest horizon is 21
+  # days, so a day is under 5% of any scenario's remaining life. Chosen from
+  # how the sources sample, never from an outcome; not to be tuned against a
+  # Brier (§1).
+  max_staleness_hours: 24
+  # When nothing falls inside the staleness window, look this far back so a
+  # stale price is reported with its age rather than as "no history". The CLOB
+  # refuses windows much past two weeks ("interval is too long", measured at
+  # 21 days), so this is also the widest single request it will answer.
+  lookback_days: 14
+  # Sampling interval, in minutes, asked of the CLOB for each window. The
+  # staleness window is small enough to take at the source's native minute;
+  # the lookback is 14x wider and only has to date a stale price.
+  fidelity_minutes: 1
+  lookback_fidelity_minutes: 60
+  # Newest-first bets requested per Manifold contract; the API's own maximum.
+  manifold_bets_limit: 1000
+  # Politeness. Neither service publishes a budget for these endpoints, so
+  # this is deliberately slow: the whole registry is ~340 requests.
+  requests_per_second: 2.0
+
 corpus: # evidence corpus (spec §3.2)
   target_chunks: 1300000
   # The build stops starting new units here. 2.0M sits just above the largest

@@ -1,0 +1,12 @@
+{
+  "clobTokenIds": "[\"20409823440890580991858740982830079400388545011128140417359184672851498226541\", \"93952533116014414379230350868796176058698771395927379319122566995968615739087\"]",
+  "conditionId": "0xbd8e261857c2867751220efc21e64528d18521515949f88708057042385bba85",
+  "createdAt": "2023-12-18T17:27:02.254Z",
+  "enableOrderBook": true,
+  "endDate": "2024-03-31T00:00:00Z",
+  "id": "253452",
+  "outcomes": "[\"Yes\", \"No\"]",
+  "question": "Ethereum spot ETF approved by Mar 31?",
+  "slug": "ethereum-spot-etf-approved-by-mar-31",
+  "startDate": "2023-01-03T17:30:17.794Z"
+}

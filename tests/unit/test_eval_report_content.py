@@ -88,6 +88,15 @@ class TestTheDeltasAreReadCorrectly:
         headline = (directory / "headline.md").read_text()
         assert "do not sum" in headline
 
+    def test_every_delta_is_printed_with_the_count_it_was_paired_on(self, tmp_path: Path) -> None:
+        """One table holds deltas over different populations -- 90 for a capped
+        cell, fewer for the market benchmark -- so each row says its own n."""
+        artifact = _artifact(comparisons=(_comparison("LOO information asymmetry", 0.02),))
+        directory = write_report(artifact, root=tmp_path)
+        headline = (directory / "headline.md").read_text()
+        assert "| Comparison | n paired |" in headline
+        assert "| LOO information asymmetry | 90 |" in headline
+
     def test_every_comparison_carries_its_reading(self, tmp_path: Path) -> None:
         readings = {spec.name: spec.reading for spec in headline_comparisons()}
         artifact = _artifact(
@@ -220,10 +229,14 @@ class TestCellsAreMachineReadable:
         assert payload["cells"][0]["metrics"] is None
 
     def test_the_baseline_table_lists_all_five_even_when_absent(self, tmp_path: Path) -> None:
+        """...and the market benchmark beside them, equally visible when absent:
+        a report that dropped the row would hide that nobody fetched a price."""
         from cascade.eval.baselines import BASELINES
 
         baselines = tuple((spec.baseline_id, spec.name, spec.config_id, None) for spec in BASELINES)
         directory = write_report(_artifact(baselines=baselines), root=tmp_path)
         payload = json.loads((directory / "metrics.json").read_text())
-        assert len(payload["baselines"]) == 5
+        in_spec = {spec.baseline_id for spec in BASELINES if spec.in_spec}
+        assert len([row for row in payload["baselines"] if row["baseline_id"] in in_spec]) == 5
+        assert "market" in {row["baseline_id"] for row in payload["baselines"]}
         assert all(row["metrics"] is None for row in payload["baselines"])
