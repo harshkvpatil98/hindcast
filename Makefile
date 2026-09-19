@@ -109,8 +109,9 @@ ci: lint typecheck test ## Everything CI runs
 TF_IMAGE ?= hashicorp/terraform:1.16.3
 TFLINT_IMAGE ?= ghcr.io/terraform-linters/tflint:v0.64.0
 CHECKOV_VERSION ?= 3.3.19
-TF_ROOTS := envs/bootstrap envs/sandbox
-TF_LINT_DIRS := envs/sandbox envs/bootstrap modules/network modules/database modules/bench
+TF_ROOTS := envs/bootstrap envs/sandbox envs/platform
+TF_TEST_ROOTS := envs/sandbox envs/platform
+TF_LINT_DIRS := envs/sandbox envs/bootstrap envs/platform modules/network modules/database modules/bench modules/governance modules/guardrails modules/eventlake
 DOCKER_TF = docker run --rm -v $(CURDIR):/work -e TF_PLUGIN_CACHE_DIR=/work/.tf-plugin-cache -e TF_IN_AUTOMATION=1
 
 .PHONY: infra-fmt
@@ -125,7 +126,9 @@ infra-check: ## Terraform fmt/validate, offline tests (mock providers), tflint, 
 		$(DOCKER_TF) -w /work/infra/terraform/$$root $(TF_IMAGE) init -backend=false -input=false >/dev/null && \
 		$(DOCKER_TF) -w /work/infra/terraform/$$root $(TF_IMAGE) validate || exit 1; \
 	done
-	$(DOCKER_TF) -w /work/infra/terraform/envs/sandbox $(TF_IMAGE) test
+	@for root in $(TF_TEST_ROOTS); do \
+		$(DOCKER_TF) -w /work/infra/terraform/$$root $(TF_IMAGE) test || exit 1; \
+	done
 	$(DOCKER_TF) -w /work/infra/terraform -e TFLINT_PLUGIN_DIR=/work/.tf-plugin-cache/tflint --entrypoint tflint $(TFLINT_IMAGE) --init --config=/work/infra/terraform/.tflint.hcl
 	@for dir in $(TF_LINT_DIRS); do \
 		$(DOCKER_TF) -w /work/infra/terraform/$$dir -e TFLINT_PLUGIN_DIR=/work/.tf-plugin-cache/tflint --entrypoint tflint $(TFLINT_IMAGE) --config=/work/infra/terraform/.tflint.hcl || exit 1; \

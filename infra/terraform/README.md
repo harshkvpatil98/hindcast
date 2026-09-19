@@ -7,10 +7,14 @@ toolchain and gates: [ADR-0033](../../docs/adr/0033-infrastructure-as-code-terra
 
 ```
 envs/bootstrap   encrypted, versioned state bucket (local state, run once)
+envs/platform    M12: cost governance + event lake + SCP guardrails (docs/architecture/)
 envs/sandbox     network + database + bench, composed
 modules/network  private subnets only, VPC endpoints, flow logs -- no internet path
 modules/database Aurora 16.11 Serverless v2, KMS, TLS forced, IAM auth, role secrets
 modules/bench    ECR, ECS/Fargate task, artifacts bucket, least-privilege roles
+modules/governance  budget derived from configs/base.yaml, anomaly detection, alerts
+modules/guardrails  service control policies; attached to nothing until targets are named
+modules/eventlake   Object-Locked event log, Glue catalog, Athena workgroup, writer/analyst roles
 ```
 
 ## What is verified, and what is not

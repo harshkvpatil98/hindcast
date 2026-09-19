@@ -100,13 +100,15 @@ jobs:
 
       - name: validate
         run: |
-          for root in envs/bootstrap envs/sandbox; do
+          for root in envs/bootstrap envs/sandbox envs/platform; do
             terraform -chdir=$root init -backend=false -input=false
             terraform -chdir=$root validate
           done
 
       - name: offline tests (mock providers)
-        run: terraform -chdir=envs/sandbox test
+        run: |
+          terraform -chdir=envs/sandbox test
+          terraform -chdir=envs/platform test
 
       - uses: terraform-linters/setup-tflint@v6
         with:
@@ -117,7 +119,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tflint --init --config="$PWD/.tflint.hcl"
-          for dir in envs/sandbox envs/bootstrap modules/network modules/database modules/bench; do
+          for dir in envs/sandbox envs/bootstrap envs/platform modules/network modules/database modules/bench modules/governance modules/guardrails modules/eventlake; do
             tflint --chdir="$dir" --config="$PWD/.tflint.hcl"
           done
 

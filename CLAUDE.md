@@ -201,7 +201,7 @@ cascade trace cost         # §12.4: reconcile the run ledger against Langfuse
 
 ## 7. Architecture decisions
 
-Thirty-three ADRs in `docs/adr/` on this branch; 0032 (live mode, proposed) lives on `m13/live-mode`. Fifteen correct defects found in the spec,
+Thirty-four ADRs in `docs/adr/` on this branch; 0032 (live mode, proposed) lives on `m13/live-mode`. Fifteen correct defects found in the spec,
 and 0023, 0025 and 0026 correct defects found in **this build** -- an ingest order
 that satisfied every criterion while covering the wrong years, and two ablation
 factors that were configured, documented and inert. The rest record choices the
@@ -242,6 +242,7 @@ spec left open.
 | 0031 | A Claude Code CLI provider for local runs under a subscription, keyed apart because it cannot honour `temperature` or `max_tokens`; measured 448-token harness overhead, thinking on by default, and a working-directory guard against auto-loading this file into every call | M10 |
 | 0033 | Terraform 1.16.3 pinned and run in Docker (the system has 1.5.7, which predates `terraform test`); gated offline by mock-provider tests, TFLint and Checkov triaged skip by skip; no AWS account needed | M11 |
 | 0034 | Aurora 16.11 so pgvector stays 0.8.0 as locally (16.13 moves it to 0.8.1), minor upgrades off; an isolated VPC with no internet path; the bench as a Fargate task inside it; fixed ACU per measurement; a copy-on-write clone for the partitioning experiment | M11 |
+| 0035 | One dedicated account, because Marketplace billing defeats tag-based budgets; the budget is *derived* from `configs/base.yaml`, never restated; SCP guardrails bound to nothing until targets are named; the event lake makes invariant 6 two independent controls (Object Lock + an explicit Deny); recovery tiers follow cost-to-lose, set by this project's own data-loss incident | M12 |
 
 ---
 
@@ -1861,3 +1862,53 @@ Remaining for M11's gate:
   the corpus (the data-only restore is untested -- Aurora's master user is not
   a true superuser), re-bench at two fixed ACU sizes, and run the partitioning
   experiment on the clone. No Aurora number exists yet.
+
+
+### M12 — Platform design · *in progress: first slice designed and gated offline; nothing applied*
+
+Started while the corpus rebuilt, in its own worktree (`../cascade-m12`),
+stacked on M11. Its rule: map the mechanisms the project already has onto AWS
+rather than invent parallel ones.
+
+Shipped so far: `modules/governance` (an account budget whose limit is *read*
+from `configs/base.yaml`'s phase ceilings, plus anomaly detection and an
+encrypted alerts topic), `modules/guardrails` (two SCPs: allowed regions; audit
+trail, encryption, public-access block, no root, no leaving -- attached to
+nothing until targets are named), `modules/eventlake` (an Object-Locked events
+bucket, a Glue table mirroring migration 009's `events`, an Athena workgroup
+that enforces encryption and a scan limit, and writer/analyst roles),
+`envs/platform`; `docs/architecture/` (overview, threat model, DR runbook,
+Well-Architected review); ADR-0035.
+
+**Offline gates, measured:** `terraform test` **15 passed** in `envs/platform`
+(17 in `envs/sandbox` unchanged); TFLint clean; Checkov **403 passed, 0 failed,
+38 skipped** across all roots; the pytest static invariants pass over the
+larger tree.
+
+**What mutation testing caught.** Four properties were broken on purpose.
+Three failed a test. The fourth -- the budget ceiling hardcoded to `330` instead
+of derived -- **survived**: 330 is today's sum, so an assertion against the real
+config could not tell derived from restated. The test now runs the module
+against a fixture with different ceilings, and the mutant fails. This is the
+§1 rule (never write a target into a code path) arriving from the other side:
+a test that only checks today's value cannot protect a derivation.
+
+**Defects found:** the analyst role's Glue permissions were granted on `*`
+(Checkov; fixed by scoping to the catalog, database and table, with a test that
+no allow in either role names `*`) -- and the skip first written for it named
+the wrong check id, so it suppressed nothing. A first draft of the DR runbook
+said the LLM cache survived the volume loss "by luck"; it had never been
+created. Corrected before commit: the *source-response* cache was lost too,
+which is exactly why the original frozen split could not be re-derived.
+
+**The finding worth keeping:** in this project's one real data-loss incident,
+the smallest datasets were the irreplaceable ones -- the sealed registry and the
+2.9 GB source cache that reproduces it -- while the 1.95M-chunk corpus was
+merely slow to rebuild. The recovery tiers are set by cost-to-lose, not size.
+
+Remaining for M12's gate, each listed under its pillar in
+`docs/architecture/well-architected.md`: Step Functions for the ingest and the
+simulation fan-out; an `audit` module (CloudTrail, GuardDuty, Config); the
+tier-0 recovery export at `ledger seal`; dashboards and alarms; a deployment
+pipeline; and an adversarial-document probe for prompt injection through the
+corpus (threat T3), which nothing measures today.
