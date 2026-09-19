@@ -80,5 +80,10 @@ meant.
   (which would have deleted the corpus as orphans).
 - The poison-pill and date-monotonicity suites could not have caught either
   leak: they test that the date is respected, not that it is true. What would
-  catch it is a scan for text dated after its document — a regex over
-  "Updated: <date>" found both. That scan is not yet a test.
+  catch it is a scan for text dated after its document — a page's own
+  "Updated: <date>" stamp found both. That scan is now `cascade/corpus/stamps.py`
+  and the leakage probe `tests/leakage/test_update_stamps.py`: only update
+  stamps count, never a future date in prose, which is scheduled-event evidence.
+  Measured before the repair: **381 chunks** carried a stamp later than their
+  date (the largest gap 1,383 days); among the 1,147 stamp-bearing chunks of the
+  first re-dated file, none did.
