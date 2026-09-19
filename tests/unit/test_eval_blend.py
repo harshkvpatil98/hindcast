@@ -99,3 +99,56 @@ def test_applying_a_weight_cannot_see_an_outcome() -> None:
 def test_a_weight_outside_the_interval_is_refused() -> None:
     with pytest.raises(ValueError, match=r"\[0, 1\]"):
         apply_weight(1.2, {"a": (0.5, 0.5)})
+
+
+# ---------------------------------------------------------------------------
+# Fitted on one partition, scored on another
+# ---------------------------------------------------------------------------
+
+
+def test_the_weight_is_fitted_on_the_fitting_set_alone() -> None:
+    """Change only the scored scenarios' outcomes: the weight must not move."""
+    from cascade.eval.blend import evaluate_blend
+
+    fitting = pairs([(0.9, 0.5, 1), (0.5, 0.1, 0), (0.5, 0.9, 1), (0.1, 0.5, 0)])
+    scored = {f"t{i}": Paired(system=0.7, reference=0.4, outcome=i % 2) for i in range(10)}
+    flipped = {
+        key: item.model_copy(update={"outcome": 1 - item.outcome}) for key, item in scored.items()
+    }
+    one = evaluate_blend(fitting, scored, seed=1, b_resamples=200)
+    two = evaluate_blend(fitting, flipped, seed=1, b_resamples=200)
+    assert one.fit == two.fit == fit_weight(fitting)
+    assert one.n_scored == 10
+
+
+def test_a_scenario_in_both_sets_is_refused() -> None:
+    from cascade.eval.blend import evaluate_blend
+
+    shared = pairs([(0.9, 0.5, 1), (0.5, 0.1, 0)])
+    with pytest.raises(ValueError, match="both the fitting and the scored set"):
+        evaluate_blend(shared, shared, seed=1, b_resamples=200)
+
+
+def test_the_scored_briers_and_the_difference_agree() -> None:
+    from cascade.eval.blend import evaluate_blend
+
+    fitting = pairs([(0.9, 0.5, 1), (0.5, 0.1, 0), (0.5, 0.9, 1), (0.1, 0.5, 0)])
+    scored = {
+        "a": Paired(system=0.8, reference=0.6, outcome=1),
+        "b": Paired(system=0.3, reference=0.1, outcome=0),
+        "c": Paired(system=0.4, reference=0.7, outcome=1),
+    }
+    result = evaluate_blend(fitting, scored, seed=3, b_resamples=500)
+    w = result.fit.weight
+    expected_blend = (
+        sum(
+            (w * item.system + (1 - w) * item.reference - item.outcome) ** 2
+            for item in scored.values()
+        )
+        / 3
+    )
+    expected_system = sum((item.system - item.outcome) ** 2 for item in scored.values()) / 3
+    assert result.brier_blend == pytest.approx(expected_blend)
+    assert result.brier_system == pytest.approx(expected_system)
+    assert result.blend_minus_system is not None
+    assert result.blend_minus_system.point == pytest.approx(expected_blend - expected_system)

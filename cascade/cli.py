@@ -4390,6 +4390,91 @@ def eval_status(config: OverlayOpt = None) -> None:
         )
 
 
+@eval_app.command("blend")
+def eval_blend(
+    config: OverlayOpt = None,
+    system: Annotated[str, typer.Option("--system", help="The system's config id.")] = "C01",
+    reference: Annotated[
+        str, typer.Option("--reference", help="The forecaster to blend with.")
+    ] = "B2_single_direct",
+) -> None:
+    """Blend two forecasters with a weight fitted on dev and scored on test.
+
+    The weight is the Brier-optimal linear pool over the **dev** scenarios both
+    forecasters scored; it is then applied, unchanged, to the **test**
+    scenarios, and the blend is compared with the system alone by a paired
+    bootstrap. Fitting and scoring never share a scenario (ADR-0038). Exits 3
+    when either side has no paired scenario to work with.
+    """
+    from cascade.eval.blend import Paired, evaluate_blend
+    from cascade.eval.split import select
+    from cascade.eval.stats import bootstrap_seed
+
+    settings = _settings(config)
+    split = _frozen_split(settings)
+    declaration = _declared_split(settings, split)
+
+    def paired(partition: Partition) -> dict[str, Paired]:
+        from cascade.eval.store import scored_forecasts
+
+        left = {
+            item.scenario_id: item
+            for item in select(scored_forecasts(settings, config_id=system), declaration, partition)
+        }
+        right = {
+            item.scenario_id: item
+            for item in select(
+                scored_forecasts(settings, config_id=reference), declaration, partition
+            )
+        }
+        return {
+            key: Paired(
+                system=left[key].p_hat, reference=right[key].p_hat, outcome=left[key].outcome
+            )
+            for key in sorted(set(left) & set(right))
+        }
+
+    fitting, scored = paired("dev"), paired("test")
+    if not fitting or not scored:
+        _fail(
+            f"{system} and {reference} share {len(fitting)} dev and {len(scored)} test "
+            "scenarios; a blend needs both",
+            EXIT_PRECONDITION,
+        )
+    result = evaluate_blend(
+        fitting,
+        scored,
+        seed=bootstrap_seed(split.study_salt, "blend", system, reference),
+        b_resamples=settings.ensemble.bootstrap_b,
+    )
+    fit = result.fit
+    console.print(
+        f"weight on {system}: [bold]{fit.weight:.4f}[/bold] (fitted on {fit.n} dev scenarios"
+        + (
+            f"; unconstrained optimum {fit.unclipped:+.4f}, clipped to [0, 1])"
+            if fit.unclipped is not None and fit.unclipped != fit.weight
+            else ")"
+        )
+    )
+    table = Table(title=f"On {result.n_scored} held-out test scenarios")
+    table.add_column("forecaster", style="cyan")
+    table.add_column("Brier", justify="right")
+    for name, value in (
+        (system, result.brier_system),
+        (reference, result.brier_reference),
+        ("blend", result.brier_blend),
+    ):
+        table.add_row(name, "-" if value is None else f"{value:.6f}")
+    console.print(table)
+    if result.blend_minus_system is not None:
+        interval = result.blend_minus_system
+        console.print(
+            f"blend - {system}: {interval.point:+.6f}, 95% CI [{interval.lo:+.6f}, "
+            f"{interval.hi:+.6f}], p {interval.p_value:.4g}. Negative means the blend is "
+            "better. One comparison, not in the Appendix C family."
+        )
+
+
 @eval_app.command("injection")
 def eval_injection(
     config: OverlayOpt = None,

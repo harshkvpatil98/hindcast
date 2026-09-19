@@ -471,3 +471,22 @@ class TestGridScenarioSelection:
             with pytest.raises(typer.Exit) as caught:
                 self._select(variant, partition=partition, is_variant=True)
             assert caught.value.exit_code == EXIT_PRECONDITION
+
+
+class TestTheBlendCommand:
+    def test_it_fits_on_dev_and_scores_on_test(self, store: dict) -> None:
+        """C01 is right on test and wrong on dev; B2 the reverse. A weight fitted
+        on dev therefore leans on B2 -- and is then scored on test, where that
+        is the wrong call. The command must report that honestly rather than
+        find a weight that suits the scenarios it is scored on."""
+        result = runner.invoke(app, ["eval", "blend", "--system", "C01"])
+        assert result.exit_code == EXIT_OK, result.output
+        output = " ".join(result.output.split())
+        assert "fitted on 40 dev scenarios" in output
+        assert f"On {len(_declared().test)} held-out test scenarios" in output
+        assert "weight on C01: 0.0000" in output
+        assert "blend - C01: +" in output
+
+    def test_a_forecaster_with_nothing_paired_is_refused(self, store: dict) -> None:
+        result = runner.invoke(app, ["eval", "blend", "--reference", "no-such-config"])
+        assert result.exit_code == EXIT_PRECONDITION

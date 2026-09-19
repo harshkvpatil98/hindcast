@@ -17,7 +17,7 @@ closed form. No optimiser, no dependency, no tolerance, and the fit is exactly
 reproducible -- sums are exactly rounded, so not even the order the scenarios
 are keyed in can move the weight.
 
-Pure: no I/O, no clock, no RNG.
+Pure: no I/O, no clock, and no RNG but the seeded bootstrap the caller keys.
 """
 
 from __future__ import annotations
@@ -27,7 +27,10 @@ from collections.abc import Mapping, Sequence
 
 from pydantic import BaseModel, ConfigDict, Field
 
-__all__ = ["BlendFit", "Paired", "apply_weight", "fit_weight"]
+from cascade.eval.schema import BootstrapInterval
+from cascade.eval.stats import bootstrap_differences
+
+__all__ = ["BlendEvaluation", "BlendFit", "Paired", "apply_weight", "evaluate_blend", "fit_weight"]
 
 
 class Paired(BaseModel):
@@ -126,3 +129,67 @@ def apply_weight(weight: float, forecasts: Mapping[str, tuple[float, float]]) ->
         key: weight * forecasts[key][0] + (1.0 - weight) * forecasts[key][1]
         for key in sorted(forecasts)
     }
+
+
+class BlendEvaluation(BaseModel):
+    """A weight fitted on one partition and scored, unchanged, on another."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    fit: BlendFit
+    n_scored: int = Field(ge=0)
+    brier_system: float | None
+    brier_reference: float | None
+    brier_blend: float | None
+    blend_minus_system: BootstrapInterval | None
+    """Paired over the scored scenarios. Negative means the blend is better."""
+
+
+def evaluate_blend(
+    fitting: Mapping[str, Paired],
+    scored: Mapping[str, Paired],
+    *,
+    seed: int,
+    b_resamples: int,
+) -> BlendEvaluation:
+    """Fit on ``fitting``, score on ``scored``; the two must not overlap.
+
+    Preserves the separation the blend's reported gain depends on: a scenario
+    in both sets would let the weight be tuned on a scenario it is then scored
+    on, so an overlap raises rather than quietly counting twice. The scored
+    side reaches :func:`apply_weight` without its outcomes; they are used only
+    afterwards, to score.
+    """
+    overlap = sorted(set(fitting) & set(scored))
+    if overlap:
+        raise ValueError(
+            f"{len(overlap)} scenario(s) are in both the fitting and the scored set "
+            f"(first: {overlap[0]}); a blend weight must not be scored where it was fitted"
+        )
+    fit = fit_weight(fitting)
+    blended = apply_weight(
+        fit.weight, {key: (scored[key].system, scored[key].reference) for key in sorted(scored)}
+    )
+    keys = sorted(scored)
+    outcome = {key: float(scored[key].outcome) for key in keys}
+    system_errors = [(scored[key].system - outcome[key]) ** 2 for key in keys]
+    blend_errors = [(blended[key] - outcome[key]) ** 2 for key in keys]
+    differences = [b - s for b, s in zip(blend_errors, system_errors, strict=True)]
+    interval = (
+        bootstrap_differences(
+            differences,
+            point=_exact_sum(differences) / len(differences),
+            seed=seed,
+            b_resamples=b_resamples,
+        )
+        if differences
+        else None
+    )
+    return BlendEvaluation(
+        fit=fit,
+        n_scored=len(keys),
+        brier_system=_mean(system_errors),
+        brier_reference=_mean([(scored[key].reference - outcome[key]) ** 2 for key in keys]),
+        brier_blend=_mean(blend_errors),
+        blend_minus_system=interval,
+    )
