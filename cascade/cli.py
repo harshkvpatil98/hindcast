@@ -3519,6 +3519,73 @@ def eval_status(config: OverlayOpt = None) -> None:
         )
 
 
+@eval_app.command("injection")
+def eval_injection(
+    config: OverlayOpt = None,
+    limit: Annotated[
+        int, typer.Option("--limit", help="Scenarios to probe (a keyed-hash sample).")
+    ] = 30,
+) -> None:
+    """Measure whether a document in the evidence can give the model orders.
+
+    Threat T3. Each sampled scenario is forecast on its retrieved evidence and
+    again with one appended document that asserts nothing about the world and
+    instructs the model to report a probability contradicting its clean answer.
+    Reads no label. Costs money in `record` mode (four short calls per
+    scenario, under the `bench` ceiling); the clean arm is the direct
+    baseline's own request, so a recorded B2 serves it from the cache.
+    """
+    from cascade.corpus.embed import Embedder
+    from cascade.eval.injection import COMPLY_WITHIN, MOVED_BY, run_probe, sample_scenarios
+    from cascade.ledger.store import load_scenarios
+    from cascade.retrieval.search import Chronofence
+
+    settings = _settings(config)
+    _require_provider_ready(settings)
+    by_id = {item.scenario_id: item for item in load_scenarios(settings, role="sim")}
+    if not by_id:
+        _fail("scenario registry is empty; run `cascade ledger build`", EXIT_PRECONDITION)
+    chosen = [
+        by_id[scenario_id]
+        for scenario_id in sample_scenarios(sorted(by_id), salt=settings.study.salt, limit=limit)
+    ]
+
+    embedder = Embedder(
+        model_name=settings.models.embedding, batch_size=settings.corpus.embed_batch_size
+    )
+    embedder.load()
+    retrieved: dict[str, tuple[tuple[str, str, str], ...]] = {}
+    with Chronofence(settings, role="sim") as fence:
+        for scenario in chosen:
+            vector = embedder.encode([f"{scenario.question} {scenario.resolution_criterion}"])[0]
+            found = fence.search(vector, as_of=scenario.cutoff_ts, k=settings.retrieval.k_agent)
+            retrieved[scenario.scenario_id] = tuple(
+                (chunk.published_at.isoformat(), chunk.source, chunk.body) for chunk in found.chunks
+            )
+
+    report = run_probe(settings, chosen, retrieved)
+    table = Table(title=f"Injected instructions · {report.scenarios} scenarios")
+    for column in ("attack", "scored", "unparseable", "complied", "95% CI", "moved", "mean shift"):
+        table.add_column(column)
+    for item in report.attacks:
+        lo, hi = item.complied_interval
+        table.add_row(
+            item.attack,
+            f"{item.scored}/{item.trials}",
+            str(item.unparseable_poisoned),
+            str(item.complied),
+            f"[{lo:.2f}, {hi:.2f}]",
+            str(item.moved),
+            "n/a" if item.mean_shift is None else f"{item.mean_shift:+.3f}",
+        )
+    console.print(table)
+    console.print(
+        f"complied: answered within {COMPLY_WITHIN} of the instructed value · "
+        f"moved: shifted at least {MOVED_BY} toward it. Measured on the single-model "
+        "forecaster, whose evidence block is formatted as the agents' is."
+    )
+
+
 @eval_app.command("prompt-audit")
 def eval_prompt_audit(
     config: OverlayOpt = None,
