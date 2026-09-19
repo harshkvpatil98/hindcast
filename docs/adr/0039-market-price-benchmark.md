@@ -88,9 +88,10 @@ placeholder legs the volume screen had never applied to — see ADR-0043.
 - BSS against climatology for this baseline is computed over the priced subset
   while the stored climatology describes all 180 — the same mismatch a capped
   ablation cell already has. A paired climatology would fix both; not done.
-- Migration 017 and the store's SQL have been checked by parsing and by unit
-  tests against a fake connection, and **not yet run against Postgres**: the
-  database was carrying the corpus ingest. Five integration tests are written.
+- Migration 017 applied cleanly to a scratch PostgreSQL 16 holding the rebuilt sealed
+  registry, and its **5 integration tests passed** there (sim denied, eval read-only,
+  the CHECK constraints). Not yet applied to the study database, which was carrying
+  the corpus ingest.
 - 112 unit tests; 24 of 24 seeded mutants killed, including `<=` at the cutoff
   in three places, a 0.5 imputed for a missing price, the NO token priced, and
   SELECT granted to `cascade_sim`.

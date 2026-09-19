@@ -139,8 +139,9 @@ floor (ADR-0001), which M5 measured some as missing.
   arm, and a stored dossier changes nothing until a configuration reads it.
 - The corpus and the retrieval path must be final before dossiers are written:
   a dossier is a function of what retrieval returns.
-- 41 unit tests, 4 integration tests (written, not yet run: the database was
-  carrying an ingest). 23 of 23 seeded mutants are killed, including: support
+- 41 unit tests; migration 019 applied and the **4 integration tests passed** on a
+  scratch PostgreSQL 16 holding the rebuilt sealed registry (the hash survives
+  `jsonb`, an edited row is detected, `cascade_sim` reads and cannot write). 23 of 23 seeded mutants are killed, including: support
   drawn from the whole pool instead of the cited excerpts; the cutoff's own day
   admitted; a late excerpt filtered instead of raised; an ungrounded cell given
   the dossier; the baseline left without it; a missing dossier rendered as

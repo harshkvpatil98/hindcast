@@ -61,9 +61,13 @@ distinct documents, mean embedding distance (the cost), overlap, and latency.
 It decides nothing by itself; switching the mode re-keys every recorded
 decision and graph, so it is the owner's call on the numbers.
 
+## Verified on a scratch database (2026-09-19)
+
+A throwaway pgvector 0.8.0 / PostgreSQL 16 container, never the study database: all 19 migrations applied cleanly; the sealed registry rebuilt from the source cache to the same manifest (`91ccd314…`); 40,000 synthetic chunks across 39 quarterly partitions (registry question text, random vectors); `retrieval index --fts` built 39 GIN indexes in 2.9 s; `retrieval verify` passed with the hybrid function deployed; and **all 23 hybrid integration tests passed**, including the two planner assumptions (the keyword scan uses the expression index; its ordering is not served by HNSW). At 40,000 rows, not 2 million: the planner may choose differently at scale, which is why the tests run again on the real corpus.
+
 ## Not yet verified
 
-The SQL has never run: the database was carrying the corpus ingest. The runbook
+On the study database, nothing has run: it was carrying the corpus ingest. The 13 leakage and property tests need the embedding model, and were not run while the ingest held the machine's memory. The runbook
 order is `db migrate` → `retrieval index --fts --dry-run` → `retrieval index
 --fts` (est. 20–60 min, 0.9–1.7 GB, unverified) → `retrieval verify` → the 23
 integration and 13 leakage/property tests (the poison-pill through the keyword
