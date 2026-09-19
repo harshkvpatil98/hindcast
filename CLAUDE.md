@@ -158,6 +158,9 @@ cascade doctor  # toolchain, pinned stack, service health
 
 cascade db enable-iam      # RDS only: switch the app roles to IAM tokens (disables their passwords; ADR-0034)
 
+cascade ledger export --to PATH     # tier-0 recovery: the sealed registry as one verifiable file (holds the labels; refused inside the repo)
+cascade ledger restore --from PATH  # verify the archive twice, write, then re-hash the database; exits 3 on any mismatch
+
 cascade retrieval index    # (re)build one HNSW index per chunks partition (ADR-0026)
 cascade retrieval verify   # assert the Chronofence preconditions; exits 3 on drift
 cascade retrieval bench    # p50/p95/p99 + recall@20; exits 3 if a criterion is missed

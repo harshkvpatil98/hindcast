@@ -35,13 +35,21 @@ below follow from that, not from size.
   with no availability requirement; tier 0 is replicated cross-region so a
   region loss costs time, never the frozen split. A warm standby would spend
   more than the study.
-- **Not yet built:** the tier-0 export at `ledger seal`, and the restore drills
-  that would turn the targets above into measurements.
+- **Built, not exercised on AWS:** `cascade ledger export` writes the sealed
+  registry to one file carrying two independent checks -- the manifest hash and
+  a digest over every field, because a reworded question leaves the manifest
+  intact -- and `cascade ledger restore` verifies both before writing and
+  re-hashes the database afterwards. `modules/recovery` is the bucket it goes
+  to: Object-Locked, replicated to a second region without delete markers, and
+  explicitly denied to the simulation's principals, because the archive holds
+  the labels.
+- **Not yet built:** syncing the two caches on a schedule, and the restore
+  drills that would turn the targets above into measurements.
 
 ## Procedures
 
-**Registry or labels lost** → restore the tier-0 export; run `cascade ledger
-verify`. If the manifest hash does not match, **stop**: every downstream number
+**Registry or labels lost** → `cascade ledger restore --from <archive>`, then
+`cascade ledger verify`. If the manifest hash does not match, **stop**: every downstream number
 is keyed to that split, and a silently different split is the failure the
 frozen-split mechanism exists to prevent.
 

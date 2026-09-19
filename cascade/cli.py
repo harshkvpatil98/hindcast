@@ -872,6 +872,133 @@ def ledger_seal(config: OverlayOpt = None) -> None:
     )
 
 
+def _outside_repository(path: Path, *, what: str) -> Path:
+    """Resolve ``path`` and refuse it if it lies inside the repository.
+
+    An archive holds the resolution labels. In the database a grant keeps them
+    from the simulation (invariant 2); on disk nothing does, so the file must
+    not sit beside the code the simulation runs -- or where `git add` finds it.
+    """
+    from cascade.config import repo_root
+
+    resolved = path.expanduser().resolve()
+    root = repo_root().resolve()
+    if resolved == root or root in resolved.parents:
+        _fail(
+            f"{what} {resolved} is inside the repository. The archive contains the resolution "
+            "labels; keep it outside the tree the simulation runs from.",
+            EXIT_PRECONDITION,
+        )
+    return resolved
+
+
+@ledger_app.command("export")
+def ledger_export(
+    config: OverlayOpt = None,
+    to: Annotated[
+        Path, typer.Option("--to", help="Archive file to write, outside the repository.")
+    ] = Path("cascade-registry.json"),
+) -> None:
+    """Write the sealed registry to one verifiable file (tier-0 recovery).
+
+    The frozen split cannot be regenerated: re-fetching the sources yields a
+    different set once markets have resolved, which is how this project lost
+    its first one. Run this after `ledger seal` and keep the file somewhere the
+    database's failure cannot reach. **The file contains the labels.**
+    """
+    import os
+
+    from cascade.ledger.archive import ArchiveCorrupt, dump_archive
+    from cascade.ledger.store import load_records, read_manifest
+
+    settings = _settings(config)
+    target = _outside_repository(to, what="--to")
+    sealed = read_manifest(settings, role="admin")
+    if sealed is None:
+        _fail("the registry is not sealed; run `cascade ledger seal` first", EXIT_PRECONDITION)
+    records = load_records(settings, role="admin")
+    try:
+        text = dump_archive(
+            records, manifest_sha256=sealed.manifest_sha256, study_salt=sealed.study_salt
+        )
+    except (ArchiveCorrupt, ValueError) as exc:
+        _fail(str(exc), EXIT_PRECONDITION)
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_name(target.name + ".partial")
+    # Owner-only from the first byte: created 0600, never chmod-ed afterwards.
+    descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+        handle.write(text)
+    temporary.replace(target)
+    console.print(
+        f"[green]exported[/green] {len(records)} scenarios and labels to {target} "
+        f"(mode 0600)\nmanifest sha256: [bold]{sealed.manifest_sha256}[/bold]"
+    )
+
+
+@ledger_app.command("restore")
+def ledger_restore(
+    config: OverlayOpt = None,
+    source: Annotated[Path, typer.Option("--from", help="Archive written by `ledger export`.")] = (
+        Path("cascade-registry.json")
+    ),
+    replace: Annotated[
+        bool, typer.Option("--replace", help="Overwrite a registry that is already loaded.")
+    ] = False,
+) -> None:
+    """Restore the sealed registry from an archive, verifying it twice.
+
+    The archive is checked before anything is written -- its content digest and
+    its manifest -- and the database is re-read and re-hashed afterwards. A
+    restore that lands on a different split exits 3 rather than resealing.
+    """
+    from cascade.ledger.archive import ArchiveCorrupt, load_archive
+    from cascade.ledger.climatology import climatology_of
+    from cascade.ledger.manifest import compute_manifest
+    from cascade.ledger.store import load_records, write_manifest, write_registry
+
+    settings = _settings(config)
+    path = source.expanduser().resolve()
+    if not path.is_file():
+        _fail(f"no archive at {path}", EXIT_PRECONDITION)
+    try:
+        archive = load_archive(path.read_text(encoding="utf-8"))
+    except ArchiveCorrupt as exc:
+        _fail(f"refusing to restore: {exc}", EXIT_PRECONDITION)
+
+    # The salt keys every seed and every outcome-independent subsample. The
+    # same split under a different salt is a different study.
+    if archive.study_salt != settings.study.salt:
+        _fail(
+            f"the archive was sealed under study salt {archive.study_salt!r} and this "
+            f"configuration uses {settings.study.salt!r}; seeds and subsamples would differ",
+            EXIT_PRECONDITION,
+        )
+    try:
+        write_registry(settings, archive.records, replace=replace)
+    except RuntimeError as exc:
+        _fail(str(exc), EXIT_PRECONDITION)
+    write_manifest(
+        settings,
+        manifest_sha256=archive.manifest_sha256,
+        climatology=climatology_of(archive.records),
+        study_salt=archive.study_salt,
+        notes=f"n={len(archive.records)}; restored from an archive",
+    )
+    landed = compute_manifest(load_records(settings, role="admin"))
+    if landed != archive.manifest_sha256:
+        _fail(
+            f"the restored registry hashes to {landed[:16]}..., not the archive's "
+            f"{archive.manifest_sha256[:16]}...; do not reseal -- find out what changed",
+            EXIT_PRECONDITION,
+        )
+    console.print(
+        f"[green]restored[/green] {len(archive.records)} scenarios; manifest "
+        f"[bold]{archive.manifest_sha256}[/bold] verified in the database"
+    )
+
+
 @ledger_app.command("verify")
 def ledger_verify(config: OverlayOpt = None) -> None:
     """Assert the loaded registry still hashes to the sealed manifest.

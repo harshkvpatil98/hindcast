@@ -7,6 +7,17 @@ variable "region" {
   type        = string
 }
 
+variable "replica_region" {
+  description = "Second region for the tier-0 recovery replica. Required, never defaulted."
+  type        = string
+}
+
+variable "simulation_principal_arns" {
+  description = "IAM principals the simulation runs as; denied the labels archive."
+  type        = list(string)
+  default     = []
+}
+
 variable "name" {
   type    = string
   default = "cascade"
@@ -36,6 +47,14 @@ variable "guardrail_target_ids" {
 
 provider "aws" {
   region = var.region
+  default_tags {
+    tags = { Project = "cascade", Environment = var.name, Milestone = "M12", ManagedBy = "terraform" }
+  }
+}
+
+provider "aws" {
+  alias  = "replica"
+  region = var.replica_region
   default_tags {
     tags = { Project = "cascade", Environment = var.name, Milestone = "M12", ManagedBy = "terraform" }
   }
@@ -103,6 +122,18 @@ module "eventlake" {
   kms_key_arn   = aws_kms_key.platform.arn
 }
 
+module "recovery" {
+  source = "../../modules/recovery"
+  providers = {
+    aws         = aws
+    aws.replica = aws.replica
+  }
+  name                      = var.name
+  bucket_suffix             = local.account
+  kms_key_arn               = aws_kms_key.platform.arn
+  simulation_principal_arns = var.simulation_principal_arns
+}
+
 module "guardrails" {
   source          = "../../modules/guardrails"
   name            = var.name
@@ -116,6 +147,10 @@ output "study_ceiling_usd" {
 
 output "monthly_limit_usd" {
   value = module.governance.monthly_limit_usd
+}
+
+output "recovery_registry_prefix" {
+  value = module.recovery.registry_prefix
 }
 
 output "events_bucket" {

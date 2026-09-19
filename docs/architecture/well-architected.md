@@ -57,14 +57,15 @@ copy-on-write clones. Recovery tiers are set by what each dataset costs to lose
 
 **Does not.**
 - **No restore has ever been exercised.** Every RTO is a target.
-- The tier-0 export (sealed registry, source cache, LLM cache) is **not
-  built** — and its absence is exactly what made this project's one real
-  data-loss incident permanent.
+- The tier-0 export exists for the registry (`cascade ledger export` /
+  `restore`, and a replicated, locked bucket) but **not for the two caches**,
+  and nothing schedules it. Its absence is exactly what made this project's one
+  real data-loss incident permanent.
 - Single-AZ writer, single region. Acceptable for a batch study; stated, not
   hidden.
 
-**To close.** Build the tier-0 export into `ledger seal` and the end of each
-recorded phase; run one restore drill per tier and replace the targets with
+**To close.** Sync the source and LLM caches to the recovery bucket at the end
+of each recorded phase; run one restore drill per tier and replace the targets with
 measurements.
 
 ## Performance efficiency
