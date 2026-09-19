@@ -34,3 +34,13 @@ output "master_user_secret_arn" {
 output "role_secret_arns" {
   value = { for role, secret in aws_secretsmanager_secret.role : role => secret.arn }
 }
+
+output "subnet_ids" {
+  description = "The subnets the cluster may place an instance in. A test asserts none of them ever has a route to the internet."
+  value       = aws_db_subnet_group.this.subnet_ids
+}
+
+output "client_labels" {
+  description = "Who is admitted to PostgreSQL, by the caller's labels."
+  value       = sort(keys(aws_vpc_security_group_ingress_rule.postgres))
+}

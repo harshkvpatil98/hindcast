@@ -14,3 +14,9 @@ output "monthly_limit_usd" {
 output "alerts_topic_arn" {
   value = aws_sns_topic.alerts.arn
 }
+
+# Read from the policy document, so a root that forgot to pass a statement
+# set shows up as a smaller count.
+output "topic_policy_source_document_count" {
+  value = length(data.aws_iam_policy_document.alerts.source_policy_documents)
+}

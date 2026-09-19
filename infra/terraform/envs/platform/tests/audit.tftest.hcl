@@ -133,9 +133,11 @@ mock_provider "aws" {
 }
 
 variables {
-  name          = "t"
-  bucket_suffix = "123456789012-us-east-1"
-  kms_key_arn   = "arn:aws:kms:us-east-1:123456789012:key/mock"
+  name                   = "t"
+  bucket_suffix          = "123456789012-us-east-1"
+  kms_key_arn            = "arn:aws:kms:us-east-1:123456789012:key/mock"
+  alerts_topic_arn       = "arn:aws:sns:us-east-1:123456789012:t-cost-alerts"
+  guardduty_min_severity = 7
 }
 
 run "the_trail_covers_every_region_and_proves_its_own_integrity" {
@@ -633,4 +635,120 @@ run "a_log_retention_cloudwatch_would_reject_is_refused_before_apply" {
     log_retention_days = 100
   }
   expect_failures = [var.log_retention_days]
+}
+
+# --- GuardDuty findings go somewhere (ADR-0042) -----------------------------------------------
+
+run "findings_at_or_above_the_threshold_go_to_the_alerts_topic" {
+  command = plan
+  module {
+    source = "../../modules/audit"
+  }
+
+  assert {
+    condition     = tolist(jsondecode(aws_cloudwatch_event_rule.findings.event_pattern).source) == tolist(["aws.guardduty"]) && tolist(jsondecode(aws_cloudwatch_event_rule.findings.event_pattern)["detail-type"]) == tolist(["GuardDuty Finding"])
+    error_message = "The rule matches GuardDuty findings and nothing else."
+  }
+  assert {
+    condition     = tolist(jsondecode(aws_cloudwatch_event_rule.findings.event_pattern).detail.severity[0].numeric) == tolist([">=", 7])
+    error_message = "At or above the caller's threshold: a numeric >= match, not a list of severities somebody typed."
+  }
+  assert {
+    condition     = aws_cloudwatch_event_target.findings.arn == var.alerts_topic_arn
+    error_message = "The target is the alerts topic."
+  }
+  assert {
+    condition     = length(aws_cloudwatch_event_target.findings.input_transformer) == 1 && strcontains(one(aws_cloudwatch_event_target.findings.input_transformer).input_template, "<severity>") && strcontains(one(aws_cloudwatch_event_target.findings.input_transformer).input_template, "<id>")
+    error_message = "The message names the severity and the finding id, so a person can act on it without the console."
+  }
+  assert {
+    condition     = aws_guardduty_detector.this.finding_publishing_frequency == "FIFTEEN_MINUTES"
+    error_message = "Updates to a finding reach EventBridge at the shortest interval GuardDuty offers."
+  }
+}
+
+run "the_threshold_follows_the_caller" {
+  command = plan
+  module {
+    source = "../../modules/audit"
+  }
+  variables {
+    guardduty_min_severity = 4
+  }
+
+  assert {
+    condition     = tolist(jsondecode(aws_cloudwatch_event_rule.findings.event_pattern).detail.severity[0].numeric) == tolist([">=", 4])
+    error_message = "The pattern must be built from the variable, not restated."
+  }
+}
+
+run "the_topic_policy_admits_this_rule_and_this_alarm_by_arn" {
+  # apply, not plan: the statements name ARNs built from data sources.
+  command = apply
+  module {
+    source = "../../modules/audit"
+  }
+
+  assert {
+    condition     = tolist(output.controls.topic_allow_source_arns["GuardDutyFindingsRulePublishes"]) == tolist(["arn:aws:events:us-east-1:123456789012:rule/t-guardduty-findings"])
+    error_message = "EventBridge's allow is scoped by aws:SourceArn to exactly this rule; events.amazonaws.com is every account's principal."
+  }
+  assert {
+    condition     = endswith(output.controls.topic_allow_source_arns["GuardDutyFindingsRulePublishes"][0], "rule/${output.controls.findings_rule_name}")
+    error_message = "And the ARN in the statement names the rule that was actually created."
+  }
+  assert {
+    condition     = tolist(output.controls.topic_allow_source_arns["GuardDutyDeliveryAlarmPublishes"]) == tolist(["arn:aws:cloudwatch:us-east-1:123456789012:alarm:t-guardduty-alert-delivery"])
+    error_message = "The delivery alarm's allow is scoped to that one alarm."
+  }
+  assert {
+    condition     = alltrue([for sid, arns in output.controls.topic_allow_source_arns : length(arns) == 1])
+    error_message = "Every allow to a service principal carries exactly one aws:SourceArn."
+  }
+  assert {
+    condition     = tolist(output.controls.topic_allow_resources) == tolist([var.alerts_topic_arn])
+    error_message = "Both statements are for the one topic."
+  }
+}
+
+run "a_rule_that_cannot_deliver_alarms" {
+  command = plan
+  module {
+    source = "../../modules/audit"
+  }
+
+  assert {
+    condition     = aws_cloudwatch_metric_alarm.findings_delivery.metric_name == "FailedInvocations" && aws_cloudwatch_metric_alarm.findings_delivery.namespace == "AWS/Events"
+    error_message = "A matched finding that EventBridge could not publish is the failure that would otherwise be silent."
+  }
+  assert {
+    condition     = aws_cloudwatch_metric_alarm.findings_delivery.dimensions.RuleName == aws_cloudwatch_event_rule.findings.name
+    error_message = "For this rule."
+  }
+  assert {
+    condition     = tolist(aws_cloudwatch_metric_alarm.findings_delivery.alarm_actions) == tolist([var.alerts_topic_arn]) && aws_cloudwatch_metric_alarm.findings_delivery.threshold == 1
+    error_message = "One failed invocation alerts."
+  }
+}
+
+run "a_severity_off_the_scale_is_refused" {
+  command = plan
+  module {
+    source = "../../modules/audit"
+  }
+  variables {
+    guardduty_min_severity = 11
+  }
+  expect_failures = [var.guardduty_min_severity]
+}
+
+run "a_topic_that_is_not_a_topic_is_refused" {
+  command = plan
+  module {
+    source = "../../modules/audit"
+  }
+  variables {
+    alerts_topic_arn = "t-cost-alerts"
+  }
+  expect_failures = [var.alerts_topic_arn]
 }

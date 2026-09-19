@@ -70,6 +70,59 @@ variable "security_group_ids" {
   }
 }
 
+variable "study_task" {
+  description = <<-EOT
+    What the study chain's states run as (modules/study): a task definition
+    with its revision, the two roles Step Functions must pass to ECS, and the
+    task's own security groups. Null runs the study on the bench's task, which
+    is pinned to replay and cannot call a model: the chain then fails closed at
+    its first cache miss, exit 4, having spent nothing.
+  EOT
+  type = object({
+    task_definition_arn     = string
+    task_execution_role_arn = string
+    task_role_arn           = string
+    security_group_ids      = list(string)
+  })
+  default = null
+
+  validation {
+    condition     = var.study_task == null || can(regex(":task-definition/[^:/]+:[0-9]+$", var.study_task.task_definition_arn))
+    error_message = "study_task.task_definition_arn must be a task definition ARN ending in :<revision>."
+  }
+}
+
+variable "egress_network" {
+  description = <<-EOT
+    The egress tier (modules/egress), or null for none. The states that must
+    reach beyond the VPC are launched in `subnet_ids` with
+    `security_group_ids` ADDED to their own groups; every other state never
+    sees either. Null is the default and the isolated design: no state leaves.
+  EOT
+  type = object({
+    subnet_ids         = list(string)
+    security_group_ids = list(string)
+  })
+  default = null
+
+  validation {
+    condition     = var.egress_network == null || (length(var.egress_network.subnet_ids) > 0 && length(var.egress_network.security_group_ids) > 0)
+    error_message = "egress_network needs at least one subnet and one security group."
+  }
+}
+
+variable "model_calls_use_egress" {
+  description = <<-EOT
+    Whether the states that call a model run in the egress tier. False when
+    the provider is reached through an interface endpoint inside the VPC
+    (Bedrock; Claude Platform on AWS when an endpoint service name is known);
+    true for api.anthropic.com, which has no private path. Off by default, as
+    every way out is; it has no effect without `egress_network`.
+  EOT
+  type        = bool
+  default     = false
+}
+
 variable "alerts_topic_arn" {
   description = "Where a failed chain is announced (modules/governance)."
   type        = string
@@ -126,9 +179,11 @@ variable "step_timeout_seconds" {
 variable "simulate_wave" {
   description = <<-EOT
     Runs advanced in lockstep by `simulate all` -- ADR-0020's operator dial.
-    On Fargate it is also the unit of re-payment: the LLM cache lives on the
-    task's scratch volume, so a task that dies mid-wave has paid for answers
-    the next task cannot read. `eval grid` keeps the CLI's own default.
+    On the bench's task it is also the unit of re-payment: there the LLM cache
+    lives on scratch, so a task that dies mid-wave has paid for answers the
+    next task cannot read. With `study_task` the cache is a file system that
+    outlives the task (modules/cache), and the unit of loss is the one call in
+    flight. `eval grid` keeps the CLI's own default.
   EOT
   type        = number
   default     = 200

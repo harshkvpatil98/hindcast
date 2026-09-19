@@ -258,32 +258,13 @@ resource "aws_cloudwatch_log_group" "task" {
   kms_key_id        = var.kms_key_arn
 }
 
-resource "aws_ecs_task_definition" "bench" {
-  family                   = var.name
-  requires_compatibilities = ["FARGATE"]
-  network_mode             = "awsvpc"
-  cpu                      = var.task_cpu
-  memory                   = var.task_memory
-  execution_role_arn       = aws_iam_role.execution.arn
-  task_role_arn            = aws_iam_role.task.arn
-
-  runtime_platform {
-    cpu_architecture        = "ARM64"
-    operating_system_family = "LINUX"
-  }
-
-  ephemeral_storage {
-    size_in_gib = var.ephemeral_storage_gib
-  }
-
-  # The container's only writable location. The root filesystem is read-only,
-  # so the image cannot be modified at run time; everything the CLI writes is
-  # redirected here through settings (below).
-  volume {
-    name = "scratch"
-  }
-
-  container_definitions = jsonencode([{
+# The container, as a value rather than inline JSON, because modules/study runs
+# the SAME image with the same database wiring and must not restate it: the
+# study's definition is this one with a handful of keys overridden, so a
+# setting added here (a new path moved off the read-only root, say) reaches
+# both or neither.
+locals {
+  container = {
     name      = "cascade"
     image     = "${aws_ecr_repository.bench.repository_url}:${var.image_tag}"
     essential = true
@@ -330,5 +311,33 @@ resource "aws_ecs_task_definition" "bench" {
         awslogs-stream-prefix = "bench"
       }
     }
-  }])
+  }
+}
+
+resource "aws_ecs_task_definition" "bench" {
+  family                   = var.name
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = var.task_cpu
+  memory                   = var.task_memory
+  execution_role_arn       = aws_iam_role.execution.arn
+  task_role_arn            = aws_iam_role.task.arn
+
+  runtime_platform {
+    cpu_architecture        = "ARM64"
+    operating_system_family = "LINUX"
+  }
+
+  ephemeral_storage {
+    size_in_gib = var.ephemeral_storage_gib
+  }
+
+  # The container's only writable location. The root filesystem is read-only,
+  # so the image cannot be modified at run time; everything the CLI writes is
+  # redirected here through settings (local.container, above).
+  volume {
+    name = "scratch"
+  }
+
+  container_definitions = jsonencode([local.container])
 }

@@ -20,25 +20,29 @@ exit code, because here a 2 (budget ceiling) and a 1 (a bug) are different
 events (`modules/observability`). Deployment identity is GitHub OIDC, with
 `apply` trusted only from a reviewed environment (`modules/cicd`).
 
+Since ADR-0042 the chains have what they lacked, each as an opt-in the root
+refuses to default: an egress tier for the one ingest state that fetches; a
+study task definition with model access, per provider, and the LLM cache on a
+file system that outlives the task; and a `plan` workflow on pull requests
+through the OIDC plan role, inert until an account exists and never an apply.
+
 **Does not.**
-- **Neither chain can run to completion today**, and the module says so: the
-  ingest fetches from the public internet and the sandbox VPC has no egress by
-  design; the study's task is pinned to `replay` and its role cannot call a
-  model; and the LLM cache and report files live on task scratch that dies with
-  the task. The chains are the right shape for the code as it is -- serial,
-  because the ingest has no unit-claiming and the fan-out holds its wavefront
-  in one process -- not yet a working deployment.
+- **Neither chain has run.** The wiring is complete and gated offline; the
+  first execution will find what mocks cannot: whether the regional DNS
+  allow-list is complete (run in ALERT first), whether DataSync accepts the
+  locked bucket, and what the provider's price table must hold (it ships
+  empty, and the task exits 3 until it is filled from the live page).
 - The pipeline retries a task that *failed* only for `corpus build`, because a
   retried phase used to be re-granted its whole budget ceiling (fixed in the
   cost meter at M12; the wider retry is now safe and not yet enabled).
-- The OIDC roles exist; **no workflow uses them**. `terraform apply` is still a
-  person at a terminal.
+- `terraform apply` is still a person at a terminal — by decision (ADR-0035),
+  and the plan workflow's test asserts it stays that way.
 - Two alarm thresholds (free memory, connections) have no value yet: they
   depend on a bench that has not run.
+- What `cascade report` writes still dies with the task.
 
-**To close.** Give the ingest an egress path or a fetch stage outside the VPC;
-a study task definition with model access and durable cache storage; a `plan`
-workflow on pull requests; set the two thresholds from the first bench.
+**To close.** One ingest execution in ALERT mode, then BLOCK; set the two
+thresholds from the first bench; an artifact for the report.
 
 ## Security
 
@@ -48,19 +52,32 @@ they matter (the lake writer); no long-lived model credential on the AWS paths;
 secrets off command lines and out of state where RDS can manage them; SCPs for
 region, audit trail, encryption and root. See the [threat model](threat-model.md).
 
+GuardDuty findings now reach the alerts topic above a severity the operator
+chooses (no default), through a rule the topic admits by ARN, with an alarm
+for the finding that could not be delivered. The egress tier is the one
+designed exception to "no internet path": opt-in, one state, one AZ, TCP 443,
+a DNS allow-list that fails closed, and a static test that keeps every
+gateway, route and open CIDR inside `modules/egress`. Every third-party
+action in the credentialed workflow is pinned by SHA and tested for it.
+
 **Does not.**
 - **Prompt injection through the evidence corpus is unmeasured** (threat T3).
   The blast radius is bounded by the action schema and the deterministic
   arbiter, but no probe tests it.
+- **The egress tier is a lookup control, not a packet control** (T13): a
+  compromised ingest task that already holds an address can reach it. The
+  ingest still runs as the database admin; a `cascade_ingest` role without
+  the labels grant is the control that would close it, and is code.
 - SCPs are written and tested, **not attached**: that needs an organization.
-- GuardDuty findings alert nobody yet, and there is no Security Hub. (The
-  audit trail itself now exists: `modules/audit` -- CloudTrail to a locked
-  bucket with data events for the lake and recovery buckets, GuardDuty, Config.)
+- There is no Security Hub.
+- `ci.yml` uses moving tags for three third-party actions (reported, not
+  rewritten: it holds no cloud credential; the invariants test carries them
+  as a ratchet).
 - Role passwords exist in Terraform state until the IAM switch is made.
 
 **To close.** An adversarial-document probe alongside the poison-pill probe;
-route GuardDuty findings to the alerts topic; attach the SCPs from a management
-account.
+a `cascade_ingest` Postgres role; attach the SCPs from a management account;
+pin `ci.yml`'s actions.
 
 ## Reliability
 
@@ -71,18 +88,23 @@ recovery path. Aurora gives point-in-time recovery; experiments run on
 copy-on-write clones. Recovery tiers are set by what each dataset costs to lose
 ([DR runbook](dr-runbook.md)).
 
+The LLM cache is on EFS, so a task stopped at its timeout — the design's own
+stop rule — loses one call, not a wave; a scheduled DataSync task copies it,
+add-only, into the locked and replicated recovery bucket; the source cache
+has a prefix, an add-only upload policy and a procedure ([DR
+runbook](dr-runbook.md)).
+
 **Does not.**
-- **No restore has ever been exercised.** Every RTO is a target.
-- The tier-0 export exists for the registry (`cascade ledger export` /
-  `restore`, and a replicated, locked bucket) but **not for the two caches**,
-  and nothing schedules it. Its absence is exactly what made this project's one
-  real data-loss incident permanent.
+- **No restore has ever been exercised.** Every RTO is a target; the LLM
+  cache's is unmeasured and bound by object count.
+- The source cache's upload is a person, not a schedule.
+- The egress tier is one AZ: an AZ outage stops the ingest until it is
+  re-run, which it survives by resuming.
 - Single-AZ writer, single region. Acceptable for a batch study; stated, not
   hidden.
 
-**To close.** Sync the source and LLM caches to the recovery bucket at the end
-of each recorded phase; run one restore drill per tier and replace the targets with
-measurements.
+**To close.** Run one restore drill per tier and replace the targets with
+measurements; a count check between the file system and the archive.
 
 ## Performance efficiency
 
@@ -111,12 +133,24 @@ endpoints kept to the four the task needs; batch inference where the provider
 offers it, and a refusal to run a batched phase unbatched. No price is written
 into the repository.
 
+The egress decision was made on cost-of-mistake: a NAT gateway forgotten for
+a month is about $33; a Network Firewall endpoint forgotten for a month is
+about $288, most of the study's $330 budget (ADR-0042, with what could and
+could not be verified). The DataSync task is pinned to Basic mode because
+Enhanced bills per execution; the cache's copy schedule and the DNS
+firewall's domain list are inputs with no default because each prices a
+decision.
+
 **Does not.**
 - **No AWS cost has been measured**, so the infrastructure allowance has no
   basis yet — which is why it is a required input with no default.
+- The DataSync schedule's per-run S3 request cost scales with the cache
+  (hundreds of thousands of entries at study scale) and is unmeasured.
 - Marketplace billing for model spend defeats tag-based allocation; the
   dedicated account is a workaround, and per-phase model cost on AWS is visible
   only through the in-process meter.
+- Reading CC-NEWS through the S3 gateway endpoint instead of the NAT would
+  save about $6 per full crawl in us-east-1 and needs a code change.
 
 **To close.** One measured sandbox cycle (create, bench, destroy) to set the
 allowance from data; reconcile the meter against Cost Explorer at M8's gate.

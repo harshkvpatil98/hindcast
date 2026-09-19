@@ -23,6 +23,11 @@ output "required_key_policy_statements_json" {
   value       = data.aws_iam_policy_document.required_key_policy.json
 }
 
+output "required_topic_policy_statements_json" {
+  description = "Statements the alerts topic's policy must carry for findings to arrive; merge with `extra_topic_policy_documents`. Depends on names, never on the topic resource."
+  value       = data.aws_iam_policy_document.required_topic_policy.json
+}
+
 # Read from the resources, not echoed from the inputs, so a test that asserts
 # on this output fails when a resource changes -- including from the root,
 # where the module's resources are out of a test's reach.
@@ -54,9 +59,20 @@ output "controls" {
       s.sid => flatten([for c in s.condition : c.values if c.variable == "aws:SourceArn" && c.test == "StringEquals"])
       if s.effect != "Deny" && contains(flatten([for p in s.principals : tolist(p.identifiers)]), "cloudtrail.amazonaws.com")
     }
-    log_group_kms_key_arn     = aws_cloudwatch_log_group.trail.kms_key_id
-    log_group_retention_days  = aws_cloudwatch_log_group.trail.retention_in_days
-    guardduty_enabled         = aws_guardduty_detector.this.enable
+    log_group_kms_key_arn    = aws_cloudwatch_log_group.trail.kms_key_id
+    log_group_retention_days = aws_cloudwatch_log_group.trail.retention_in_days
+    guardduty_enabled        = aws_guardduty_detector.this.enable
+    findings_rule_name       = aws_cloudwatch_event_rule.findings.name
+    findings_pattern         = jsondecode(aws_cloudwatch_event_rule.findings.event_pattern)
+    findings_target_arn      = aws_cloudwatch_event_target.findings.arn
+    findings_delivery_alarm  = { metric = aws_cloudwatch_metric_alarm.findings_delivery.metric_name, rule = aws_cloudwatch_metric_alarm.findings_delivery.dimensions.RuleName, actions = aws_cloudwatch_metric_alarm.findings_delivery.alarm_actions }
+    # Every allow to a service principal in the topic statements, with the
+    # ARN it is scoped to. An unscoped one shows up here as an empty list.
+    topic_allow_source_arns = {
+      for s in data.aws_iam_policy_document.required_topic_policy.statement :
+      s.sid => flatten([for c in s.condition : c.values if c.variable == "aws:SourceArn" && c.test == "ArnEquals"])
+    }
+    topic_allow_resources     = distinct(flatten([for s in data.aws_iam_policy_document.required_topic_policy.statement : s.resources]))
     config_records_all_types  = one(aws_config_configuration_recorder.this.recording_group).all_supported
     config_records_global     = one(aws_config_configuration_recorder.this.recording_group).include_global_resource_types
     config_recording          = aws_config_configuration_recorder_status.this.is_enabled

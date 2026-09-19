@@ -122,6 +122,7 @@ variables {
   region                       = "us-east-1"
   replica_region               = "us-west-2"
   infrastructure_allowance_usd = 50
+  guardduty_min_severity       = 7
 }
 
 run "the_platform_composes" {
@@ -147,5 +148,35 @@ run "the_region_guardrail_always_admits_the_platforms_own_two_regions" {
   assert {
     condition     = toset(one(one(module.guardrails.regions_statement).condition).values) == toset(["us-east-1", "us-west-2"])
     error_message = "A region SCP that omitted the replica region would deny the platform's own recovery bucket."
+  }
+}
+
+run "guardduty_findings_reach_the_one_alerts_topic_and_the_topic_admits_them" {
+  command = apply
+
+  assert {
+    condition     = module.audit.controls.findings_target_arn == module.governance.alerts_topic_arn
+    error_message = "Findings go where the budget alerts go."
+  }
+  assert {
+    condition     = tolist(module.audit.controls.topic_allow_resources) == tolist([module.governance.alerts_topic_arn])
+    error_message = "The audit module's topic statements are written for the governance module's topic."
+  }
+  assert {
+    condition     = module.governance.topic_policy_source_document_count == 2
+    error_message = "The topic policy merges the sandbox's statements AND the audit module's: a root that forgot the second drops every finding, with no error."
+  }
+}
+
+run "the_recovery_output_is_what_the_sandbox_takes" {
+  command = apply
+
+  assert {
+    condition     = output.recovery.llm_cache_prefix == "llm-cache" && can(regex("^arn:aws:s3:::", output.recovery.bucket_arn)) && output.recovery.kms_key_arn == aws_kms_key.platform.arn
+    error_message = "The sandbox's `study.recovery` is this object, passed whole: bucket, key, prefix."
+  }
+  assert {
+    condition     = endswith(output.recovery_source_cache_prefix, "/source-cache/")
+    error_message = "The platform must say where the source cache goes."
   }
 }

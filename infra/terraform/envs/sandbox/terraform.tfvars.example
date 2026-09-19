@@ -2,3 +2,30 @@
 region             = "us-east-1"
 availability_zones = ["us-east-1a", "us-east-1b"]
 acu                = 8
+
+# --- Opt-ins (ADR-0042). Each is a decision; none has a default. -----------------
+
+# The way out, for the ingest. Hosts from cascade/corpus/sources/*.py; drop
+# any source you are not ingesting. Start in ALERT, read the DNS log, then BLOCK.
+# egress = {
+#   availability_zone   = "us-east-1a"            # one of availability_zones
+#   allowed_domains     = ["data.commoncrawl.org", "en.wikipedia.org", "www.federalregister.gov", "www.sec.gov", "api.gdeltproject.org"]
+#   dns_firewall_action = "ALERT"                 # then "BLOCK"
+# }
+
+# The study task and its durable cache. `recovery` is the platform root's
+# `terraform output recovery`, copied whole. The schedule is the RPO for the
+# LLM cache against a per-run cost that grows with it; hourly is the minimum.
+# study = {
+#   model_provider           = "aws"              # aws | bedrock | anthropic
+#   model_region             = "us-east-1"
+#   workspace_id             = "wrkspc_..."       # aws only; not a credential
+#   # model_endpoint_service_name = "com.amazonaws.us-east-1...."   # aws: when you have the PrivateLink name; else needs `egress`
+#   # api_key_secret = { arn = "arn:aws:secretsmanager:...", kms_key_arn = "arn:aws:kms:..." }   # anthropic only; needs `egress`
+#   recovery = {
+#     bucket_arn       = "arn:aws:s3:::cascade-recovery-ACCOUNT_ID-REGION"
+#     kms_key_arn      = "arn:aws:kms:REGION:ACCOUNT_ID:key/KEY_ID"
+#     llm_cache_prefix = "llm-cache"
+#   }
+#   sync_schedule_expression = "rate(1 hour)"
+# }

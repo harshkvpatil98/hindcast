@@ -63,6 +63,91 @@ variable "pipeline" {
   default = null
 }
 
+variable "egress" {
+  description = <<-EOT
+    The egress tier (modules/egress), or null for none -- and null is the
+    default, because the default sandbox is ADR-0034's isolated VPC. Setting it
+    gives the VPC an internet gateway, one NAT gateway in one AZ, and one
+    subnet whose tasks can reach the names on `allowed_domains`; the ingest's
+    fetching state runs there, and the study's model calls when the provider
+    has no private path. Every attribute is required: which AZ bills the NAT,
+    what may be reached, and whether an unlisted name is logged ("ALERT") or
+    refused ("BLOCK") are decisions, not constants.
+  EOT
+  type = object({
+    availability_zone   = string
+    allowed_domains     = list(string)
+    dns_firewall_action = string
+  })
+  default = null
+
+  # The cache's mount targets exist only where the isolated tier has a subnet,
+  # and a task mounts through the one in its own AZ.
+  validation {
+    condition     = var.egress == null || contains(var.availability_zones, var.egress.availability_zone)
+    error_message = "egress.availability_zone must be one of availability_zones: an egress task mounts the LLM cache through the mount target in its own AZ."
+  }
+}
+
+variable "study" {
+  description = <<-EOT
+    The study task (modules/study) and its durable LLM cache (modules/cache),
+    or null for none. `recovery` is the platform root's `recovery` output,
+    passed whole: the cache is copied into that bucket on
+    `sync_schedule_expression`, which has no default -- it is the RPO for
+    losing the file system, priced against a per-run cost that grows with the
+    cache. `model_endpoint_service_name` is the PrivateLink service for Claude
+    Platform on AWS, when the operator has it; this project could not find it
+    published, so it is never guessed.
+  EOT
+  type = object({
+    model_provider              = string
+    model_region                = optional(string)
+    workspace_id                = optional(string)
+    model_endpoint_service_name = optional(string)
+    api_key_secret = optional(object({
+      arn         = string
+      kms_key_arn = string
+    }))
+    recovery = object({
+      bucket_arn       = string
+      kms_key_arn      = string
+      llm_cache_prefix = string
+    })
+    sync_schedule_expression = string
+  })
+  default = null
+
+  # api.anthropic.com has no private path, and Claude Platform on AWS has one
+  # only when its endpoint service is named. Without the egress tier those
+  # calls would time out inside a task that is already billing.
+  validation {
+    condition = (
+      var.study == null ? true :
+      var.study.model_provider == "anthropic" ? var.egress != null :
+      var.study.model_provider == "aws" && var.study.model_endpoint_service_name == null ? var.egress != null :
+      true
+    )
+    error_message = "This provider is reached over the internet: set `egress` as well, or (for aws) give model_endpoint_service_name."
+  }
+  # An interface endpoint serves its own region.
+  validation {
+    condition = (
+      var.study == null ? true :
+      var.study.model_provider == "bedrock" || (var.study.model_provider == "aws" && var.study.model_endpoint_service_name != null) ? var.study.model_region == var.region :
+      true
+    )
+    error_message = "A provider reached through an interface endpoint must be in this sandbox's region: model_region must equal region."
+  }
+  # ADR-0028: Bedrock has no Message Batches API, and the fan-out fits its
+  # ceiling only at the batch rate. The chain would reach SimulateAll and exit
+  # 3; better to be told at plan.
+  validation {
+    condition     = var.study == null || var.pipeline == null || var.study.model_provider != "bedrock"
+    error_message = "The study chain cannot run on bedrock: it has no Message Batches API (ADR-0028). Use aws or anthropic with `pipeline`, or leave `pipeline` null and run the unbatched phases by hand."
+  }
+}
+
 variable "observability" {
   description = <<-EOT
     Alerts and a dashboard for this sandbox, or null for none. All-or-nothing on

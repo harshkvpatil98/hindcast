@@ -59,3 +59,28 @@ variable "log_retention_days" {
     error_message = "log_retention_days must be a retention period CloudWatch Logs accepts (1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, ...)."
   }
 }
+
+variable "alerts_topic_arn" {
+  description = "Where GuardDuty findings above the threshold go (modules/governance). The root must merge `required_topic_policy_statements_json` into that topic's policy, or they go nowhere -- with no error."
+  type        = string
+
+  validation {
+    condition     = can(regex("^arn:[^:]+:sns:[^:]+:[0-9]{12}:[^:]+$", var.alerts_topic_arn))
+    error_message = "alerts_topic_arn must be an SNS topic ARN."
+  }
+}
+
+variable "guardduty_min_severity" {
+  description = <<-EOT
+    The lowest GuardDuty severity that is published to the alerts topic.
+    Required, with no default: what pages a person is a decision about this
+    account and who is on the other end of the topic. GuardDuty's scale is
+    1.0-3.9 Low, 4.0-6.9 Medium, 7.0-8.9 High, 9.0-10.0 Critical.
+  EOT
+  type        = number
+
+  validation {
+    condition     = var.guardduty_min_severity >= 1 && var.guardduty_min_severity <= 10
+    error_message = "guardduty_min_severity must be between 1 (every finding) and 10 (only the most critical)."
+  }
+}

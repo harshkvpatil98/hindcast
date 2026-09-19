@@ -694,3 +694,159 @@ run "an_invented_fanout_timeout_is_not_accepted" {
   }
   expect_failures = [var.fanout_timeout_seconds]
 }
+
+# --- The way out reaches the states that fetch, and no others (ADR-0042) ------------------
+
+run "without_an_egress_tier_no_state_leaves" {
+  command = plan
+  module {
+    source = "../../modules/pipeline"
+  }
+
+  assert {
+    condition = alltrue(flatten([
+      for machine in ["ingest", "study"] : [
+        for name, subnets in output.controls[machine].subnets : tolist(subnets) == tolist(var.subnet_ids)
+      ]
+    ]))
+    error_message = "With no egress tier, every state of both chains runs in the isolated subnets."
+  }
+  assert {
+    condition = alltrue(flatten([
+      for machine in ["ingest", "study"] : [
+        for name, groups in output.controls[machine].security_groups : tolist(groups) == tolist(var.security_group_ids)
+      ]
+    ]))
+    error_message = "And carries only the task's own security groups."
+  }
+}
+
+run "with_an_egress_tier_only_the_state_that_fetches_leaves" {
+  command = plan
+  module {
+    source = "../../modules/pipeline"
+  }
+  variables {
+    egress_network = {
+      subnet_ids         = ["subnet-egress"]
+      security_group_ids = ["sg-egress"]
+    }
+  }
+
+  assert {
+    condition     = tolist(output.controls.ingest.subnets.CorpusBuild) == tolist(["subnet-egress"]) && tolist(output.controls.ingest.security_groups.CorpusBuild) == tolist(["sg-0ccc", "sg-egress"])
+    error_message = "CorpusBuild runs in the egress subnet with the egress group added to its own."
+  }
+  assert {
+    condition = alltrue([
+      for name in ["RetrievalIndex", "RetrievalVerify", "CorpusVerify", "CorpusCoverage"] :
+      tolist(output.controls.ingest.subnets[name]) == tolist(var.subnet_ids) && !contains(output.controls.ingest.security_groups[name], "sg-egress")
+    ])
+    error_message = "The four ingest states that never fetch stay isolated: they hold the database's admin credential."
+  }
+  assert {
+    condition     = alltrue([for name, subnets in output.controls.study.subnets : tolist(subnets) == tolist(var.subnet_ids)])
+    error_message = "Model calls do not leave unless model_calls_use_egress says the provider has no private path."
+  }
+}
+
+run "model_calls_leave_only_when_told_the_provider_has_no_private_path" {
+  command = plan
+  module {
+    source = "../../modules/pipeline"
+  }
+  variables {
+    egress_network = {
+      subnet_ids         = ["subnet-egress"]
+      security_group_ids = ["sg-egress"]
+    }
+    model_calls_use_egress = true
+  }
+
+  assert {
+    condition = alltrue([
+      for name in ["SimulateEstimate", "SimulateAll", "EvalGrid"] :
+      tolist(output.controls.study.subnets[name]) == tolist(["subnet-egress"]) && contains(output.controls.study.security_groups[name], "sg-egress")
+    ])
+    error_message = "The three states that call a model run in the egress subnet."
+  }
+  assert {
+    condition = alltrue([
+      for name in ["EnsembleCollapse", "Report"] :
+      tolist(output.controls.study.subnets[name]) == tolist(var.subnet_ids) && !contains(output.controls.study.security_groups[name], "sg-egress")
+    ])
+    error_message = "The collapse and the report call no model and stay inside."
+  }
+}
+
+run "the_flag_alone_moves_nothing" {
+  command = plan
+  module {
+    source = "../../modules/pipeline"
+  }
+  variables {
+    model_calls_use_egress = true
+  }
+
+  assert {
+    condition     = alltrue([for name, subnets in output.controls.study.subnets : tolist(subnets) == tolist(var.subnet_ids)])
+    error_message = "Without an egress tier there is nowhere to move a state to; the flag is inert, not an error."
+  }
+}
+
+run "the_study_runs_on_its_own_task_and_the_role_may_pass_its_roles" {
+  # apply, not plan: the role's resources are built from the inputs by data sources.
+  command = apply
+  module {
+    source = "../../modules/pipeline"
+  }
+  variables {
+    study_task = {
+      task_definition_arn     = "arn:aws:ecs:us-east-1:123456789012:task-definition/mock-study:3"
+      task_execution_role_arn = "arn:aws:iam::123456789012:role/mock-execution"
+      task_role_arn           = "arn:aws:iam::123456789012:role/mock-study-task"
+      security_group_ids      = ["sg-study"]
+    }
+  }
+
+  assert {
+    condition     = alltrue([for name, arn in output.controls.study.task_definitions : arn == var.study_task.task_definition_arn])
+    error_message = "Every study state runs on the study task definition."
+  }
+  assert {
+    condition     = alltrue([for name, arn in output.controls.ingest.task_definitions : arn == var.task_definition_arn])
+    error_message = "Every ingest state still runs on the bench's."
+  }
+  assert {
+    condition     = alltrue([for name, groups in output.controls.study.security_groups : tolist(groups) == tolist(["sg-study"])])
+    error_message = "With the study task's own security group."
+  }
+  assert {
+    condition = toset(flatten([
+      for s in data.aws_iam_policy_document.states.statement : s.resources if s.sid == "RunTheCascadeTaskOnly"
+    ])) == toset(["arn:aws:ecs:us-east-1:123456789012:task-definition/mock:*", "arn:aws:ecs:us-east-1:123456789012:task-definition/mock-study:*"])
+    error_message = "The role may run any revision of both families and no other."
+  }
+  assert {
+    condition = toset(flatten([
+      for s in data.aws_iam_policy_document.states.statement : s.resources if s.sid == "PassTheTaskRolesToEcsOnly"
+    ])) == toset(["arn:aws:iam::123456789012:role/mock-execution", "arn:aws:iam::123456789012:role/mock-task", "arn:aws:iam::123456789012:role/mock-study-task"])
+    error_message = "It may pass the three roles the two definitions use, and no other -- the shared execution role once."
+  }
+}
+
+run "an_unpinned_study_task_definition_is_refused" {
+  command = plan
+  module {
+    source = "../../modules/pipeline"
+  }
+  variables {
+    study_task = {
+      task_definition_arn     = "arn:aws:ecs:us-east-1:123456789012:task-definition/mock-study"
+      task_execution_role_arn = "arn:aws:iam::123456789012:role/mock-execution"
+      task_role_arn           = "arn:aws:iam::123456789012:role/mock-study-task"
+      security_group_ids      = ["sg-study"]
+    }
+  }
+  expect_failures = [var.study_task]
+}
