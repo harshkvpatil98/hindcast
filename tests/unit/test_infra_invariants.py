@@ -87,10 +87,19 @@ def test_internet_egress_exists_only_in_the_egress_module() -> None:
         for number, line in code_lines(path)
         if re.search(rf'resource\s+"({"|".join(EGRESS_TYPES)})"', line)
     ]
-    assert not found, "internet egress lives in modules/egress and nowhere else (ADR-0042):\n" + "\n".join(found)
+    assert (
+        not found
+    ), "internet egress lives in modules/egress and nowhere else (ADR-0042):\n" + "\n".join(found)
     # Guard the guard: the exception must actually contain what it excuses.
-    egress_text = "\n".join(line for path in terraform_sources() if not outside_egress(path) for _, line in code_lines(path))
-    assert re.search(r'resource\s+"aws_nat_gateway"', egress_text), "modules/egress no longer builds a NAT gateway; retire the exception"
+    egress_text = "\n".join(
+        line
+        for path in terraform_sources()
+        if not outside_egress(path)
+        for _, line in code_lines(path)
+    )
+    assert re.search(
+        r'resource\s+"aws_nat_gateway"', egress_text
+    ), "modules/egress no longer builds a NAT gateway; retire the exception"
 
 
 def test_no_route_table_outside_the_egress_module_can_be_given_a_way_out() -> None:
@@ -101,7 +110,9 @@ def test_no_route_table_outside_the_egress_module_can_be_given_a_way_out() -> No
         for number, line in code_lines(path)
         if any(re.search(pattern, line) for pattern in ROUTE_PATTERNS)
     ]
-    assert not found, "only modules/egress may create routes or name a gateway (ADR-0042):\n" + "\n".join(found)
+    assert (
+        not found
+    ), "only modules/egress may create routes or name a gateway (ADR-0042):\n" + "\n".join(found)
 
 
 # Open CIDRs are forbidden everywhere but the egress module's security group
@@ -145,13 +156,17 @@ def test_the_way_out_and_the_model_are_opt_in_and_off_by_default(opt_in: str) ->
     """The default sandbox is ADR-0034's isolated VPC; a way out, and a task that can call a model, are asked for."""
     variables = (SANDBOX_ROOT / "variables.tf").read_text(encoding="utf-8")
     body = _block_body(variables, rf'variable\s+"{opt_in}"\s*\{{')
-    assert re.search(r"^  default\s*=\s*null\s*$", body, flags=re.MULTILINE), f"variable {opt_in!r} must default to null"
+    assert re.search(
+        r"^  default\s*=\s*null\s*$", body, flags=re.MULTILINE
+    ), f"variable {opt_in!r} must default to null"
     main = (SANDBOX_ROOT / "main.tf").read_text(encoding="utf-8")
     modules = {"egress": ["egress"], "study": ["study", "cache"]}[opt_in]
     for module in modules:
         body = _block_body(main, rf'module\s+"{module}"\s*\{{')
         assert re.search(
-            rf"^\s*count\s*=\s*var\.{opt_in}\s*==\s*null\s*\?\s*0\s*:\s*1\s*$", body, flags=re.MULTILINE
+            rf"^\s*count\s*=\s*var\.{opt_in}\s*==\s*null\s*\?\s*0\s*:\s*1\s*$",
+            body,
+            flags=re.MULTILINE,
         ), f"module {module!r} must exist only when var.{opt_in} is given"
 
 
@@ -232,7 +247,9 @@ def test_a_never_defaulted_input_is_not_defaulted_through_an_object_attribute() 
         for name in NEVER_DEFAULTED
         if re.search(rf"^\s+{name}\s*=\s*optional\(", line)
     ]
-    assert not offenders, "a required decision is defaulted inside an object type:\n" + "\n".join(offenders)
+    assert not offenders, "a required decision is defaulted inside an object type:\n" + "\n".join(
+        offenders
+    )
 
 
 def test_every_checkov_skip_says_why() -> None:
@@ -305,7 +322,9 @@ def test_third_party_actions_are_pinned_to_a_commit_sha() -> None:
                 ratchet_seen.add((path.name, ref))
                 continue
             unpinned.append(f"{path.name}:{number}: {ref}")
-    assert not unpinned, "third-party actions must be pinned to a 40-hex commit SHA:\n" + "\n".join(unpinned)
+    assert not unpinned, "third-party actions must be pinned to a 40-hex commit SHA:\n" + "\n".join(
+        unpinned
+    )
     expected = {(name, ref) for name, refs in KNOWN_UNPINNED.items() for ref in refs}
     assert ratchet_seen == expected, (
         "KNOWN_UNPINNED no longer matches the tree; remove the entries that were pinned: "
@@ -320,20 +339,28 @@ def test_the_plan_workflow_is_read_only_gated_and_minimal() -> None:
     path = REPO_ROOT / ".github" / "workflows" / "infra-plan.yml"
     text = path.read_text(encoding="utf-8")
     workflow = yaml.safe_load(text)
-    assert workflow.get("permissions") == {}, "workflow-level permissions must be empty; each job states its own"
+    assert (
+        workflow.get("permissions") == {}
+    ), "workflow-level permissions must be empty; each job states its own"
     jobs = workflow["jobs"]
     assert set(jobs) == {"plan"}, "one job: plan. An apply job is a decision for an ADR."
     plan = jobs["plan"]
     assert plan["permissions"] == {"id-token": "write", "contents": "read"}
-    assert "vars.AWS_PLAN_ROLE_ARN != ''" in str(plan["if"]), "the job must be skipped, not red, until the role variable is set"
+    assert "vars.AWS_PLAN_ROLE_ARN != ''" in str(
+        plan["if"]
+    ), "the job must be skipped, not red, until the role variable is set"
     steps = "\n".join(str(step.get("run", "")) for step in plan["steps"])
     assert "terraform plan" in steps
     assert not re.search(r"terraform\s+apply", text), "no apply, anywhere in this file"
     assert "-lock=false" in steps, "the plan role cannot write the state lock"
-    assert not any("upload-artifact" in ref for _, ref in workflow_uses(path)), "a plan file is never uploaded"
+    assert not any(
+        "upload-artifact" in ref for _, ref in workflow_uses(path)
+    ), "a plan file is never uploaded"
     for step in plan["steps"]:
         if "aws-actions/configure-aws-credentials" in str(step.get("uses", "")):
-            assert "role-to-assume" in step["with"] and "aws-access-key-id" not in step["with"], "OIDC, never a stored key"
+            assert (
+                "role-to-assume" in step["with"] and "aws-access-key-id" not in step["with"]
+            ), "OIDC, never a stored key"
             break
     else:
         raise AssertionError("the plan job must assume the OIDC plan role")
