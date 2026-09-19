@@ -20,10 +20,12 @@ from __future__ import annotations
 
 import shutil
 from collections import deque
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Generator, Iterator, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
+from contextlib import closing
 from dataclasses import dataclass, field
 from datetime import datetime
+from functools import partial
 
 from cascade.config import Settings, repo_root
 from cascade.corpus.chunker import chunk_text
@@ -330,6 +332,76 @@ def _chunks_for(document: DatedDocument, settings: Settings, embedder: Embedder)
     ]
 
 
+def _chunk_ahead(
+    batches: Sequence[Sequence[DatedDocument]],
+    *,
+    workers: int,
+    chunk: Callable[[DatedDocument], list[Chunk]],
+) -> Generator[tuple[Sequence[DatedDocument], list[Chunk]], None, None]:
+    """Chunk one batch ahead of the consumer, yielding batches in order.
+
+    Chunking and embedding alternated on one thread: sampled on a live ingest,
+    it was either inside the tokenizer with the GPU idle or inside the
+    embedding call with the CPUs near idle, and both release the GIL. So the
+    documents of a batch are chunked on a pool, and the *next* batch is
+    submitted just before this one is handed over -- it chunks while the
+    consumer embeds and writes.
+
+    Preserves the serial loop's output exactly, for any ``workers``. A
+    document's chunks are a function of that document alone, futures are read
+    in submission order and never in completion order, and batches are yielded
+    in the order given, so the consumer sees the same chunk list, element for
+    element, that the ``workers <= 1`` branch builds -- and that branch is the
+    loop this replaced, with no thread anywhere in it.
+
+    The lookahead is one batch and is not tunable. The next batch is submitted
+    only after the current one has been fully collected, so at most two
+    batches' chunks exist unwritten at any moment -- the one being embedded
+    and the one behind it -- whatever ``workers`` is. Deeper lookahead could
+    not make the consumer faster, only the heap larger, on a machine whose
+    memory the embedding model shares with the GPU.
+
+    A worker's exception surfaces from ``result()`` when its document's turn
+    comes, which is where the serial loop would have raised it: after every
+    earlier batch was written and before anything later is. ``chunk`` runs on
+    worker threads and must not mutate shared state.
+    """
+    if workers <= 1:
+        for batch in batches:
+            yield batch, [piece for document in batch for piece in chunk(document)]
+        return
+
+    with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="chunk") as pool:
+        # Never longer than two: the batch being collected or consumed, and the
+        # one submitted behind it.
+        outstanding: deque[tuple[Sequence[DatedDocument], list[Future[list[Chunk]]]]] = deque()
+        upcoming = iter(batches)
+
+        def submit_next() -> None:
+            nxt = next(upcoming, None)
+            if nxt is not None:
+                outstanding.append((nxt, [pool.submit(chunk, document) for document in nxt]))
+
+        try:
+            submit_next()
+            while outstanding:
+                batch, futures = outstanding[0]
+                chunks: list[Chunk] = []
+                for future in futures:
+                    chunks.extend(future.result())
+                outstanding.popleft()
+                submit_next()
+                yield batch, chunks
+        finally:
+            # Reached on a worker's exception, on the consumer's, and on an
+            # interrupt. Queued documents are cancelled so the pool's exit
+            # waits only for the few already running -- the failing batch's
+            # own tail included, which is why it is popped only once collected.
+            for _, futures in outstanding:
+                for future in futures:
+                    future.cancel()
+
+
 def run_ingest(
     settings: Settings,
     *,
@@ -349,6 +421,11 @@ def run_ingest(
     whole, never abandoned half-written, so a stopped build resumes exactly
     where it left off. ``free_disk_gb`` is injected so the guard is testable
     without filling a disk.
+
+    ``corpus.chunk_workers`` changes when chunking happens and never what is
+    stored: embedding, writing and marking stay on this thread, in batch
+    order, and the lookahead never crosses a unit boundary -- so both stop
+    rules still fire between units, with nothing of the next unit started.
     """
     corpus = settings.corpus
     measure_disk = free_disk_gb if free_disk_gb is not None else _free_disk_gb
@@ -359,6 +436,9 @@ def run_ingest(
         model_name=settings.models.embedding, batch_size=corpus.embed_batch_size
     )
     model.load()
+    # Bound once, outside every loop: the workers call it, and a closure over
+    # a loop variable is how a pool ends up chunking for the wrong iteration.
+    chunk = partial(_chunks_for, settings=settings, embedder=model)
 
     index = DedupeIndex()
     index.seed(seen_simhashes(settings))
@@ -488,21 +568,28 @@ def run_ingest(
                 # it goes; the unit is still only marked done at the end, so a
                 # crash mid-unit re-does the unit and never skips it.
                 batch_size = max(1, settings.corpus.write_batch_size)
+                batches = [
+                    documents[start : start + batch_size]
+                    for start in range(0, len(documents), batch_size)
+                ]
                 unit_chunks = 0
-                for start in range(0, len(documents), batch_size):
-                    batch = documents[start : start + batch_size]
-                    chunks: list[Chunk] = []
-                    for document in batch:
-                        chunks.extend(_chunks_for(document, settings, model))
-                    if not chunks:
-                        continue
-                    vectors = model.encode([chunk.body for chunk in chunks])
-                    written_documents, written_chunks = write_batch(
-                        settings, batch, chunks, vectors
-                    )
-                    source_report.documents_written += written_documents
-                    source_report.chunks_written += written_chunks
-                    unit_chunks += written_chunks
+                # `closing`, because an exception out of this loop keeps the
+                # generator alive for as long as the traceback does, and its
+                # `finally` is what stops the pool. Closed here, no chunking
+                # thread outlives the unit that started it.
+                with closing(
+                    _chunk_ahead(batches, workers=corpus.chunk_workers, chunk=chunk)
+                ) as chunked:
+                    for batch, chunks in chunked:
+                        if not chunks:
+                            continue
+                        vectors = model.encode([piece.body for piece in chunks])
+                        written_documents, written_chunks = write_batch(
+                            settings, batch, chunks, vectors
+                        )
+                        source_report.documents_written += written_documents
+                        source_report.chunks_written += written_chunks
+                        unit_chunks += written_chunks
 
                 source_report.units_done += 1
                 mark_unit(

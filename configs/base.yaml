@@ -257,6 +257,23 @@ corpus: # evidence corpus (spec §3.2)
   # CC-NEWS ingest is I/O bound -- a single WARC stream leaves the CPU idle
   # ~75% of the time. Files are independent, so they are streamed in parallel.
   fetch_workers: 6
+  # Threads that chunk a write batch while the previous batch is being
+  # embedded and written; the lookahead is fixed at one batch, so this does
+  # not set how much is held in memory. 1 is the serial loop exactly. Any
+  # value stores byte-identical chunks (asserted in
+  # tests/unit/test_corpus_pipeline_parallel.py), so this is a speed setting
+  # and nothing else.
+  #
+  # What it buys end to end is NOT measured: it shipped while the production
+  # ingest held the GPU, and the embedding stage could not be run beside it.
+  # Measured without the model, the tokenizer already spreads one batched call
+  # over several cores, so the gain to expect is the overlap with embedding
+  # rather than the thread count. 4 is therefore a judgement, not a tuned
+  # value: enough threads that chunking should stay the shorter of the two
+  # overlapped stages, few enough to leave cores for fetch_workers, Postgres
+  # and the thread feeding the GPU, which needs the GIL these threads share.
+  # A/B one CC-NEWS unit against `chunk_workers: 1` before trusting it.
+  chunk_workers: 4
   # A CC-NEWS unit is one WARC file (ADR-0023); this is how many files per
   # month the queue generates, i.e. the maximum depth a month can reach. The
   # queue sweeps depth-major, so raising it adds a later pass rather than

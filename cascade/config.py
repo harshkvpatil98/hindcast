@@ -410,6 +410,10 @@ class CorpusConfig(_Model):
     enabled_sources: tuple[str, ...]
     gdelt_max_records: int
     fetch_workers: int
+    # Threads chunking a write batch, one batch ahead of the embedding call.
+    # 1 is the serial loop with no thread in it. Any value stores the same
+    # bytes -- it moves *when* a document is chunked, never what comes out.
+    chunk_workers: int = Field(ge=1)
     ccnews_max_files: int
     ccnews_max_records_per_file: int
     coverage_lookback_months: int
