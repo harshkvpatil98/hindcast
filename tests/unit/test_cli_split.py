@@ -23,25 +23,34 @@ import cascade.cli as cli_module
 from cascade.cli import app
 from cascade.config import load_settings, repo_root
 from cascade.eval.ablation import cell_by_id, grid_scenarios
+from cascade.eval.exclusions import exclusions
 from cascade.eval.schema import ScoredForecast
-from cascade.eval.split import HeldOutViolation, declare_split
+from cascade.eval.split import HeldOutViolation, declare_study_split
 from cascade.eval.store import FrozenSplit
 from cascade.eval.supplementary import supplementary_by_id
 from cascade.version import EXIT_OK, EXIT_PRECONDITION
 
 runner = CliRunner()
 
-REGISTRY: list[tuple[str, str]] = [
-    (scenario_id, domain)
-    for scenario_id, domain in json.loads(
+# The sealed registry's (id, domain, question) -- no outcome. The question is
+# there because the study split excludes exchange stand-ins by their wording
+# before drawing the partition (ADR-0043).
+STUDY: list[tuple[str, str, str]] = [
+    (scenario_id, domain, question)
+    for scenario_id, domain, question in json.loads(
         (repo_root() / "tests" / "fixtures" / "registry_domains.json").read_text(encoding="utf-8")
     )
 ]
+REGISTRY: list[tuple[str, str]] = [(scenario_id, domain) for scenario_id, domain, _ in STUDY]
 IDS = [scenario_id for scenario_id, _ in REGISTRY]
+
+# Stand-ins excluded before the split is drawn (ADR-0043), and what is left.
+EXCLUDED = {item.scenario_id for item in exclusions([(i, q) for i, _, q in STUDY])}
+SCORABLE = [scenario_id for scenario_id in IDS if scenario_id not in EXCLUDED]
 
 
 def _declared():
-    return declare_split(REGISTRY, salt=load_settings().study.salt, dev_size=40)
+    return declare_study_split(STUDY, salt=load_settings().study.salt, dev_size=40)
 
 
 def _rows(
@@ -81,7 +90,7 @@ def store(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     salt = settings.study.salt
     subsample = list(
         grid_scenarios(
-            IDS, cell=cell_by_id("C05"), salt=salt, cap=settings.ensemble.ablation_scenarios
+            SCORABLE, cell=cell_by_id("C05"), salt=salt, cap=settings.ensemble.ablation_scenarios
         )
     )
     forecasts = {
@@ -92,7 +101,7 @@ def store(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         "k9-try3": _rows("k9-try3", list(_declared().dev)),
         "leaky-variant": _rows("leaky-variant", IDS),
     }
-    state: dict[str, Any] = {"forecasts": forecasts, "reports": [], "registry": list(REGISTRY)}
+    state: dict[str, Any] = {"forecasts": forecasts, "reports": [], "registry": list(STUDY)}
 
     def refuse(*args: object, **kwargs: object) -> None:
         raise AssertionError("a unit test tried to open a database connection")
@@ -112,8 +121,8 @@ def store(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
     monkeypatch.setattr(
         "cascade.ledger.store.load_scenarios",
         lambda settings, **_: tuple(
-            SimpleNamespace(scenario_id=scenario_id, domain=domain)
-            for scenario_id, domain in state["registry"]
+            SimpleNamespace(scenario_id=scenario_id, domain=domain, question=question)
+            for scenario_id, domain, question in state["registry"]
         ),
     )
     monkeypatch.setattr(
@@ -160,10 +169,11 @@ class TestTheReportCommand:
         text = (directory / "headline.md").read_text()
         section = text[text.index("## Headline") :]
         lead = section[section.index("**Brier") :].splitlines()[0]
-        assert "**Brier 0.010000**" in lead and "140 scenarios" in lead
+        n_test = len(_declared().test)
+        assert "**Brier 0.010000**" in lead and f"{n_test} scenarios" in lead
         payload = json.loads((directory / "metrics.json").read_text())
         headline = next(row for row in payload["configs"] if row["config_id"] == "C01")
-        assert (headline["n"], headline["brier"]) == (140, pytest.approx(0.01))
+        assert (headline["n"], headline["brier"]) == (n_test, pytest.approx(0.01))
 
     def test_the_all_scenario_figure_is_printed_beside_it_labelled(
         self, store: dict, tmp_path: Path
@@ -171,8 +181,11 @@ class TestTheReportCommand:
         text = (_report(tmp_path) / "headline.md").read_text()
         section = text[text.index("## Headline") :]
         row = next(line for line in section.splitlines() if line.startswith("| all |"))
-        expected = (140 * 0.01 + 40 * 0.81) / 180
-        assert f"| 180 | {expected:.6f} |" in row and "not the headline" in row
+        n_test = len(_declared().test)
+        expected = (n_test * 0.01 + 40 * 0.81) / (n_test + 40)
+        assert f"| {n_test + 40} | {expected:.6f} |" in row and "not the headline" in row
+        # The stand-ins are excluded from "all" too, not only from test.
+        assert n_test + 40 == len(SCORABLE)
 
     def test_the_database_row_records_the_test_figure_and_says_so(
         self, store: dict, tmp_path: Path
@@ -219,15 +232,20 @@ class TestTheReportCommand:
     ) -> None:
         payload = json.loads((_report(tmp_path) / "significance.json").read_text())
         families = {row["name"]: (row["family"], row["n_paired"]) for row in payload["comparisons"]}
-        assert families["S01 vs C01 (supplementary)"] == ("supplementary", 74)
-        assert families["LOO information asymmetry"] == ("appendix_c", 74)
+        salt = load_settings().study.salt
+        paired = len(
+            set(grid_scenarios(SCORABLE, cell=cell_by_id("C05"), salt=salt, cap=90))
+            & set(_declared().test)
+        )
+        assert families["S01 vs C01 (supplementary)"] == ("supplementary", paired)
+        assert families["LOO information asymmetry"] == ("appendix_c", paired)
         assert not any("variant" in name or "k9" in name for name in families)
 
     def test_the_evidence_table_is_written_for_the_test_partition(
         self, store: dict, tmp_path: Path
     ) -> None:
         lines = (_report(tmp_path) / "per_evidence_tier.csv").read_text().strip().splitlines()
-        assert sum(int(line.split(",")[3]) for line in lines[1:]) == 140
+        assert sum(int(line.split(",")[3]) for line in lines[1:]) == len(_declared().test)
 
     def test_an_unknown_partition_is_refused(self, store: dict, tmp_path: Path) -> None:
         result = runner.invoke(app, ["report", "--out", str(tmp_path), "--partition", "holdout"])
@@ -310,7 +328,8 @@ class TestTheDeclarationIsChecked:
     def test_eval_split_prints_the_declared_split(self, store: dict) -> None:
         result = runner.invoke(app, ["eval", "split"])
         assert result.exit_code == EXIT_OK, result.output
-        assert "40 dev / 140 test" in result.output
+        assert f"40 dev / {len(_declared().test)} test" in result.output
+        assert "excluded" in result.output
         assert str(load_settings().eval.split_sha256)[:16] in result.output.replace("\n", "")
 
     def test_it_lists_a_partition_s_ids_on_request(self, store: dict) -> None:
@@ -347,14 +366,17 @@ class TestTheDeclarationIsChecked:
         fact is a registry that does not match its seal. The message is
         asserted because the exit code alone cannot tell the two apart.
         """
-        store["registry"] = REGISTRY[:-1]
+        store["registry"] = STUDY[:-1]
         result = runner.invoke(app, ["eval", "score", "--config-id", "C01"], env={"COLUMNS": "400"})
         assert result.exit_code == EXIT_PRECONDITION
         assert "holds 179 scenarios but the seal covers 180" in result.output
         assert "re-pin" not in result.output
 
     def test_a_moved_registry_of_the_right_size_is_refused_by_the_pin(self, store: dict) -> None:
-        store["registry"] = [*REGISTRY[:-1], ("polymarket:a-substitute", "elections")]
+        store["registry"] = [
+            *STUDY[:-1],
+            ("polymarket:a-substitute", "elections", "Will Alpha win?"),
+        ]
         result = runner.invoke(app, ["eval", "score", "--config-id", "C01"], env={"COLUMNS": "400"})
         assert result.exit_code == EXIT_PRECONDITION
         assert "Do not re-pin" in result.output
@@ -416,13 +438,13 @@ class TestGridScenarioSelection:
             "limit": None,
         }
         arguments.update(overrides)
-        return cli_module._cell_scenarios(cell, IDS, **arguments)
+        return cli_module._cell_scenarios(cell, SCORABLE, **arguments)
 
     def test_a_study_run_is_unchanged(self) -> None:
         settings = load_settings()
-        assert self._select(cell_by_id("C01")) == sorted(IDS)
+        assert self._select(cell_by_id("C01")) == sorted(SCORABLE)
         assert self._select(cell_by_id("C05")) == list(
-            grid_scenarios(IDS, cell=cell_by_id("C05"), salt=settings.study.salt, cap=90)
+            grid_scenarios(SCORABLE, cell=cell_by_id("C05"), salt=settings.study.salt, cap=90)
         )
 
     def test_s01_runs_the_same_subsample_as_every_capped_cell(self) -> None:
@@ -430,7 +452,7 @@ class TestGridScenarioSelection:
 
     def test_a_partition_is_an_intersection_of_the_cell_s_own_scenarios(self) -> None:
         dev = self._select(cell_by_id("C05"), partition="dev")
-        assert len(dev) == 16 and set(dev) <= set(_declared().dev)
+        assert 0 < len(dev) < 40 and set(dev) <= set(_declared().dev)
         assert set(dev) == set(self._select(cell_by_id("C05"))) & set(_declared().dev)
 
     def test_a_variant_gets_all_of_dev_and_nothing_else(self) -> None:

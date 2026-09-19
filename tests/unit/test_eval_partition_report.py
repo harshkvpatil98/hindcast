@@ -16,6 +16,7 @@ import pytest
 
 from cascade.config import load_settings, repo_root
 from cascade.eval.evidence import evidence_finding
+from cascade.eval.exclusions import exclusions
 from cascade.eval.metrics import brier
 from cascade.eval.report import StudyArtifact, write_report
 from cascade.eval.schema import BootstrapInterval, Comparison, ScoredForecast
@@ -26,18 +27,23 @@ from cascade.eval.score import (
     recalibrated_brier,
     split_halves,
 )
-from cascade.eval.split import PartitionInteraction, declare_split, select
+from cascade.eval.split import PartitionInteraction, declare_study_split, select
 
-REGISTRY: list[tuple[str, str]] = [
-    (scenario_id, domain)
-    for scenario_id, domain in json.loads(
+# The sealed registry's (id, domain, question) -- no outcome. The question is
+# there because the study split excludes exchange stand-ins by their wording
+# before drawing the partition (ADR-0043).
+STUDY: list[tuple[str, str, str]] = [
+    (scenario_id, domain, question)
+    for scenario_id, domain, question in json.loads(
         (repo_root() / "tests" / "fixtures" / "registry_domains.json").read_text(encoding="utf-8")
     )
 ]
+REGISTRY: list[tuple[str, str]] = [(scenario_id, domain) for scenario_id, domain, _ in STUDY]
+EXCLUDED = {item.scenario_id for item in exclusions([(i, q) for i, _, q in STUDY])}
 
 
 def _declared():
-    return declare_split(REGISTRY, salt=load_settings().study.salt, dev_size=40)
+    return declare_study_split(STUDY, salt=load_settings().study.salt, dev_size=40)
 
 
 def _scored(*, dev_p: float = 0.35, config_id: str = "C01") -> tuple[ScoredForecast, ...]:
@@ -82,11 +88,13 @@ class TestTheTestFigureIsAFunctionOfTestAlone:
         scored = _scored(dev_p=1.0)
         test_rows = [item for item in scored if item.scenario_id in set(declared.test)]
         measured = dict(headline_by_partition(scored, declared, config_id="C01"))
-        assert measured["test"].n == 140
+        assert measured["test"].n == len(declared.test)
         assert measured["test"].brier == brier(
             [item.p_hat for item in test_rows], [item.outcome for item in test_rows]
         )
-        assert measured["all"].n == 180 and measured["dev"].n == 40
+        # "all" is every *scored* scenario: the stand-ins are on neither side.
+        assert measured["all"].n == 180 - len(EXCLUDED) and measured["dev"].n == 40
+        assert not {item.scenario_id for item in select(scored, declared, "all")} & EXCLUDED
         assert measured["all"].brier != measured["test"].brier
 
     def test_the_order_is_test_then_all_then_dev(self) -> None:
@@ -108,7 +116,7 @@ class TestRecalibrationStaysInsideItsPartition:
         test_rows = select(_scored(), declared, "test")
         fit, held = split_halves(test_rows, salt=salt)
         assert {item.scenario_id for item in (*fit, *held)} == set(declared.test)
-        assert (len(fit), len(held)) == (75, 65)
+        assert len(fit) + len(held) == len(declared.test) and fit and held
 
     def test_the_test_figure_is_fitted_on_test_scenarios_only(self) -> None:
         """Change every dev forecast and every dev label; the recalibrated test
@@ -211,7 +219,7 @@ class TestTheHeadlineIsTheTestPartition:
         section = text[text.index("## Headline") :]
         lead = section[section.index("**Brier") : section.index("\n", section.index("**Brier"))]
         assert f"{measured['test'].brier:.6f}" in lead
-        assert "140 scenarios" in lead and "test partition" in lead
+        assert f"{measured['test'].n} scenarios" in lead and "test partition" in lead
         assert f"{measured['all'].brier:.6f}" not in lead
 
     def test_the_all_scenario_figure_is_beside_it_and_labelled(self, tmp_path: Path) -> None:
@@ -220,11 +228,11 @@ class TestTheHeadlineIsTheTestPartition:
         text = _headline(tmp_path, artifact)
         section = text[text.index("## Headline") :]
         row = next(line for line in section.splitlines() if line.startswith("| all |"))
-        assert f"| 180 | {measured['all'].brier:.6f} |" in row
+        assert f"| {180 - len(EXCLUDED)} | {measured['all'].brier:.6f} |" in row
         assert "not the headline" in row
         assert "tuned on" in row
         held_out = next(line for line in text.splitlines() if line.startswith("| **test** |"))
-        assert f"| 140 | {measured['test'].brier:.6f} |" in held_out
+        assert f"| {measured['test'].n} | {measured['test'].brier:.6f} |" in held_out
         assert "Held out" in held_out
 
     def test_dev_is_listed_as_the_tuning_partition(self, tmp_path: Path) -> None:
@@ -239,7 +247,7 @@ class TestTheHeadlineIsTheTestPartition:
         assert payload["partition"] == "test"
         flags = {row["partition"]: row["is_headline"] for row in payload["headline_by_partition"]}
         assert flags == {"test": True, "all": False, "dev": False}
-        assert payload["configs"][0]["n"] == 140
+        assert payload["configs"][0]["n"] == len(_declared().test)
 
 
 class TestTheSplitIsStated:
@@ -247,7 +255,10 @@ class TestTheSplitIsStated:
         artifact = _artifact()
         text = _headline(tmp_path, artifact)
         section = text[text.index("## Dev/test split") : text.index("## Headline")]
-        assert "**40 dev**" in section and "**140 test**" in section
+        n_test = len(_declared().test)
+        assert "**40 dev**" in section and f"**{n_test} test**" in section
+        assert f"**{len(EXCLUDED)} of the 180 sealed scenarios" in section
+        assert "placeholder" in section and "ADR-0043" in section
         assert "declared before any" in section and "forecast existed" in section
         assert artifact.split is not None and artifact.split.sha256 in section
         assert f"Applies to scenario manifest: `{'a' * 64}`" in section
@@ -262,7 +273,8 @@ class TestTheSplitIsStated:
 
     def test_the_domain_table_and_the_overlaps_are_printed(self, tmp_path: Path) -> None:
         text = _headline(tmp_path, _artifact())
-        assert "| elections | 45 | 10 | 35 |" in text
+        elections = next(row for row in _declared().domains if row.domain == "elections")
+        assert f"| elections | {elections.n} | {elections.dev} | {elections.test} |" in text
         assert "| test | 140 | 74 | 75 / 65 |" in text
         assert "| dev | 40 | 16 | 18 / 22 |" in text
         assert "never crosses the dev/test boundary" in text
@@ -274,7 +286,11 @@ class TestTheSplitIsStated:
         assert payload["split"]["sha256"] == load_settings().eval.split_sha256
         assert payload["split"]["declared_before_any_forecast"] is True
         assert payload["split"]["applies_to_manifest_sha256"] == "a" * 64
-        assert (payload["split"]["n_dev"], payload["split"]["n_test"]) == (40, 140)
+        assert (payload["split"]["n_dev"], payload["split"]["n_test"]) == (
+            40,
+            len(_declared().test),
+        )
+        assert {item["scenario_id"] for item in payload["split"]["excluded"]} == EXCLUDED
         assert payload["split"]["dev_scenario_ids"] == list(_declared().dev)
 
     def test_a_report_with_no_split_says_nothing_in_it_is_held_out(self, tmp_path: Path) -> None:
@@ -394,7 +410,7 @@ class TestTheEvidenceTable:
         assert "not quantiles" in section
         assert "| none | 0 |" in section and "| rich | 10,000+ |" in section
         assert "| thin | 1-999 |" in section and "| moderate | 1,000-9,999 |" in section
-        assert "Measured on the test partition, 140 scenarios" in section
+        assert f"Measured on the test partition, {len(_declared().test)} scenarios" in section
         assert "does not estimate what more" in section
 
     def test_the_csv_has_the_per_domain_shape(self, tmp_path: Path) -> None:
@@ -402,7 +418,7 @@ class TestTheEvidenceTable:
         lines = (directory / "per_evidence_tier.csv").read_text().strip().splitlines()
         assert lines[0] == "tier,chunks_lo,chunks_hi,n,base_rate,brier"
         assert [line.split(",")[0] for line in lines[1:]] == ["none", "thin", "moderate", "rich"]
-        assert sum(int(line.split(",")[3]) for line in lines[1:]) == 140
+        assert sum(int(line.split(",")[3]) for line in lines[1:]) == len(_declared().test)
 
     def test_without_a_measurement_the_csv_is_a_header_and_the_section_is_absent(
         self, tmp_path: Path

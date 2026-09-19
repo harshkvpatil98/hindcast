@@ -68,7 +68,6 @@ RejectionReason = Literal[
     "horizon_too_short",
     "cutoff_not_derivable",
     "low_volume",
-    "placeholder_leg",
     "duplicate_event_group",
     "missing_timestamp",
     "naive_timestamp",

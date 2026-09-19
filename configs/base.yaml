@@ -229,11 +229,15 @@ eval: # the declared dev/test split (cascade/eval/split.py)
   # figure is from stand-in deciders, and real agents may spread differently.
   dev_scenarios: 40
   # sha256 of the exact dev/test membership the line above produces under
-  # study.salt, over the sealed 180. Declared before any forecast existed.
+  # study.salt, over the sealed 180 minus the 15 exchange placeholder legs
+  # excluded from scoring (cascade/eval/exclusions.py, ADR-0043) -- the
+  # exclusions are part of the fingerprint. Re-declared 2026-09-19 when the
+  # stand-ins were found, still before any forecast existed; the first pin
+  # (4b8dad2f..., over all 180) never had a forecast scored against it.
   # Every `cascade eval` path and `cascade report` recomputes the split and
   # exits 3 on a mismatch. Never edit this to make a mismatch go away: a split
   # re-drawn after forecasts exist is a split chosen after looking.
-  split_sha256: "4b8dad2f36865985948f36308214532f1e8a92203ae7cd19e7f0a8d6db1d226d"
+  split_sha256: "4914fba3e25346408e1efddd9e0b35f9cb7286b8d3585b16024c7b148fbbccb3"
 
 budget:
   phase_ceiling_usd:

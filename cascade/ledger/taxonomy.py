@@ -51,8 +51,6 @@ _QUANTITY_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
         r"\bprice of\b",
         r"\b(?:inflation|unemployment|cpi|gdp|interest rate)s?\b[^?]{0,40}\b\d",
         r"\bhow many\b",
-        # Player and match props: "Points O/U 16.5" is a number, not a contest.
-        r"\bO/U\b|\bover/under\b",
         r"\bwhat will the\b.*\bbe\b",
     )
 )
@@ -557,10 +555,7 @@ _DOMAIN_PATTERNS: tuple[tuple[Domain, re.Pattern[str]], ...] = (
         re.compile(
             r"\b(?:war|ceasefire|truce|invade|invasion|missile|troops|"
             r"military|air ?strike|nuclear test|hostage|armistice|peace deal|"
-            r"occupation)\b"
-            # "Iran strike on Israel" is an attack, not a walkout: checked here,
-            # before `labor`, which would otherwise take it on "strike".
-            r"|\bstrikes? (?:on|against)\b|\battacks? (?:on|against)\b",
+            r"occupation)\b",
             re.IGNORECASE,
         ),
     ),
@@ -612,13 +607,7 @@ _DOMAIN_PATTERNS: tuple[tuple[Domain, re.Pattern[str]], ...] = (
     ),
     (
         "health",
-        # "WHO" is the organisation only in capitals; case-insensitively it is
-        # the pronoun, and every criterion that names "the party who wins"
-        # became a health question.
-        re.compile(
-            r"\b(?:pandemic|vaccine|outbreak|epidemic|virus|disease)\b|\b(?-i:WHO)\b",
-            re.IGNORECASE,
-        ),
+        re.compile(r"\b(?:pandemic|vaccine|outbreak|epidemic|virus|WHO|disease)\b", re.IGNORECASE),
     ),
     (
         "sports",

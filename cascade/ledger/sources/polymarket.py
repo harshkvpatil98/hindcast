@@ -25,7 +25,6 @@ from hashlib import blake2b
 from typing import Any
 
 from cascade.ledger.http import SourceCache
-from cascade.ledger.rules import is_placeholder
 from cascade.ledger.schema import RawQuestion
 
 __all__ = ["EVENTS_KEYSET_URL", "EVENTS_URL", "load_polymarket", "parse_event"]
@@ -95,41 +94,11 @@ def _outcome_of(market: dict[str, Any]) -> int | None:
     return None
 
 
-def _leg_volume(market: dict[str, Any]) -> float | None:
-    """A leg's own traded volume, or ``None`` when the payload carries none.
-
-    ``None`` and ``0`` are different facts and are kept apart: a leg nobody
-    traded has a volume, and it is zero.
-    """
-    for key in ("volumeNum", "volume"):
-        raw = market.get(key)
-        if raw is None or raw == "":
-            continue
-        try:
-            return float(raw)
-        except (TypeError, ValueError):
-            return None
-    return None
-
-
-def parse_event(event: dict[str, Any], *, salt: str, min_volume: float) -> RawQuestion | None:
+def parse_event(event: dict[str, Any], *, salt: str) -> RawQuestion | None:
     """Normalise one event into a single candidate question, or ``None``.
 
     Returns ``None`` when the event carries no cleanly resolved binary market,
     rather than reaching for a partial one.
-
-    The representative leg is drawn, by keyed hash, from the legs that name a
-    party rather than a stand-in -- a rule on the question's wording, which is
-    fixed before anything resolves. Volume is deliberately *not* used to
-    choose: a leg's final volume accumulates after the cutoff and tracks the
-    eventual winner, so "pick a traded leg" would let the outcome lean on the
-    choice. Volume stays what it was meant to be, a screen on the chosen leg,
-    now applied to that leg's own figure. ``min_volume`` is accepted for the
-    loader's signature and not consulted here.
-
-    When every leg is a stand-in the hashed one is still returned so the
-    screen rejects it and the rejection is counted -- an event that silently
-    vanished here would not appear in any histogram.
     """
     markets = event.get("markets")
     if not isinstance(markets, list) or not markets:
@@ -149,10 +118,6 @@ def parse_event(event: dict[str, Any], *, salt: str, min_volume: float) -> RawQu
     if not resolved:
         return None
 
-    named = [pair for pair in resolved if not is_placeholder(str(pair[0].get("question") or ""))]
-    if named:
-        resolved = named
-
     # Outcome-independent choice. Sorting by a keyed hash of the question makes
     # the pick reproducible without letting the resolution influence it.
     resolved.sort(
@@ -165,13 +130,6 @@ def parse_event(event: dict[str, Any], *, salt: str, min_volume: float) -> RawQu
     market, outcome = resolved[0]
 
     open_ts = _parse_ts(market.get("startDate")) or _parse_ts(event.get("startDate"))
-    # A leg added to a running event inherits the event's start date while
-    # having been listed -- and tradable, and knowable -- only later. The
-    # cutoff is a fraction of the way through the question's life, so a life
-    # measured from before the question existed puts the cutoff before it too.
-    created_ts = _parse_ts(market.get("createdAt"))
-    if open_ts is not None and created_ts is not None and created_ts > open_ts:
-        open_ts = created_ts
     resolved_at = _parse_ts(market.get("closedTime")) or _parse_ts(market.get("endDate"))
     close_ts = _parse_ts(market.get("endDate")) or resolved_at
     if open_ts is None or resolved_at is None or close_ts is None:
@@ -181,18 +139,10 @@ def parse_event(event: dict[str, Any], *, salt: str, min_volume: float) -> RawQu
     if not question:
         return None
 
-    # The leg's own volume, including an honest zero. The event's volume is a
-    # fallback for a payload with no leg figure at all -- it used to be reached
-    # through `or`, which treats 0 as missing, so every untraded leg of a busy
-    # event inherited the event's volume and cleared the screen.
-    own_volume = _leg_volume(market)
-    if own_volume is not None:
-        volume = own_volume
-    else:
-        try:
-            volume = float(event.get("volume") or 0.0)
-        except (TypeError, ValueError):
-            volume = 0.0
+    try:
+        volume = float(market.get("volumeNum") or event.get("volume") or 0.0)
+    except (TypeError, ValueError):
+        volume = 0.0
 
     slug = str(event.get("slug") or event.get("ticker") or event.get("id") or "").strip()
     if not slug:
@@ -216,7 +166,7 @@ def parse_event(event: dict[str, Any], *, salt: str, min_volume: float) -> RawQu
 
 
 def load_polymarket(
-    cache: SourceCache, *, salt: str, pages: int, page_size: int, min_volume: float
+    cache: SourceCache, *, salt: str, pages: int, page_size: int
 ) -> list[RawQuestion]:
     """Fetch closed events, highest volume first, and normalise them.
 
@@ -248,7 +198,7 @@ def load_polymarket(
         for event in events:
             if not isinstance(event, dict):
                 continue
-            question = parse_event(event, salt=salt, min_volume=min_volume)
+            question = parse_event(event, salt=salt)
             if question is not None:
                 out.append(question)
 

@@ -101,11 +101,13 @@ from typing import Literal, Protocol
 from pydantic import BaseModel, ConfigDict
 
 from cascade.canonical import canonical_json
+from cascade.eval.exclusions import ExcludedScenario, exclusions
 
 __all__ = [
     "PARTITIONS",
     "SPLIT_PURPOSE",
     "DomainAllocation",
+    "ExcludedFromScoring",
     "HeldOutViolation",
     "Partition",
     "PartitionInteraction",
@@ -115,6 +117,7 @@ __all__ = [
     "UnknownScenario",
     "assert_declared",
     "declare_split",
+    "declare_study_split",
     "domain_quotas",
     "interactions",
     "require_declared_config",
@@ -152,6 +155,10 @@ class HeldOutViolation(SplitError):
 
 class UnknownScenario(SplitError):
     """A scenario id the declaration has never seen was asked for a partition."""
+
+
+class ExcludedFromScoring(SplitError):
+    """A scenario declared unscoreable was asked for its partition."""
 
 
 class SplitDeclarationMismatch(SplitError):
@@ -195,6 +202,13 @@ class SplitDeclaration(_Frozen):
     test: tuple[str, ...]
     domains: tuple[DomainAllocation, ...]
     sha256: str
+    excluded: tuple[ExcludedScenario, ...] = ()
+    """Sealed scenarios on neither side: declared unscoreable before any
+    forecast (``cascade/eval/exclusions.py``). Part of the fingerprint."""
+
+    @property
+    def excluded_ids(self) -> tuple[str, ...]:
+        return tuple(item.scenario_id for item in self.excluded)
 
     @property
     def n(self) -> int:
@@ -220,6 +234,12 @@ class SplitDeclaration(_Frozen):
             return "dev"
         if scenario_id in set(self.test):
             return "test"
+        if scenario_id in set(self.excluded_ids):
+            raise ExcludedFromScoring(
+                f"scenario {scenario_id!r} is sealed but excluded from scoring "
+                f"({dict((e.scenario_id, e.reason) for e in self.excluded)[scenario_id]}); "
+                "it is on neither side of the split and may be neither tuned on nor scored."
+            )
         raise UnknownScenario(
             f"scenario {scenario_id!r} is not in the declared split "
             f"({self.sha256[:16]}..., {self.n} scenarios). A partition is looked up "
@@ -340,15 +360,49 @@ def declare_split(
     )
 
 
-def _fingerprint(dev: Sequence[str], test: Sequence[str]) -> str:
+def _fingerprint(
+    dev: Sequence[str],
+    test: Sequence[str],
+    excluded: Sequence[ExcludedScenario] = (),
+) -> str:
     """sha256 of the exact membership, over the system's one canonical JSON.
 
     The salt is deliberately not an input: the fingerprint identifies *which
     scenarios are held out*, and two routes to the same membership are the
-    same declaration.
+    same declaration. Excluded scenarios and their reasons are in it when
+    there are any, so widening the exclusion rule after the pin changes the
+    fingerprint and is refused like any other re-drawn split.
     """
-    payload = canonical_json({"purpose": SPLIT_PURPOSE, "dev": list(dev), "test": list(test)})
+    body: dict[str, object] = {"purpose": SPLIT_PURPOSE, "dev": list(dev), "test": list(test)}
+    if excluded:
+        body["excluded"] = [[item.scenario_id, item.reason] for item in excluded]
+    payload = canonical_json(body)
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def declare_study_split(
+    scenarios: Sequence[tuple[str, str, str]], *, salt: str, dev_size: int
+) -> SplitDeclaration:
+    """The study's split: ``(scenario_id, domain, question)`` for the whole
+    sealed registry, stand-ins excluded first, the rest split by
+    :func:`declare_split`.
+
+    Preserves outcome-independence by construction, as :func:`declare_split`
+    does: ids, domains, wording, a salt and a size are the only inputs.
+    Exclusion happens before quotas are apportioned, so the dev partition is
+    ``dev_size`` real questions rather than ``dev_size`` minus however many
+    stand-ins the hash happened to draw.
+    """
+    excluded = exclusions([(scenario_id, question) for scenario_id, _, question in scenarios])
+    gone = {item.scenario_id for item in excluded}
+    base = declare_split(
+        [(scenario_id, domain) for scenario_id, domain, _ in scenarios if scenario_id not in gone],
+        salt=salt,
+        dev_size=dev_size,
+    )
+    return base.model_copy(
+        update={"excluded": excluded, "sha256": _fingerprint(base.dev, base.test, excluded)}
+    )
 
 
 def assert_declared(declaration: SplitDeclaration, *, pinned_sha256: str | None) -> None:
@@ -395,7 +449,12 @@ def select[Item: _HasScenarioId](
     it, whatever else is or is not in ``items``. An undeclared id raises under
     ``dev`` and ``test``; ``all`` is the identity on membership and only sorts.
     """
-    ordered = sorted(items, key=lambda item: item.scenario_id)
+    excluded = set(declaration.excluded_ids)
+    ordered = [
+        item
+        for item in sorted(items, key=lambda item: item.scenario_id)
+        if item.scenario_id not in excluded
+    ]
     if partition == "all":
         return tuple(ordered)
     wanted = set(declaration.ids(partition))
@@ -424,15 +483,18 @@ def require_dev_only(
     requested = sorted(set(scenario_ids))
     dev = set(declaration.dev)
     test = set(declaration.test)
+    excluded = set(declaration.excluded_ids)
     held_out = [scenario_id for scenario_id in requested if scenario_id in test]
-    unknown = [scenario_id for scenario_id in requested if scenario_id not in dev | test]
-    if held_out or unknown:
-        shown = ", ".join((held_out + unknown)[:5])
+    dropped = [scenario_id for scenario_id in requested if scenario_id in excluded]
+    unknown = [scenario_id for scenario_id in requested if scenario_id not in dev | test | excluded]
+    if held_out or dropped or unknown:
+        shown = ", ".join((held_out + dropped + unknown)[:5])
         raise HeldOutViolation(
             f"{what} refused: {len(held_out)} of {len(requested)} scenario(s) are in the "
-            f"held-out test partition and {len(unknown)} are not in the declared split "
-            f"(first: {shown}). Tuning is only ever legitimate on dev "
-            f"({len(declaration.dev)} scenarios; `cascade eval split --ids dev` lists them)."
+            f"held-out test partition, {len(dropped)} are excluded from scoring and "
+            f"{len(unknown)} are not in the declared split (first: {shown}). Tuning is only "
+            f"ever legitimate on dev ({len(declaration.dev)} scenarios; "
+            "`cascade eval split --ids dev` lists them)."
         )
     return tuple(requested)
 

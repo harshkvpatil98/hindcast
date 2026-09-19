@@ -12,7 +12,6 @@ the set -- and what it excluded -- is auditable rather than asserted.
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
@@ -38,7 +37,6 @@ __all__ = [
     "Rejected",
     "ScreenOutcome",
     "derive_cutoff",
-    "is_placeholder",
     "screen",
 ]
 
@@ -113,31 +111,6 @@ def _party_verdict(raw: RawQuestion) -> tuple[PartyRule, tuple[str, ...]] | None
     return None
 
 
-# Exchanges pre-list the legs of an open-ended event before the names are
-# known: "Will Candidate B win ...", "Will Company K be the largest ...",
-# "Will Placeholder V be the #1 searched song ...". They resolve -- always NO
-# unless renamed -- so they pass every resolution rule, and they are not
-# questions about anything. A stand-in is one or two capital letters after a
-# role noun; "Team USA" and "Company 3M" are not matched.
-_PLACEHOLDER = re.compile(
-    r"\bplaceholder\b"
-    r"|\b(?:candidate|company|person|player|team|artist|option|driver|party|country|movie|song)"
-    r"\s+(?-i:[A-Z]{1,2})\b(?!\.)",
-    re.IGNORECASE,
-)
-
-
-def is_placeholder(question: str) -> bool:
-    """Whether a question names a stand-in rather than a party.
-
-    Preserves what a scenario is: a question about named actors. A placeholder
-    leg cannot be researched, decomposed or forecast from evidence, and twenty
-    of them in a set of 180 is 11% of the headline measuring nothing.
-    Outcome-independent: it reads the question text alone.
-    """
-    return _PLACEHOLDER.search(question) is not None
-
-
 def screen(
     raw: RawQuestion,
     *,
@@ -155,9 +128,6 @@ def screen(
     # authored, so neither has a volume to screen on.
     if raw.source in ("polymarket", "manifold") and raw.volume < min_volume:
         return Rejected(raw.source_ref, "low_volume", f"{raw.volume:.0f}")
-
-    if raw.source in ("polymarket", "manifold") and is_placeholder(raw.question):
-        return Rejected(raw.source_ref, "placeholder_leg", raw.question[:100])
 
     text = f"{raw.question} {raw.resolution_criterion}"
 
@@ -186,14 +156,7 @@ def screen(
             f"{(raw.resolved_at - cutoff).days}d <= {MIN_HORIZON.days}d",
         )
 
-    # The question says what the scenario is about; a market's resolution
-    # criterion is mostly boilerplate ("... according to official sources who
-    # ..."), and classifying on both put an NFL draft pick under `health` on
-    # the word "who". The criterion is consulted only when the question alone
-    # matches nothing.
-    domain: Domain = raw.curated_domain or classify_domain(raw.question)
-    if domain == "other" and not raw.curated_domain:
-        domain = classify_domain(text)
+    domain: Domain = raw.curated_domain or classify_domain(text)
 
     scenario = Scenario(
         scenario_id=scenario_id,

@@ -39,12 +39,16 @@ from cascade.eval.split import (
     split_score,
 )
 
-REGISTRY: list[tuple[str, str]] = [
-    (scenario_id, domain)
-    for scenario_id, domain in json.loads(
+# The sealed registry's (id, domain, question) -- no outcome. The question is
+# there because the study split excludes exchange stand-ins by their wording
+# before drawing the partition (ADR-0043).
+STUDY: list[tuple[str, str, str]] = [
+    (scenario_id, domain, question)
+    for scenario_id, domain, question in json.loads(
         (repo_root() / "tests" / "fixtures" / "registry_domains.json").read_text(encoding="utf-8")
     )
 ]
+REGISTRY: list[tuple[str, str]] = [(scenario_id, domain) for scenario_id, domain, _ in STUDY]
 DEV_SIZE = 40
 
 
@@ -54,6 +58,13 @@ def _salt() -> str:
 
 def _declared():
     return declare_split(REGISTRY, salt=_salt(), dev_size=DEV_SIZE)
+
+
+def _study_declared():
+    """What every eval path declares: stand-ins excluded, then split."""
+    from cascade.eval.split import declare_study_split
+
+    return declare_study_split(STUDY, salt=_salt(), dev_size=DEV_SIZE)
 
 
 class TestOutcomeIndependenceByConstruction:
@@ -77,7 +88,11 @@ class TestOutcomeIndependenceByConstruction:
 
     def test_the_declaration_has_no_field_an_outcome_could_occupy(self) -> None:
         fields = set(type(_declared()).model_fields)
-        assert fields == {"purpose", "dev_size", "dev", "test", "domains", "sha256"}
+        assert fields == {"purpose", "dev_size", "dev", "test", "domains", "sha256", "excluded"}
+        # And the excluded entries carry an id and a reason, nothing else.
+        from cascade.eval.exclusions import ExcludedScenario
+
+        assert set(ExcludedScenario.model_fields) == {"scenario_id", "reason"}
 
     def test_the_module_cannot_name_a_label(self) -> None:
         """`cascade.eval.schema` holds `ScoredForecast`, the one labelled type;
@@ -100,6 +115,7 @@ class TestOutcomeIndependenceByConstruction:
             "typing",
             "pydantic",
             "cascade.canonical",
+            "cascade.eval.exclusions",
         }
         touched = (
             {node.attr for node in ast.walk(tree) if isinstance(node, ast.Attribute)}
@@ -259,10 +275,10 @@ class TestThePin:
         committed before any forecast existed; this asserts that it is the
         fingerprint of the split this code produces over the sealed ids, so the
         pin, the code and the registry cannot drift apart unnoticed."""
-        assert load_settings().eval.split_sha256 == _declared().sha256
+        assert load_settings().eval.split_sha256 == _study_declared().sha256
 
     def test_the_declared_split_passes(self) -> None:
-        assert_declared(_declared(), pinned_sha256=load_settings().eval.split_sha256)
+        assert_declared(_study_declared(), pinned_sha256=load_settings().eval.split_sha256)
 
     @pytest.mark.parametrize(
         "change",

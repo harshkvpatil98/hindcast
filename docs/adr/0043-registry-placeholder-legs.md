@@ -1,7 +1,7 @@
-# ADR-0043 — Placeholder legs, leg-level volume, and domain from the question
+# ADR-0043 — Placeholder legs: excluded from scoring, the sealed set kept
 
-- **Status:** accepted as code; **the reseal it implies awaits the owner's
-  decision** (2026-09-19)
+- **Status:** accepted (2026-09-19). The owner chose to **keep the sealed set
+  and exclude the stand-ins from scoring** rather than reseal; see "Decision".
 - **Milestone:** M14 (corrects M1 code)
 - **Corrects a defect found in this build** — by the market benchmark
   (ADR-0039), not by review
@@ -43,25 +43,53 @@ boilerplate defeats all three.
 
 ## Decision
 
-- **A stand-in is not a party.** `is_placeholder`: "placeholder", or a role
-  noun (candidate, company, person, player, team, …) followed by one or two
-  capital letters. Case-sensitive on the letters, so "Company 3M" and "Team
-  USA" are names. Reads the question text and nothing else.
-- **The representative is chosen by keyed hash among named legs.** Not among
-  traded ones: a leg's final volume accumulates after the cutoff and tracks the
-  eventual winner, so preferring traded legs would let the outcome lean on the
-  selection. Volume stays a screen on the chosen leg, now on its own figure.
-  An event of nothing but stand-ins still yields a candidate so the screen
-  rejects and counts it (`placeholder_leg`).
-- **A leg's life starts at its own `createdAt`** when that is later than the
-  event's start.
-- **Domain from the question**, the criterion consulted only when the question
-  alone matches nothing; `WHO` only in capitals; "strike on / attack on" is
-  conflict, not labour; player props ("Points O/U 16.5") are single-quantity.
+Two options were measured and put to the owner: reseal the registry with the
+fixes below (40 of 180 scenarios change, and `make demo`'s stored events must be
+deleted because they reference scenarios that leave), or keep the sealed set and
+exclude the stand-ins from every scored figure. **The owner chose the second.**
 
-All of these read fields fixed before resolution. None reads an outcome.
+1. **The sealed registry does not move.** Manifest `91ccd314…`, its YES rate,
+   its domain labels and its cutoffs are the study's. The ledger code on this
+   branch reproduces it byte for byte from the source cache (checked: a dry
+   rebuild gives the same manifest with 0 fetches).
+2. **Fifteen stand-ins are excluded from scoring and counted.**
+   `cascade/eval/exclusions.py::is_placeholder` — "placeholder", or a role noun
+   (candidate, company, person, player, team, …) followed by one or two capital
+   letters, case-sensitive on the letters so "Team USA" and "Company 3M" are
+   names. It reads the question's wording and nothing else. Stand-ins almost
+   always resolve NO, so a rule that could see outcomes would look the same on
+   the data; this one cannot see them, by signature.
+3. **The exclusion happens before the split is drawn, and is inside its pin.**
+   `declare_study_split` removes the stand-ins, then splits the remaining 165:
+   **40 dev / 125 test**, so dev is 40 real questions. The excluded ids and
+   their reason are in the fingerprint (`eval.split_sha256` = `4914fba3…`), so
+   widening the rule later — to drop one more scenario that went badly — is
+   refused like any re-drawn split. The first pin (`4b8dad2f…`, over all 180)
+   was replaced on the same day; no forecast had been scored against either.
+4. **Excluded means excluded everywhere.** `select` drops them from `dev`,
+   `test` *and* `all`; the tuning guard refuses them; the grid's pools omit them
+   (so the A=on and A=off cells draw the same 90); and compile, the dossier
+   writer, the baselines, the estimate and the injection probe skip them, so no
+   budget is spent on a number the report must discard. The report states the
+   count and the reason above the headline, and `manifest.json` lists the ids.
 
-## Measured — a dry rebuild from the recorded source cache (0 fetches)
+**Kept, as the cost of not resealing:** the 11 `health` scenarios are misfiled
+(game shows and sport, matched on the pronoun "who"), which loosens the ≤ 25%
+domain cap and makes the per-domain table's `health` row meaningless; and one
+scenario (an ETF approval) has a cutoff four months before its market was
+created — forecastable from evidence, but with no market price to benchmark.
+Both are named in the report's limitations, not fixed.
+
+**The registry fixes are preserved** on branch `m14-registry-v2` (commit
+`d5b0ef3`) for the next registry this project seals: leg-level volume (the
+`or` that read a zero as missing), the representative leg drawn by keyed hash
+among *named* legs — not traded ones, because a leg's final volume accumulates
+after the cutoff and tracks the eventual winner — the leg's own `createdAt`,
+the domain read from the question, `WHO` case-sensitive, "strike on" as
+conflict, and "O/U" props as single-quantity. 14 of 14 seeded mutants killed
+there.
+
+## Measured — what the reseal would have done (a dry rebuild, 0 fetches)
 
 | | sealed `91ccd314…` | with this ADR `1ef204c5…` |
 |---|---|---|
@@ -77,20 +105,14 @@ stand-ins, because selection is a joint constraint problem — base rate, domain
 cap, one per event, keyed-hash order — and a different eligible pool and
 different domain labels re-solve it.
 
-## The reseal — not done, and why it is the owner's call
+## Verification
 
-Writing this registry is a new frozen split. It is legitimate now and only now:
-no forecast exists, so nothing can have been chosen after looking. Against it:
-
-- `ledger build --write --replace` deletes the scenarios that leave, and
-  `make demo`'s stored runs, forecasts and **452,374 events** reference some of
-  them. The demo data is heuristic and regenerates in ~90 s, but clearing it
-  is a `DELETE` on the append-only event log, and invariant 6 says never.
-- The CC-NEWS ingest running now is anchored on the current cutoffs
-  (ADR-0036); 40 new scenarios would want it re-planned (a restart of that step
-  — completed units are kept).
-- The dev/test pin, the market prices and the memorisation probe are all per
-  scenario and cheap to redo, but they must be redone.
-
-Not resealing leaves 15 stand-ins (8%) in the headline, a `health` row made of
-game shows, and one scenario forecast from before its market existed.
+- 22 tests in `tests/unit/test_eval_exclusions.py`, including a regression pin
+  of exactly 15 over the real registry and a static check that every spend
+  path filters. The split, CLI and report tests now derive their counts from
+  the declaration instead of hard-coding 140/180.
+- 10 of 10 seeded mutants killed: the rule's case-sensitivity and letter count
+  loosened; the "placeholder" keyword dropped; the exclusion left out of the
+  fingerprint; excluded ids kept in `all`; exclusion applied after the split;
+  the CLI declaring the plain split; the tuning guard ignoring excluded ids;
+  the report and the manifest silent about them.

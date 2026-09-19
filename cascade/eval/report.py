@@ -413,7 +413,7 @@ _PARTITION_NOTE: dict[Partition, str] = {
         "is the figure the study reports."
     ),
     "all": (
-        "Every sealed scenario, dev included. Printed for comparison only and **not "
+        "Every scored scenario, dev included. Printed for comparison only and **not "
         "the headline**: it contains the scenarios the system was tuned on, and is "
         "optimistic by however much that tuning fitted them."
     ),
@@ -482,8 +482,20 @@ def _split_section(artifact: StudyArtifact) -> list[str]:
             "as a held-out figure.",
             "",
         ]
+    if split.excluded:
+        lines += [
+            f"**{len(split.excluded)} of the {split.n + len(split.excluded)} sealed scenarios "
+            "are excluded from every scored figure**, and counted here. They are exchange "
+            'placeholder legs -- markets listed before a name was known, such as "Will '
+            'Candidate B win ..." -- which resolved and so passed every registry rule, '
+            "but name no party and cannot be forecast from evidence. The rule reads the "
+            "question's wording alone, was fixed before any forecast existed, and the "
+            "excluded ids are part of the pinned fingerprint below (ADR-0043). The sealed "
+            "registry and its manifest are unchanged.",
+            "",
+        ]
     lines += [
-        f"The {split.n} sealed scenarios are partitioned into **{len(split.dev)} dev** "
+        f"The {split.n} scored scenarios are partitioned into **{len(split.dev)} dev** "
         f"and **{len(split.test)} test**. The partition was declared before any "
         "forecast existed: membership is a keyed hash of the scenario id under the "
         f"study salt (purpose `{split.purpose}`), stratified by domain, and it takes "
@@ -631,6 +643,7 @@ def _split_payload(artifact: StudyArtifact) -> dict[str, Any] | None:
         "n_dev": len(split.dev),
         "n_test": len(split.test),
         "dev_scenario_ids": list(split.dev),
+        "excluded": [item.model_dump(mode="json") for item in split.excluded],
         "domains": [row.model_dump(mode="json") for row in split.domains],
         "interactions": [row.model_dump(mode="json") for row in artifact.split_interactions],
         "configs_withheld_from_this_partition": list(artifact.withheld_configs),

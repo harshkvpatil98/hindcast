@@ -1595,6 +1595,30 @@ def _sim_role_is_fenced(settings: Settings) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 
+def _scorable(scenarios: Sequence[Any], *, what: str) -> list[Any]:
+    """Drop the scenarios declared unscoreable (ADR-0043), saying how many.
+
+    Nothing is scored on them, so nothing is spent on them either: compiling,
+    briefing or forecasting a stand-in like "Candidate B" would buy a number
+    the report is bound to discard. Scoring does not depend on this filter --
+    the split declaration drops them from every scored figure regardless.
+    """
+    from cascade.eval.exclusions import exclusions
+
+    excluded = {
+        item.scenario_id
+        for item in exclusions(
+            [(scenario.scenario_id, scenario.question) for scenario in scenarios]
+        )
+    }
+    if excluded:
+        console.print(
+            f"[dim]{len(excluded)} scenario(s) excluded from scoring are skipped by {what} "
+            "(exchange placeholder legs; ADR-0043)[/dim]"
+        )
+    return [scenario for scenario in scenarios if scenario.scenario_id not in excluded]
+
+
 def _situations(
     settings: Settings,
     scenario_ids: Sequence[str],
@@ -1831,6 +1855,7 @@ def compile_build(
     scenarios = load_scenarios(settings, role="admin")
     if not scenarios:
         _fail("scenario registry is empty; run `cascade ledger build` first", EXIT_PRECONDITION)
+    scenarios = tuple(_scorable(scenarios, what="compile"))
 
     done = set() if rebuild else completed_scenarios(settings)
     pending = [item for item in scenarios if item.scenario_id not in done]
@@ -1901,6 +1926,7 @@ def compile_dossier(
     scenarios = sorted(load_scenarios(settings, role="admin"), key=lambda item: item.scenario_id)
     if not scenarios:
         _fail("scenario registry is empty; run `cascade ledger build` first", EXIT_PRECONDITION)
+    scenarios = _scorable(scenarios, what="the dossier writer")
     done = set() if rebuild else written_scenarios(settings)
     pending = [item for item in scenarios if item.scenario_id not in done]
     if limit is not None:
@@ -3011,7 +3037,7 @@ def _declared_split(settings: Settings, split: FrozenSplit) -> SplitDeclaration:
     before any number is computed. Every `cascade eval` path that measures
     anything goes through here.
     """
-    from cascade.eval.split import assert_declared, declare_split
+    from cascade.eval.split import assert_declared, declare_study_split
     from cascade.ledger.store import load_scenarios
 
     registry = load_scenarios(settings, role="eval")
@@ -3022,8 +3048,10 @@ def _declared_split(settings: Settings, split: FrozenSplit) -> SplitDeclaration:
             EXIT_PRECONDITION,
         )
     try:
-        declaration = declare_split(
-            [(item.scenario_id, item.domain) for item in registry],
+        # The wording goes in so stand-ins are excluded before the split is
+        # drawn (ADR-0043); it carries no outcome.
+        declaration = declare_study_split(
+            [(item.scenario_id, item.domain, item.question) for item in registry],
             salt=split.study_salt,
             dev_size=settings.eval.dev_scenarios,
         )
@@ -3347,7 +3375,10 @@ def eval_baselines(
         )
     if MARKET_BASELINE_CHOICE in wanted:
         _market_prices(settings, refresh=False, offline=False, write=True, limit=limit)
-    scenarios = sorted(load_scenarios(settings, role="admin"), key=lambda s: s.scenario_id)
+    scenarios = _scorable(
+        sorted(load_scenarios(settings, role="admin"), key=lambda s: s.scenario_id),
+        what="the baselines",
+    )
     if limit is not None:
         scenarios = scenarios[:limit]
     if not scenarios:
@@ -3480,7 +3511,10 @@ def eval_estimate(
     _require_provider_ready(settings)
     draws = samples if samples is not None else settings.ensemble.replicates
 
-    scenarios = sorted(load_scenarios(settings, role="admin"), key=lambda item: item.scenario_id)
+    scenarios = _scorable(
+        sorted(load_scenarios(settings, role="admin"), key=lambda item: item.scenario_id),
+        what="the estimate",
+    )
     if not scenarios:
         _fail("scenario registry is empty; run `cascade ledger build`", EXIT_PRECONDITION)
     sample = scenarios[: max(1, units)]
@@ -3755,8 +3789,17 @@ def eval_grid(
 
     from cascade.ledger.store import load_scenarios
 
-    registry = sorted(item.scenario_id for item in load_scenarios(base, role="admin"))
-    compiled = sorted(completed_scenarios(base))
+    # Excluded scenarios are in neither pool (ADR-0043), so the A=on and A=off
+    # cells rank the same candidates and their 90-scenario subsamples agree.
+    excluded = set(declaration.excluded_ids)
+    registry = sorted(
+        item.scenario_id
+        for item in load_scenarios(base, role="admin")
+        if item.scenario_id not in excluded
+    )
+    compiled = sorted(
+        scenario_id for scenario_id in completed_scenarios(base) if scenario_id not in excluded
+    )
     if not registry:
         _fail("scenario registry is empty; run `cascade ledger build`", EXIT_PRECONDITION)
 
@@ -4157,6 +4200,13 @@ def eval_split(
         f"  purpose {declaration.purpose} · applies to manifest "
         f"{split.manifest_sha256[:16]}... · pinned in configs/base.yaml (eval.split_sha256)"
     )
+    if declaration.excluded:
+        console.print(
+            f"  {len(declaration.excluded)} of {split.n_scenarios} sealed scenarios excluded "
+            "from scoring before the split was drawn (exchange placeholder legs; ADR-0043):"
+        )
+        for item in declaration.excluded:
+            console.print(f"    {item.scenario_id}  [dim]{item.reason}[/dim]")
     table = Table(title=f"{len(declaration.dev)} dev / {len(declaration.test)} test, by domain")
     table.add_column("domain", style="cyan")
     table.add_column("n", justify="right")
@@ -4363,7 +4413,10 @@ def eval_injection(
 
     settings = _settings(config)
     _require_provider_ready(settings)
-    by_id = {item.scenario_id: item for item in load_scenarios(settings, role="sim")}
+    by_id = {
+        item.scenario_id: item
+        for item in _scorable(load_scenarios(settings, role="sim"), what="the injection probe")
+    }
     if not by_id:
         _fail("scenario registry is empty; run `cascade ledger build`", EXIT_PRECONDITION)
     chosen = [
