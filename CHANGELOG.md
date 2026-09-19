@@ -52,6 +52,31 @@ since M3. Built and tested; the live AWS criteria are blocked.
   was re-fetched and re-sealed at `91ccd314…`, a new frozen split. The corpus
   was not rebuilt, so compile remains blocked.
 
+## M9 — Presentation
+
+The repository made readable and runnable from a clean clone. 2 of 3 criteria
+met; the optional dashboard deferred.
+
+- **`README.md`** applies the measured-values contract to the front page, with
+  six stated limitations including the two criteria still missed. (M10 found
+  that it also stated three §1 cost targets as the study's price, and corrected
+  it.)
+- **`make demo`** — registry → four ablation cells → 25-run replay →
+  provenance chain → report artifact, entirely on the stand-in decider, with no
+  credential and no spend. `make verify` and `make install-full` are new.
+- **CI**: a gates job and a separate invariants job, a pull-request template
+  carrying the gate checklist, two issue templates; `CONTRIBUTING.md`,
+  `LICENSE` (MIT) and an index of the 27 ADRs.
+- **The CI workflow was run in a CI-equivalent environment first, and it
+  failed**: without the `embed` extra, mypy could not resolve the lazily
+  imported `torch` and `sentence_transformers`. Fixed with the same override the
+  other optional imports use; re-measured at 1,193 passed, 1 skipped.
+- **The quickstart did not work**: `make install` omitted the `kernel` extra
+  the demo needs. `cascade trace explain` now defaults to the first stored run,
+  so the documented demo line needs no `psql`.
+- **Deferred:** the read-only dashboard — optional in the spec, and there were
+  no study numbers to put in it.
+
 ## M8 — Strata: determinism and provenance
 
 Replay verification, provenance chains, and the cost-ledger gate.
