@@ -258,3 +258,54 @@ def test_timezone_representation_does_not_affect_validation() -> None:
     result = validate(raw(published_at=shifted), now=NOW)
     assert not isinstance(result, str)
     assert result.published_at == shifted
+
+
+# ---------------------------------------------------------------------------
+# When the stored text was knowable (ADR-0044)
+# ---------------------------------------------------------------------------
+
+
+def test_a_page_fetched_after_the_date_it_states_is_dated_by_the_fetch() -> None:
+    """A 2025 article re-crawled in 2026 carries the 2026 page -- update notes,
+    sidebars. Its text was knowable in 2026, whatever the article says."""
+    stated = datetime(2025, 8, 23, 18, 31, tzinfo=UTC)
+    crawled = datetime(2026, 4, 9, 2, 0, tzinfo=UTC)
+    result = validate(raw(published_at=stated, crawled_at=crawled), now=NOW + timedelta(days=900))
+    assert not isinstance(result, str)
+    assert result.published_at == crawled
+    assert (result.stated_published_at, result.crawled_at) == (stated, crawled)
+
+
+def test_a_stated_date_after_the_fetch_is_kept() -> None:
+    """Metadata can claim a later instant than the fetch (a scheduled story, a
+    timezone mislabel). The later of the two is still the safe one."""
+    stated = datetime(2024, 1, 1, 12, tzinfo=UTC)
+    crawled = datetime(2024, 1, 1, 9, tzinfo=UTC)
+    result = validate(raw(published_at=stated, crawled_at=crawled), now=NOW)
+    assert not isinstance(result, str)
+    assert result.published_at == stated
+
+
+def test_without_a_fetch_time_the_stated_date_stands() -> None:
+    result = validate(raw(), now=NOW)
+    assert not isinstance(result, str)
+    assert result.published_at == datetime(2024, 1, 1, tzinfo=UTC)
+    assert result.crawled_at is None
+
+
+def test_a_naive_fetch_time_is_refused_not_assumed() -> None:
+    naive = datetime(2024, 1, 2, 9)
+    assert validate(raw(crawled_at=naive), now=NOW) == "naive_date"
+
+
+def test_the_earlier_copy_keeps_its_own_text_not_only_its_date() -> None:
+    """When the earlier copy of a syndicated story arrives second, the survivor
+    must be that copy -- text and date together. Moving only the date back
+    paired a later-fetched text with an earlier date."""
+    early = dated("early", BODY + " early", 3)
+    late = dated("late", BODY + " later update", 9)
+    kept = deduplicate([late, early]).kept
+    assert len(kept) == 1
+    assert kept[0].document_id == early.document_id
+    assert kept[0].body == early.body
+    assert kept[0].published_at == early.published_at

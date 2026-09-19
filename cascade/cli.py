@@ -586,6 +586,55 @@ def corpus_status(config: OverlayOpt = None) -> None:
     _print_corpus_stats(corpus_stats(settings), settings.corpus.target_chunks)
 
 
+@corpus_app.command("redate")
+def corpus_redate(
+    config: OverlayOpt = None,
+    limit: Annotated[
+        int | None, typer.Option("--limit", help="Re-date at most N finished files.")
+    ] = None,
+    delete_orphans: Annotated[
+        bool,
+        typer.Option(
+            "--delete-orphans",
+            help="Once every finished file is re-dated, delete CC-NEWS documents none of them holds.",
+        ),
+    ] = False,
+) -> None:
+    """Re-date stored CC-NEWS documents by when their text was fetched (ADR-0044).
+
+    Re-reads the WARC headers of every finished CC-NEWS unit -- no chunking, no
+    embedding -- and moves each stored document to the later of the date it
+    states and the time Common Crawl fetched it, keeping both. Resumable per
+    file; a file read twice changes nothing. Run it with the ingest stopped.
+    """
+    from cascade.corpus.redate import gap_summary, run_redate
+
+    settings = _settings(config)
+
+    def progress(index: int, total: int, unit_key: str, matched: int, moved: int) -> None:
+        console.print(
+            f"  [{index}/{total}] {unit_key}: {matched} documents matched, {moved} moved later"
+        )
+
+    report = run_redate(settings, limit=limit, delete_orphans=delete_orphans, progress=progress)
+    summary = gap_summary(report.gap_days)
+    console.print(
+        f"re-dated [bold]{report.files}[/bold] file(s): {report.documents_matched} documents "
+        f"matched, {report.documents_moved} moved to their fetch time"
+    )
+    console.print(
+        "  gap between stated date and fetch, moved documents: "
+        f"median {summary['median_days']:.2f} d · >1 d {summary['over_1_day']} · "
+        f">7 d {summary['over_7_days']} · >30 d {summary['over_30_days']} · "
+        f">180 d {summary['over_180_days']}"
+    )
+    if delete_orphans:
+        console.print(
+            f"  orphans deleted: {report.orphans_deleted} documents, {report.chunks_deleted} "
+            "chunks (from interrupted units; re-fetched when the ingest resumes)"
+        )
+
+
 @corpus_app.command("coverage")
 def corpus_coverage(
     config: OverlayOpt = None,

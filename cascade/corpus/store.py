@@ -72,7 +72,7 @@ def write_batch(
     with _connect(settings) as conn, conn.cursor() as cur:
         with cur.copy(
             "COPY documents (document_id, source, source_ref, url, title, "
-            "published_at, simhash, n_chunks) FROM STDIN"
+            "published_at, simhash, n_chunks, stated_published_at, crawled_at) FROM STDIN"
         ) as copy:
             for document in documents:
                 copy.write_row(
@@ -85,6 +85,8 @@ def write_batch(
                         document.published_at,
                         to_signed(document.simhash),
                         counts.get(document.document_id, 0),
+                        document.stated_published_at,
+                        document.crawled_at,
                     )
                 )
 

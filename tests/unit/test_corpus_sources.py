@@ -583,3 +583,53 @@ def test_gdelt_units_are_not_clamped_when_the_request_starts_later() -> None:
 def test_gdelt_coverage_floor_is_the_measured_one() -> None:
     """2016-12 was refused and 2020-06 served; the documented start is 2017-01-01."""
     assert gdelt.COVERAGE_START_YEAR == 2017
+
+
+def test_the_warc_date_is_read_from_the_record_header() -> None:
+    from cascade.corpus.sources.ccnews import warc_date
+
+    header = (
+        b"WARC/1.0\r\nWARC-Type: response\r\n"
+        b"WARC-Date: 2026-03-16T11:31:17Z\r\n"
+        b"WARC-Target-URI: https://example.com/a\r\nContent-Length: 10"
+    )
+    assert warc_date(header) == datetime(2026, 3, 16, 11, 31, 17, tzinfo=UTC)
+    assert warc_date(b"WARC/1.0\r\nWARC-Type: response") is None
+    assert warc_date(b"WARC/1.0\r\nWARC-Date: not-a-date") is None
+
+
+def test_a_warc_response_carries_its_fetch_time_into_the_document() -> None:
+    """End to end through the streaming parser: the stated date and the fetch
+    time both reach the document, so validate can date the text by the later."""
+    import gzip
+
+    import httpx
+
+    from cascade.corpus.sources import ccnews
+
+    html = (
+        b"<html><head><meta property='article:published_time' "
+        b"content='2025-08-23T18:31:00+00:00'></head><body><p>"
+        + b"A long enough article body about a port strike and its settlement. " * 8
+        + b"</p></body></html>"
+    )
+    http = b"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n" + html
+    record = (
+        b"WARC/1.0\r\nWARC-Type: response\r\nWARC-Date: 2026-04-09T02:00:00Z\r\n"
+        b"WARC-Target-URI: https://example.com/old-article\r\n"
+        + f"Content-Length: {len(http)}".encode()
+        + b"\r\n\r\n"
+        + http
+        + b"\r\n\r\n"
+    )
+    payload = gzip.compress(record)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=payload)
+
+    fetcher = Fetcher(
+        requests_per_second=100.0, client=httpx.Client(transport=httpx.MockTransport(handler))
+    )
+    [document] = list(ccnews.load_warc(fetcher, path="crawl-data/x.warc.gz", max_records=5))
+    assert document.published_at == datetime(2025, 8, 23, 18, 31, tzinfo=UTC)
+    assert document.crawled_at == datetime(2026, 4, 9, 2, 0, tzinfo=UTC)
