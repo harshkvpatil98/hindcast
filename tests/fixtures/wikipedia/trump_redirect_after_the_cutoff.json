@@ -1,0 +1,257 @@
+{
+ "exchanges": [
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "lastrevid": 1339118493,
+       "length": 143,
+       "ns": 0,
+       "pageid": 52343313,
+       "redirect": true,
+       "title": "Trump"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "info",
+    "titles": "Trump"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20241110113407|1256539148"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 52343313,
+       "revisions": [
+        {
+         "parentid": 1256539148,
+         "revid": 1266241619,
+         "slots": {
+          "main": {
+           "content": "#REDIRECT [[Trump]]\n\n{{Redirect category shell|\n{{R to disambiguation page}}\n}}",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2024-12-30T19:29:54Z"
+        }
+       ],
+       "title": "Trump"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-03-04T15:37:48Z",
+    "titles": "Trump"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "logevents": [
+      {
+       "logid": 169552353,
+       "logpage": 253639,
+       "ns": 0,
+       "pageid": 52343313,
+       "params": {
+        "suppressredirect": true,
+        "target_ns": 0,
+        "target_title": "Trump (disambiguation)"
+       },
+       "revid": 1288817834,
+       "timestamp": "2025-05-04T22:24:05Z",
+       "title": "Trump"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "ledir": "newer",
+    "lelimit": "1",
+    "leprop": "ids|title|timestamp|details",
+    "lestart": "2025-03-04T15:37:48Z",
+    "letitle": "Trump",
+    "letype": "move",
+    "list": "logevents",
+    "maxlag": "5"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20250228185018|1278146272"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 253639,
+       "revisions": [
+        {
+         "parentid": 1278146272,
+         "revid": 1278599626,
+         "slots": {
+          "main": {
+           "content": "{{pp-move-indef}}\n{{pp-semi-indef|small=yes}}\n{{Wiktionary|Trump|trump}}\n'''Trump''' most commonly refers to:\n* [[Donald Trump]] (born 1946), President of the United States <!-- This should always match the start of his article's SD -->\n* [[Trump (card games)]], any playing card given an ad-hoc high rank\n\n'''Trump''' may also refer to:\n{{TOC right}}\n==Arts and entertainment==\n=== Film ===\n* ''[[Trump: The Kremlin Candidate?]]'', a 2017 British television film\n* ''[[Trump: What's the Deal?]]'', an American documentary first screened in 1991\n\n=== Games ===\n{{seealso|Trump card (disambiguation)}}\n* [[Court piece]] or trumps, a trick-taking card game related to whist\n* ''[[Trump: The Game]]'', a board game\n\n=== Literature ===\n* [[Trump (magazine)|''Trump'' (magazine)]], a 1957 American humor magazine\n* [[Trump (series)|''Trump'' (series)]], a Japanese stage, manga and anime series since 2009\n* ''[[Trump: The Art of the Deal]]'', a 1987 book by Donald Trump and Tony Schwartz\n* ''[[Trump: Surviving at the Top]]'', a 1990 book by Donald Trump and Charles Leerhsen\n* ''[[Trump: The Deals and the Downfall]]'', a 1992 biography by Wayne Barrett\n* ''[[Trump: The Art of the Comeback]]'', a 1997 book by Donald Trump and Kate Bohner\n\n== Domesticated animals ==\n* [[Trump (dog)]], a pug owned by English painter William Hogarth\n* [[The Trump (horse)]], an Australian racehorse\n\n== People ==\n* [[Trump (surname)]], including a list of people and fictional characters with the name\n* [[Trump (gamer)]], or Jeffrey Shih (born 1987), streamer-competitor in ''Hearthstone''\n\n== Places ==\n* [[Trump, Colorado]], U.S.\n* [[Trump, Maryland]], U.S.\n* [[Trump Islands]], Antarctica\n* [[Trump Islands (Newfoundland and Labrador)]], Canada\n* [[Trump Street]], City of London, U.K.\n\n== Transport ==\n* [[HMS Trump (P333)|HMS ''Trump'' (P333)]], a British submarine, 1944–1969\n* [[Trump Shuttle]], an airline (1989–1992; callsign: TRUMP)\n* [[USCGC William Trump|USCGC ''William Trump'']], a U.S. Coast Guard cutter, launched 2014\n\n== Other uses ==\n* ''trump'', a colloquialism for [[flatulence]]\n* [[$Trump]], a 2025 cryptocurrency meme coin\n\n== See also ==\n* [[Tromp (disambiguation)]]\n* [[Trumpf]], a machine tool company\n* [[Trump Organization]]\n* [[Van Trump (disambiguation)]]\n* {{lookfrom|Trump}}\n* {{intitle|Trump}}\n{{Disambiguation|geo|ship}}",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-03-03T12:26:37Z"
+        }
+       ],
+       "title": "Trump (disambiguation)"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "pageids": "253639",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-03-04T15:37:48Z"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20250304143756|1278774805"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 4848272,
+       "revisions": [
+        {
+         "parentid": 1278774805,
+         "revid": 1278775336,
+         "slots": {
+          "main": {
+           "content": "{{Short description|President of the United States (2017–2021, 2025–present)}} \n{{Other uses|Donald Trump (disambiguation)}}\n{{pp-extended|small=yes}}\n{{Use American English|date=November 2020}}\n{{Use mdy dates|date=January 2025}}\n{{Bots|deny=InternetArchiveBot}}<!-- Per [[Talk:Donald Trump#Current consensus]], item 25. -->\n{{stack begin}}<!-- DO NOT REMOVE. Required for correct vertical alignment of image at \"Early life and education\" in some user configurations. -->\n{{Infobox officeholder\n| image               = TrumpPortrait.jpg\n| caption             = Inaugural portrait, 2025\n| alt                 = Head-and-shoulders portrait of Trump with a stern facial expression. He is wearing a blue suit, a white shirt, a blue necktie, and an American flag lapel pin. The background is unlit and blurred, and part of an American flag is visible.\n| order               = 45th & 47th<!-- DO NOT ADD A LINK. Please discuss any proposal on the talk page first. Most recent discussion at [[Talk:Donald Trump/Archive 65#Link-ifying \"45th\" in the Infobox?]] had a weak consensus to keep the status-quo (no link). -->\n| office              = President of the United States\n| vicepresident       = [[JD Vance]]\n| term_start          = January 20, 2025\n| term_end            = \n| predecessor         = [[Joe Biden]]\n| successor           = \n| vicepresident1      = [[Mike Pence]]\n| term_start1         = January 20, 2017\n| term_end1           = January 20, 2021\n| predecessor1        = [[Barack Obama]]\n| successor1          = Joe Biden\n| birth_name          = Donald John Trump\n| birth_date          = {{birth date and age|1946|6|14}}\n| birth_place         = [[Queens]], New York City, U.S.<!-- DO NOT CHANGE (or add to) this location without prior consensus; please see [[Talk:Donald Trump#Current consensus]], item 2. -->\n| death_date          = \n| death_place         = \n| party               = [[Republican Party (United States)|Republican]] (1987–1999, 2009–2011, 2012–present)\n| otherparty          = {{unbulleted list\n| [[Reform Party of the United States of America|Reform]] (1999–2001)\n| [[Democratic Party (United States)|Democratic]] (2001–2009)\n| [[Independent politician|Independent]] (2011–2012)\n}}\n| spouse              = {{unbulleted list\n| {{marriage|[[Ivana Zelníčková]]|April 9, 1977|December 11, 1990|end=divorced}}\n| {{marriage|[[Marla Maples]]|December 20, 1993|June 8, 1999|end=divorced}}\n| {{marriage|[[Melania Knauss]]|January 22, 2005}}\n}}\n| children            = {{hlist\n| [[Donald Jr.]]\n| [[Ivanka Trump|Ivanka]]\n| [[Eric Trump|Eric]]\n| [[Tiffany Trump|Tiffany]]\n| [[Barron Trump|Barron]]\n}}\n| parents             = {{unbulleted list\n| [[Fred Trump]]\n| [[Mary Anne MacLeod]]\n}}\n| relatives           = [[Trump family]]\n| education           = [[University of Pennsylvania]] ([[Bachelor of Science|BS]])\n| occupation          = {{hlist\n| [[Political career of Donald Trump|Politician]]\n| [[Business career of Donald Trump|businessman]]\n| [[Media career of Donald Trump|media personality]]\n}}\n| residence           = [[White House]]\n| signature           = Donald Trump (Presidential signature).svg\n| signature_alt       = Donald J. Trump stylized autograph, in ink\n| website             = {{unbulleted list\n| {{URL|trumplibrary.gov|Presidential library}}\n| {{URL|whitehouse.gov|White House website}}\n| {{URL|trumpwhitehouse.archives.gov|White House archives}}\n}}\n| module               = {{Listen voice\n| filename    = Donald Trump speaks on declaration of Covid-19 as a Global Pandemic by the World Health Organization.ogg\n| description = Trump on the [[World Health Organization|WHO]]'s declaration of [[COVID-19 pandemic|COVID-19 as a global pandemic]]\n| recorded    = March 11, 2020\n}}\n}}\n{{Donald Trump series}}\n{{stack end}}\n<!-- NOTE: Changes to the lead are regularly discussed on the talk page. DO NOT EDIT WAR. If you make a change that is reverted, please open a discussion or contribute to an existing one, per [[WP:BRD]]. Consensus items marked \"DO NOT CHANGE\" require prior discussion. If you add or remove a sentence with a section link, please also add or remove the hidden reminder following the section heading. -->\n\n'''Donald John Trump''' (born June 14, 1946) is an American politician, media personality, and businessman who is the 47th [[president of the United States]].<!--DO NOT CHANGE preceding sentence (including linking) without prior consensus; see [[Talk:Donald Trump#Current consensus]], item 70.--> A member of the [[Republican Party (United States)|Republican Party]], he served as the 45th president from 2017 to 2021.<!--DO NOT CHANGE preceding sentence (including linking) without prior consensus; see [[Talk:Donald Trump#Current consensus]], item 70.-->\n\nBorn in New York City, Trump graduated from the [[University of Pennsylvania]] in 1968 with a [[bachelor's degree]] in economics. He became the president of his family's real estate business in 1971, renamed it [[the Trump Organization]], and began acquiring and building skyscrapers, hotels, casinos, and golf courses. After six business bankruptcies in the 1990s and 2000s, he began side ventures. From 2004 to 2015, he hosted the reality television show ''[[The Apprentice (American TV series)|The Apprentice]]''. A political outsider, Trump won the [[2016 United States presidential election|2016 presidential election]] against Democratic nominee [[Hillary Clinton]].\n\nIn [[First presidency of Donald Trump|his first term]], Trump imposed [[Executive Order 13769|a travel ban]] on citizens from six Muslim-majority countries, expanded the [[U.S.–Mexico border wall]], and implemented [[Trump administration family separation policy|a family separation policy]].<!-- This sentence must contain a summary of Trump's actions on immigration, including the Muslim travel ban, the wall, and the family separation policy; see [[Talk:Donald Trump#Current consensus]], item 52. --> He rolled back environmental and business regulations, signed the [[Tax Cuts and Jobs Act]] of 2017, and appointed [[Donald Trump Supreme Court candidates|three Supreme Court justices]]. In foreign policy, Trump withdrew the U.S. from agreements on climate, trade, and Iran's nuclear program, began [[China–United States trade war|a trade war with China]], and met with North Korean leader [[Kim Jong Un]] without reaching an agreement on denuclearization.<!-- DO NOT REMOVE preceding sentence without prior consensus; see [[Talk:Donald Trump#Current consensus]], item 44. --> In response to the [[COVID-19 pandemic in the United States|COVID-19 pandemic]], he downplayed its severity, contradicted health officials, and signed the [[CARES Act]] stimulus. Trump was impeached in 2019 for abuse of power and obstruction of Congress, and in 2021 for incitement of insurrection; the Senate acquitted him in both cases. After his first term, [[Historical rankings of presidents of the United States|scholars and historians ranked]] him as one of the worst presidents in American history.<!--DO NOT CHANGE preceding sentence without prior consensus; see [[Talk:Donald Trump#Current consensus]], item 54.-->\n\nTrump is the central figure of [[Trumpism]].<!--DO NOT EXPAND on Trumpism without prior consensus; see [[Talk:Donald Trump#Current consensus]], item 68.--> Many of his comments and actions have been characterized as racially charged, racist or misogynistic,<!--DO NOT CHANGE preceding sentence without prior consensus, see [[Talk:Donald Trump#Current consensus]], items 30 and 51.--> and he has made false and misleading statements and promoted conspiracy theories to a degree unprecedented in American politics.<!--DO NOT CHANGE preceding sentence without prior consensus; see [[Talk:Donald Trump#Current consensus]], items 49 and 53.--> After losing the [[2020 United States presidential election|2020 presidential election]] to [[Joe Biden]], Trump [[Attempts to overturn the 2020 United States presidential election|attempted to overturn the outcome]], culminating in the [[January 6 Capitol attack]] in 2021. In 2023, Trump was held liable in civil cases [[E. Jean Carroll v. Donald J. Trump|for sexual abuse and defamation]] and [[New York business fraud lawsuit against the Trump Organization|for business fraud]]. In 2024, he was found guilty [[Prosecution of Donald Trump in New York|of falsifying business records]], making him the first U.S. president convicted of a felony.  After winning the [[2024 United States presidential election|2024 presidential election]] against [[Kamala Harris]], Trump was sentenced to a penalty-free [[Discharge (sentence)|discharge]], and [[Indictments against Donald Trump|two other felony indictments]] against him were dismissed.\n\nTrump began his second term by [[Pardon of January 6 United States Capitol attack defendants|pardoning around 1,500 January&nbsp;6 rioters]], imposing sweeping tariffs against major trading partners, creating the [[Department of Government Efficiency]] presidential task force, and initiating [[2025 United States federal mass layoffs|mass layoffs of the federal workforce]]. Trump's broad and extensive use of [[executive order]]s has drawn numerous lawsuits challenging their legality.\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-03-04T14:42:14Z"
+        }
+       ],
+       "title": "Donald Trump"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-03-04T15:37:48Z",
+    "titles": "Donald Trump"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20250304143756|1278774805"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 4848272,
+       "revisions": [
+        {
+         "parentid": 1278774805,
+         "revid": 1278775336,
+         "slots": {
+          "main": {
+           "content": "{{Short description|President of the United States (2017–2021, 2025–present)}} \n{{Other uses|Donald Trump (disambiguation)}}\n{{pp-extended|small=yes}}\n{{Use American English|date=November 2020}}\n{{Use mdy dates|date=January 2025}}\n{{Bots|deny=InternetArchiveBot}}<!-- Per [[Talk:Donald Trump#Current consensus]], item 25. -->\n{{stack begin}}<!-- DO NOT REMOVE. Required for correct vertical alignment of image at \"Early life and education\" in some user configurations. -->\n{{Infobox officeholder\n| image               = TrumpPortrait.jpg\n| caption             = Inaugural portrait, 2025\n| alt                 = Head-and-shoulders portrait of Trump with a stern facial expression. He is wearing a blue suit, a white shirt, a blue necktie, and an American flag lapel pin. The background is unlit and blurred, and part of an American flag is visible.\n| order               = 45th & 47th<!-- DO NOT ADD A LINK. Please discuss any proposal on the talk page first. Most recent discussion at [[Talk:Donald Trump/Archive 65#Link-ifying \"45th\" in the Infobox?]] had a weak consensus to keep the status-quo (no link). -->\n| office              = President of the United States\n| vicepresident       = [[JD Vance]]\n| term_start          = January 20, 2025\n| term_end            = \n| predecessor         = [[Joe Biden]]\n| successor           = \n| vicepresident1      = [[Mike Pence]]\n| term_start1         = January 20, 2017\n| term_end1           = January 20, 2021\n| predecessor1        = [[Barack Obama]]\n| successor1          = Joe Biden\n| birth_name          = Donald John Trump\n| birth_date          = {{birth date and age|1946|6|14}}\n| birth_place         = [[Queens]], New York City, U.S.<!-- DO NOT CHANGE (or add to) this location without prior consensus; please see [[Talk:Donald Trump#Current consensus]], item 2. -->\n| death_date          = \n| death_place         = \n| party               = [[Republican Party (United States)|Republican]] (1987–1999, 2009–2011, 2012–present)\n| otherparty          = {{unbulleted list\n| [[Reform Party of the United States of America|Reform]] (1999–2001)\n| [[Democratic Party (United States)|Democratic]] (2001–2009)\n| [[Independent politician|Independent]] (2011–2012)\n}}\n| spouse              = {{unbulleted list\n| {{marriage|[[Ivana Zelníčková]]|April 9, 1977|December 11, 1990|end=divorced}}\n| {{marriage|[[Marla Maples]]|December 20, 1993|June 8, 1999|end=divorced}}\n| {{marriage|[[Melania Knauss]]|January 22, 2005}}\n}}\n| children            = {{hlist\n| [[Donald Jr.]]\n| [[Ivanka Trump|Ivanka]]\n| [[Eric Trump|Eric]]\n| [[Tiffany Trump|Tiffany]]\n| [[Barron Trump|Barron]]\n}}\n| parents             = {{unbulleted list\n| [[Fred Trump]]\n| [[Mary Anne MacLeod]]\n}}\n| relatives           = [[Trump family]]\n| education           = [[University of Pennsylvania]] ([[Bachelor of Science|BS]])\n| occupation          = {{hlist\n| [[Political career of Donald Trump|Politician]]\n| [[Business career of Donald Trump|businessman]]\n| [[Media career of Donald Trump|media personality]]\n}}\n| residence           = [[White House]]\n| signature           = Donald Trump (Presidential signature).svg\n| signature_alt       = Donald J. Trump stylized autograph, in ink\n| website             = {{unbulleted list\n| {{URL|trumplibrary.gov|Presidential library}}\n| {{URL|whitehouse.gov|White House website}}\n| {{URL|trumpwhitehouse.archives.gov|White House archives}}\n}}\n| module               = {{Listen voice\n| filename    = Donald Trump speaks on declaration of Covid-19 as a Global Pandemic by the World Health Organization.ogg\n| description = Trump on the [[World Health Organization|WHO]]'s declaration of [[COVID-19 pandemic|COVID-19 as a global pandemic]]\n| recorded    = March 11, 2020\n}}\n}}\n{{Donald Trump series}}\n{{stack end}}\n<!-- NOTE: Changes to the lead are regularly discussed on the talk page. DO NOT EDIT WAR. If you make a change that is reverted, please open a discussion or contribute to an existing one, per [[WP:BRD]]. Consensus items marked \"DO NOT CHANGE\" require prior discussion. If you add or remove a sentence with a section link, please also add or remove the hidden reminder following the section heading. -->\n\n'''Donald John Trump''' (born June 14, 1946) is an American politician, media personality, and businessman who is the 47th [[president of the United States]].<!--DO NOT CHANGE preceding sentence (including linking) without prior consensus; see [[Talk:Donald Trump#Current consensus]], item 70.--> A member of the [[Republican Party (United States)|Republican Party]], he served as the 45th president from 2017 to 2021.<!--DO NOT CHANGE preceding sentence (including linking) without prior consensus; see [[Talk:Donald Trump#Current consensus]], item 70.-->\n\nBorn in New York City, Trump graduated from the [[University of Pennsylvania]] in 1968 with a [[bachelor's degree]] in economics. He became the president of his family's real estate business in 1971, renamed it [[the Trump Organization]], and began acquiring and building skyscrapers, hotels, casinos, and golf courses. After six business bankruptcies in the 1990s and 2000s, he began side ventures. From 2004 to 2015, he hosted the reality television show ''[[The Apprentice (American TV series)|The Apprentice]]''. A political outsider, Trump won the [[2016 United States presidential election|2016 presidential election]] against Democratic nominee [[Hillary Clinton]].\n\nIn [[First presidency of Donald Trump|his first term]], Trump imposed [[Executive Order 13769|a travel ban]] on citizens from six Muslim-majority countries, expanded the [[U.S.–Mexico border wall]], and implemented [[Trump administration family separation policy|a family separation policy]].<!-- This sentence must contain a summary of Trump's actions on immigration, including the Muslim travel ban, the wall, and the family separation policy; see [[Talk:Donald Trump#Current consensus]], item 52. --> He rolled back environmental and business regulations, signed the [[Tax Cuts and Jobs Act]] of 2017, and appointed [[Donald Trump Supreme Court candidates|three Supreme Court justices]]. In foreign policy, Trump withdrew the U.S. from agreements on climate, trade, and Iran's nuclear program, began [[China–United States trade war|a trade war with China]], and met with North Korean leader [[Kim Jong Un]] without reaching an agreement on denuclearization.<!-- DO NOT REMOVE preceding sentence without prior consensus; see [[Talk:Donald Trump#Current consensus]], item 44. --> In response to the [[COVID-19 pandemic in the United States|COVID-19 pandemic]], he downplayed its severity, contradicted health officials, and signed the [[CARES Act]] stimulus. Trump was impeached in 2019 for abuse of power and obstruction of Congress, and in 2021 for incitement of insurrection; the Senate acquitted him in both cases. After his first term, [[Historical rankings of presidents of the United States|scholars and historians ranked]] him as one of the worst presidents in American history.<!--DO NOT CHANGE preceding sentence without prior consensus; see [[Talk:Donald Trump#Current consensus]], item 54.-->\n\nTrump is the central figure of [[Trumpism]].<!--DO NOT EXPAND on Trumpism without prior consensus; see [[Talk:Donald Trump#Current consensus]], item 68.--> Many of his comments and actions have been characterized as racially charged, racist or misogynistic,<!--DO NOT CHANGE preceding sentence without prior consensus, see [[Talk:Donald Trump#Current consensus]], items 30 and 51.--> and he has made false and misleading statements and promoted conspiracy theories to a degree unprecedented in American politics.<!--DO NOT CHANGE preceding sentence without prior consensus; see [[Talk:Donald Trump#Current consensus]], items 49 and 53.--> After losing the [[2020 United States presidential election|2020 presidential election]] to [[Joe Biden]], Trump [[Attempts to overturn the 2020 United States presidential election|attempted to overturn the outcome]], culminating in the [[January 6 Capitol attack]] in 2021. In 2023, Trump was held liable in civil cases [[E. Jean Carroll v. Donald J. Trump|for sexual abuse and defamation]] and [[New York business fraud lawsuit against the Trump Organization|for business fraud]]. In 2024, he was found guilty [[Prosecution of Donald Trump in New York|of falsifying business records]], making him the first U.S. president convicted of a felony.  After winning the [[2024 United States presidential election|2024 presidential election]] against [[Kamala Harris]], Trump was sentenced to a penalty-free [[Discharge (sentence)|discharge]], and [[Indictments against Donald Trump|two other felony indictments]] against him were dismissed.\n\nTrump began his second term by [[Pardon of January 6 United States Capitol attack defendants|pardoning around 1,500 January&nbsp;6 rioters]], imposing sweeping tariffs against major trading partners, creating the [[Department of Government Efficiency]] presidential task force, and initiating [[2025 United States federal mass layoffs|mass layoffs of the federal workforce]]. Trump's broad and extensive use of [[executive order]]s has drawn numerous lawsuits challenging their legality.\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-03-04T14:42:14Z"
+        }
+       ],
+       "title": "Donald Trump"
+      }
+     ],
+     "redirects": [
+      {
+       "from": "Trump",
+       "to": "Donald Trump"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "redirects": "1",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-03-04T15:37:48Z",
+    "titles": "Trump"
+   },
+   "status": 200
+  }
+ ],
+ "note": "The tariff scenario's cutoff is 2025-03-04T15:37:48.653Z (party_names include United States). That day 'Trump' was a disambiguation page (revision 1278599626) declaring Donald Trump and Trump (card games) primary; in May 2025 it was moved away, and the page filed under 'Trump' today held only a self-redirect at the cutoff. The redirects=1 form of the as-of query is recorded too: the server answers from today's redirect table.",
+ "recorded": "2026-09-19",
+ "source": "https://en.wikipedia.org/w/api.php"
+}

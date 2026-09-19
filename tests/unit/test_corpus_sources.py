@@ -165,12 +165,12 @@ def test_edgar_extracts_the_primary_document() -> None:
 def test_wikipedia_snapshot_requires_an_aware_anchor() -> None:
     """A naive anchor cannot be compared to a revision timestamp."""
     with pytest.raises(ValueError, match="timezone-aware"):
-        wikipedia.SnapshotRequest("Brexit", datetime(2016, 4, 15))
+        wikipedia.SnapshotUnit(as_of=datetime(2016, 4, 15), titles=("Brexit",))
 
 
 def test_wikipedia_snapshot_keeps_its_anchor() -> None:
     anchor = datetime(2016, 4, 15, tzinfo=UTC)
-    assert wikipedia.SnapshotRequest("Brexit", anchor).as_of == anchor
+    assert wikipedia.SnapshotUnit(as_of=anchor, titles=("Brexit",)).as_of == anchor
 
 
 # ---------------------------------------------------------------------------

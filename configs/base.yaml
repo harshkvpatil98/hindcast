@@ -440,7 +440,14 @@ corpus: # evidence corpus (spec §3.2)
   # it, so a corpus that is over its chunk target but covers the wrong years
   # cannot pass silently.
   coverage_min_chunks: 200
-  wikipedia_max_articles_per_scenario: 6
+  # Wikipedia, as each article read strictly before the scenario's cutoff. Depth
+  # 1 asks for what the question and its parties name; depth 2 adds one window
+  # (12) of the links in those articles' as-of leads, and each further depth
+  # the next window. Raising it adds units -- depth is in the unit key -- so a
+  # deeper pass never waits on, or re-runs, a shallower one.
+  wikipedia_depth: 2
+  # Serial and slow, as Wikimedia asks of bots; `maxlag` is always sent.
+  wikipedia_requests_per_second: 2.0
 
 database:
   host: localhost
