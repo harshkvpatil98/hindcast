@@ -154,7 +154,7 @@ class TestSampleRequests:
             settings, _scenario(), [], samples=2, temperature=0.5, config_id="B3"
         )[1]
         assert item.request.sample_index == 1
-        assert "sample_index" not in _batch_params(item.request)
+        assert "sample_index" not in _batch_params(item.request, model=item.request.model)
 
 
 class TestCollapse:

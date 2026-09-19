@@ -155,6 +155,12 @@ flags: # ablation switches
 
 llm:
   mode: replay # record | replay | live -- replay is the safe default
+  # Who serves the model: anthropic | aws | bedrock | claude_code (ADR-0028,
+  # ADR-0031). The three API providers share one cache namespace (ADR-0029), so
+  # a recording made through one replays through the others. claude_code has
+  # its own. Neither bedrock nor claude_code has a batch API, so neither can
+  # carry a batched phase: `complete_batch` refuses before any spend (exit 3).
+  provider: anthropic
   cache_dir: .cache/llm
   # Bumped to r2 with migration 010: the compiler prompt gained a scale anchor
   # for `volatility`. prompt_rev is part of the LLM cache key (spec §8.3), so a
@@ -163,6 +169,36 @@ llm:
   prompt_rev: "r2"
   max_retries: 2
   timeout_s: 600.0
+
+# Routing for the two AWS surfaces (ADR-0028). Identity is never configured
+# here: it is the ambient IAM principal from the standard AWS credential chain.
+# Every routing value is passed to the SDK explicitly, so an ambient AWS_REGION
+# in someone's shell cannot decide where the study's spend lands.
+#
+# Both ship empty. Enabling a provider means filling in its region and its
+# price table from the provider's live pricing page -- `cascade doctor` and the
+# client refuse to spend on a provider that cannot be priced.
+providers:
+  aws: # Claude Platform on AWS: Anthropic-operated, SigV4 + IAM, batches supported
+    region: null
+    workspace_id: null # required by the service; not a credential
+    base_url: null # null = derived from region by the SDK
+    profile: null # null = default credential chain
+    pricing: {}
+  bedrock: # Amazon Bedrock: partner-operated, no Message Batches
+    region: null
+    base_url: null
+    profile: null
+    model_ids: {} # logical -> Bedrock id; absent = "anthropic.<logical>"
+    pricing: {}
+  # The Claude Code CLI run headless under a Claude subscription (ADR-0031).
+  # Local-only, not the pinned configuration: the CLI cannot set temperature or
+  # max_tokens, so it records under its own cache namespace and is never mixed
+  # with API recordings. Switching to a pay-as-you-go key later is
+  # `llm.provider: anthropic` plus CASCADE_ANTHROPIC_API_KEY -- nothing else.
+  claude_code:
+    executable: claude
+    workdir: null # null = fresh temp dir; must not sit below any CLAUDE.md
 
 ledger: # scenario registry (spec §3.1)
   target_scenarios: 180

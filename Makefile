@@ -26,11 +26,11 @@ install: ## Create the venv and install what the demo and the test suite need
 	# imports it, so `make demo`, `cascade simulate` and `cascade trace replay`
 	# all need it. `embed` is left out -- it is a multi-gigabyte download that
 	# only the corpus and retrieval paths use.
-	$(UV) sync --extra dev --extra kernel
+	$(UV) sync --extra dev --extra kernel --extra aws
 
 .PHONY: install-full
 install-full: ## Everything, including the embedding stack (torch, ~2GB)
-	$(UV) sync --extra dev --extra kernel --extra embed --extra analytics
+	$(UV) sync --extra dev --extra kernel --extra aws --extra embed --extra analytics
 
 .PHONY: env
 env: ## Write a .env with local development defaults if none exists

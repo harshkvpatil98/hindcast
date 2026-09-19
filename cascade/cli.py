@@ -23,7 +23,7 @@ from rich.console import Console
 from rich.table import Table
 
 from cascade.config import Settings, env_file_path, load_settings, repo_root
-from cascade.llm.types import BudgetExceeded, CacheMiss, PromptTooShortToCache
+from cascade.llm.types import BudgetExceeded, CacheMiss, PromptTooShortToCache, ProviderNotReady
 
 if TYPE_CHECKING:  # pragma: no cover -- types only, never imported at startup
     from cascade.eval.schema import MetricSet, ScoredForecast
@@ -121,6 +121,76 @@ def _dep_version(dist: str) -> str | None:
         return metadata.version(dist)
     except metadata.PackageNotFoundError:
         return None
+
+
+def _provider_rows(table: Table, settings: Settings) -> bool:
+    """Describe the active model provider; fail only where it would spend.
+
+    Preserves the invariant that `doctor` never costs anything: it reports
+    what a record run would do without making a model call. An unready
+    provider fails the check only in record or live mode -- replay reaches no
+    provider, and demanding one there would break the keyless demo path.
+    """
+    from cascade.llm.claude_cli import UNCONTROLLED_FIELDS
+    from cascade.llm.providers import endpoint, readiness_problems, spec_for
+
+    provider = settings.llm.provider
+    spec = spec_for(provider)
+    ok_mark, no_mark, info_mark = "[green]OK[/green]", "[red]NO[/red]", "[yellow]--[/yellow]"
+    table.add_row("llm provider", "anthropic|aws|bedrock|claude_code", provider, ok_mark)
+    table.add_row("  operated by", "", spec.operated_by, ok_mark)
+    table.add_row(
+        "  batches",
+        "needed by simulate",
+        "yes" if spec.supports_batches else "no -- batched phases refuse (exit 3)",
+        ok_mark if spec.supports_batches else info_mark,
+    )
+    table.add_row(
+        "  cache namespace",
+        "ADR-0029 / ADR-0031",
+        spec.cache_namespace or "shared with the API providers",
+        ok_mark,
+    )
+    table.add_row(
+        "  billing",
+        "",
+        "per token" if spec.billing == "per_token" else "subscription (ledger books $0)",
+        ok_mark,
+    )
+    route = endpoint(settings)
+    if route is not None:
+        table.add_row("  endpoint", "explicit, never ambient", route, ok_mark)
+
+    healthy = True
+    if provider == "claude_code":
+        executable = settings.providers.claude_code.executable
+        found = _tool_version(executable, ["--version"])
+        table.add_row(
+            "  claude cli", executable, found or "not found", ok_mark if found else no_mark
+        )
+        table.add_row(
+            "  not controllable",
+            "recorded under its own namespace",
+            ", ".join(UNCONTROLLED_FIELDS),
+            info_mark,
+        )
+        healthy = found is not None or settings.llm.mode == "replay"
+
+    problems = readiness_problems(
+        settings, models=(settings.models.agent, settings.models.compiler)
+    )
+    spending = settings.llm.mode != "replay"
+    if problems:
+        table.add_row(
+            "  ready to record",
+            "routed + priced",
+            "; ".join(problems),
+            no_mark if spending else info_mark,
+        )
+        healthy = healthy and not spending
+    else:
+        table.add_row("  ready to record", "routed + priced", "yes", ok_mark)
+    return healthy
 
 
 def _tool_version(binary: str, args: list[str]) -> str | None:
@@ -238,6 +308,7 @@ def doctor(
         "compiler model", settings.models.compiler, settings.models.compiler, "[green]OK[/green]"
     )
     table.add_row("llm mode", "record|replay|live", settings.llm.mode, "[green]OK[/green]")
+    ok &= _provider_rows(table, settings)
 
     if not offline:
         pg_ok, pg_msg = _postgres_status(settings)
@@ -1077,15 +1148,8 @@ def retrieval_memorization(
 
     # Checked here rather than left to the SDK: a probe that dies twenty
     # scenarios in has already spent money, and the operator needs to know
-    # which variable to set before it starts, not after.
-    key = settings.anthropic_api_key
-    if settings.llm.mode != "replay" and (key is None or not key.get_secret_value().strip()):
-        _fail(
-            f"llm.mode={settings.llm.mode!r} needs CASCADE_ANTHROPIC_API_KEY, which is "
-            "unset or empty. Set it in .env, or run against a recorded cache with "
-            "CASCADE_LLM__MODE=replay",
-            EXIT_PRECONDITION,
-        )
+    # what to configure before it starts, not after.
+    _require_provider_ready(settings)
 
     records = load_records(settings, role="eval")
     if not records:
@@ -1195,19 +1259,27 @@ def _lathe(settings: Settings) -> Any:
     return compiler, fence
 
 
-def _require_api_key(settings: Settings) -> None:
-    """Fail before spending anything if the credential is absent.
+def _require_provider_ready(settings: Settings) -> None:
+    """Fail before spending anything if the active provider cannot be used.
 
     Checked here rather than left to the SDK: a 180-scenario compile that dies
     on scenario 20 has already spent real money, and the operator needs to know
-    which variable to set before it starts.
+    what to configure before it starts. Provider-aware (ADR-0028): Bedrock and
+    Claude Platform on AWS authenticate through IAM and need no Anthropic key,
+    so demanding one would block exactly the runs those providers exist for.
     """
-    key = settings.anthropic_api_key
-    if settings.llm.mode != "replay" and (key is None or not key.get_secret_value().strip()):
+    from cascade.llm.providers import readiness_problems
+
+    if settings.llm.mode == "replay":
+        return
+    problems = readiness_problems(
+        settings, models=(settings.models.agent, settings.models.compiler)
+    )
+    if problems:
         _fail(
-            f"llm.mode={settings.llm.mode!r} needs CASCADE_ANTHROPIC_API_KEY, which is unset "
-            "or empty. Set it in .env, or replay a recorded compile with "
-            "CASCADE_LLM__MODE=replay",
+            f"llm.mode={settings.llm.mode!r} through provider {settings.llm.provider!r} "
+            f"cannot start: {'; '.join(problems)}. Configure the provider, or replay a "
+            "recorded phase with CASCADE_LLM__MODE=replay",
             EXIT_PRECONDITION,
         )
 
@@ -1308,7 +1380,7 @@ def compile_build(
     from cascade.ledger.store import load_scenarios
 
     settings = _settings(config)
-    _require_api_key(settings)
+    _require_provider_ready(settings)
 
     scenarios = load_scenarios(settings, role="admin")
     if not scenarios:
@@ -1650,7 +1722,7 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
     from cascade.sim.agent import LLMAgents, prepare_actor
     from cascade.sim.prompts import brief_from
 
-    _require_api_key(settings)
+    _require_provider_ready(settings)
     grounded = settings.flags.grounding == "chronofence"
     if grounded:
         from cascade.corpus.embed import Embedder
@@ -2641,7 +2713,7 @@ def eval_baselines(
         return
 
     # 2 and 3. The single-model baselines, on the agents' own evidence.
-    _require_api_key(settings)
+    _require_provider_ready(settings)
     embedder = Embedder(
         model_name=settings.models.embedding, batch_size=settings.corpus.embed_batch_size
     )
@@ -2720,7 +2792,7 @@ def eval_estimate(
 
     settings = _settings(config)
     _frozen_split(settings)
-    _require_api_key(settings)
+    _require_provider_ready(settings)
     draws = samples if samples is not None else settings.ensemble.replicates
 
     scenarios = sorted(load_scenarios(settings, role="admin"), key=lambda item: item.scenario_id)
@@ -3155,6 +3227,83 @@ def eval_prompt_audit(
         f"recorded prompt revision {rev!r}/{subsystem}: before="
         f"{'null' if before is None else f'{before:.6f}'}, after="
         f"{'null' if measured is None else f'{measured:.6f}'}"
+    )
+
+
+@eval_app.command("equivalence")
+def eval_equivalence(
+    config: OverlayOpt = None,
+    reference: Annotated[
+        str, typer.Option("--reference", help="Provider whose self-agreement is the control.")
+    ] = "anthropic",
+    candidate: Annotated[
+        str, typer.Option("--candidate", help="Provider tested against the reference.")
+    ] = "bedrock",
+    limit: Annotated[
+        int, typer.Option("--limit", help="Questions to ask; each is asked three times.")
+    ] = 50,
+) -> None:
+    """Measure whether two providers serve the same model (ADR-0029).
+
+    The three API providers share one cache namespace, which is only sound if
+    they serve the same model. This asks each question twice of the reference
+    and once of the candidate, and puts a paired bootstrap interval on how much
+    more the candidate disagrees with the reference than the reference does
+    with itself. Exits 3 on divergence: the provider must then join the key.
+    Makes live calls -- 3 x limit of them -- metered against `bench`.
+    """
+    from cascade.eval.equivalence import run_equivalence
+    from cascade.ledger.store import load_scenarios
+    from cascade.llm.providers import PROVIDERS
+
+    settings = _settings(config)
+    known = sorted(PROVIDERS)
+    for name in (reference, candidate):
+        if name not in PROVIDERS:
+            _fail(f"unknown provider {name!r}; known: {', '.join(known)}", EXIT_PRECONDITION)
+    if limit <= 0:
+        _fail(f"--limit must be positive, got {limit}", EXIT_PRECONDITION)
+
+    # Loaded as the simulation role: the probe compares providers with each
+    # other, never with an outcome, so it is given no way to read one.
+    scenarios = tuple(sorted(load_scenarios(settings, role="sim"), key=lambda s: s.scenario_id))
+    if not scenarios:
+        _fail("scenario registry is empty; run `cascade ledger build` first", EXIT_PRECONDITION)
+    try:
+        report = run_equivalence(
+            settings,
+            scenarios[:limit],
+            reference=reference,  # type: ignore[arg-type]  # validated above
+            candidate=candidate,  # type: ignore[arg-type]
+        )
+    except ValueError as exc:
+        _fail(str(exc), EXIT_PRECONDITION)
+
+    table = Table(title=f"Provider equivalence: {reference} vs {candidate}")
+    table.add_column("Quantity", style="cyan")
+    table.add_column("Measured", justify="right")
+    table.add_row("questions asked", str(report.asked))
+    table.add_row("scored (both sides parseable)", str(report.scored))
+    table.add_row("dropped, never imputed", str(report.dropped))
+    table.add_row(f"mean |a1 - a2|  ({reference} vs itself)", f"{report.within_mean:.4f}")
+    table.add_row(f"mean |a1 - b|   ({reference} vs {candidate})", f"{report.cross_mean:.4f}")
+    table.add_row("cross - within", f"{report.interval.point:+.4f}")
+    table.add_row(
+        "95% interval",
+        f"[{report.interval.lo:+.4f}, {report.interval.hi:+.4f}]  (B = {report.interval.b})",
+    )
+    console.print(table)
+    if report.divergent:
+        _fail(
+            f"{candidate!r} disagrees with {reference!r} more than {reference!r} disagrees with "
+            "itself. They do not serve the same model, so the provider must join the cache "
+            "key domain (ADR-0029).",
+            EXIT_PRECONDITION,
+        )
+    console.print(
+        f"[green]no divergence detected[/green] at n = {report.scored}. That supports sharing "
+        "the cache namespace; it is not proof of equivalence, and a small n may only mean the "
+        "probe was underpowered."
     )
 
 
@@ -3845,6 +3994,9 @@ def main() -> int:
         return EXIT_CACHE_MISS
     except PromptTooShortToCache as exc:
         err_console.print(f"[bold red]prompt cache misconfigured[/bold red] {exc}")
+        return EXIT_PRECONDITION
+    except ProviderNotReady as exc:
+        err_console.print(f"[bold red]model provider not ready[/bold red] {exc}")
         return EXIT_PRECONDITION
     except KeyboardInterrupt:  # pragma: no cover
         err_console.print("[yellow]interrupted[/yellow]")

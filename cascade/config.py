@@ -45,8 +45,10 @@ from pydantic_settings import (
 
 __all__ = [
     "LLMMode",
+    "LLMProvider",
     "Settings",
     "child_environment",
+    "claude_cli_environment",
     "env_file_path",
     "load_settings",
     "repo_root",
@@ -59,6 +61,11 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 _NON_FIELD_ENV_VARS = frozenset({"CASCADE_CONFIG", "CASCADE_ENV_FILE"})
 
 LLMMode = Literal["record", "replay", "live"]
+# Who serves the model (ADR-0028, ADR-0031). The first three are SDK clients
+# from the one `anthropic` package; `claude_code` is the Claude Code CLI run
+# headless on the operator's machine. All four are reached only through
+# LLMClient, so invariant 5's single door is unaffected by the choice.
+LLMProvider = Literal["anthropic", "aws", "bedrock", "claude_code"]
 Grounding = Literal["chronofence", "parametric_only"]
 CacheTTL = Literal["5m", "1h"]
 
@@ -214,10 +221,72 @@ class FlagsConfig(_Model):
 
 class LLMConfig(_Model):
     mode: LLMMode
+    # Not part of the cache key (ADR-0029): the key carries the logical model,
+    # and the provider only decides where the request is sent and how it is
+    # billed.
+    provider: LLMProvider
     cache_dir: str
     prompt_rev: str
     max_retries: int
     timeout_s: float
+
+
+class AWSProviderConfig(_Model):
+    """Routing for Claude Platform on AWS (ADR-0028).
+
+    Routing only. Identity is the ambient IAM principal resolved by the
+    standard AWS credential chain -- an instance or task role in the cloud, a
+    profile on a workstation -- so no credential ever appears in this file.
+
+    Every routing value is passed to the SDK explicitly. Left unset, the SDK
+    falls back to ``AWS_REGION`` and ``ANTHROPIC_AWS_WORKSPACE_ID`` from
+    whatever shell it runs in, which would decide where the study's spend
+    lands without that choice appearing in any reviewed file.
+    """
+
+    region: str | None
+    workspace_id: str | None
+    base_url: str | None
+    profile: str | None
+    # Empty by design. Rates are read from the provider's live pricing page at
+    # the time a provider is enabled, never transcribed from memory: a wrong
+    # rate is a silent ledger error that surfaces only at reconciliation.
+    pricing: dict[str, PricingEntry]
+
+
+class BedrockProviderConfig(_Model):
+    """Routing for Amazon Bedrock (ADR-0028). Same identity rule as AWS."""
+
+    region: str | None
+    base_url: str | None
+    profile: str | None
+    # Logical model -> Bedrock model id. Absent entries render as
+    # ``anthropic.<logical>``, the documented Bedrock form; an entry overrides
+    # it without a code change when a deployment publishes something else.
+    model_ids: dict[str, str]
+    pricing: dict[str, PricingEntry]
+
+
+class ClaudeCodeProviderConfig(_Model):
+    """The Claude Code CLI, run headless under a Claude subscription (ADR-0031).
+
+    Local-only by design: it authenticates as the person logged in to Claude
+    Code on this machine, which is not an identity that belongs inside cloud
+    infrastructure. The deployed design uses ``aws`` or ``bedrock``.
+    """
+
+    executable: str
+    # Where the CLI runs. Null means a fresh temporary directory per client.
+    # It must not sit below any CLAUDE.md: the CLI auto-discovers them upward
+    # from its working directory, and this repository's build contract is
+    # ~27k tokens that would be injected into every forecasting call.
+    workdir: str | None
+
+
+class ProvidersConfig(_Model):
+    aws: AWSProviderConfig
+    bedrock: BedrockProviderConfig
+    claude_code: ClaudeCodeProviderConfig
 
 
 class DatabaseConfig(_Model):
@@ -335,6 +404,7 @@ class Settings(BaseSettings):
     budget: BudgetConfig
     flags: FlagsConfig
     llm: LLMConfig
+    providers: ProvidersConfig
     ledger: LedgerConfig
     corpus: CorpusConfig
     database: DatabaseConfig
@@ -448,19 +518,48 @@ class Settings(BaseSettings):
         candidate = Path(raw)
         return candidate if candidate.is_absolute() else REPO_ROOT / candidate
 
+    def pricing_table(self) -> dict[str, PricingEntry]:
+        """The price table of the active provider (ADR-0028).
+
+        Preserves the invariant that a call is priced at the rate of whoever
+        served it. Bedrock is partner-operated and priced separately, so
+        falling back to the first-party table for it would book every Bedrock
+        call at the wrong rate and reconcile against nothing.
+        """
+        provider = self.llm.provider
+        if provider == "anthropic":
+            return self.pricing
+        if provider == "aws":
+            return self.providers.aws.pricing
+        if provider == "bedrock":
+            return self.providers.bedrock.pricing
+        # A subscription bills no tokens, so every model it serves costs zero
+        # in the ledger -- which is the truth, and what makes the M8 ledger
+        # reconciliation report "nothing to reconcile" rather than inventing a
+        # spend. The CLI's notional list-price cost is kept on each recording.
+        zero = PricingEntry(input_per_mtok=Decimal(0), output_per_mtok=Decimal(0))
+        return {self.models.agent: zero, self.models.compiler: zero}
+
     def price_for(self, model: str) -> PricingEntry:
-        """Return the price table entry for ``model``.
+        """Return the active provider's price table entry for ``model``.
 
         Raises rather than defaulting: an unpriced model silently costing $0
         would corrupt the cost ledger, which blocks the report at M8.
         """
+        table = self.pricing_table()
         try:
-            return self.pricing[model]
+            return table[model]
         except KeyError:
-            known = ", ".join(sorted(self.pricing))
+            known = ", ".join(sorted(table)) or "none"
+            section = (
+                "pricing"
+                if self.llm.provider == "anthropic"
+                else f"providers.{self.llm.provider}.pricing"
+            )
             raise KeyError(
-                f"no pricing entry for model {model!r}; known models: {known}. "
-                "Add it to configs/base.yaml -- an unpriced model breaks the cost ledger."
+                f"no pricing entry for model {model!r} under provider "
+                f"{self.llm.provider!r}; known models: {known}. Add it to {section} "
+                "in configs/base.yaml -- an unpriced model breaks the cost ledger."
             ) from None
 
     def phase_ceiling(self, phase: str) -> Decimal:
@@ -549,6 +648,36 @@ def child_environment(**overrides: str) -> dict[str, str]:
     env = dict(os.environ)
     env["CASCADE_ENV_FILE"] = str(env_file_path())
     env.update(overrides)
+    return env
+
+
+# Variables that attach a process to a running Claude Code session. A child CLI
+# that inherited them would try to report into *this* session rather than run
+# as an independent headless call.
+_CLAUDE_SESSION_PREFIXES = ("CLAUDECODE", "CLAUDE_CODE_", "CLAUDE_PID", "CLAUDE_EFFORT")
+
+# Credentials that would silently switch the CLI from the subscription to
+# per-token API billing -- the "#1 auth trap" in the SDK's own documentation.
+# The pay-as-you-go path is `llm.provider: anthropic`; keeping the two apart is
+# what makes switching between them a configuration change and not a surprise.
+_CLI_CREDENTIAL_OVERRIDES = ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN")
+
+
+def claude_cli_environment() -> dict[str, str]:
+    """The environment ``claude -p`` runs with (ADR-0031).
+
+    Inherits PATH, HOME and the keychain access the subscription login needs,
+    then removes the session-attachment variables and any API credential, and
+    turns extended thinking off. Thinking is off on the API path, so leaving
+    the CLI's default on would change the model's behaviour between providers
+    (measured: 235 of 254 output tokens were thinking on a one-line answer).
+    """
+    env = {
+        name: value
+        for name, value in sorted(os.environ.items())
+        if not name.startswith(_CLAUDE_SESSION_PREFIXES) and name not in _CLI_CREDENTIAL_OVERRIDES
+    }
+    env["MAX_THINKING_TOKENS"] = "0"
     return env
 
 

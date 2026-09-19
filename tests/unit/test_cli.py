@@ -312,6 +312,7 @@ def test_exit_codes_are_distinct() -> None:
         ("BudgetExceeded", EXIT_BUDGET_BREACH),
         ("CacheMiss", 4),
         ("PromptTooShortToCache", EXIT_PRECONDITION),
+        ("ProviderNotReady", EXIT_PRECONDITION),
     ],
 )
 def test_error_boundary_maps_each_failure_to_its_code(
@@ -328,6 +329,8 @@ def test_error_boundary_maps_each_failure_to_its_code(
         raised = llm_types.BudgetExceeded("simulate", D("1"), D("0.5"), "checkpoints/cp.json")
     elif exception == "CacheMiss":
         raised = llm_types.CacheMiss("no recording")
+    elif exception == "ProviderNotReady":
+        raised = llm_types.ProviderNotReady("bedrock", ["providers.bedrock.region is not set"])
     else:
         raised = llm_types.PromptTooShortToCache(1900, 4096)
 

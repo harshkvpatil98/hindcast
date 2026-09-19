@@ -1,6 +1,6 @@
 # Architecture decision records
 
-Twenty-seven records. Each states the decision, the evidence behind it, and
+Thirty-one records. Each states the decision, the evidence behind it, and
 what it costs. They exist because this project's specification is detailed
 enough to be wrong in specific, checkable ways — and when it was, the record
 says so with the measurement that showed it.
@@ -37,3 +37,7 @@ this build. The rest record a choice the specification left open.
 | [0025](0025-ablation-factors-a-and-c.md) | **Found here.** Two of four ablation factors were configuration fields nothing read | M7 |
 | [0026](0026-hnsw-and-bounded-candidate-pool.md) | **Found here.** HNSW replaces IVFFlat, and a parameterised `LIMIT` in a non-inlinable function cost 4× | M8 |
 | [0027](0027-provenance-chain-is-a-path.md) | The provenance walk is a path, not an ancestor set: the spec's CTE expands 6^depth and does not return | M8 |
+| [0028](0028-model-providers-behind-one-door.md) | Four model providers behind the one call site; Bedrock has no Message Batches, so it cannot carry a batched phase | M10 |
+| [0029](0029-api-providers-share-one-cache-namespace.md) | The API providers share one cache namespace — conditional on a measured equivalence probe | M10 |
+| [0030](0030-knowledge-bases-rejected-guardrails-deferred.md) | Bedrock Knowledge Bases rejected: a managed KB cannot enforce the time lock. Guardrails deferred: no path through the one door | M10 |
+| [0031](0031-claude-code-cli-provider.md) | A Claude Code CLI provider under a subscription, keyed apart because it cannot honour `temperature` or `max_tokens` | M10 |

@@ -62,7 +62,9 @@ enforces 1, 5 and 7 statically.
    documented order: exogenous walk → observation noise → tie-breaks → arbiter
    jitter. Never re-seeded mid-run.
 5. **One LLM call site**: `cascade/llm/client.py`. A grep for the Anthropic SDK
-   import anywhere else fails CI.
+   import anywhere else fails CI. It is also the only place the Claude Code CLI
+   is run, so every provider's calls are cached, metered and traced alike
+   (ADR-0028, ADR-0031).
 6. **The event log is append-only.** No `UPDATE`, no `DELETE`, ever.
 7. **All iteration over collections is sorted.** Dict/set iteration order is a
    nondeterminism vector.
@@ -80,6 +82,14 @@ Python 3.12 · LangGraph 0.2.x · PostgreSQL 16 + pgvector 0.8 ·
 `BAAI/bge-small-en-v1.5` (384-d, local) · Claude Haiku 4.5 (agents) ·
 Claude Sonnet 4.6 (compiler) · Langfuse self-hosted · DuckDB + Parquet ·
 Typer + Rich · uv + Docker Compose · pytest + hypothesis.
+
+Model access (ADR-0028, approved 2026-09-18): the pinned models are reached
+through `llm.provider` — the Anthropic API, Claude Platform on AWS, or Amazon
+Bedrock, whose clients all ship in the one `anthropic` package (the `aws`
+extra adds boto3/botocore for SigV4). `claude_code` (ADR-0031) runs the Claude
+Code CLI locally under a subscription; it is **not** the pinned configuration,
+because the CLI cannot set `temperature` or `max_tokens`, and its results must
+be labelled as such.
 
 `cascade doctor` asserts this list (`cascade/version.py`). If you believe a
 substitution is warranted, write an ADR in `docs/adr/` and **ask**. Do not swap
@@ -126,7 +136,7 @@ silently.
 ## 6. Commands
 
 ```bash
-make install    # uv sync --extra dev --extra kernel
+make install    # uv sync --extra dev --extra kernel --extra aws
 make install-full  # adds embed (torch) and analytics
 make demo       # the 90-second path: cells -> replay -> trace -> report
 make verify     # every structural gate that needs no credential
@@ -138,7 +148,7 @@ make test-all   # includes integration and leakage tests (needs `make up`)
 make test-leakage  # the M3 time-lock probes alone
 cascade doctor  # toolchain, pinned stack, service health
 
-cascade retrieval index    # (re)build one IVFFlat index per chunks partition
+cascade retrieval index    # (re)build one HNSW index per chunks partition (ADR-0026)
 cascade retrieval verify   # assert the Chronofence preconditions; exits 3 on drift
 cascade retrieval bench    # p50/p95/p99 + recall@20; exits 3 if a criterion is missed
 cascade retrieval memorization  # the parametric probe (costs money in record mode)
@@ -168,6 +178,7 @@ cascade eval grid          # PHASE 4: Appendix C's 12 cells, then collapse each
 cascade eval score --config-id C01   # §10.1 metrics for one configuration
 cascade eval significance  # paired bootstrap + Holm-Bonferroni (§10.4)
 cascade eval prompt-audit  # §1.3's before/after Brier for a prompt revision
+cascade eval equivalence --reference anthropic --candidate bedrock  # ADR-0029's condition; exits 3 on divergence
 cascade report             # write reports/study_{ts}/ (Appendix D)
 
 cascade trace status       # what is replayable and traceable
@@ -180,7 +191,7 @@ cascade trace cost         # §12.4: reconcile the run ledger against Langfuse
 
 ## 7. Architecture decisions
 
-Twenty-seven ADRs in `docs/adr/`. Fifteen correct defects found in the spec,
+Thirty-one ADRs in `docs/adr/`. Fifteen correct defects found in the spec,
 and 0023, 0025 and 0026 correct defects found in **this build** -- an ingest order
 that satisfied every criterion while covering the wrong years, and two ablation
 factors that were configured, documented and inert. The rest record choices the
@@ -215,6 +226,10 @@ spec left open.
 | 0025 | Ablation factors A (`causal_decomposition`) and C (`grounding`) are mechanisms, not configuration fields: both were read nowhere outside `config.py`, so six of the twelve cells would have executed as duplicates and the headline deltas would have been precise nulls | M7 |
 | 0026 | HNSW replaces IVFFlat and the caller's `k` leaves the plan: a parameterised `LIMIT k` in a non-inlinable SECURITY DEFINER function cost 4x, and IVFFlat's `probes x Σ√n_p` does not scale past ~2M chunks. Retires ADR-0012's rebuild-on-drift class and supersedes ADR-0013's `probes` | M8 (amends M3) |
 | 0027 | §11.2's provenance walk is a path, not an ancestor set: the spec's CTE recurses over every element of `caused_by` and expands 6^depth, which did not return on a 24-step run; its own example output is a single path | M8 |
+| 0028 | Four model providers behind the one call site. Routing is explicit and identity ambient, so a stray `AWS_REGION` cannot redirect spend; each provider is priced from its own table by the logical model; **Bedrock has no Message Batches API, so it cannot carry a batched phase** ($126 batched vs $252 against a $240 ceiling) | M10 |
+| 0029 | The three API providers share one cache namespace — the key carries the logical model, the wire id is rendered at the boundary — *conditional* on `cascade eval equivalence`, which bootstraps cross-provider against within-provider disagreement | M10 |
+| 0030 | Bedrock Knowledge Bases rejected: a managed KB cannot enforce the `as_of` time lock the leakage suite verifies. Bedrock Guardrails deferred: the SDK's Bedrock client has no guardrail parameter, and `ApplyGuardrail` would be a second door | M10 |
+| 0031 | A Claude Code CLI provider for local runs under a subscription, keyed apart because it cannot honour `temperature` or `max_tokens`; measured 448-token harness overhead, thinking on by default, and a working-directory guard against auto-loading this file into every call | M10 |
 
 ---
 
@@ -1648,3 +1663,103 @@ Deferred, with reasons:
   1.9M-chunk corpus and a sealed registry, which is hours of state per push.
   `make test-all` runs it against a real environment and the workflow says so
   rather than quietly skipping.
+
+### M10 — Model providers on AWS · *implemented and tested; 2 of 5 acceptance criteria met, 3 blocked on an AWS account, a pay-as-you-go key, and the corpus*
+
+Shipped: `cascade/llm/providers.py` (pure: four provider specs, wire-id
+rendering, explicit endpoints, readiness), `cascade/llm/claude_cli.py` (pure:
+the `claude -p` adapter), the provider dispatch, the batch refusal, per-provider
+pricing and the cache namespace in `llm/client.py` and `llm/cache.py`;
+`cascade/eval/equivalence.py` and `cascade eval equivalence`; provider rows in
+`cascade doctor`; `bootstrap_differences` extracted from `paired_bootstrap`
+(bit-identical, checked against HEAD on 200 random inputs); `probe_request`
+extracted from the memorization probe so a label-free caller can share it; the
+`aws` extra (boto3/botocore for SigV4); ADRs 0028–0031. Branches were cut for
+M10, M11 and M12; M11 and M12 are empty and rebase onto M10 at their gates.
+
+**Measured acceptance values — 2 of 5 met.**
+
+| # | Criterion | Measured | Verdict |
+|---|---|---|---|
+| 1 | Provider equivalence over ≥ 50 identical requests | **NOT RUN** — no AWS account and no API key in this environment. `cascade eval equivalence` is built, tested against a same-model and an offset candidate, and exits 3 on divergence | **BLOCKED** |
+| 2 | 180 graphs compiled live; M4's criteria measured | **NOT RUN** — a provider now exists (`claude_code`, not the pinned configuration), but compiling retrieves at each cutoff and the corpus was lost with the database volume | **BLOCKED** |
+| 3 | Compile spend within $40, reconciled against a second record | **NOT RUN** — nothing has been spent | **BLOCKED** |
+| 4 | `make demo` green with no key and no AWS variable; replay constructs no client | **PASS** — exit 0, all five steps: 2,480 heuristic runs across C09–C12, **25/25** replayed byte-identically in **8.4 s**, a complete provenance chain, a report artifact. Replay-without-a-client asserted on every provider | **PASS** |
+| 5 | CI green | **PASS** offline — ruff, black, mypy strict (**101 files**), **1,235 passed**, 1 skipped (the pre-existing empty parametrisation). With live services: **1,298 passed, 75 skipped, 1 failed** — all 76 because the corpus is not rebuilt; the failure is `test_indexes_use_the_expected_name_and_operator_class`, which asserts non-empty partitions rather than skipping, and was left asserting | **PASS** |
+
+**Also measured, beyond the plan.** M3 criterion 5 — the parametric probe,
+blocked since M3 — through `claude_code`: **180/180** answers parsed, mean
+confidence **0.6254**, median **0.70**, probe Brier **0.261562**, direction
+correct on **97/180** (one-sided binomial p = 0.166 against chance, two-sided
+~0.33). Haiku states confident priors (61 answers at confidence ≥ 0.9) that do
+not predict the outcome better than chance at this n. **Not the pinned
+configuration**: the CLI cannot set the probe's zero temperature and adds its
+own context.
+
+**The finding that shaped the design: Bedrock has no Message Batches API.**
+Read from the SDK's platform-availability table rather than assumed. ADR-0020
+makes the batch discount functional — simulate is $126 batched and $252 not,
+against $240 — so Bedrock is refused at the batch door before any spend, and
+Claude Platform on AWS (`AnthropicAWS`: Anthropic-operated, IAM, batches, bare
+model ids) is the study's AWS execution path. Both clients ship inside the one
+`anthropic` package, so invariant 5's test needed no exemption.
+
+**The project owner asked for a Claude subscription to power the pipeline.**
+Extracting the subscription's OAuth token into the SDK was declined — it
+impersonates Claude Code. Running the official CLI headless was adopted
+(ADR-0031), and measured before it was trusted:
+
+| | measured |
+|---|---|
+| harness context per call | **448** input tokens for a ~45-token request |
+| extended thinking | on by default: **235 of 254** output tokens; **0** with `MAX_THINKING_TOKENS=0` |
+| `--bare` | unusable: it reads `ANTHROPIC_API_KEY` only, never the subscription login |
+| `temperature`, `max_tokens` | cannot be set — hence a separate cache namespace |
+| `CLAUDE.md` exposure | two 109,520-byte copies (~27k tokens each) on the path from the repository upward; a working directory there would inject the build contract into every call. Now refused |
+
+**Defects found and fixed at M10** (each has a regression test):
+
+- **The CLI refused every non-Anthropic provider.** `compile build`,
+  `retrieval memorization`, `eval baselines` and `eval estimate` all demanded
+  `CASCADE_ANTHROPIC_API_KEY`, which would have blocked exactly the Bedrock and
+  AWS runs the seam exists for. Now `_require_provider_ready`.
+- **The meter priced by the model string the response echoed.** Bedrock echoes
+  a prefixed id in no price table; a provider echoing a different *known* id
+  would have booked the wrong rate silently. Priced by the logical model the
+  request named.
+- **Both AWS clients take routing from the ambient shell** (`AWS_REGION`,
+  `ANTHROPIC_AWS_BASE_URL`, `ANTHROPIC_BEDROCK_MANTLE_BASE_URL`) before the
+  region. Every routing value is now passed explicitly; a test sets decoys for
+  all of them and asserts the request still reaches the configured region, and
+  another asserts the reproduced endpoint templates equal the installed SDK's.
+- **The README stated three §1 targets as the study's price** — `$290`,
+  `$0.0035` and `$0.008` per run, as "the study is priced at". M9 recorded that
+  a grep for contract literals over the README returned nothing; run here, it
+  returned all three. Restated as the cost model they are.
+- **The README pointed at the previous repository owner** — the CI badge and
+  the quickstart `git clone`. Committed separately.
+
+Checked by mutation, not by inspection: five behaviours were broken on purpose
+(the CLI sharing the API namespace, pricing by the response model, routing left
+to the SDK, thinking left on, the batch guard removed) and each failed at least
+one test; the suite was 35/35 before and after.
+
+**Environment state.** The Postgres volume was lost before this milestone,
+taking the corpus, the sealed registry and every stored run. `uv` and the venv
+were also absent. The registry was re-fetched (`--refresh`) and re-sealed:
+180 scenarios, YES rate **0.5000**, max domain share **0.2500**, sha256
+**`91ccd314…`** — a **new frozen split**, since markets resolved after M1 change
+the pool; M1's `30d9c61d…` is gone. Composition tracks M1's: polymarket 165,
+manifold 6, curated 9 (M1: 164 / 7 / 9). The M2–M8 corpus and retrieval figures
+were measured in the previous environment and have not been re-measured.
+
+Deferred, with reasons:
+
+- **Criteria 1–3** → an AWS account (for `aws`/`bedrock`), or a pay-as-you-go
+  key; and, for compile, the corpus. The corpus rebuild is hours of ingest plus
+  the `embed` extra; it was not started unasked.
+- **Bedrock Guardrails** → the SDK's Bedrock client has no guardrail
+  parameter, and `ApplyGuardrail` would be a second door (ADR-0030).
+- **M11 and M12** → their own sessions, per §5.
+- **The parent-directory copy of this file** (`~/Downloads/CLAUDE.md`) is
+  outside the repository and was not edited; it now lags this one.

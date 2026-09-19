@@ -31,6 +31,14 @@ analytics = [
 kernel = [
     "langgraph>=0.2,<0.3",
 ]
+# Model providers on AWS (ADR-0028). The client classes ship inside the
+# `anthropic` package itself -- no second SDK, so invariant 5 is unaffected --
+# but they sign requests with SigV4 through boto3/botocore, which the SDK
+# imports lazily. Without this extra an AWS client constructs cleanly and then
+# fails at its first request, which is the worst moment to find out.
+aws = [
+    "anthropic[aws,bedrock]>=0.40",
+]
 dev = [
     "pytest>=8.2",
     "pytest-cov>=5.0",

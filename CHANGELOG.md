@@ -9,6 +9,49 @@ package index.
 
 ---
 
+## M10 — Model providers on AWS
+
+Four providers behind the one call site, and the first model-produced number
+since M3. Built and tested; the live AWS criteria are blocked.
+
+- **Four providers, one door.** `llm.provider` selects the Anthropic API,
+  Claude Platform on AWS, Amazon Bedrock, or the Claude Code CLI. The three
+  SDK clients ship in the one `anthropic` package, so invariant 5 needs no
+  exemption ([ADR-0028](docs/adr/0028-model-providers-behind-one-door.md)).
+- **Bedrock cannot carry the simulate phase.** It has no Message Batches API,
+  and the phase fits its $240 ceiling only at the batch rate. A batch with
+  anything to submit is refused before any spend (exit 3).
+- **Routing explicit, identity ambient.** Both AWS clients read
+  `AWS_REGION` and base-URL variables from the shell before the region; the
+  seam passes every routing value from config, verified against decoys.
+- **Priced by the logical model, per provider**, with empty AWS price tables
+  that refuse to record rather than guess a rate.
+- **The API providers share one cache namespace — conditionally.**
+  `cascade eval equivalence` bootstraps cross-provider against within-provider
+  disagreement; divergence makes the provider join the key
+  ([ADR-0029](docs/adr/0029-api-providers-share-one-cache-namespace.md)).
+  Not yet run: no two API providers were available.
+- **Bedrock Knowledge Bases rejected** — they cannot enforce the time lock the
+  leakage suite verifies. **Guardrails deferred** — no path through the one
+  door ([ADR-0030](docs/adr/0030-knowledge-bases-rejected-guardrails-deferred.md)).
+- **`claude_code`: a local provider on a Claude subscription**, keyed apart
+  because the CLI cannot set `temperature` or `max_tokens`. Measured before it
+  was trusted: 448 tokens of harness context per call, thinking on by default
+  (235 → 0 output tokens once disabled), and this repository's ~27k-token
+  `CLAUDE.md` one working directory away from every call — now refused
+  ([ADR-0031](docs/adr/0031-claude-code-cli-provider.md)).
+- **Parametric memorization, measured for the first time** (through
+  `claude_code`, not the pinned configuration): 180/180 parsed, median
+  confidence 0.70, direction correct on 97/180 — not distinguishable from
+  chance — and a probe Brier of 0.2616 against climatology's 0.2500.
+- **The README stated three cost targets as the study's price.** `$290`,
+  `$0.0035/run` and `$0.008/run` are §1 targets; they are now described as the
+  cost model they are. M9 recorded that a grep for contract literals over the
+  README returned nothing; it did not.
+- **The environment was rebuilt.** The database volume was lost; the registry
+  was re-fetched and re-sealed at `91ccd314…`, a new frozen split. The corpus
+  was not rebuilt, so compile remains blocked.
+
 ## M8 — Strata: determinism and provenance
 
 Replay verification, provenance chains, and the cost-ledger gate.

@@ -214,11 +214,14 @@ def test_live_bypasses_the_cache_entirely(
 
 
 def test_live_without_a_key_fails_loudly(settings: Settings) -> None:
-    """Only replay runs without credentials; the others must say so."""
+    """Only replay runs without credentials; the others must say so.
+
+    Refused at construction since ADR-0028, not at the first call: a client
+    that cannot be routed or priced must fail before the first dollar.
+    """
     keyless = in_mode(settings, "live").model_copy(update={"anthropic_api_key": None})
-    client = LLMClient(keyless, phase="bench")
     with pytest.raises(LLMError, match="CASCADE_ANTHROPIC_API_KEY is not set"):
-        client.complete(request_for(0))
+        LLMClient(keyless, phase="bench").complete(request_for(0))
 
 
 # ---------------------------------------------------------------------------

@@ -33,7 +33,7 @@ jobs:
       # run here anyway. Every module that touches it imports it lazily, and a
       # test that needs it skips rather than fails.
       - name: Install the project
-        run: uv sync --extra dev --extra kernel
+        run: uv sync --extra dev --extra kernel --extra aws
 
       - name: ruff
         run: uv run ruff check cascade tests
@@ -62,7 +62,7 @@ jobs:
         with:
           enable-cache: true
       - run: uv python install 3.12
-      - run: uv sync --extra dev --extra kernel
+      - run: uv sync --extra dev --extra kernel --extra aws
 
       # Run separately so a failure names *which* contract broke rather than
       # arriving as one red X on a 1,300-test job. These are the checks that

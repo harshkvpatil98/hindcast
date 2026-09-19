@@ -24,6 +24,7 @@ __all__ = [
     "LLMRequest",
     "LLMResult",
     "PromptTooShortToCache",
+    "ProviderNotReady",
     "Usage",
 ]
 
@@ -103,6 +104,29 @@ class PromptTooShortToCache(LLMError):
             "be billed at list price. Pad the prefix or set "
             "prompt_cache.enforce_min_prefix=false and accept the cost. See ADR-0001."
         )
+
+
+class ProviderNotReady(LLMError):
+    """The selected provider cannot serve this request as configured (ADR-0028).
+
+    Raised *before* any spend, for two reasons that share a remedy -- change
+    the configuration, not the code:
+
+    * the provider is missing routing or pricing it needs, so a call would
+      either go somewhere nobody chose or be booked at a rate nobody checked;
+    * the provider lacks a capability the caller requires. Bedrock has no
+      Message Batches API, and the simulate phase is only inside its ceiling
+      at the batch rate (ADR-0020): run unbatched it costs roughly twice as
+      much, so the right response is to refuse, not to fall back.
+
+    Exit code 3.
+    """
+
+    def __init__(self, provider: str, problems: list[str]) -> None:
+        self.provider = provider
+        self.problems = list(problems)
+        listed = "; ".join(self.problems)
+        super().__init__(f"provider {provider!r} is not ready: {listed}")
 
 
 # ---------------------------------------------------------------------------
