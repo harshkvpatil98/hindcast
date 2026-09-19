@@ -1,6 +1,6 @@
 # Architecture decision records
 
-Thirty-four records here, plus 0032 (live mode, proposed), which lives on the `m13/live-mode` branch. Each states the decision, the evidence behind it, and
+Thirty-five records here, plus 0032 (live mode, proposed), which lives on the `m13/live-mode` branch. Each states the decision, the evidence behind it, and
 what it costs. They exist because this project's specification is detailed
 enough to be wrong in specific, checkable ways — and when it was, the record
 says so with the measurement that showed it.
@@ -45,3 +45,4 @@ this build. The rest record a choice the specification left open.
 | [0033](0033-infrastructure-as-code-terraform.md) | Terraform, pinned and run in Docker; gated offline with mock-provider tests, TFLint and triaged Checkov — no AWS account needed | M11 |
 | [0034](0034-aurora-data-plane.md) | Aurora 16.11 with pgvector pinned at 0.8.0, an isolated VPC, the bench as a Fargate task inside it, fixed capacity, and a copy-on-write clone for the partitioning experiment | M11 |
 | [0035](0035-platform-design.md) | One dedicated account; a budget derived from the study configuration; SCP guardrails; an event lake that makes append-only two independent controls; recovery tiers set by cost-to-lose | M12 |
+| [0036](0036-cutoff-anchored-file-selection.md) | **Found here.** CC-NEWS files are chosen by their distance from each scenario's cutoff: the month queue ranked old background above the final weeks, and could only ever reach a month's first two days. *Amends 0023* | M12 |
