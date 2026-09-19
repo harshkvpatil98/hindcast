@@ -165,7 +165,10 @@ cascade retrieval index    # (re)build one HNSW index per chunks partition (ADR-
 cascade retrieval verify   # assert the Chronofence preconditions; exits 3 on drift
 cascade retrieval bench    # p50/p95/p99 + recall@20; exits 3 if a criterion is missed
 cascade retrieval memorization  # the parametric probe (costs money in record mode)
+cascade retrieval index --fts   # also build the keyword (GIN) indexes the hybrid path needs (ADR-0040)
+cascade retrieval bench --relevance  # vector vs hybrid on the study's own queries, label-blind; exits 3 without the hybrid index
 
+cascade compile dossier    # one cited, machine-checked situation report per scenario (ADR-0037)
 cascade compile build      # draft -> critique -> repair -> validate, per scenario
 cascade compile status     # graph statistics and the repair-retry histogram
 cascade compile verify     # re-validate and re-hash every stored graph; exits 3 on drift
@@ -192,6 +195,13 @@ cascade eval score --config-id C01   # §10.1 metrics for one configuration
 cascade eval significance  # paired bootstrap + Holm-Bonferroni (§10.4)
 cascade eval prompt-audit  # §1.3's before/after Brier for a prompt revision
 cascade eval equivalence --reference anthropic --candidate bedrock  # ADR-0029's condition; exits 3 on divergence
+cascade eval split         # the declared dev/test split and its exclusions; exits 3 if it is not the pinned one (ADR-0038)
+cascade eval tune-guard --scenario ID   # refuse any set touching test, an excluded or an undeclared scenario
+cascade eval grid --supplementary   # also run S01 (12 chunks per agent), in its own Holm family
+cascade eval market-prices # fetch each market's price strictly before its cutoff (ADR-0039)
+cascade eval baselines --baseline market   # score the market at the cutoff; excluded-and-counted, never imputed
+cascade eval blend         # a blend weight fitted on dev, scored unchanged on test
+cascade eval injection     # threat T3: can a document in the evidence give the model orders?
 cascade report             # write reports/study_{ts}/ (Appendix D)
 
 cascade trace status       # what is replayable and traceable
@@ -204,7 +214,7 @@ cascade trace cost         # §12.4: reconcile the run ledger against Langfuse
 
 ## 7. Architecture decisions
 
-Thirty-five ADRs in `docs/adr/` on this branch; 0032 (live mode, proposed) lives on `m13/live-mode`. Fifteen correct defects found in the spec,
+Forty-two ADRs in `docs/adr/` on this branch; 0032 (live mode, proposed) lives on `m13/live-mode`. Fifteen correct defects found in the spec,
 and 0023, 0025 and 0026 correct defects found in **this build** -- an ingest order
 that satisfied every criterion while covering the wrong years, and two ablation
 factors that were configured, documented and inert. The rest record choices the
@@ -247,6 +257,12 @@ spec left open.
 | 0034 | Aurora 16.11 so pgvector stays 0.8.0 as locally (16.13 moves it to 0.8.1), minor upgrades off; an isolated VPC with no internet path; the bench as a Fargate task inside it; fixed ACU per measurement; a copy-on-write clone for the partitioning experiment | M11 |
 | 0035 | One dedicated account, because Marketplace billing defeats tag-based budgets; the budget is *derived* from `configs/base.yaml`, never restated; SCP guardrails bound to nothing until targets are named; the event lake makes invariant 6 two independent controls (Object Lock + an explicit Deny); recovery tiers follow cost-to-lose, set by this project's own data-loss incident | M12 |
 | 0036 | CC-NEWS files are chosen by their distance from each scenario's cutoff, not by month: ADR-0023's demand counted a month 17 months before a cutoff like the month of it, and its twelve files per month all came from the month's first two days. A floor phase, then closeness with a 14-day half-life, every scenario equal; a function of cutoffs and listings only, never an outcome. Amends 0023 | M12 (amends M2) |
+| 0037 | A cited situation report per scenario from ~100 pre-cutoff chunks; every claim's names, numbers and wording machine-checked against the excerpts it cites, so the writer's memory of the outcome cannot reach the agents as evidence. Off until the dev partition decides | M14 |
+| 0038 | A dev/test split (40 / 125) declared before any forecast, pinned, checked on every eval path; the headline is test; the evidence-tier analysis and S01 (12 chunks) declared in advance, S01 in its own Holm family | M14 |
+| 0039 | The market's own price strictly before the cutoff is a benchmark and only a benchmark: never imputed, stale prices excluded and counted, unreadable by `cascade_sim` | M14 |
+| 0040 | Hybrid retrieval: time-locked vector and keyword pools, rank fusion with recency, story diversity by SimHash, one switch for every evidence site; off until measured | M14 |
+| 0042 | An opt-in egress tier for the ingest, model access and an EFS-backed LLM cache for the study, GuardDuty to the alerts topic, both caches in the recovery plan | M12 |
+| 0043 | **Found here.** 15 of 180 sealed scenarios are exchange placeholder legs; the owner kept the sealed set, and they are excluded from scoring before the split is drawn, inside its pin | M14 |
 
 ---
 
