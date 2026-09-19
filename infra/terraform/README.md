@@ -18,6 +18,8 @@ modules/eventlake   Object-Locked event log, Glue catalog, Athena workgroup, wri
 modules/recovery    tier-0 recovery bucket: locked, replicated cross-region, closed to the simulation
 modules/audit       CloudTrail (locked bucket, data events for the lake and recovery buckets), GuardDuty, Config
 modules/cicd        GitHub OIDC roles: read-only plan from pull requests, apply from a reviewed environment
+modules/pipeline    Step Functions chains for the ingest and the study (in envs/sandbox, opt-in)
+modules/observability  exit-code-preserving task alerts, Aurora alarms, dashboard (in envs/sandbox, opt-in)
 ```
 
 **Destroying the platform root:** the Config bucket denies `s3:DeleteObjectVersion`

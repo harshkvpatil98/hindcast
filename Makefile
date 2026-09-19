@@ -111,7 +111,7 @@ TFLINT_IMAGE ?= ghcr.io/terraform-linters/tflint:v0.64.0
 CHECKOV_VERSION ?= 3.3.19
 TF_ROOTS := envs/bootstrap envs/sandbox envs/platform
 TF_TEST_ROOTS := envs/sandbox envs/platform
-TF_LINT_DIRS := envs/sandbox envs/bootstrap envs/platform modules/network modules/database modules/bench modules/governance modules/guardrails modules/eventlake modules/recovery modules/audit modules/cicd
+TF_LINT_DIRS := envs/sandbox envs/bootstrap envs/platform modules/network modules/database modules/bench modules/governance modules/guardrails modules/eventlake modules/recovery modules/audit modules/cicd modules/observability modules/pipeline
 DOCKER_TF = docker run --rm -v $(CURDIR):/work -e TF_PLUGIN_CACHE_DIR=/work/.tf-plugin-cache -e TF_IN_AUTOMATION=1
 
 .PHONY: infra-fmt

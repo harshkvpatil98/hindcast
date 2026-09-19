@@ -41,6 +41,15 @@ mock_provider "aws" {
   mock_resource "aws_ecs_cluster" {
     defaults = { arn = "arn:aws:ecs:us-east-1:123456789012:cluster/mock" }
   }
+  mock_resource "aws_sfn_state_machine" {
+    defaults = { arn = "arn:aws:states:us-east-1:123456789012:stateMachine:mock" }
+  }
+  mock_resource "aws_cloudwatch_event_rule" {
+    defaults = { arn = "arn:aws:events:us-east-1:123456789012:rule/mock" }
+  }
+  mock_resource "aws_cloudwatch_metric_alarm" {
+    defaults = { arn = "arn:aws:cloudwatch:us-east-1:123456789012:alarm:mock" }
+  }
   mock_resource "aws_ecs_task_definition" {
     defaults = { arn = "arn:aws:ecs:us-east-1:123456789012:task-definition/mock:1" }
   }
@@ -72,4 +81,58 @@ run "a_malformed_region_is_refused" {
     region = "not-a-region"
   }
   expect_failures = [var.region]
+}
+
+run "observability_is_off_until_a_topic_and_thresholds_are_given" {
+  command = plan
+
+  assert {
+    condition     = length(module.observability) == 0
+    error_message = "With no observability input the sandbox must create no alarms -- and need no thresholds."
+  }
+}
+
+run "observability_watches_this_sandbox_with_the_thresholds_given" {
+  command = plan
+  variables {
+    observability = {
+      alerts_topic_arn          = "arn:aws:sns:us-east-1:123456789012:cascade-cost-alerts"
+      freeable_memory_low_bytes = 123456789
+      database_connections_high = 37
+    }
+  }
+
+  assert {
+    condition     = length(module.observability) == 1
+    error_message = "Given a topic and thresholds, the sandbox is watched."
+  }
+}
+
+run "the_chains_exist_only_when_asked_for_and_feed_the_failure_alarms" {
+  command = plan
+  variables {
+    pipeline = {
+      alerts_topic_arn       = "arn:aws:sns:us-east-1:123456789012:cascade-cost-alerts"
+      fanout_timeout_seconds = 86400
+    }
+    observability = {
+      alerts_topic_arn          = "arn:aws:sns:us-east-1:123456789012:cascade-cost-alerts"
+      freeable_memory_low_bytes = 123456789
+      database_connections_high = 37
+    }
+  }
+
+  assert {
+    condition     = length(module.pipeline) == 1
+    error_message = "Given a topic and a fan-out timeout, the two chains are created."
+  }
+}
+
+run "no_chains_by_default" {
+  command = plan
+
+  assert {
+    condition     = length(module.pipeline) == 0
+    error_message = "A plain sandbox creates no state machines."
+  }
 }

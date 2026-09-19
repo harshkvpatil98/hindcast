@@ -82,6 +82,46 @@ module "database" {
   experiment_clone    = var.experiment_clone
 }
 
+module "pipeline" {
+  count  = var.pipeline == null ? 0 : 1
+  source = "../../modules/pipeline"
+  name   = var.name
+
+  cluster_arn             = module.bench.cluster_arn
+  task_definition_arn     = module.bench.task_definition_arn
+  task_execution_role_arn = module.bench.execution_role_arn
+  task_role_arn           = module.bench.task_role_arn
+  subnet_ids              = module.network.private_subnet_ids
+  security_group_ids      = [module.bench.security_group_id]
+  alerts_topic_arn        = var.pipeline.alerts_topic_arn
+  fanout_timeout_seconds  = var.pipeline.fanout_timeout_seconds
+  # This root's key already admits CloudWatch Logs for /cascade/* groups.
+  kms_key_arn        = aws_kms_key.platform.arn
+  log_retention_days = 30
+}
+
+module "observability" {
+  count  = var.observability == null ? 0 : 1
+  source = "../../modules/observability"
+  name   = var.name
+
+  alerts_topic_arn          = var.observability.alerts_topic_arn
+  freeable_memory_low_bytes = var.observability.freeable_memory_low_bytes
+  database_connections_high = var.observability.database_connections_high
+
+  cluster_arn           = module.bench.cluster_arn
+  db_cluster_identifier = module.database.cluster_identifier
+  task_log_group_name   = module.bench.log_group
+  # Capacity is pinned for measurement (see var.acu), which the module detects:
+  # with min == max the capacity alarms would fire for the cluster's whole
+  # life, so it watches CPU against that capacity instead.
+  min_acu = var.acu
+  max_acu = var.acu
+
+  # Failed, timed-out and aborted executions alert too, when the chains exist.
+  state_machine_arns = var.pipeline == null ? [] : [module.pipeline[0].ingest_state_machine_arn, module.pipeline[0].study_state_machine_arn]
+}
+
 module "bench" {
   source                 = "../../modules/bench"
   name                   = var.name

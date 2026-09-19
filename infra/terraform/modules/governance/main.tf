@@ -26,6 +26,8 @@ resource "aws_sns_topic" "alerts" {
 }
 
 data "aws_iam_policy_document" "alerts" {
+  source_policy_documents = var.extra_topic_policy_documents
+
   statement {
     sid       = "CostServicesPublish"
     actions   = ["sns:Publish"]

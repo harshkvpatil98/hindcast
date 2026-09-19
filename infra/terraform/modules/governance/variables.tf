@@ -32,6 +32,17 @@ variable "alert_emails" {
   default     = []
 }
 
+variable "extra_topic_policy_documents" {
+  description = <<-EOT
+    Policy documents (JSON) merged into the alerts topic's policy. An SNS topic
+    has exactly one policy, and this module's names only the two cost services;
+    anything else that alerts here -- alarms, EventBridge rules -- must be
+    admitted through this, or its alerts are dropped without an error.
+  EOT
+  type        = list(string)
+  default     = []
+}
+
 variable "anomaly_threshold_usd" {
   description = "Absolute impact above which a cost anomaly alerts."
   type        = number

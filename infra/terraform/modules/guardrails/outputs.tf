@@ -12,3 +12,9 @@ output "policy_ids" {
     integrity = aws_organizations_policy.integrity.id
   }
 }
+
+# The statement itself, not its rendered JSON: under mock providers the JSON is
+# a placeholder, and a root-level test needs the real condition values.
+output "regions_statement" {
+  value = data.aws_iam_policy_document.regions.statement
+}

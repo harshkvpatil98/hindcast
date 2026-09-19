@@ -23,6 +23,16 @@ variable "name" {
   default = "cascade"
 }
 
+variable "sandbox_name" {
+  description = <<-EOT
+    Name prefix of the sandbox whose alarms and task-failure rules alert here.
+    The sandbox is created and destroyed; this root must not read its state, so
+    publish rights are granted on the ARNs its names make deterministic.
+  EOT
+  type        = string
+  default     = "cascade-sandbox"
+}
+
 variable "infrastructure_allowance_usd" {
   description = "Monthly allowance for non-model spend. Required: see modules/governance."
   type        = number
@@ -33,8 +43,12 @@ variable "alert_emails" {
   default = []
 }
 
-variable "allowed_regions" {
-  description = "Regions workload accounts may use. Defaults to the platform's own."
+variable "additional_allowed_regions" {
+  description = <<-EOT
+    Regions workload accounts may use besides this root's own two (primary and
+    replica), which are always allowed -- the region SCP would otherwise deny
+    the platform's own replica bucket.
+  EOT
   type        = list(string)
   default     = []
 }
@@ -86,6 +100,37 @@ data "aws_iam_policy_document" "key" {
     }
   }
 
+  # CloudWatch alarms publish to the same encrypted topic.
+  statement {
+    sid       = "AlarmsUseTheAlertsKey"
+    actions   = ["kms:GenerateDataKey*", "kms:Decrypt"]
+    resources = ["*"]
+    principals {
+      type        = "Service"
+      identifiers = ["cloudwatch.amazonaws.com"]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [local.account]
+    }
+  }
+
+  # EventBridge too -- and this statement carries NO condition, on purpose. The
+  # SNS developer guide states that source conditions in a KMS key policy are
+  # not supported for EventBridge-to-encrypted-topic delivery: copying the
+  # SourceAccount pattern from the statements around it would drop every
+  # task-failure alert, with no error anywhere. Not verified live.
+  statement {
+    sid       = "EventBridgeUsesTheAlertsKey"
+    actions   = ["kms:GenerateDataKey*", "kms:Decrypt"]
+    resources = ["*"]
+    principals {
+      type        = "Service"
+      identifiers = ["events.amazonaws.com"]
+    }
+  }
+
   # Budgets and Cost Anomaly Detection publish to an encrypted topic, so they
   # must be able to use its key.
   statement {
@@ -95,6 +140,43 @@ data "aws_iam_policy_document" "key" {
     principals {
       type        = "Service"
       identifiers = ["budgets.amazonaws.com", "costalerts.amazonaws.com"]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [local.account]
+    }
+  }
+}
+
+# Who, beyond the cost services, may publish to the alerts topic.
+data "aws_iam_policy_document" "sandbox_alerts" {
+  statement {
+    sid       = "SandboxTaskFailureRulesPublish"
+    actions   = ["sns:Publish"]
+    resources = ["arn:${data.aws_partition.current.partition}:sns:${var.region}:${local.account}:${var.name}-cost-alerts"]
+    principals {
+      type        = "Service"
+      identifiers = ["events.amazonaws.com"]
+    }
+    condition {
+      test     = "ArnLike"
+      variable = "aws:SourceArn"
+      values   = ["arn:${data.aws_partition.current.partition}:events:${var.region}:${local.account}:rule/${var.sandbox_name}-task-*"]
+    }
+  }
+  statement {
+    sid       = "SandboxAlarmsPublish"
+    actions   = ["sns:Publish"]
+    resources = ["arn:${data.aws_partition.current.partition}:sns:${var.region}:${local.account}:${var.name}-cost-alerts"]
+    principals {
+      type        = "Service"
+      identifiers = ["cloudwatch.amazonaws.com"]
+    }
+    condition {
+      test     = "ArnLike"
+      variable = "aws:SourceArn"
+      values   = ["arn:${data.aws_partition.current.partition}:cloudwatch:${var.region}:${local.account}:alarm:${var.sandbox_name}-*"]
     }
     condition {
       test     = "StringEquals"
@@ -118,6 +200,7 @@ module "governance" {
   infrastructure_allowance_usd = var.infrastructure_allowance_usd
   kms_key_arn                  = aws_kms_key.platform.arn
   alert_emails                 = var.alert_emails
+  extra_topic_policy_documents = [data.aws_iam_policy_document.sandbox_alerts.json]
 }
 
 module "eventlake" {
@@ -155,8 +238,13 @@ module "audit" {
 module "guardrails" {
   source          = "../../modules/guardrails"
   name            = var.name
-  allowed_regions = length(var.allowed_regions) > 0 ? var.allowed_regions : [var.region]
+  allowed_regions = distinct(concat([var.region, var.replica_region], var.additional_allowed_regions))
   target_ids      = var.guardrail_target_ids
+}
+
+output "alerts_topic_arn" {
+  description = "Feed this to the sandbox's `observability.alerts_topic_arn`."
+  value       = module.governance.alerts_topic_arn
 }
 
 output "study_ceiling_usd" {

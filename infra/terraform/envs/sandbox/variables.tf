@@ -48,6 +48,37 @@ variable "image_tag" {
   default = "m11"
 }
 
+variable "pipeline" {
+  description = <<-EOT
+    Step Functions chains for the ingest and the study, or null for none. It
+    lives in this root, beside the task definition and the network it runs in,
+    so every input is a module output rather than a value copied between
+    roots. `fanout_timeout_seconds` has no default: no batch has ever been
+    submitted, so any number would be invented.
+  EOT
+  type = object({
+    alerts_topic_arn       = string
+    fanout_timeout_seconds = number
+  })
+  default = null
+}
+
+variable "observability" {
+  description = <<-EOT
+    Alerts and a dashboard for this sandbox, or null for none. All-or-nothing on
+    purpose: the two thresholds depend on measurements nobody has made yet (how
+    much memory the bench leaves free, how many connections it opens), so they
+    have no default -- and a sandbox can be created before the platform root
+    that owns the alerts topic exists.
+  EOT
+  type = object({
+    alerts_topic_arn          = string
+    freeable_memory_low_bytes = number
+    database_connections_high = number
+  })
+  default = null
+}
+
 variable "experiment_clone" {
   description = "Create the copy-on-write clone for the partitioning experiment."
   type        = bool

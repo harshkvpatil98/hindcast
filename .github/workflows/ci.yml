@@ -119,7 +119,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tflint --init --config="$PWD/.tflint.hcl"
-          for dir in envs/sandbox envs/bootstrap envs/platform modules/network modules/database modules/bench modules/governance modules/guardrails modules/eventlake modules/recovery modules/audit modules/cicd; do
+          for dir in envs/sandbox envs/bootstrap envs/platform modules/network modules/database modules/bench modules/governance modules/guardrails modules/eventlake modules/recovery modules/audit modules/cicd modules/observability modules/pipeline; do
             tflint --chdir="$dir" --config="$PWD/.tflint.hcl"
           done
 

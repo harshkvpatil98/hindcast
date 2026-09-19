@@ -13,17 +13,32 @@ and checked by a test. Each phase is a resumable CLI command with distinct exit
 codes, so a supervisor can tell "budget breached" (2) from "precondition failed"
 (3) from a bug (1). Decisions and their evidence are recorded as ADRs.
 
-**Does not.**
-- No orchestration. Phases are started by hand; the Step Functions state
-  machines for ingest and the simulation fan-out are designed in the plan and
-  **not written**.
-- No dashboards or alarms beyond cost. Task logs reach CloudWatch, but nothing
-  watches them.
-- No deployment pipeline: `terraform apply` is a person at a terminal.
+Two Step Functions chains run the ingest and the study as Fargate tasks
+(`modules/pipeline`); every task failure is routed to an alert and a Fail
+state, so a failed chain can never read as finished. Alerts keep the process
+exit code, because here a 2 (budget ceiling) and a 1 (a bug) are different
+events (`modules/observability`). Deployment identity is GitHub OIDC, with
+`apply` trusted only from a reviewed environment (`modules/cicd`).
 
-**To close.** Step Functions for the two fan-out phases; a CloudWatch dashboard
-and alarms on task failure and on Aurora capacity; OIDC-federated `plan` on
-pull requests and `apply` on merge.
+**Does not.**
+- **Neither chain can run to completion today**, and the module says so: the
+  ingest fetches from the public internet and the sandbox VPC has no egress by
+  design; the study's task is pinned to `replay` and its role cannot call a
+  model; and the LLM cache and report files live on task scratch that dies with
+  the task. The chains are the right shape for the code as it is -- serial,
+  because the ingest has no unit-claiming and the fan-out holds its wavefront
+  in one process -- not yet a working deployment.
+- The pipeline retries a task that *failed* only for `corpus build`, because a
+  retried phase used to be re-granted its whole budget ceiling (fixed in the
+  cost meter at M12; the wider retry is now safe and not yet enabled).
+- The OIDC roles exist; **no workflow uses them**. `terraform apply` is still a
+  person at a terminal.
+- Two alarm thresholds (free memory, connections) have no value yet: they
+  depend on a bench that has not run.
+
+**To close.** Give the ingest an egress path or a fetch stage outside the VPC;
+a study task definition with model access and durable cache storage; a `plan`
+workflow on pull requests; set the two thresholds from the first bench.
 
 ## Security
 
@@ -38,13 +53,14 @@ region, audit trail, encryption and root. See the [threat model](threat-model.md
   The blast radius is bounded by the action schema and the deterministic
   arbiter, but no probe tests it.
 - SCPs are written and tested, **not attached**: that needs an organization.
-- No GuardDuty, Security Hub or CloudTrail in the Terraform yet — the SCP
-  protects an audit trail this code does not create.
+- GuardDuty findings alert nobody yet, and there is no Security Hub. (The
+  audit trail itself now exists: `modules/audit` -- CloudTrail to a locked
+  bucket with data events for the lake and recovery buckets, GuardDuty, Config.)
 - Role passwords exist in Terraform state until the IAM switch is made.
 
 **To close.** An adversarial-document probe alongside the poison-pill probe;
-an `audit` module (CloudTrail to a locked bucket, GuardDuty, Config); attach
-the SCPs from a management account.
+route GuardDuty findings to the alerts topic; attach the SCPs from a management
+account.
 
 ## Reliability
 

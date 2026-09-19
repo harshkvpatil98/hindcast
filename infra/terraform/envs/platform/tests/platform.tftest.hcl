@@ -140,3 +140,12 @@ run "the_platform_composes" {
     error_message = "Bucket names carry the account and region."
   }
 }
+
+run "the_region_guardrail_always_admits_the_platforms_own_two_regions" {
+  command = plan
+
+  assert {
+    condition     = toset(one(one(module.guardrails.regions_statement).condition).values) == toset(["us-east-1", "us-west-2"])
+    error_message = "A region SCP that omitted the replica region would deny the platform's own recovery bucket."
+  }
+}

@@ -29,7 +29,7 @@ is removed; several were verified by removing them on purpose.
 | T8 | A batched phase silently runs unbatched at ~2× cost | `complete_batch` refuses a provider without a batch API before any spend | tested |
 | T9 | Supply chain: a dependency or base image changes underneath | `uv.lock`; Terraform provider locks with hashes for three platforms; container base pinned by digest; ECR tags immutable; pgvector pinned via the Aurora minor version | tested where static; **residual**: the RDS CA bundle is fetched at image build over TLS and not pinned, because AWS rotates it |
 | T10 | Data exfiltration from the VPC | No internet gateway, NAT or public IP; the S3 endpoint policy names its buckets; task egress limited to endpoints, S3 and PostgreSQL | tested |
-| T11 | Audit trail switched off from inside the account | SCP denies stopping CloudTrail, Config, GuardDuty and flow logs, and denies the root user | tested as policy; **not attached** — needs an organization's management account |
+| T11 | Audit trail switched off from inside the account | The trail exists (`modules/audit`: multi-region CloudTrail with log validation to an Object-Locked bucket, GuardDuty, Config); an SCP denies stopping any of them, and denies the root user | tested; SCPs **not attached** — needs an organization's management account |
 | T12 | A subscription credential used where an IAM identity belongs | `claude_code` is local-only and excluded from every AWS path (ADR-0031) | by construction |
 
 ## Out of scope

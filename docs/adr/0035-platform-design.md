@@ -50,17 +50,33 @@ its delete Deny, Object Lock switched off, and an SCP statement that allowed.
 
 ## Where the design stops
 
-Not written: Step Functions for the ingest and simulation fan-out; an `audit`
-module (CloudTrail, GuardDuty, Config); dashboards and alarms; a deployment
-pipeline; the tier-0 recovery export. Not possible without an account or an
+Written after this record was first accepted, by a team of agents working in
+separate worktrees and integrated here: `modules/audit`, `modules/pipeline`,
+`modules/observability`, `modules/cicd`, `modules/recovery` and the
+`cascade ledger export`/`restore` commands. Two briefs were wrong and the
+agents were right to depart from them: AWS Config cannot deliver to a bucket
+with a default Object Lock retention (so Config has its own bucket), and with
+capacity pinned for measurement the two Serverless capacity alarms would fire
+for the cluster's whole life (so the module watches CPU against that capacity
+instead). Observability and the pipeline live in `envs/sandbox`, beside what
+they watch and run: a metric filter cannot attach to a log group that does not
+exist, and the platform root must plan while the sandbox is destroyed.
+
+Still not written: an egress or fetch path that would let the ingest chain
+actually run inside the isolated VPC; a study task with model access and
+durable cache storage; any workflow that uses the OIDC roles; routing of
+GuardDuty findings; syncing the two caches to the recovery bucket; an
+adversarial-document probe. Not possible without an account or an
 organization: applying anything, attaching the SCPs, and every AWS number. The
 [Well-Architected review](../architecture/well-architected.md) lists each gap
 under its pillar.
 
 ## Verified by
 
-`terraform test` in `envs/platform` (15 runs, mock providers), TFLint, Checkov
-(403 passed, 0 failed, 38 justified skips across all roots), and the static
-invariants in the pytest suite. One Checkov finding was real and fixed rather
+`terraform test` (73 runs in `envs/platform`, 21 in `envs/sandbox`, mock
+providers), TFLint, Checkov (742 passed, 0 failed, 61 justified skips across
+all roots), and the static invariants in the pytest suite -- which now also
+fail if a required decision input (a region, a budget allowance, an unmeasured
+threshold) is ever given a default, a gap `terraform test` cannot cover. One Checkov finding was real and fixed rather
 than skipped: the analyst role's Glue permissions were granted on `*` and are
 now scoped to the catalog, the database and the one table.

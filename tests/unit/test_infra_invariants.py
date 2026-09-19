@@ -100,6 +100,52 @@ def test_the_region_is_never_defaulted() -> None:
     assert not offenders, f"a region variable carries a default: {offenders}"
 
 
+# Inputs that are decisions or unmeasured quantities. Each is required on
+# purpose, and `terraform test` cannot protect that: omitting a required
+# variable is a run error, not something `expect_failures` can target, so a
+# default slipped in later would pass every Terraform test. Found by mutation
+# at M12 -- the mutant that added one survived.
+NEVER_DEFAULTED = {
+    "region": "where spend lands is a decision (ADR-0028)",
+    "replica_region": "as region",
+    "allowed_regions": "as region",
+    "infrastructure_allowance_usd": "no AWS cost has been measured; a default would be an invented number",
+    "freeable_memory_low_bytes": "depends on a measurement nobody has made",
+    "database_connections_high": "depends on a measurement nobody has made",
+    "apply_policy_arns": "what a pipeline may change is a decision; the easy default is admin",
+    "github_repository": "who may deploy is a decision",
+}
+
+
+def _variable_bodies(text: str) -> list[tuple[str, str]]:
+    found = []
+    for match in re.finditer(r'variable\s+"([^"]+)"\s*\{', text):
+        depth, index = 1, match.end()
+        while depth and index < len(text):
+            depth += {"{": 1, "}": -1}.get(text[index], 0)
+            index += 1
+        found.append((match.group(1), text[match.end() : index]))
+    return found
+
+
+def test_decisions_and_unmeasured_thresholds_are_never_defaulted() -> None:
+    offenders, seen = [], set()
+    for path in terraform_sources():
+        for name, body in _variable_bodies(path.read_text(encoding="utf-8")):
+            if name not in NEVER_DEFAULTED:
+                continue
+            seen.add(name)
+            # Top-level `default =` only: an object type's optional() defaults
+            # and nested blocks are indented deeper than two spaces.
+            if re.search(r"^  default\s*=", body, flags=re.MULTILINE):
+                offenders.append(f"{rel(path)}: variable {name!r} -- {NEVER_DEFAULTED[name]}")
+    assert not offenders, "a required input has been given a default:\n" + "\n".join(offenders)
+    # Guard the guard: a renamed variable would make its entry vacuous.
+    assert seen == set(
+        NEVER_DEFAULTED
+    ), f"never declared anywhere: {sorted(set(NEVER_DEFAULTED) - seen)}"
+
+
 def test_every_checkov_skip_says_why() -> None:
     """A suppression without a reason is indistinguishable from an oversight."""
     bad = []
