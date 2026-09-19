@@ -65,9 +65,31 @@ decision and graph, so it is the owner's call on the numbers.
 
 A throwaway pgvector 0.8.0 / PostgreSQL 16 container, never the study database: all 19 migrations applied cleanly; the sealed registry rebuilt from the source cache to the same manifest (`91ccd314…`); 40,000 synthetic chunks across 39 quarterly partitions (registry question text, random vectors); `retrieval index --fts` built 39 GIN indexes in 2.9 s; `retrieval verify` passed with the hybrid function deployed; and **all 23 hybrid integration tests passed**, including the two planner assumptions (the keyword scan uses the expression index; its ordering is not served by HNSW). At 40,000 rows, not 2 million: the planner may choose differently at scale, which is why the tests run again on the real corpus.
 
-## Not yet verified
+## Measured on the rebuilt corpus (2026-09-19, 1,998,127 chunks)
 
-On the study database, nothing has run: it was carrying the corpus ingest. The 13 leakage and property tests need the embedding model, and were not run while the ingest held the machine's memory. The runbook
+`retrieval verify`: 25/25 partitions with both indexes, hybrid function deployed.
+The 23 integration tests pass, including the two planner assumptions, and the
+leakage and property suites pass (74 tests): the poison pill planted for every
+scenario was never returned through the keyword pool.
+
+`cascade retrieval bench --relevance`, 180 scenarios, paired bootstrap over
+scenarios (B = 10,000, salt-seeded); every interval below excludes zero:
+
+| | compiler evidence (k=60) | baseline evidence (k=6) |
+|---|---|---|
+| chunks naming a registry party | 0.5508 → 0.6452 (+0.0945) | 0.7676 → 0.8257 (+0.0581) |
+| same, generic names screened | 0.4947 → 0.5903 (+0.0956) | 0.7197 → 0.7842 (+0.0645) |
+| median age at the cutoff (days) | 183.15 → 139.29 | 141.07 → 70.22 |
+| distinct documents | 42.94 → 49.44 | 4.55 → 4.86 |
+| mean embedding distance (the cost) | 0.7954 → 0.8186 | 0.6962 → 0.7212 |
+| latency p50 / p95 (ms) | 101 / 451 → 310 / 1019 | 48 / 241 → 263 / 336 |
+
+The two arms share 43% and 38% of their chunks. 25 of 464 registry names
+were screened as generic (e.g. "all", "other", "trump", "united states"), and
+7 scenarios had no entity term, so their hybrid query is vector plus recency.
+These show the mechanisms working, at a stated semantic cost; they are not
+evidence about forecast accuracy. The study makes about 2,500 searches, so the
+latency difference is minutes, not a design constraint. The runbook
 order is `db migrate` → `retrieval index --fts --dry-run` → `retrieval index
 --fts` (est. 20–60 min, 0.9–1.7 GB, unverified) → `retrieval verify` → the 23
 integration and 13 leakage/property tests (the poison-pill through the keyword
