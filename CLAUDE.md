@@ -2014,3 +2014,117 @@ storage; a workflow that uses the OIDC roles; GuardDuty findings routed to the
 alerts topic; the two caches synced to the recovery bucket; and an
 adversarial-document probe for prompt injection through the corpus (threat T3),
 which nothing measures today.
+
+### M14 — Forecast quality: a benchmark, a held-out split, better evidence · *in progress: the corpus, retrieval and evaluation mechanisms are done and measured; the study numbers wait on a batch-capable key*
+
+Shipped: the market-at-cutoff benchmark (`cascade/eval/market.py`,
+`market_fetch.py`, migration 017, ADR-0039); the declared dev/test split, the
+evidence-tier analysis and the supplementary 12-chunk cell (`eval/split.py`,
+`eval/evidence.py`, `eval/supplementary.py`, ADR-0038); hybrid retrieval
+(migration 018, `retrieval/fusion.py`, `retrieval/keywords.py`, ADR-0040); the
+scenario dossier (`decompose/dossier.py`, migration 019, ADR-0037); the
+rewritten Wikipedia adapter (ADR-0041); fetch-time dating and the corpus
+repair (`corpus/redate.py`, `corpus/stamps.py`, migration 020, ADR-0044); the
+stand-in exclusion (`ledger/exclusions.py`, ADR-0043); the forecast blend
+(`eval/blend.py`) and the adversarial-document probe (`eval/injection.py`);
+and the M12 platform follow-ups (ADR-0042).
+
+**Two time-lock leaks, both with honest dates and later text.** Neither could
+be caught by the poison-pill or date-monotonicity probes, which test that the
+date is respected, not that it is true of the text.
+
+- **Wikipedia** (ADR-0041). The adapter read an old revision by *rendering* it,
+  and a render expands today's templates: the 2024-25 Houston Rockets season
+  article as of 2025-02-14, three days before that scenario's cutoff and while
+  the team stood at 34-21, rendered "Updated: August 26, 2026" and the final
+  52-30. All 340 documents it had written (14,380 chunks) were purged. The
+  rewrite stores the revision's own wikitext, anchors one second before the
+  cutoff with no first-revision fallback, and follows redirects and moves as
+  they read then.
+- **CC-NEWS** (ADR-0044). Documents were dated by the publication date the page
+  states, while the text stored is the text Common Crawl fetched. Measured on
+  one 2026-03 file: **3.7% of dated pages were re-crawls of articles over 180
+  days old**, carrying the crawl's update notes and sidebars. `ccnews.py` had
+  argued the crawl date was the *unsafe* choice; the reverse is true -- a later
+  date can only exclude a document, an earlier date on later text leaks.
+  `published_at` is now `max(stated, fetched)`, both kept (migration 020).
+
+**The corpus was repaired in place, not rebuilt.** `cascade corpus redate`
+re-read the WARC headers of all 29 finished units (no chunking, no embedding),
+moving each stored document and its chunks with `GREATEST`, so the pass is
+order-independent, idempotent and resumable -- Common Crawl answered HTTP 503
+intermittently throughout. Of **204,355** CC-NEWS documents, **200,122 moved
+to their fetch time**; **11,237 (5.5%) had been fetched more than 180 days
+after the date they state**. 5,000 documents (29,878 chunks) from interrupted
+units matched no finished file, so their fetch time was unknowable; they were
+deleted and re-fetched under the new rule.
+
+**Measured corpus (2026-09-19).** 1,998,127 chunks across 317,780 documents --
+ccnews 1,985,516 / wikipedia 12,611; `corpus verify` and `retrieval verify`
+exit 0, 25/25 partitions carrying both an HNSW and a full-text index.
+`corpus coverage`: **180/180 covered**, median 1,236,969 chunks in the
+18-month window, minimum 327.
+
+| over the 165 scored scenarios | earlier corpus (859k chunks, 180 scenarios) | now |
+|---|---|---|
+| newest evidence <= 1 day before the cutoff | 97 | **155** |
+| 2-7 days | 62 | 9 |
+| 8-30 days | 14 | 1 |
+| more than 30 days | 7 | **0** |
+| no chunks in the final 30 days | 7 | **0** |
+| 10k+ chunks in the final 30 days | 83 | **156** |
+
+The nine thin scenarios are the eight curated pre-2023 questions and the
+Ethereum-ETF one: CC-NEWS now starts at 2023-04, because the 2.0M-chunk budget
+went where 156 of the scenarios are, so those nine rest on Wikipedia revisions
+(11-320 chunks in their final 30 days).
+
+**Hybrid retrieval was measured, then switched on by the project owner**
+(ADR-0040), before anything was compiled, so no recorded decision or graph was
+invalidated. `cascade retrieval bench --relevance`, 180 scenarios, paired
+bootstrap over scenarios (B = 10,000), every interval excluding zero:
+
+| | compiler evidence (k=60) | baseline evidence (k=6) |
+|---|---|---|
+| chunks naming a registry party | 0.5508 -> **0.6452** | 0.7676 -> **0.8257** |
+| same, generic names screened | 0.4947 -> 0.5903 | 0.7197 -> 0.7842 |
+| median age at the cutoff (days) | 183.15 -> **139.29** | 141.07 -> **70.22** |
+| distinct documents | 42.94 -> 49.44 | 4.55 -> 4.86 |
+| mean embedding distance (the cost) | 0.7954 -> 0.8186 | 0.6962 -> 0.7212 |
+
+**The market at the cutoff is now a benchmark** (ADR-0039). Over the sealed
+180: **143 usable prices** (all Polymarket, observed 0.04-79.7 s before the
+cutoff), 6 stale (every Manifold market, 32.7-542.6 h old, excluded and
+counted), 21 with no price history, 9 not markets, and **1 market created
+after its own cutoff**. Replayed from 358 recordings with 0 requests.
+
+**15 of the 180 sealed scenarios are not questions** (ADR-0043) -- exchange
+placeholder legs ("Will Candidate B win the 2026 Busan Mayoral Election?")
+that passed every rule because the volume screen read a leg's honest zero as
+missing and fell through to the event's volume. The project owner chose to
+keep the sealed set and exclude them from scoring: the split is drawn over the
+remaining **165 (40 dev / 125 test)**, the excluded ids are inside its pinned
+fingerprint, and compile, the dossier, the baselines and the probes skip them.
+The registry fixes wait on branch `m14-registry-v2`.
+
+**Gates.** ruff, black, mypy strict (117 files) clean; **1,998 offline tests**,
+**150 integration** and **74 leakage/property** against the rebuilt corpus, all
+passing under `retrieval.mode: hybrid` -- including the poison pill planted for
+every scenario and never returned through the new keyword pool. The
+update-stamp scan (`tests/leakage/test_update_stamps.py`) went from **381
+flagged chunks to 4**, and all four are stamps later than the page's own fetch
+-- publisher typos the fetched text cannot contain.
+
+**Deferred, with reasons:**
+
+- **Every study number** -- the simulation is 36,000 runs of batched calls, and
+  neither the Claude Code CLI nor Bedrock has a Message Batches API
+  (ADR-0028). Compile, the dossier, the probes and the direct baseline run on
+  the subscription; the headline needs a batch-capable key or the AWS path.
+- **The dossier's on/off decision** (ADR-0037) reads dev forecasts, so it waits
+  on the same key. The dossier ships off, and the graphs compiled now are its
+  "off" arm.
+- **The blend** needs two forecasters to blend.
+- **Retrieval p95** is not re-measured on the rebuilt corpus; `bench
+  --relevance` reports its own latency (vector 48-101 ms p50), and the M3
+  criterion is still the one M8 recorded as missed.
