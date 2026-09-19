@@ -368,6 +368,32 @@ class LedgerConfig(_Model):
     metaculus_page_size: int
 
 
+class MarketBaselineConfig(_Model):
+    """The market-at-cutoff benchmark (M14). Reasons are in ``configs/base.yaml``.
+
+    Every value here decides which prices may be *scored*, so each is an
+    explicit, versioned constraint in the same sense as :class:`LedgerConfig`:
+    chosen from how the sources sample, never from an outcome.
+    """
+
+    max_staleness_hours: float = Field(gt=0)
+    lookback_days: int = Field(ge=1)
+    fidelity_minutes: int = Field(ge=1)
+    lookback_fidelity_minutes: int = Field(ge=1)
+    manifold_bets_limit: int = Field(ge=1, le=1000)
+    requests_per_second: float = Field(gt=0)
+
+    @model_validator(mode="after")
+    def _lookback_covers_the_staleness_window(self) -> MarketBaselineConfig:
+        if self.lookback_days * 24 < self.max_staleness_hours:
+            raise ValueError(
+                f"market_baseline.lookback_days ({self.lookback_days}) is shorter than "
+                f"max_staleness_hours ({self.max_staleness_hours}): the fallback window "
+                "could never find a price the first window missed"
+            )
+        return self
+
+
 class CorpusConfig(_Model):
     """Evidence-corpus ingest settings (spec §3.2)."""
 
@@ -485,6 +511,7 @@ class Settings(BaseSettings):
     llm: LLMConfig
     providers: ProvidersConfig
     ledger: LedgerConfig
+    market_baseline: MarketBaselineConfig
     corpus: CorpusConfig
     database: DatabaseConfig
     langfuse: LangfuseConfig

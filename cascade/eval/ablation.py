@@ -23,6 +23,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Literal
 
+from cascade.eval.market import MARKET_CONFIG_ID
 from cascade.eval.schema import Grounding
 
 __all__ = [
@@ -290,17 +291,30 @@ def comparison_family(
             continue
         if headline not in have:
             continue
+        reading = (
+            f"Brier({config_id}) - Brier({headline}). Positive means "
+            f"{config_id} is worse than the reported configuration. Included "
+            "in the Holm family so the adjustment covers every comparison the "
+            "report prints (§10.4)."
+        )
+        if config_id == MARKET_CONFIG_ID:
+            # The one comparison whose population is set by someone else's
+            # data, so the reading has to say which scenarios are in it.
+            reading = (
+                f"Brier(market at the cutoff) - Brier({headline}), paired on the "
+                "intersection: only scenarios whose own prediction market quoted a "
+                "usable price strictly before the cutoff are on either side, and n is "
+                "how many that is. Scenarios with no market, no price history or a "
+                "stale price are excluded and counted by `cascade eval market-prices`, "
+                f"never imputed. Negative means the market beat {headline} on those "
+                "scenarios. In the Holm family like every other comparison (§10.4)."
+            )
         out.append(
             ComparisonSpec(
                 name=f"{config_id} vs {headline}",
                 config_a=config_id,
                 config_b=headline,
-                reading=(
-                    f"Brier({config_id}) - Brier({headline}). Positive means "
-                    f"{config_id} is worse than the reported configuration. Included "
-                    "in the Holm family so the adjustment covers every comparison the "
-                    "report prints (§10.4)."
-                ),
+                reading=reading,
             )
         )
     return tuple(out)

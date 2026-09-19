@@ -1,4 +1,4 @@
-"""The five baselines (spec §10.2). Prompt construction is pure; the calls are not.
+"""The five baselines (spec §10.2), and the market. Prompt construction is pure.
 
 "Five, and all five appear in the report. Omitting the fair-compute baseline is
 the most common way a multi-agent result gets dismissed."
@@ -22,6 +22,15 @@ The three that are not cells are built here:
   averaged. §10.2 calls it critical, and it is: it matches Cascade's sample
   budget, so a gain over it cannot be dismissed as "you just sampled more".
 
+A sixth stands outside the spec's five (M14): **the market at the cutoff**,
+the YES probability each scenario's own prediction market quoted strictly
+before ``cutoff_ts``. §10.2's five are all models or arithmetic; this is the
+one benchmark that is other people's money, and it is the comparison a
+forecasting reader asks for first. It is built in ``cascade/eval/market.py``,
+covers only the scenarios whose market had a usable price, and -- unlike every
+other row here -- is scored from its own table rather than from ``forecasts``,
+because ``cascade_sim`` can read ``forecasts`` and must not read a market price.
+
 The self-consistency draws are distinguished by ``LLMRequest.sample_index``.
 The call cache is content-addressed, so without it 200 identical requests would
 be one recording replayed 200 times -- an ensemble with sigma exactly zero,
@@ -36,6 +45,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
 from cascade.config import Settings
+from cascade.eval.market import MARKET_CONFIG_ID
 from cascade.ledger.schema import Scenario
 from cascade.llm.types import BatchItem, LLMRequest
 
@@ -43,6 +53,7 @@ __all__ = [
     "BASELINES",
     "CLIMATOLOGY_CONFIG_ID",
     "DIRECT_CONFIG_ID",
+    "MARKET_CONFIG_ID",
     "SELF_CONSISTENCY_CONFIG_ID",
     "BaselineRun",
     "BaselineSpec",
@@ -72,6 +83,10 @@ class BaselineSpec:
     purpose: str
     from_grid: bool
     """True when the baseline *is* an ablation cell and is scored from it."""
+    in_spec: bool = True
+    """False for a benchmark added beyond §10.2's five. The spec's list stays
+    checkable as a list -- "all five appear in the report" -- while the report
+    is free to carry more than the spec asked for."""
 
 
 BASELINES: tuple[BaselineSpec, ...] = (
@@ -117,6 +132,21 @@ BASELINES: tuple[BaselineSpec, ...] = (
         construction="Decomposition + asymmetry + ensemble",
         purpose="The system under test.",
         from_grid=True,
+    ),
+    BaselineSpec(
+        baseline_id="market",
+        config_id=MARKET_CONFIG_ID,
+        name="Market at the cutoff",
+        construction=(
+            "The scenario's own prediction market: last YES probability strictly "
+            "before the cutoff, unobtainable or stale prices excluded and counted"
+        ),
+        purpose=(
+            "The external benchmark. Every comparison against it is paired on the "
+            "scenarios whose market had a usable price, and says how many."
+        ),
+        from_grid=False,
+        in_spec=False,
     ),
 )
 

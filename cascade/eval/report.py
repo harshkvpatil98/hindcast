@@ -276,10 +276,16 @@ def _headline_markdown(artifact: StudyArtifact) -> str:
         "",
     ]
     if artifact.comparisons:
-        lines += ["| Comparison | delta Brier | 95% CI | p | Holm p* |", "|---|---|---|---|---|"]
+        # n is the paired count, per row: the capped cells pair on 90 scenarios
+        # and the market benchmark on however many markets had a usable price,
+        # so one table holds deltas over different populations and must say so.
+        lines += [
+            "| Comparison | n paired | delta Brier | 95% CI | p | Holm p* |",
+            "|---|---|---|---|---|---|",
+        ]
         for item in artifact.comparisons:
             lines.append(
-                f"| {item.name} | {item.interval.point:+.6f} | "
+                f"| {item.name} | {item.n_paired} | {item.interval.point:+.6f} | "
                 f"[{item.interval.lo:+.6f}, {item.interval.hi:+.6f}] | "
                 f"{item.interval.p_value:.4g} | {_fmt(item.p_adjusted, '{:.4g}')} |"
             )
@@ -319,7 +325,7 @@ def _headline_markdown(artifact: StudyArtifact) -> str:
         "|---|---|",
         "| `manifest.json` | scenario hash, git sha, model versions, config |",
         "| `metrics.json` | every metric, every cell, machine-readable |",
-        "| `baselines.csv` | the five §10.2 baselines, per scenario |",
+        "| `baselines.csv` | the §10.2 baselines and the market at the cutoff, per scenario |",
         "| `ablation_grid.csv` | the twelve Appendix C cells, per scenario |",
         "| `calibration.csv` | 10 bins: count, mean_pred, obs_freq, Wilson bounds |",
         "| `per_domain.csv` | Brier by domain with counts |",

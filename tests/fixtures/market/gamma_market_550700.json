@@ -1,0 +1,13 @@
+{
+  "clobTokenIds": "[\"32278380626064569919890704724885971781663484519100813711542074563045450491626\", \"107348686072928689547937918134399430142289580762655323355470748305105323897082\"]",
+  "conditionId": "0xc30407cd2195b94a0340fb8b70618a47a2863c19a4473fea10a268b2f8dbd302",
+  "createdAt": "2025-06-08T02:11:21.911588Z",
+  "enableOrderBook": true,
+  "endDate": "2026-04-12T00:00:00Z",
+  "id": "550700",
+  "negRisk": false,
+  "outcomes": "[\"Yes\", \"No\"]",
+  "question": "Will Saudi Arabia qualify for the 2026 FIFA World Cup?",
+  "slug": "will-saudi-arabia-qualify-for-the-2026-fifa-world-cup",
+  "startDate": "2025-06-09T12:21:59.432551Z"
+}
