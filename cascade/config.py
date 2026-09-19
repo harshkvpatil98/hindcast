@@ -203,6 +203,36 @@ class EnsembleConfig(_Model):
     sigma_multimodal_threshold: float
 
 
+class DossierConfig(_Model):
+    """The per-scenario situation report (ADR-0037).
+
+    ``enabled`` is off until the development partition says otherwise: whether
+    the report helps is an empirical question, and the only honest place to
+    answer it is on scenarios the headline is not computed over. Turning it on
+    changes the compiler's and every agent's prompt, so it requires a prompt
+    revision newer than the one the unreported prompts were recorded under --
+    enforced by ``Settings``, because an audit trail that depends on someone
+    remembering is not one.
+    """
+
+    enabled: bool
+    since_prompt_rev: int = Field(ge=1)
+    per_query_k: int = Field(gt=0)
+    max_party_queries: int = Field(ge=0)
+    pool_chunks: int = Field(gt=0)
+    max_per_document: int = Field(gt=0)
+    excerpt_chars: int = Field(gt=0)
+    # Verification thresholds. Fixed before any forecast exists and never
+    # revisited against accuracy: they decide what counts as supported by the
+    # record, which is a validity rule, not a performance knob.
+    min_support_ratio: float = Field(ge=0.0, le=1.0)
+    max_claims_per_section: int = Field(gt=0)
+    # Characters of rendered report placed in each prompt. Every agent call
+    # carries it in the cached prefix, so this is a per-call cost (ADR-0019).
+    prompt_chars: int = Field(gt=0)
+    max_tokens: int = Field(gt=0)
+
+
 class BudgetConfig(_Model):
     phase_ceiling_usd: dict[str, Money]
     abort_on_breach: bool
@@ -482,6 +512,7 @@ class Settings(BaseSettings):
     ensemble: EnsembleConfig
     budget: BudgetConfig
     flags: FlagsConfig
+    dossier: DossierConfig
     llm: LLMConfig
     providers: ProvidersConfig
     ledger: LedgerConfig
@@ -501,6 +532,25 @@ class Settings(BaseSettings):
     db_eval_password: SecretStr | None = Field(default=None)
     langfuse_public_key: SecretStr | None = Field(default=None)
     langfuse_secret_key: SecretStr | None = Field(default=None)
+
+    @model_validator(mode="after")
+    def _dossier_needs_its_prompt_revision(self) -> Settings:
+        """Refuse to run reported prompts under an unreported prompt revision.
+
+        Preserves §1.3's audit: enabling the dossier changes what the compiler
+        and every agent read, and ``prompt_revisions`` is only a record of
+        prompt changes if a change cannot happen without a new revision.
+        """
+        if not self.dossier.enabled:
+            return self
+        digits = "".join(ch for ch in self.llm.prompt_rev if ch.isdigit())
+        if not digits or int(digits) < self.dossier.since_prompt_rev:
+            raise ValueError(
+                f"dossier.enabled requires llm.prompt_rev >= r{self.dossier.since_prompt_rev} "
+                f"(got {self.llm.prompt_rev!r}): the situation report changes the compiler and "
+                "agent prompts, and migration 019 records that change as its own revision"
+            )
+        return self
 
     @model_validator(mode="after")
     def _reject_unrecognised_overrides(self) -> Settings:

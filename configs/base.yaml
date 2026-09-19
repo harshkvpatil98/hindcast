@@ -134,9 +134,27 @@ ensemble:
   bootstrap_b: 10000
   sigma_multimodal_threshold: 0.30
 
+dossier: # the per-scenario situation report (ADR-0037)
+  # Off until measured on the development partition; see the ADR for the
+  # decision rule, which was written down before any forecast existed.
+  enabled: false
+  since_prompt_rev: 3 # enabling it needs llm.prompt_rev >= r3 (migration 019)
+  per_query_k: 40 # chunks drawn per query; the SQL pool is bounded at max_k
+  max_party_queries: 8
+  pool_chunks: 100 # ~30k input tokens at excerpt_chars below
+  max_per_document: 3
+  excerpt_chars: 1200
+  min_support_ratio: 0.6
+  max_claims_per_section: 12
+  prompt_chars: 3600 # ~900 tokens in the compiler prompt and each agent prefix
+  max_tokens: 4000
+
 budget:
   phase_ceiling_usd:
     compile: 40.0
+    # One compiler-model call per scenario over ~30k input tokens. Its own
+    # phase so the compile ceiling keeps meaning what M4 sized it for.
+    dossier: 30.0
     simulate: 240.0
     baseline: 30.0
     corpus: 15.0

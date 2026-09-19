@@ -11,12 +11,12 @@ import json
 import shutil
 import subprocess
 import sys
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from decimal import Decimal
 from importlib import metadata
 from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, NoReturn
+from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn
 
 import typer
 from rich.console import Console
@@ -1398,7 +1398,71 @@ def _sim_role_is_fenced(settings: Settings) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 
-def _lathe(settings: Settings) -> Any:
+def _situations(
+    settings: Settings,
+    scenario_ids: Sequence[str],
+    *,
+    role: Literal["sim", "eval"],
+    grounded: bool = True,
+) -> dict[str, tuple[str, str | None]]:
+    """The rendered dossier per scenario, or a precondition failure.
+
+    One funnel for every phase that builds a prompt, so "the dossier is on and
+    some scenarios have none" is exit 3 everywhere rather than an empty report
+    in whichever phase forgot to check (ADR-0037).
+
+    The dossier is evidence, so it follows Appendix C's factor C: an
+    ungrounded cell gets no report, exactly as it gets no chunks, and the
+    table is not read at all.
+    """
+    from cascade.decompose.dossier_store import MissingDossiers, situations_for
+
+    if not grounded:
+        return {scenario_id: ("", None) for scenario_id in sorted(scenario_ids)}
+    try:
+        return situations_for(settings, tuple(scenario_ids), role=role)
+    except MissingDossiers as exc:
+        _fail(str(exc), EXIT_PRECONDITION)
+
+
+def _chronofence_hits(settings: Settings) -> tuple[Any, Any]:
+    """A `(search, fence)` pair for the dossier writer: text in, ranked hits out.
+
+    Opened as `eval`, like the compiler's retrieval, and for the same reason:
+    writing a dossier is offline preparation, and the separation that matters
+    here is the time lock, which the search function enforces for every role.
+    """
+    from cascade.corpus.embed import Embedder
+    from cascade.decompose.dossier import Hit
+    from cascade.retrieval.search import Chronofence
+
+    embedder = Embedder(
+        model_name=settings.models.embedding, batch_size=settings.corpus.embed_batch_size
+    )
+    embedder.load()
+    fence = Chronofence(settings, role="eval")
+    fence.__enter__()
+
+    def search(query: str, as_of: Any, k: int) -> list[Hit]:
+        vector = embedder.encode([query])[0]
+        result = fence.search(vector, as_of=as_of, k=k)
+        return [
+            Hit(
+                chunk_id=chunk.chunk_id,
+                document_id=chunk.document_id,
+                published_at=chunk.published_at,
+                source=chunk.source,
+                body=chunk.body,
+            )
+            for chunk in result.chunks
+        ]
+
+    return search, fence
+
+
+def _lathe(
+    settings: Settings, situations: Mapping[str, tuple[str, str | None]] | None = None
+) -> Any:
     """Wire the compiler to the real model, embedder and corpus.
 
     Retrieval goes through Chronofence as `eval` rather than `sim`: compilation
@@ -1431,6 +1495,7 @@ def _lathe(settings: Settings) -> Any:
         client=LLMClient(settings, phase="compile"),
         embed=embedder.encode,
         retrieve=retrieve,
+        situations=dict(situations or {}),
     )
     return compiler, fence
 
@@ -1572,7 +1637,8 @@ def compile_build(
         f"{len(scenarios) - len(pending)} already done"
     )
 
-    compiler, fence = _lathe(settings)
+    situations = _situations(settings, [item.scenario_id for item in pending], role="eval")
+    compiler, fence = _lathe(settings, situations)
     compiled = failed = 0
     try:
         for index, scenario in enumerate(pending, start=1):
@@ -1597,6 +1663,75 @@ def compile_build(
         )
 
 
+@compile_app.command("dossier")
+def compile_dossier(
+    config: OverlayOpt = None,
+    limit: Annotated[
+        int | None, typer.Option("--limit", help="Write at most N pending dossiers.")
+    ] = None,
+    rebuild: Annotated[
+        bool,
+        typer.Option("--rebuild", help="Rewrite scenarios that already have a dossier."),
+    ] = False,
+) -> None:
+    """Write one cited situation report per scenario (ADR-0037).
+
+    Runs whether or not `dossier.enabled` is set: writing the reports is how
+    the development-partition comparison gets its "on" arm, and a stored
+    dossier changes nothing until a configuration reads it. Resumable per
+    scenario. Costs money in `record` mode; the `dossier` phase ceiling applies.
+
+    Prints the refused-claim rate by reason. That figure is the dossier's own
+    integrity measurement -- how often the writer asserted what its sources do
+    not say -- and belongs wherever the dossier is reported.
+    """
+    from cascade.decompose.dossier import DossierWriter
+    from cascade.decompose.dossier_store import dossier_stats, write_dossier, written_scenarios
+    from cascade.ledger.store import load_scenarios
+    from cascade.llm.client import LLMClient
+
+    settings = _settings(config)
+    _require_provider_ready(settings)
+
+    scenarios = sorted(load_scenarios(settings, role="admin"), key=lambda item: item.scenario_id)
+    if not scenarios:
+        _fail("scenario registry is empty; run `cascade ledger build` first", EXIT_PRECONDITION)
+    done = set() if rebuild else written_scenarios(settings)
+    pending = [item for item in scenarios if item.scenario_id not in done]
+    if limit is not None:
+        pending = pending[:limit]
+    console.print(
+        f"writing [bold]{len(pending)}[/bold] dossier(s); "
+        f"{len(scenarios) - len(pending)} already done"
+    )
+
+    search, fence = _chronofence_hits(settings)
+    writer = DossierWriter(
+        settings=settings, client=LLMClient(settings, phase="dossier"), search=search
+    )
+    try:
+        for index, scenario in enumerate(pending, start=1):
+            outcome = writer.write(scenario)
+            write_dossier(settings, outcome)
+            console.print(
+                f"  [{index}/{len(pending)}] {scenario.scenario_id}: "
+                f"{outcome.dossier.n_claims} claims kept, {len(outcome.dropped)} refused, "
+                f"{outcome.n_excerpts} excerpts"
+            )
+    finally:
+        fence.__exit__(None, None, None)
+
+    stats = dossier_stats(settings)
+    console.print(
+        f"dossiers [bold]{stats.written}[/bold] of {len(scenarios)} "
+        f"({stats.empty} empty) · claims kept [bold]{stats.claims}[/bold] · refused "
+        f"[bold]{stats.dropped}[/bold] ({stats.dropped_rate:.1%} of emitted) · "
+        f"mean excerpts {stats.mean_excerpts:.1f}"
+    )
+    for reason, count in stats.dropped_by_reason:
+        console.print(f"  refused · {reason}: {count}")
+
+
 @compile_app.command("status")
 def compile_status(config: OverlayOpt = None) -> None:
     """Report measured graph statistics and the repair-retry histogram."""
@@ -1615,12 +1750,21 @@ def compile_verify(config: OverlayOpt = None) -> None:
     violation, hash mismatch, or missing scenario.
     """
     from cascade.corpus.embed import Embedder
+    from cascade.decompose.dossier_store import verify_dossier_hashes
     from cascade.decompose.store import compile_stats, verify_hashes
     from cascade.decompose.validator import validate
     from cascade.ledger.store import load_scenarios
 
     settings = _settings(config)
     failures: list[str] = []
+
+    # A dossier is evidence the agents act on; an edited row is an edited
+    # experiment, so it is held to the same hash check as a graph.
+    failures.extend(
+        f"{item.scenario_id}: dossier hash mismatch (recorded {item.recorded[:12]}, "
+        f"recomputed {item.recomputed[:12]})"
+        for item in verify_dossier_hashes(settings)
+    )
 
     mismatches = verify_hashes(settings)
     if mismatches:
@@ -1910,6 +2054,13 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
     else:
         embedder = None
 
+    situations = _situations(
+        settings,
+        [scenario.scenario_id for scenario, _ in pairs],
+        role="sim",
+        grounded=grounded,
+    )
+
     prepared: dict[tuple[str, str], Any] = {}
     with _maybe_chronofence(settings, enabled=grounded) as fence:
         for scenario, graph in pairs:
@@ -1944,6 +2095,7 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
                     question_context=context,
                     evidence=evidence,
                     grounded=grounded,
+                    situation=situations.get(scenario.scenario_id, ("", None))[0],
                 )
                 prepared[(scenario.scenario_id, actor.id)] = prepare_actor(brief, settings)
 
@@ -2911,6 +3063,9 @@ def eval_baselines(
             config_id=baseline_config,
             samples=draws,
             temperature=temperature,
+            situations=_situations(
+                settings, [scenario.scenario_id for scenario in scenarios], role="eval"
+            ),
         )
         for collapsed in run.collapsed:
             write_forecast(
@@ -3002,6 +3157,9 @@ def eval_estimate(
             samples=count,
             temperature=temperature,
             client=client,
+            situations=_situations(
+                settings, [scenario.scenario_id for scenario in sample], role="eval"
+            ),
         )
 
     estimate = estimate_phase(

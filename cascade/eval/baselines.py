@@ -158,8 +158,13 @@ def baseline_prompt(
     evidence: Sequence[tuple[str, str, str]],
     *,
     evidence_chars: int,
+    situation: str = "",
 ) -> str:
     """Render the user turn: question, criterion, cutoff, and the evidence. Pure.
+
+    ``situation`` is the rendered dossier (ADR-0037). The baseline gets it
+    whenever the agents do: otherwise "Cascade beats a single model" would
+    partly mean "a model given a briefing beats one that was not".
 
     ``evidence`` is ``(published_iso, source, excerpt)`` -- the same triple the
     agent prefix carries, truncated to the same width, so the only difference
@@ -178,9 +183,10 @@ def baseline_prompt(
         "",
         "Reason only from what was knowable at the cutoff.",
         "",
-        "# Evidence published before the cutoff",
-        "",
     ]
+    if situation:
+        lines.extend(["# Situation report (public record before the cutoff)", "", situation, ""])
+    lines.extend(["# Evidence published before the cutoff", ""])
     if evidence:
         lines.extend(
             f"[{published}] {source}\n{excerpt[:evidence_chars]}\n"
@@ -200,6 +206,7 @@ def sample_requests(
     samples: int,
     temperature: float,
     config_id: str,
+    situation: str = "",
 ) -> list[BatchItem]:
     """Build ``samples`` independent draws of one scenario's prompt. Pure.
 
@@ -211,7 +218,12 @@ def sample_requests(
     if samples <= 0:
         raise ValueError(f"samples must be positive, got {samples}")
     system = system_prompt()
-    user = baseline_prompt(scenario, evidence, evidence_chars=settings.kernel.evidence_chars)
+    user = baseline_prompt(
+        scenario,
+        evidence,
+        evidence_chars=settings.kernel.evidence_chars,
+        situation=situation,
+    )
     return [
         BatchItem(
             custom_id=f"{config_id}|{scenario.scenario_id}|{index}",
@@ -316,6 +328,7 @@ def run_single_model(
     temperature: float,
     client: object = None,
     batch_size: int = 2000,
+    situations: Mapping[str, tuple[str, str | None]] | None = None,
 ) -> BaselineRun:
     """Draw ``samples`` forecasts per scenario and collapse them.
 
@@ -348,6 +361,7 @@ def run_single_model(
                 samples=samples,
                 temperature=temperature,
                 config_id=config_id,
+                situation=(situations or {}).get(scenario.scenario_id, ("", None))[0],
             )
         )
 

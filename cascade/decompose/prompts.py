@@ -309,14 +309,28 @@ def draft_user_prompt(
     cutoff_iso: str,
     party_names: tuple[str, ...],
     chunks: list[tuple[str, str, str]],
+    situation: str = "",
 ) -> str:
-    """The per-scenario message for the draft pass (spec §5.2)."""
+    """The per-scenario message for the draft pass (spec §5.2).
+
+    ``situation`` is the rendered dossier (ADR-0037). Empty, the message is
+    byte-identical to the one sent before the dossier existed, so a
+    configuration with it off keeps resolving its recordings.
+    """
     parties = ", ".join(party_names) if party_names else "(none recorded)"
+    report = (
+        "# Situation report\nBuilt from a wider set of pre-cutoff documents than the "
+        "evidence below; every line was checked against the documents it came from.\n\n"
+        f"{situation}\n\n"
+        if situation
+        else ""
+    )
     return (
         f"# Question\n{question}\n\n"
         f"# Resolution criterion\n{resolution_criterion}\n\n"
         f"# Cutoff\n{cutoff_iso} — all evidence below predates this instant.\n\n"
         f"# Parties named in the registry\n{parties}\n\n"
+        f"{report}"
         f"# Evidence\n{_render_evidence(chunks)}\n\n"
         "Emit the causal graph with the emit_causal_graph tool."
     )
