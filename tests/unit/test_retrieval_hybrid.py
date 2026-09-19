@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import ast
 import inspect
+import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -515,4 +516,6 @@ class TestCli:
 
         outcome = CliRunner().invoke(app, ["retrieval", "index", "--help"])
         assert outcome.exit_code == 0
-        assert "--fts" in outcome.output and "--no-fts" in outcome.output
+        # Colour codes split option names on a colour terminal (CI is one).
+        text = re.sub(r"\x1b\[[0-9;]*m", "", outcome.output)
+        assert "--fts" in text and "--no-fts" in text

@@ -10,6 +10,7 @@ whose refusal never becomes an exit status. The store is replaced wholesale and
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -422,7 +423,11 @@ class TestGridCellSelection:
                 cli_module._grid_cells(None, supplementary=False, variants=[name])
 
     def test_the_flag_is_on_the_command(self) -> None:
-        output = runner.invoke(app, ["eval", "grid", "--help"]).output
+        # Rich colours option names when the terminal says it can (CI does), which
+        # splits "--supplementary" with escape codes; read the text, not the paint.
+        output = re.sub(
+            r"\x1b\[[0-9;]*m", "", runner.invoke(app, ["eval", "grid", "--help"]).output
+        )
         assert "--supplementary" in output and "--variant" in output and "--partition" in output
 
 
