@@ -194,6 +194,28 @@ class RetrievalConfig(_Model):
     target_recall_at_k: float = Field(gt=0.0, le=1.0)
     poison_pill_count: int = Field(gt=0)
     signature_similarity_threshold: float = Field(gt=0.0, le=1.0)
+    # -- Hybrid retrieval (M14, migration 018) -------------------------------
+    # `vector` is `chronofence_search`, unchanged. `hybrid` fuses its pool with
+    # a time-locked keyword pool. The evidence an agent sees is part of its
+    # prompt and so of the LLM cache key: switching mode invalidates every
+    # recorded decision and every compiled graph, which is why it is a
+    # deliberate setting and not a default that moves under a study.
+    mode: Literal["vector", "hybrid"]
+    # Mirrors of literals in migration 018, asserted equal by a static test
+    # (ADR-0026 keeps every LIMIT out of the plan, so they cannot be read from
+    # here at query time).
+    hybrid_term_candidates: int = Field(gt=0)
+    hybrid_max_terms: int = Field(gt=0, le=32)
+    rrf_k: int = Field(gt=0)
+    rrf_vector_weight: float = Field(gt=0.0)
+    rrf_keyword_weight: float = Field(gt=0.0)
+    # Zero switches recency off. The upper bound that keeps recency from
+    # outvoting a relevance list depends on `rrf_k` and `max_k` together, so it
+    # is enforced where both are known: `fusion.FusionParams`.
+    rrf_recency_weight: float = Field(ge=0.0)
+    diversity_max_per_story: int = Field(gt=0)
+    diversity_simhash_bits: int = Field(ge=0, le=64)
+    relevance_generic_name_rate: float = Field(gt=0.0, le=1.0)
 
 
 class EnsembleConfig(_Model):

@@ -122,6 +122,63 @@ retrieval:
   # signature scan reports a reviewed count, it does not silently drop rows.
   signature_similarity_threshold: 0.80
 
+  # -- Hybrid retrieval (M14, migration 018) ---------------------------------
+  # `vector` ranks by embedding distance alone. `hybrid` adds a time-locked
+  # keyword pool, fuses the two with a recency ranking, and suppresses
+  # near-duplicates. `vector` stays the default until `cascade retrieval bench
+  # --relevance` has been read: retrieved evidence is part of every agent
+  # prompt, so changing this invalidates recorded decisions and compiled graphs.
+  mode: vector
+  # Literals in migration 018, mirrored here and asserted equal statically.
+  # Each entity term contributes at most this many of its most recent matches
+  # to the keyword pool; the cap bounds how many bodies are re-parsed for
+  # ranking, since the FTS index is an expression index with no stored column.
+  hybrid_term_candidates: 500
+  hybrid_max_terms: 8
+  # Reciprocal-rank fusion: score = sum_i w_i / (rrf_k + rank_i). 60 is the
+  # constant from Cormack, Clarke & Buettcher (SIGIR 2009), who found the
+  # result insensitive to it across an order of magnitude. It is adopted, not
+  # tuned -- there is no labelled relevance set here to tune it against, and
+  # tuning it against forecast outcomes is what §1 forbids.
+  rrf_k: 60
+  # The two relevance signals are weighted equally because nothing measured
+  # says one deserves more, and an unmeasured preference is a guess.
+  rrf_vector_weight: 1.0
+  rrf_keyword_weight: 1.0
+  # Recency is a prior about usefulness, not evidence of relevance, so it gets
+  # half a relevance list's weight. The binding constraint is structural:
+  # the newest candidate at the BOTTOM of a relevance list must never outrank
+  # the oldest at the TOP of one, or recency has stopped breaking ties and
+  # started overruling relevance. That holds iff
+  #   recency_weight < relevance_weight * (1 - (rrf_k + 1) / (rrf_k + max_k))
+  # = 0.765 at rrf_k 60, max_k 200. `FusionParams` refuses a value at or above
+  # the bound, so this cannot be raised past it by editing a number.
+  rrf_recency_weight: 0.5
+  # A "story" is one document plus any document within `diversity_simhash_bits`
+  # of it. At most this many chunks of a story fill the first pass; a copy of
+  # a passage already taken (same ordinal, sibling document) is never taken
+  # while anything else remains.
+  diversity_max_per_story: 2
+  # Ingest already collapsed documents within 3 bits (spec §3.2), so 3 here
+  # would find nothing. What survives ingest is the *edited* syndication copy
+  # -- a changed headline, a local dateline, a trimmed tail. Unrelated 64-bit
+  # SimHashes differ by 32 +/- 4 bits, so 8 is six standard deviations clear of
+  # a chance collision among the <= 400 candidates of one query. Not measured
+  # against this corpus: `bench --relevance` reports distinct documents per k,
+  # which is the number this setting exists to move.
+  diversity_simhash_bits: 8
+  # `bench --relevance` scores the share of retrieved chunks naming one of the
+  # scenario's parties. The registry's `party_names` are proper-noun runs, not
+  # vetted actors: of 466 distinct names only 82 are in the actor lexicon, and
+  # the rest mix real entities ("Baltimore Ravens", "Elon Musk") with
+  # resolution boilerplate -- "PM ET" is listed by 71 scenarios, "Other" by 28,
+  # then "Any", "Only", "However", "Associated Press". A boilerplate name is
+  # in nearly every news chunk, so it pins both arms near 1.0 and hides the
+  # difference being measured. A name mentioned by more than this share of the
+  # chunks retrieved for scenarios that do NOT list it identifies nothing, and
+  # is dropped from the informative-names reading. Both readings are printed.
+  relevance_generic_name_rate: 0.05
+
 ensemble:
   replicates: 200
   ablation_replicates: 30
