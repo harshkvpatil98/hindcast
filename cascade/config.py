@@ -52,6 +52,7 @@ __all__ = [
     "claude_cli_environment",
     "env_file_path",
     "load_settings",
+    "overlay_kind",
     "repo_root",
 ]
 
@@ -201,6 +202,21 @@ class EnsembleConfig(_Model):
     ablation_scenarios: int
     bootstrap_b: int
     sigma_multimodal_threshold: float
+
+
+class EvalConfig(_Model):
+    """The declared dev/test split (``cascade/eval/split.py``).
+
+    ``dev_scenarios`` is how many of the sealed scenarios tuning may look at.
+    ``split_sha256`` pins the exact membership that size produced under the
+    study salt; every evaluation path recomputes the split and exits 3 when it
+    differs, so neither the size nor the salt can be changed after forecasts
+    exist without the change being refused. ``None`` is "never declared", and
+    is refused too.
+    """
+
+    dev_scenarios: int = Field(gt=0)
+    split_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
 
 
 class BudgetConfig(_Model):
@@ -480,6 +496,7 @@ class Settings(BaseSettings):
     aperture: ApertureConfig
     retrieval: RetrievalConfig
     ensemble: EnsembleConfig
+    eval: EvalConfig
     budget: BudgetConfig
     flags: FlagsConfig
     llm: LLMConfig
@@ -722,6 +739,29 @@ def _rds_auth_token(*, host: str, port: int, user: str, region: str) -> str:
     return str(client.generate_db_auth_token(DBHostname=host, Port=port, DBUsername=user))
 
 
+OVERLAY_DIRECTORIES: tuple[str, ...] = ("ablations", "supplementary", "tuning")
+"""Where an overlay name is looked up, in order.
+
+``ablations`` holds Appendix C's twelve cells and nothing else. ``supplementary``
+holds comparisons declared in ``cascade/eval/supplementary.py``. ``tuning``
+holds variants under development, which the evaluation harness will run and
+score on the dev partition only (``cascade/eval/split.py``).
+"""
+
+
+def overlay_kind(overlay: str) -> str | None:
+    """Which overlay directory ``overlay`` resolves from, or ``None``.
+
+    Preserves the distinction the dev/test guard rests on: whether a
+    configuration is a declared study configuration or a tuning variant is a
+    fact about where its file lives, read from disk, not a claim a caller makes.
+    """
+    for kind in OVERLAY_DIRECTORIES:
+        if (REPO_ROOT / "configs" / kind / f"{overlay}.yaml").is_file():
+            return kind
+    return None
+
+
 @lru_cache(maxsize=8)
 def _cached_settings(overlay: str | None) -> Settings:
     # Zero-argument construction is correct: the YAML settings source supplies
@@ -730,9 +770,19 @@ def _cached_settings(overlay: str | None) -> Settings:
     base = Settings()
     if overlay is None:
         return base
-    overlay_path = REPO_ROOT / "configs" / "ablations" / f"{overlay}.yaml"
-    if not overlay_path.is_file():
-        raise FileNotFoundError(f"ablation overlay not found: {overlay_path}")
+    # Appendix C's twelve cells live in `ablations/` and a test asserts there are
+    # exactly twelve files there. Supplementary cells are declared beside them
+    # rather than among them, so adding one cannot be mistaken for a thirteenth
+    # ablation cell -- or enter the twelve's Holm family by being listed.
+    candidates = [REPO_ROOT / "configs" / kind / f"{overlay}.yaml" for kind in OVERLAY_DIRECTORIES]
+    overlay_path = next((path for path in candidates if path.is_file()), None)
+    if overlay_path is None:
+        raise FileNotFoundError(
+            f"ablation overlay not found: {candidates[0]} (nor a supplementary or tuning "
+            f"overlay named {overlay!r}; looked in configs/"
+            + ", configs/".join(OVERLAY_DIRECTORIES)
+            + ")"
+        )
     with overlay_path.open("r", encoding="utf-8") as handle:
         patch = yaml.safe_load(handle) or {}
     merged = _deep_merge(base.model_dump(mode="python"), patch)
@@ -817,7 +867,8 @@ def claude_cli_environment() -> dict[str, str]:
 def load_settings(overlay: str | None = None) -> Settings:
     """Load configuration, optionally overlaid with an ablation cell.
 
-    ``overlay`` names a file in ``configs/ablations/`` without its extension.
+    ``overlay`` names a file in one of :data:`OVERLAY_DIRECTORIES` under
+    ``configs/``, without its extension.
     Results are cached so repeated calls in one process return an identical
     object -- config is immutable within a run by construction.
     """

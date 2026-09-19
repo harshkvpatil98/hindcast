@@ -1,0 +1,32 @@
+# Supplementary cell S01. NOT one of Appendix C's twelve ablation cells.
+#
+# The headline configuration (C01) with 12 evidence chunks per agent instead
+# of 6. Declared before any forecast existed, in cascade/eval/supplementary.py,
+# which a test requires to agree with this file.
+#
+# decomposition=on | asymmetry=on | grounding=chronofence | D=200 | k_agent=12
+#
+# Reported in its own Holm family, so its presence does not change any of the
+# twelve cells' adjusted p-values. Run only by `cascade eval grid
+# --supplementary`. A favourable delta on the test partition is a finding to
+# report; adopting k_agent=12 for the headline because of it would be tuning on
+# test. That decision belongs to the dev partition.
+#
+# `ensemble.replicates` carries the design factor D, as in every ablation
+# overlay; `ensemble.ablation_replicates` (30) is the budget cap the grid
+# driver applies to every non-headline cell, this one included -- CLAUDE.md Q1.
+#
+# Twelve 900-character excerpts roughly double the evidence block of the cached
+# prefix (ADR-0019), so S01 costs more per cache write than C01. Run
+# `cascade simulate estimate --config S01` before launching it.
+
+flags:
+  causal_decomposition: true
+  information_asymmetry: true
+  grounding: chronofence
+
+ensemble:
+  replicates: 200
+
+retrieval:
+  k_agent: 12

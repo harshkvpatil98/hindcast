@@ -24,8 +24,11 @@ __all__ = [
     "CalibrationBin",
     "CalibrationReport",
     "Comparison",
+    "ComparisonFamily",
     "DispersionFinding",
     "DomainMetrics",
+    "EvidenceFinding",
+    "EvidenceTierMetrics",
     "Grounding",
     "MetricSet",
     "MurphyTerms",
@@ -34,6 +37,14 @@ __all__ = [
 
 Unit = Annotated[float, Field(ge=0.0, le=1.0)]
 Grounding = Literal["chronofence", "parametric_only"]
+ComparisonFamily = Literal["appendix_c", "supplementary", "exploratory_dev"]
+"""Which Holm family a comparison was adjusted in.
+
+``appendix_c`` is §10.4's family: the twelve cells and the baselines.
+``supplementary`` holds comparisons declared in ``eval/supplementary.py``.
+``exploratory_dev`` holds ad-hoc comparisons of tuning variants, which exist
+only on the dev partition. Each family is adjusted on its own, so a row's
+adjusted p-value means nothing without this field beside it."""
 
 
 class _Frozen(BaseModel):
@@ -134,6 +145,9 @@ class MetricSet(_Frozen):
 
     bss_vs_climatology: float | None = None
     bss_vs_direct: float | None = None
+    climatology_brier: float | None = None
+    """The reference ``bss_vs_climatology`` was computed against, so the report
+    prints the floor that was actually used rather than one it assumes."""
     brier_recalibrated: float | None = None
     """Isotonic recalibration fitted on a held-out half (§10.5). Secondary,
     never the headline."""
@@ -147,6 +161,41 @@ class DomainMetrics(_Frozen):
     n: int
     base_rate: float
     brier: float
+
+
+class EvidenceTierMetrics(_Frozen):
+    """One row of the accuracy-by-evidence table. Same shape as a domain row.
+
+    ``lo`` and ``hi`` are the tier's chunk-count bounds, inclusive, carried
+    with the row so the table is readable without the module that defines
+    them; ``hi`` is ``None`` for the open top tier. A tier no scenario fell
+    into is still a row, with ``n = 0`` and no metrics: an absent row reads as
+    "this tier does not exist", which is a different statement.
+    """
+
+    tier: str
+    lo: int
+    hi: int | None
+    n: int
+    base_rate: float | None
+    brier: float | None
+
+
+class EvidenceFinding(_Frozen):
+    """Does richer evidence forecast better? Declared before any forecast.
+
+    The tier table is the description; the rank correlation between the chunk
+    count and the per-scenario squared error is the one pre-declared test, so
+    the question has a single answer rather than whichever of four tier
+    contrasts looks best afterwards. Negative ``spearman_rho`` means more
+    evidence went with smaller error.
+    """
+
+    window_days: int
+    n: int
+    tiers: tuple[EvidenceTierMetrics, ...]
+    spearman_rho: float | None
+    spearman_p: float | None
 
 
 class BootstrapInterval(_Frozen):
@@ -174,6 +223,7 @@ class Comparison(_Frozen):
     n_paired: int
     interval: BootstrapInterval
     p_adjusted: float | None = None
+    family: ComparisonFamily = "appendix_c"
 
     @property
     def delta(self) -> float:

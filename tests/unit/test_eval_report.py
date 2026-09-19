@@ -48,6 +48,9 @@ REPORT_PATH_MODULES = (
     "cascade/eval/score.py",
     "cascade/eval/ablation.py",
     "cascade/eval/figures.py",
+    "cascade/eval/split.py",
+    "cascade/eval/evidence.py",
+    "cascade/eval/supplementary.py",
 )
 
 

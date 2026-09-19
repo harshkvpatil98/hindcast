@@ -19,7 +19,7 @@ number a careful reader will compute anyway".
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from typing import Literal
 
@@ -257,7 +257,10 @@ def grid_scenarios(
 
 
 def comparison_family(
-    *, available: Sequence[str], headline: str = HEADLINE_CELL
+    *,
+    available: Sequence[str],
+    headline: str = HEADLINE_CELL,
+    eligible: Collection[str] | None = None,
 ) -> tuple[ComparisonSpec, ...]:
     """The family Holm-Bonferroni is applied across (spec §10.4).
 
@@ -276,8 +279,18 @@ def comparison_family(
     ``headline`` is a parameter rather than the constant so the family can be
     built against whichever configuration is actually being reported. A partial
     grid has a headline too.
+
+    ``eligible`` closes the family. §10.4's family is "twelve cells plus five
+    baselines" -- a list, not "whatever has forecasts". Without it, every
+    configuration anyone ever stored joins the family: a supplementary cell, or
+    a tuning variant scored once on dev and forgotten, would each raise the
+    Holm multiplier on all twelve ablation results. The report passes the
+    declared cells and baselines; ``None`` keeps the open reading for callers
+    that have nothing else stored.
     """
     have = set(available)
+    if eligible is not None:
+        have &= set(eligible) | {headline}
     out: list[ComparisonSpec] = []
     named = {
         (spec.config_a, spec.config_b)

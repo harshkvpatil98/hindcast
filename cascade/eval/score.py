@@ -16,8 +16,10 @@ must not drift.
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Sequence
+from collections.abc import Collection, Mapping, Sequence
+from typing import Literal
 
+from cascade.eval.ablation import ComparisonSpec, comparison_family
 from cascade.eval.metrics import (
     CALIBRATION_BINS,
     auc,
@@ -32,25 +34,59 @@ from cascade.eval.metrics import (
 )
 from cascade.eval.schema import (
     CalibrationReport,
+    Comparison,
+    ComparisonFamily,
     DispersionFinding,
     DomainMetrics,
     MetricSet,
     ScoredForecast,
 )
-from cascade.eval.stats import pearson, permutation_p, spearman
+from cascade.eval.split import Partition, SplitDeclaration, require_dev_only, select
+from cascade.eval.stats import (
+    adjust_family,
+    bootstrap_seed,
+    paired_bootstrap,
+    pearson,
+    permutation_p,
+    spearman,
+)
+from cascade.eval.supplementary import supplementary_family, supplementary_ids
 
 __all__ = [
     "calibration_of",
+    "climatology_reference",
+    "compare_family",
     "dispersion_finding",
     "domains_of",
+    "headline_by_partition",
+    "measure",
     "metrics_for",
+    "paired_reference",
     "recalibrated_brier",
+    "recalibration_half",
+    "significance_families",
     "split_halves",
 ]
 
 
 def _columns(scored: Sequence[ScoredForecast]) -> tuple[list[float], list[int]]:
     return [item.p_hat for item in scored], [item.outcome for item in scored]
+
+
+def recalibration_half(scenario_id: str, *, salt: str) -> Literal["fit", "held"]:
+    """Which recalibration half one scenario falls in. A function of its id.
+
+    Preserves per-id assignment, which is what lets the dev/test split compose
+    with this one: a scenario's half does not depend on which other scenarios
+    are present, so handing :func:`split_halves` the test partition alone
+    splits *the test partition* -- the fit cannot reach across into dev -- and
+    ``split.interactions`` can count the halves from ids without a label in
+    sight.
+    """
+    digest = hashlib.blake2b(
+        scenario_id.encode("utf-8"), digest_size=8, key=salt.encode("utf-8")
+    ).digest()
+    return "fit" if digest[0] & 1 else "held"
 
 
 def split_halves(
@@ -71,10 +107,7 @@ def split_halves(
     fit: list[ScoredForecast] = []
     held: list[ScoredForecast] = []
     for item in sorted(scored, key=lambda value: value.scenario_id):
-        digest = hashlib.blake2b(
-            item.scenario_id.encode("utf-8"), digest_size=8, key=salt.encode("utf-8")
-        ).digest()
-        (fit if digest[0] & 1 else held).append(item)
+        (fit if recalibration_half(item.scenario_id, salt=salt) == "fit" else held).append(item)
     return tuple(fit), tuple(held)
 
 
@@ -158,6 +191,7 @@ def metrics_for(
         bss_vs_direct=(
             brier_skill_score(score, direct_brier) if direct_brier not in (None, 0.0) else None
         ),
+        climatology_brier=climatology_brier,
         brier_recalibrated=(recalibrated_brier(scored, salt=salt) if salt else None),
     )
 
@@ -214,3 +248,246 @@ def dispersion_finding(
         brier_unflagged=subset_brier(unflagged),
         sigma_threshold=sigma_threshold,
     )
+
+
+def climatology_reference(scored: Sequence[ScoredForecast], *, base_rate: float) -> float:
+    """The sealed climatology forecast, scored on exactly these scenarios.
+
+    Preserves like-for-like skill scores. §10.2's floor is the *sealed* base
+    rate issued as a constant forecast -- never a base rate re-estimated from
+    whatever is loaded, which would let the floor see the labels it is scored
+    on. But a skill score on a partition, or on a 90-scenario capped cell, has
+    to be taken against that forecast's Brier **on the same scenarios**; the
+    sealed set's own figure is a different population's. At a base rate of
+    exactly one half the two coincide on every subset, which is why this never
+    showed.
+    """
+    return brier([base_rate] * len(scored), [item.outcome for item in scored])
+
+
+def paired_reference(
+    scored: Sequence[ScoredForecast], reference: Sequence[ScoredForecast]
+) -> float | None:
+    """A reference configuration's Brier on the scenarios ``scored`` covers.
+
+    ``None`` when the two share no scenario: not measured, never zero.
+    """
+    theirs = {item.scenario_id: item for item in reference}
+    shared = sorted({item.scenario_id for item in scored} & set(theirs))
+    if not shared:
+        return None
+    return brier([theirs[key].p_hat for key in shared], [theirs[key].outcome for key in shared])
+
+
+def measure(
+    scored: Sequence[ScoredForecast],
+    *,
+    config_id: str,
+    base_rate: float | None,
+    direct: Sequence[ScoredForecast] = (),
+    salt: str | None = None,
+    bins: int = CALIBRATION_BINS,
+) -> MetricSet | None:
+    """Every metric for one configuration on one already-selected set.
+
+    Preserves one rule: **every reference is taken on the scenarios being
+    measured.** Hand it a partition and the climatology floor, the
+    single-model reference and the recalibration halves are all drawn from
+    inside that partition. ``None`` for an empty set.
+    """
+    if not scored:
+        return None
+    return metrics_for(
+        scored,
+        config_id=config_id,
+        climatology_brier=(
+            climatology_reference(scored, base_rate=base_rate) if base_rate is not None else None
+        ),
+        direct_brier=paired_reference(scored, direct) if direct else None,
+        salt=salt,
+        bins=bins,
+    )
+
+
+def headline_by_partition(
+    scored: Sequence[ScoredForecast],
+    declaration: SplitDeclaration,
+    *,
+    config_id: str,
+    base_rate: float | None = None,
+    direct: Sequence[ScoredForecast] = (),
+    salt: str | None = None,
+    bins: int = CALIBRATION_BINS,
+) -> tuple[tuple[Partition, MetricSet | None], ...]:
+    """One configuration measured on ``test``, ``all`` and ``dev``, in that order.
+
+    Preserves the separation the split exists for. Each partition's metrics
+    are computed from that partition's forecasts and nothing else -- including
+    the isotonic recalibration, whose fit and held-out halves are both drawn
+    from inside the partition being measured -- so the ``test`` row is a
+    function of test forecasts and test labels alone, and no dev forecast,
+    however it was tuned, can move it. ``None`` where a partition holds no
+    scored scenario: not measured, never zero.
+    """
+    partitions: tuple[Partition, ...] = ("test", "all", "dev")
+    return tuple(
+        (
+            partition,
+            measure(
+                select(scored, declaration, partition),
+                config_id=config_id,
+                base_rate=base_rate,
+                direct=direct,
+                salt=salt,
+                bins=bins,
+            ),
+        )
+        for partition in partitions
+    )
+
+
+def compare_family(
+    specs: Sequence[ComparisonSpec],
+    scored_by_config: Mapping[str, Sequence[ScoredForecast]],
+    *,
+    salt: str,
+    b_resamples: int,
+    family: ComparisonFamily,
+) -> tuple[Comparison, ...]:
+    """Paired bootstrap for every comparison in **one** family, Holm-adjusted.
+
+    Preserves two things. Pairing: each comparison is computed on the scenarios
+    both sides scored, and that count travels with the result -- the capped
+    cells run 90 scenarios against the headline's 180, fewer once restricted to
+    a partition, and an unpaired difference would be a difference between two
+    populations. And the family boundary: the adjustment sees exactly the
+    comparisons passed in, so what is corrected together is decided by the
+    caller in the open and not by whatever else happens to be stored.
+
+    A comparison with fewer than two paired scenarios is dropped before the
+    adjustment, not after: it cannot be tested, and an untestable hypothesis
+    in the family inflates the multiplier on every real one.
+    """
+    built: list[Comparison] = []
+    for spec in specs:
+        left = {item.scenario_id: item for item in scored_by_config.get(spec.config_a, ())}
+        right = {item.scenario_id: item for item in scored_by_config.get(spec.config_b, ())}
+        shared = sorted(set(left) & set(right))
+        if len(shared) < 2:
+            continue
+        pa = [left[key].p_hat for key in shared]
+        pb = [right[key].p_hat for key in shared]
+        outcomes = [left[key].outcome for key in shared]
+        built.append(
+            Comparison(
+                name=spec.name,
+                config_a=spec.config_a,
+                config_b=spec.config_b,
+                brier_a=brier(pa, outcomes),
+                brier_b=brier(pb, outcomes),
+                n_paired=len(shared),
+                interval=paired_bootstrap(
+                    pa,
+                    pb,
+                    outcomes,
+                    seed=bootstrap_seed(salt, spec.config_a, spec.config_b),
+                    b_resamples=b_resamples,
+                ),
+                family=family,
+            )
+        )
+    return adjust_family(built)
+
+
+def significance_families(
+    scored_by_config: Mapping[str, Sequence[ScoredForecast]],
+    *,
+    headline: str,
+    salt: str,
+    b_resamples: int,
+    eligible: Collection[str],
+    exploratory: Sequence[str] = (),
+    declaration: SplitDeclaration | None = None,
+) -> tuple[Comparison, ...]:
+    """Every reported comparison, each adjusted inside its own family.
+
+    Three families, in the order they are printed:
+
+    * ``appendix_c`` -- §10.4's: the named readings plus every *eligible*
+      configuration against the headline. ``eligible`` is the declared cells
+      and baselines, so nothing else that happens to have forecasts can raise
+      the multiplier on the twelve.
+    * ``supplementary`` -- comparisons declared in ``eval/supplementary.py``.
+    * ``exploratory_dev`` -- tuning variants named by the caller, against the
+      headline.
+
+    Preserves the invariant the tests assert with exact equality: **the
+    ``appendix_c`` rows are identical whether or not any other family has
+    members.** Supplementary ids are removed from the first family even if a
+    caller lists them as eligible, so one comparison can never be adjusted
+    under two multipliers.
+
+    The exploratory family is refused unless every forecast on both sides of
+    it is a dev scenario. It is checked against the data handed in, not
+    against a flag saying which partition the caller meant to select: the
+    failure this guards against is precisely a caller that forgot to.
+    """
+    available = sorted(name for name, rows in sorted(scored_by_config.items()) if rows)
+    closed = set(eligible) - set(supplementary_ids())
+    redundant = sorted(set(exploratory) & (closed | set(supplementary_ids())))
+    if redundant:
+        raise ValueError(
+            f"{redundant} are declared study configurations and are already compared "
+            "in their own family; an exploratory comparison is for a tuning variant"
+        )
+    out = list(
+        compare_family(
+            comparison_family(available=available, headline=headline, eligible=closed),
+            scored_by_config,
+            salt=salt,
+            b_resamples=b_resamples,
+            family="appendix_c",
+        )
+    )
+    out.extend(
+        compare_family(
+            supplementary_family(available=available, headline=headline),
+            scored_by_config,
+            salt=salt,
+            b_resamples=b_resamples,
+            family="supplementary",
+        )
+    )
+    variants = [name for name in sorted(set(exploratory)) if name != headline]
+    if variants:
+        if declaration is None:
+            raise ValueError("exploratory comparisons need the split declaration to be checked")
+        for name in [headline, *variants]:
+            require_dev_only(
+                (item.scenario_id for item in scored_by_config.get(name, ())),
+                declaration,
+                what=f"exploratory comparison involving {name!r}",
+            )
+        out.extend(
+            compare_family(
+                [
+                    ComparisonSpec(
+                        name=f"{name} vs {headline} (exploratory, dev)",
+                        config_a=name,
+                        config_b=headline,
+                        reading=(
+                            f"Brier({name}) - Brier({headline}) on the dev partition. "
+                            "A tuning comparison: it may inform a decision and is never "
+                            "a result."
+                        ),
+                    )
+                    for name in variants
+                    if name in available and headline in available
+                ],
+                scored_by_config,
+                salt=salt,
+                b_resamples=b_resamples,
+                family="exploratory_dev",
+            )
+        )
+    return tuple(out)
