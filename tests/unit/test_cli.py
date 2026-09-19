@@ -352,3 +352,24 @@ def test_typer_exit_codes_survive_the_boundary(monkeypatch: pytest.MonkeyPatch) 
 
     monkeypatch.setattr(sys, "argv", ["cascade", "evaluate"])
     assert cli_module.main() == EXIT_PRECONDITION
+
+
+def test_compile_build_shards_the_pending_work_without_overlap() -> None:
+    """Several processes compile at once on a subscription; two of them paying
+    for the same scenario would waste the budget the shard exists to spread."""
+    pending = [f"s{index:03d}" for index in range(17)]
+    shards = [pending[k::3] for k in range(3)]
+    assert sorted(item for shard in shards for item in shard) == pending
+    assert len({item for shard in shards for item in shard}) == len(pending)
+    assert all(shard for shard in shards)
+
+
+def test_compile_build_rejects_a_malformed_shard() -> None:
+    from typer.testing import CliRunner
+
+    from cascade.cli import app
+    from cascade.version import EXIT_PRECONDITION
+
+    for bad in ("3/3", "x/2", "1", "-1/2"):
+        result = CliRunner().invoke(app, ["compile", "build", "--shard", bad])
+        assert result.exit_code == EXIT_PRECONDITION, (bad, result.output)

@@ -1873,6 +1873,21 @@ def _print_compile_stats(stats: Any, settings: Settings) -> None:
         console.print(histogram)
 
 
+def _shard(value: str | None) -> tuple[int, int] | None:
+    """Parse ``k/n`` into an offset and a stride, or exit 3.
+
+    Positional, not keyed: the pending list is already sorted, so taking every
+    n-th item from k partitions it exactly, and two processes given different k
+    can never draw the same scenario.
+    """
+    if value is None:
+        return None
+    left, _, right = value.partition("/")
+    if not left.isdigit() or not right.isdigit() or not 0 <= int(left) < int(right):
+        _fail(f"--shard must be `k/n` with 0 <= k < n; got {value!r}", EXIT_PRECONDITION)
+    return int(left), int(right)
+
+
 @compile_app.command("build")
 def compile_build(
     config: OverlayOpt = None,
@@ -1883,12 +1898,23 @@ def compile_build(
         bool,
         typer.Option("--rebuild", help="Recompile scenarios that already have a graph."),
     ] = False,
+    shard: Annotated[
+        str | None,
+        typer.Option("--shard", help="Compile one part of the pending work, as `k/n`."),
+    ] = None,
 ) -> None:
     """Compile scenarios into typed causal graphs (M4, spec §5).
 
     Resumable: scenarios already compiled are skipped unless --rebuild is
     given, so an interrupted run continues rather than paying for 180 scenarios
     again. Costs money in `record` mode; the `compile` phase ceiling applies.
+
+    ``--shard k/n`` takes every n-th pending scenario, counting from k, so
+    several processes can compile at once without two of them paying for the
+    same scenario. The partition is by position in the sorted pending list, so
+    it is the same on every machine; each process still skips what is already
+    stored, so a re-run after an interruption stays correct whatever shard it
+    is given.
     """
     from cascade.decompose.store import (
         compile_stats,
@@ -1899,6 +1925,9 @@ def compile_build(
     from cascade.ledger.store import load_scenarios
 
     settings = _settings(config)
+    # Checked before anything is loaded or spent: a bad shard is a typo in a
+    # command that otherwise runs for hours.
+    part = _shard(shard)
     _require_provider_ready(settings)
 
     scenarios = load_scenarios(settings, role="admin")
@@ -1908,12 +1937,20 @@ def compile_build(
 
     done = set() if rebuild else completed_scenarios(settings)
     pending = [item for item in scenarios if item.scenario_id not in done]
+    stored = len(scenarios) - len(pending)
+    if part is not None:
+        pending = pending[part[0] :: part[1]]
     if limit is not None:
         pending = pending[:limit]
 
     console.print(
-        f"compiling [bold]{len(pending)}[/bold] scenario(s); "
-        f"{len(scenarios) - len(pending)} already done"
+        f"compiling [bold]{len(pending)}[/bold] scenario(s); {stored} already stored"
+        + (f"; shard {shard}" if shard else "")
+        + (
+            f"; {len(scenarios) - stored - len(pending)} left for another run"
+            if limit or shard
+            else ""
+        )
     )
 
     situations = _situations(settings, [item.scenario_id for item in pending], role="eval")
