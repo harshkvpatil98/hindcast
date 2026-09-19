@@ -214,7 +214,7 @@ cascade trace cost         # §12.4: reconcile the run ledger against Langfuse
 
 ## 7. Architecture decisions
 
-Forty-two ADRs in `docs/adr/` on this branch; 0032 (live mode, proposed) lives on `m13/live-mode`. Fifteen correct defects found in the spec,
+Forty-one ADRs in `docs/adr/` on this branch; 0032 (live mode, proposed) lives on `m13/live-mode`. Fifteen correct defects found in the spec,
 and 0023, 0025 and 0026 correct defects found in **this build** -- an ingest order
 that satisfied every criterion while covering the wrong years, and two ablation
 factors that were configured, documented and inert. The rest record choices the
