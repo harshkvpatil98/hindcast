@@ -78,7 +78,7 @@ exclude the stand-ins from every scored figure. **The owner chose the second.**
 domain cap and makes the per-domain table's `health` row meaningless; and one
 scenario (an ETF approval) has a cutoff four months before its market was
 created — forecastable from evidence, but with no market price to benchmark.
-Both are named in the report's limitations, not fixed.
+Neither is fixed. The report prints the domain caveat beside the exclusions; `cascade eval market-prices` counts the ETF scenario as a market created after its cutoff.
 
 **The registry fixes are preserved** on branch `m14-registry-v2` (commit
 `d5b0ef3`) for the next registry this project seals: leg-level volume (the
