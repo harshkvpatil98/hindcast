@@ -3,6 +3,13 @@
 # source-response cache that reproduces it, and the LLM recording cache, where
 # every file is a model call already paid for.
 #
+# How each gets here (ADR-0042): the LLM cache is copied from the study's file
+# system by a scheduled DataSync task (modules/cache, in the sandbox root),
+# whose role can add objects under llm-cache/<sandbox>/ and nothing else. The
+# registry archive and the source cache are made on a person's machine and
+# uploaded by that person, with the add-only policy below. One replication
+# rule, with no filter, carries all three to the second region.
+#
 # This project lost the first two once, with a local volume, and the frozen
 # split with them. So this bucket is versioned, Object-Locked, and replicated
 # to a second region: tier 0 is the one place cross-region replication earns
@@ -17,6 +24,22 @@ data "aws_region" "replica" {
 locals {
   primary_name = "${var.name}-recovery-${var.bucket_suffix}-${data.aws_region.primary.region}"
   replica_name = "${var.name}-recovery-${var.bucket_suffix}-${data.aws_region.replica.region}"
+
+  # The three tier-0 datasets, one prefix each. Defined once, here, and handed
+  # to everything that writes to them as outputs, so a writer's IAM scope and
+  # this bucket's deny rules cannot come to disagree about a name.
+  prefixes = {
+    registry     = "registry"     # `cascade ledger export` archives. Holds the labels.
+    source_cache = "source-cache" # ledger.source_cache_dir: the raw API responses a sealed split is re-derived from.
+    llm_cache    = "llm-cache"    # llm.cache_dir: every file a model call already paid for (modules/cache writes it).
+  }
+
+  # Where the resolution labels are. The registry archive, obviously -- and the
+  # source cache, which is easy to miss: it is the markets' own API responses,
+  # and a resolved market's response states how it resolved. The LLM cache is
+  # not here on purpose. It is what the simulation itself recorded, from
+  # prompts invariant 2 already kept label-free.
+  label_bearing_prefixes = [local.prefixes.registry, local.prefixes.source_cache]
 }
 
 # --- Primary ---------------------------------------------------------------------
@@ -98,7 +121,7 @@ data "aws_iam_policy_document" "primary_bucket" {
       sid       = "SimulationNeverReadsLabels"
       effect    = "Deny"
       actions   = ["s3:GetObject", "s3:GetObjectVersion"]
-      resources = ["${aws_s3_bucket.primary.arn}/registry/*"]
+      resources = [for prefix in local.label_bearing_prefixes : "${aws_s3_bucket.primary.arn}/${prefix}/*"]
       principals {
         type        = "AWS"
         identifiers = var.simulation_principal_arns
@@ -110,6 +133,48 @@ data "aws_iam_policy_document" "primary_bucket" {
 resource "aws_s3_bucket_policy" "primary" {
   bucket = aws_s3_bucket.primary.id
   policy = data.aws_iam_policy_document.primary_bucket.json
+}
+
+# --- Adding to the archive, from outside AWS -------------------------------------------------
+#
+# The registry and the source cache are made on a person's machine: `ledger
+# build` fetches from the markets' public APIs and is not one of the chains. So
+# their way into tier 0 is a person running `aws s3 cp` / `aws s3 sync`, and
+# this is the permission to do that and nothing more -- put, under the two
+# prefixes; no read, no list of other prefixes, no delete. A credential that
+# can only ADD to the archive is one a laptop can hold: stolen, it cannot read
+# the labels back out or remove a version (and Object Lock would refuse the
+# second anyway). Attached to nobody here: who the archivist is, is the
+# account owner's decision.
+data "aws_iam_policy_document" "archive_write" {
+  statement {
+    sid       = "AddToTheRegistryAndSourceCacheArchives"
+    actions   = ["s3:PutObject", "s3:AbortMultipartUpload", "s3:ListMultipartUploadParts"]
+    resources = [for prefix in local.label_bearing_prefixes : "${aws_s3_bucket.primary.arn}/${prefix}/*"]
+  }
+  # `aws s3 sync` lists the destination to decide what to send. Names only,
+  # and only under the two prefixes.
+  statement {
+    sid       = "ListWhatIsAlreadyArchived"
+    actions   = ["s3:ListBucket"]
+    resources = [aws_s3_bucket.primary.arn]
+    condition {
+      test     = "StringLike"
+      variable = "s3:prefix"
+      values   = [for prefix in local.label_bearing_prefixes : "${prefix}/*"]
+    }
+  }
+  statement {
+    sid       = "EncryptThroughS3"
+    actions   = ["kms:GenerateDataKey"]
+    resources = [var.kms_key_arn]
+  }
+}
+
+resource "aws_iam_policy" "archive_write" {
+  name        = "${var.name}-recovery-archive-write"
+  description = "Add objects to the tier-0 registry and source-cache archives: no read, no delete"
+  policy      = data.aws_iam_policy_document.archive_write.json
 }
 
 # --- Replica, in the second region -----------------------------------------------------

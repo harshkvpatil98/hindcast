@@ -6,22 +6,28 @@
 # non-zero exit stops the chain, tells someone, and leaves the execution FAILED
 # -- where a shell script's `;` would have carried on.
 #
-# What this does NOT make possible, stated here so the wiring is not mistaken
-# for a capability:
+# What the wiring needs from its caller before either chain can finish
+# (ADR-0042). Each is an input, because each is somebody's decision:
 #
 # * The ingest fetches from the public internet (Common Crawl, SEC, the
-#   Federal Register, Wikipedia). The sandbox VPC has no path to it, by design
-#   (ADR-0034), so in those subnets `corpus build` fetches nothing, exits 0,
-#   and the chain stops where it should -- at `corpus verify`, exit 3. Running
-#   the ingest on AWS needs subnets with a deliberate egress path, which is a
-#   decision this module takes no part in: subnets are an input.
+#   Federal Register, Wikipedia, GDELT). The sandbox VPC has no path to it, by
+#   design (ADR-0034). Given `egress_network` (modules/egress), the ONE state
+#   that fetches -- CorpusBuild -- runs in the egress tier's subnet with its
+#   security group added; every other ingest state stays isolated. Without it
+#   `corpus build` fetches nothing, exits 0, and the chain stops where it
+#   should: at `corpus verify`, exit 3.
 # * modules/bench pins CASCADE_LLM__MODE=replay and its task role cannot call
-#   a model. The study chain needs both changed (var.study_environment and the
-#   task role); until then it fails closed at its first state.
-# * The task's scratch volume dies with the task. The LLM cache and the files
-#   `cascade report` writes do not outlive the state that made them; only what
-#   reaches Postgres does. The Report state proves the report can be written
-#   and leaves its headline in the task log -- it does not publish an artifact.
+#   a model. Given `study_task` (modules/study), the study chain runs on a
+#   definition that can, with the LLM cache on a file system that outlives the
+#   task. Without it the chain fails closed at its first state, having spent
+#   nothing. `model_calls_use_egress` says whether the provider is reached
+#   through an interface endpoint (false) or the egress tier (true); only the
+#   three states that call a model are moved.
+#
+# Still true, and not fixed by wiring: the files `cascade report` writes live
+# on task scratch and die with the task. The Report state proves the report
+# can be written and leaves its headline in the task log -- it does not
+# publish an artifact.
 
 data "aws_partition" "current" {}
 data "aws_region" "current" {}
@@ -41,6 +47,12 @@ locals {
   #
   # `rerun_on_failure` marks the one phase whose failed task may be re-run
   # without a person looking first. See local.rerun_retry.
+  #
+  # `reach` says what the phase must get to beyond the VPC: "sources" (the
+  # ingest's public hosts), "model" (the provider), or "none". It is declared
+  # per phase, not per machine, because a path to the internet is an exposure
+  # and four of the five ingest states -- which hold the database's admin
+  # credential -- never fetch anything. See local.uses_egress.
   chains = {
     # The ingest is serial on purpose. There is NO Map state fanning units out,
     # because the code has nothing that would make one correct: `corpus build`
@@ -53,23 +65,23 @@ locals {
     # behaviour M2's collapse ratio was measured under. `corpus build` already
     # streams WARC files concurrently inside the one process.
     ingest = [
-      { state = "CorpusBuild", command = ["cascade", "corpus", "build"], timeout = var.build_timeout_seconds, rerun_on_failure = true },
+      { state = "CorpusBuild", command = ["cascade", "corpus", "build"], timeout = var.build_timeout_seconds, rerun_on_failure = true, reach = "sources" },
       # After the build and before anything reads: an HNSW index is built from
       # the rows present, and the verdicts below are about the indexed corpus.
-      { state = "RetrievalIndex", command = ["cascade", "retrieval", "index", "--drop-legacy"], timeout = var.step_timeout_seconds, rerun_on_failure = false },
-      { state = "RetrievalVerify", command = ["cascade", "retrieval", "verify"], timeout = var.step_timeout_seconds, rerun_on_failure = false },
+      { state = "RetrievalIndex", command = ["cascade", "retrieval", "index", "--drop-legacy"], timeout = var.step_timeout_seconds, rerun_on_failure = false, reach = "none" },
+      { state = "RetrievalVerify", command = ["cascade", "retrieval", "verify"], timeout = var.step_timeout_seconds, rerun_on_failure = false, reach = "none" },
       # Two gates, because neither can see what the other sees (M7): `verify`
       # cannot detect a corpus covering the wrong years, `coverage` cannot
       # detect an empty one.
-      { state = "CorpusVerify", command = ["cascade", "corpus", "verify"], timeout = var.step_timeout_seconds, rerun_on_failure = false },
-      { state = "CorpusCoverage", command = ["cascade", "corpus", "coverage"], timeout = var.step_timeout_seconds, rerun_on_failure = false },
+      { state = "CorpusVerify", command = ["cascade", "corpus", "verify"], timeout = var.step_timeout_seconds, rerun_on_failure = false, reach = "none" },
+      { state = "CorpusCoverage", command = ["cascade", "corpus", "coverage"], timeout = var.step_timeout_seconds, rerun_on_failure = false, reach = "none" },
     ]
 
     study = [
       # Spec 12.4: no full phase launches without the estimate. It exits 2 on a
       # projected breach; that lands in this state's Catch like any failure,
       # and the only edge into SimulateAll is this state's success.
-      { state = "SimulateEstimate", command = ["cascade", "simulate", "estimate", "--units", tostring(var.estimate_units)], timeout = var.step_timeout_seconds, rerun_on_failure = false },
+      { state = "SimulateEstimate", command = ["cascade", "simulate", "estimate", "--units", tostring(var.estimate_units)], timeout = var.step_timeout_seconds, rerun_on_failure = false, reach = "model" },
       # ONE state, not 24. The fan-out advances every run in lockstep and
       # submits one Message Batch per step (ADR-0020), but it does so inside a
       # single process that holds the wavefront -- each run's world, agent
@@ -79,17 +91,44 @@ locals {
       # unit of orchestration is the whole phase and the unit of resumption is
       # the run. No heartbeat either: the process has no way to send one, and a
       # batch legitimately stays silent for hours. The stop rule is the timeout.
-      { state = "SimulateAll", command = ["cascade", "simulate", "all", "--wave", tostring(var.simulate_wave)], timeout = var.fanout_timeout_seconds, rerun_on_failure = false },
-      { state = "EnsembleCollapse", command = ["cascade", "ensemble", "collapse"], timeout = var.step_timeout_seconds, rerun_on_failure = false },
+      { state = "SimulateAll", command = ["cascade", "simulate", "all", "--wave", tostring(var.simulate_wave)], timeout = var.fanout_timeout_seconds, rerun_on_failure = false, reach = "model" },
+      { state = "EnsembleCollapse", command = ["cascade", "ensemble", "collapse"], timeout = var.step_timeout_seconds, rerun_on_failure = false, reach = "none" },
       # The same wavefront shape as SimulateAll, over the other eleven cells.
-      { state = "EvalGrid", command = ["cascade", "eval", "grid"], timeout = var.fanout_timeout_seconds, rerun_on_failure = false },
-      { state = "Report", command = ["cascade", "report"], timeout = var.step_timeout_seconds, rerun_on_failure = false },
+      { state = "EvalGrid", command = ["cascade", "eval", "grid"], timeout = var.fanout_timeout_seconds, rerun_on_failure = false, reach = "model" },
+      { state = "Report", command = ["cascade", "report"], timeout = var.step_timeout_seconds, rerun_on_failure = false, reach = "none" },
     ]
   }
 
   environments = {
     ingest = var.ingest_environment
     study  = var.study_environment
+  }
+
+  # What each machine's tasks run as. The ingest is the bench's task; the study
+  # is modules/study's when the caller has one, and the bench's otherwise --
+  # which cannot call a model, so the chain fails closed at its first state.
+  tasks = {
+    ingest = {
+      task_definition_arn     = var.task_definition_arn
+      task_execution_role_arn = var.task_execution_role_arn
+      task_role_arn           = var.task_role_arn
+      security_group_ids      = var.security_group_ids
+    }
+    study = var.study_task == null ? {
+      task_definition_arn     = var.task_definition_arn
+      task_execution_role_arn = var.task_execution_role_arn
+      task_role_arn           = var.task_role_arn
+      security_group_ids      = var.security_group_ids
+    } : var.study_task
+  }
+
+  # Whether a phase leaves the isolated subnets. Only with an egress tier to
+  # leave to; only for a phase that fetches; and, for a model call, only when
+  # the provider has no private path.
+  uses_egress = {
+    sources = var.egress_network != null
+    model   = var.egress_network != null && var.model_calls_use_egress
+    none    = false
   }
 
   # Every state retries a task that never started: ECS refused or throttled
@@ -146,11 +185,16 @@ locals {
             Parameters = {
               LaunchType     = "FARGATE"
               Cluster        = var.cluster_arn
-              TaskDefinition = var.task_definition_arn
+              TaskDefinition = local.tasks[machine].task_definition_arn
               NetworkConfiguration = {
                 AwsvpcConfiguration = {
-                  Subnets        = var.subnet_ids
-                  SecurityGroups = var.security_group_ids
+                  # The egress tier's subnet INSTEAD of the isolated ones, and
+                  # its security group IN ADDITION to the task's own -- which
+                  # still carries the database, endpoint and cache rules.
+                  Subnets        = local.uses_egress[step.reach] ? var.egress_network.subnet_ids : var.subnet_ids
+                  SecurityGroups = concat(local.tasks[machine].security_group_ids, local.uses_egress[step.reach] ? var.egress_network.security_group_ids : [])
+                  # Even there. The way out is the NAT gateway; a task never
+                  # has an address anyone could reach it on.
                   AssignPublicIp = "DISABLED"
                 }
               }
@@ -233,10 +277,11 @@ locals {
     }
   }
 
-  # IAM scopes derived from the two ARNs, so the role follows the inputs.
-  task_definition_family = replace(var.task_definition_arn, "/:[0-9]+$/", "")
-  cluster_tasks          = "${replace(var.cluster_arn, ":cluster/", ":task/")}/*"
-  state_machine_arns     = [for machine in sort(keys(local.chains)) : "arn:${local.partition}:states:${local.region}:${local.account}:stateMachine:${var.name}-${machine}"]
+  # IAM scopes derived from the ARNs, so the role follows the inputs.
+  task_definition_families = distinct([for machine in sort(keys(local.tasks)) : replace(local.tasks[machine].task_definition_arn, "/:[0-9]+$/", "")])
+  passed_role_arns         = distinct(flatten([for machine in sort(keys(local.tasks)) : [local.tasks[machine].task_execution_role_arn, local.tasks[machine].task_role_arn]]))
+  cluster_tasks            = "${replace(var.cluster_arn, ":cluster/", ":task/")}/*"
+  state_machine_arns       = [for machine in sort(keys(local.chains)) : "arn:${local.partition}:states:${local.region}:${local.account}:stateMachine:${var.name}-${machine}"]
 }
 
 # --- Logs -----------------------------------------------------------------------------
@@ -279,12 +324,13 @@ resource "aws_iam_role" "states" {
 }
 
 data "aws_iam_policy_document" "states" {
-  # Any revision of the one family, in the one cluster: a new image tag is a
-  # new revision, and must not need a policy change to run.
+  # Any revision of the named families -- the bench's, and the study's when
+  # there is one -- in the one cluster: a new image tag is a new revision, and
+  # must not need a policy change to run.
   statement {
     sid       = "RunTheCascadeTaskOnly"
     actions   = ["ecs:RunTask"]
-    resources = ["${local.task_definition_family}:*"]
+    resources = [for family in local.task_definition_families : "${family}:*"]
     condition {
       test     = "ArnEquals"
       variable = "ecs:cluster"
@@ -304,12 +350,12 @@ data "aws_iam_policy_document" "states" {
       values   = [var.cluster_arn]
     }
   }
-  # RunTask hands ECS the task's two roles. Those two, to ECS, and nothing
-  # else -- an unrestricted PassRole is how a scheduler becomes an admin.
+  # RunTask hands ECS the task's roles. Those, to ECS, and nothing else -- an
+  # unrestricted PassRole is how a scheduler becomes an admin.
   statement {
     sid       = "PassTheTaskRolesToEcsOnly"
     actions   = ["iam:PassRole"]
-    resources = [var.task_execution_role_arn, var.task_role_arn]
+    resources = local.passed_role_arns
     condition {
       test     = "StringEquals"
       variable = "iam:PassedToService"

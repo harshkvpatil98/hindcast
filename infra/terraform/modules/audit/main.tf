@@ -295,6 +295,91 @@ resource "aws_cloudtrail" "this" {
 resource "aws_guardduty_detector" "this" {
   #checkov:skip=CKV2_AWS_3:Organization-wide auto-enable is set from a delegated administrator, and there is no organization yet (ADR-0035): this detector covers the one account that exists.
   enable = true
+  # How soon a finding's UPDATES reach EventBridge (a new finding is sent
+  # within minutes regardless). Fifteen is the shortest offered and costs
+  # nothing: a recurring finding is a finding still happening.
+  finding_publishing_frequency = "FIFTEEN_MINUTES"
+}
+
+# --- Findings go somewhere (ADR-0042) -------------------------------------------------------------
+#
+# A detector whose findings nobody reads is the audit-trail version of a
+# budget with no alarm. Findings at or above a severity the caller chooses go
+# to the alerts topic; below it they stay in the console. The threshold has NO
+# default: "what severity pages a human" is a decision about this account,
+# and a default here would be somebody else's.
+#
+# GuardDuty's scale: 1.0-3.9 Low, 4.0-6.9 Medium, 7.0-8.9 High, 9.0-10.0
+# Critical.
+
+locals {
+  findings_rule_name = "${var.name}-guardduty-findings"
+  # Built from the name, like the trail ARN above: the topic policy statement
+  # this module hands the caller must exist before the rule does.
+  findings_rule_arn = "arn:${local.partition}:events:${local.region}:${local.account}:rule/${local.findings_rule_name}"
+
+  delivery_alarm_name = "${var.name}-guardduty-alert-delivery"
+  delivery_alarm_arn  = "arn:${local.partition}:cloudwatch:${local.region}:${local.account}:alarm:${local.delivery_alarm_name}"
+}
+
+resource "aws_cloudwatch_event_rule" "findings" {
+  name        = local.findings_rule_name
+  description = "GuardDuty findings of severity ${var.guardduty_min_severity} or higher, to the alerts topic"
+
+  event_pattern = jsonencode({
+    source        = ["aws.guardduty"]
+    "detail-type" = ["GuardDuty Finding"]
+    detail = {
+      severity = [{ numeric = [">=", var.guardduty_min_severity] }]
+    }
+  })
+}
+
+resource "aws_cloudwatch_event_target" "findings" {
+  rule      = aws_cloudwatch_event_rule.findings.name
+  target_id = "alerts"
+  arn       = var.alerts_topic_arn
+
+  # The finding, in the order someone deciding what to do needs it. The raw
+  # event is several KB of JSON; the console has that.
+  input_transformer {
+    input_paths = {
+      severity    = "$.detail.severity"
+      type        = "$.detail.type"
+      title       = "$.detail.title"
+      description = "$.detail.description"
+      resource    = "$.detail.resource.resourceType"
+      region      = "$.region"
+      account     = "$.account"
+      id          = "$.detail.id"
+      count       = "$.detail.service.count"
+    }
+    input_template = join("\n", [for line in [
+      "GuardDuty finding, severity <severity>: <type>",
+      "<title>",
+      "<description>",
+      "resource type: <resource>; account <account>, region <region>; seen <count> time(s)",
+      "finding id <id> -- open it in the GuardDuty console for the full record",
+    ] : "\"${line}\""])
+  }
+}
+
+# A rule that matched and could not deliver is silence with a green light. The
+# topic policy and its KMS statement are the two ways delivery fails, and
+# neither failure is reported anywhere else.
+resource "aws_cloudwatch_metric_alarm" "findings_delivery" {
+  alarm_name          = local.delivery_alarm_name
+  alarm_description   = "EventBridge matched a GuardDuty finding and could not publish it to the alerts topic (rule ${local.findings_rule_name}). Check the topic policy and the key policy."
+  namespace           = "AWS/Events"
+  metric_name         = "FailedInvocations"
+  dimensions          = { RuleName = aws_cloudwatch_event_rule.findings.name }
+  statistic           = "Sum"
+  period              = 300
+  evaluation_periods  = 1
+  threshold           = 1
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = [var.alerts_topic_arn]
 }
 
 # --- AWS Config: what changed, not only who called ---------------------------------------
@@ -471,6 +556,50 @@ resource "aws_config_configuration_recorder_status" "this" {
   name       = aws_config_configuration_recorder.this.name
   is_enabled = true
   depends_on = [aws_config_delivery_channel.this]
+}
+
+# --- What the caller's topic policy must carry ------------------------------------------------------
+#
+# The alerts topic is modules/governance's, and an SNS topic has one policy.
+# These two statements admit exactly this module's rule and this module's
+# alarm -- by ARN, so no other rule in the account can publish here by being
+# an EventBridge rule -- and are merged by the root the way the key-policy
+# statements below are. Depends on names, never on the topic.
+data "aws_iam_policy_document" "required_topic_policy" {
+  statement {
+    sid       = "GuardDutyFindingsRulePublishes"
+    actions   = ["sns:Publish"]
+    resources = [var.alerts_topic_arn]
+    principals {
+      type        = "Service"
+      identifiers = ["events.amazonaws.com"]
+    }
+    condition {
+      test     = "ArnEquals"
+      variable = "aws:SourceArn"
+      values   = [local.findings_rule_arn]
+    }
+  }
+
+  statement {
+    sid       = "GuardDutyDeliveryAlarmPublishes"
+    actions   = ["sns:Publish"]
+    resources = [var.alerts_topic_arn]
+    principals {
+      type        = "Service"
+      identifiers = ["cloudwatch.amazonaws.com"]
+    }
+    condition {
+      test     = "ArnEquals"
+      variable = "aws:SourceArn"
+      values   = [local.delivery_alarm_arn]
+    }
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [local.account]
+    }
+  }
 }
 
 # --- What the caller's key policy must carry ------------------------------------------------

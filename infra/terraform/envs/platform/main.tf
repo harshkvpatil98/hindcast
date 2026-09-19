@@ -53,6 +53,11 @@ variable "additional_allowed_regions" {
   default     = []
 }
 
+variable "guardduty_min_severity" {
+  description = "Lowest GuardDuty severity published to the alerts topic. Required: see modules/audit."
+  type        = number
+}
+
 variable "guardrail_target_ids" {
   description = "OUs or accounts the SCPs attach to. Empty = created, bound to nothing."
   type        = set(string)
@@ -200,7 +205,10 @@ module "governance" {
   infrastructure_allowance_usd = var.infrastructure_allowance_usd
   kms_key_arn                  = aws_kms_key.platform.arn
   alert_emails                 = var.alert_emails
-  extra_topic_policy_documents = [data.aws_iam_policy_document.sandbox_alerts.json]
+  # The sandbox's rules and alarms, and the audit module's findings rule: an
+  # SNS topic has one policy, and each thing that publishes must be admitted
+  # by it -- by ARN -- or is dropped with no error.
+  extra_topic_policy_documents = [data.aws_iam_policy_document.sandbox_alerts.json, module.audit.required_topic_policy_statements_json]
 }
 
 module "eventlake" {
@@ -227,6 +235,10 @@ module "audit" {
   name          = var.name
   bucket_suffix = "${local.account}-${var.region}"
   kms_key_arn   = aws_kms_key.platform.arn
+  # Findings above the threshold go where the budget alerts go: one topic, one
+  # set of subscribers, one place to look.
+  alerts_topic_arn       = module.governance.alerts_topic_arn
+  guardduty_min_severity = var.guardduty_min_severity
   # The lake and the recovery bucket deliberately have no S3 access logging:
   # these data events, written to a locked trail, are their access record.
   data_event_bucket_arns = [
@@ -257,6 +269,27 @@ output "monthly_limit_usd" {
 
 output "recovery_registry_prefix" {
   value = module.recovery.registry_prefix
+}
+
+output "recovery_source_cache_prefix" {
+  description = "Upload ledger.source_cache_dir here after every `ledger seal` (dr-runbook.md), with `recovery_archive_write_policy_arn`."
+  value       = module.recovery.source_cache_prefix
+}
+
+output "recovery_archive_write_policy_arn" {
+  description = "Add-only access to the registry and source-cache archives, for whoever uploads them."
+  value       = module.recovery.archive_write_policy_arn
+}
+
+# Feed this whole object to the sandbox's `study.recovery`: where the LLM cache
+# is archived, under which key, and under which prefix -- passed, so the two
+# roots cannot spell the prefix differently.
+output "recovery" {
+  value = {
+    bucket_arn       = module.recovery.bucket_arn
+    kms_key_arn      = aws_kms_key.platform.arn
+    llm_cache_prefix = module.recovery.prefixes.llm_cache
+  }
 }
 
 output "events_bucket" {

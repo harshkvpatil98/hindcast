@@ -123,6 +123,7 @@ variables {
   region                       = "us-east-1"
   replica_region               = "us-west-2"
   infrastructure_allowance_usd = 50
+  guardduty_min_severity       = 7
 }
 
 run "both_buckets_are_locked_in_different_regions" {
@@ -148,7 +149,8 @@ run "a_delete_in_the_primary_does_not_reach_the_replica" {
 }
 
 run "the_simulation_is_denied_the_labels_archive" {
-  command = plan
+  # apply, not plan: the Deny's resources are built from the bucket's ARN.
+  command = apply
   variables {
     simulation_principal_arns = ["arn:aws:iam::123456789012:role/cascade-sim"]
   }
@@ -160,6 +162,10 @@ run "the_simulation_is_denied_the_labels_archive" {
   assert {
     condition     = contains(module.recovery.controls.labels_deny_actions, "s3:GetObject")
     error_message = "The Deny must cover reading the archive."
+  }
+  assert {
+    condition     = toset(module.recovery.controls.labels_deny_resources) == toset(["arn:aws:s3:::mock/registry/*", "arn:aws:s3:::mock/source-cache/*"])
+    error_message = "Both places the labels are: the registry archive and the source cache, whose raw market responses state how each market resolved. Not the LLM cache, which the simulation itself wrote."
   }
 }
 
@@ -173,5 +179,41 @@ run "with_no_simulation_principal_there_is_no_empty_deny" {
   assert {
     condition     = contains(module.recovery.controls.deny_statements, "TlsOnly")
     error_message = "The TLS-only Deny is unconditional."
+  }
+}
+
+# --- The caches are in the plan (ADR-0042) -----------------------------------------------
+
+run "the_three_tier_zero_prefixes_are_named_once_and_all_replicate" {
+  command = plan
+
+  assert {
+    condition     = module.recovery.prefixes == { registry = "registry", source_cache = "source-cache", llm_cache = "llm-cache" }
+    error_message = "Three datasets, three prefixes, defined in one place."
+  }
+  assert {
+    condition     = module.recovery.controls.replication_prefix == ""
+    error_message = "The replication rule carries every prefix: a rule filtered to registry/ would leave the caches single-region."
+  }
+  assert {
+    condition     = endswith(module.recovery.llm_cache_prefix, "/llm-cache/") && endswith(module.recovery.source_cache_prefix, "/source-cache/")
+    error_message = "Writers are told where to go."
+  }
+}
+
+run "the_archivist_can_add_to_the_two_uploaded_prefixes_and_read_nothing_back" {
+  command = apply
+
+  assert {
+    condition     = length(setintersection(toset(module.recovery.controls.archive_write_actions), toset(["s3:GetObject", "s3:GetObjectVersion", "s3:DeleteObject", "s3:DeleteObjectVersion", "s3:BypassGovernanceRetention"]))) == 0
+    error_message = "A laptop credential that can only add: no read of the labels, no delete, no lock override."
+  }
+  assert {
+    condition     = contains(module.recovery.controls.archive_write_actions, "s3:PutObject")
+    error_message = "It can add."
+  }
+  assert {
+    condition     = toset(module.recovery.controls.archive_write_objects) == toset(["arn:aws:s3:::mock/registry/*", "arn:aws:s3:::mock/source-cache/*"])
+    error_message = "Under the registry and source-cache prefixes only; the LLM cache is DataSync's, from the sandbox."
   }
 }

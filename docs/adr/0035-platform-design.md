@@ -71,6 +71,13 @@ organization: applying anything, attaching the SCPs, and every AWS number. The
 [Well-Architected review](../architecture/well-architected.md) lists each gap
 under its pillar.
 
+*Amended:* the first five of those — the egress path, the study task with
+model access and a durable cache, a workflow on the OIDC roles, GuardDuty
+routing, and the caches in the recovery plan — are closed by
+[ADR-0042](0042-ingest-egress-model-access-and-durable-caches.md), which
+also records what each still leaves undone. The adversarial-document probe
+remains open.
+
 ## Verified by
 
 `terraform test` (73 runs in `envs/platform`, 21 in `envs/sandbox`, mock

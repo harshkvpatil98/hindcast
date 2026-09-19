@@ -2,6 +2,12 @@
 # Every AWS service the study needs is reached through a VPC endpoint, so the
 # network has no path to the internet at all -- which is what makes "the bench
 # measured Aurora, not the internet" true by construction.
+#
+# The one deliberate exception is not here: modules/egress (ADR-0042) adds a
+# separate, opt-in tier with its own subnets and its own route table for the
+# ingest, which must fetch from the public internet. This module's route table
+# has no default route and no input through which it could be given one, and
+# the static tests keep every gateway resource out of this directory.
 
 data "aws_region" "current" {}
 
@@ -99,9 +105,21 @@ resource "aws_vpc_security_group_ingress_rule" "endpoints_https" {
 }
 
 resource "aws_vpc_endpoint" "interface" {
-  for_each            = var.interface_endpoints
+  for_each            = setunion(var.interface_endpoints, var.extra_interface_endpoints)
   vpc_id              = aws_vpc.this.id
   service_name        = "com.amazonaws.${data.aws_region.current.region}.${each.key}"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.endpoints.id]
+  tags                = { Name = "${var.name}-${each.key}" }
+}
+
+# The same endpoint, for a service whose name this module cannot derive.
+resource "aws_vpc_endpoint" "named" {
+  for_each            = var.named_interface_endpoints
+  vpc_id              = aws_vpc.this.id
+  service_name        = each.value
   vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
   subnet_ids          = aws_subnet.private[*].id

@@ -36,6 +36,20 @@ output "controls" {
         for name, state in jsondecode(resource.definition).States : name
         if length(setintersection(flatten([for retry in try(state.Retry, []) : retry.ErrorEquals]), ["States.ALL", "States.TaskFailed", "States.Timeout"])) > 0 && can(state.Parameters.Overrides)
       ])
+      # Per state, what it runs as and where. A test reads these to prove
+      # that the way out reaches the states that fetch and no others.
+      task_definitions = {
+        for name, state in jsondecode(resource.definition).States :
+        name => state.Parameters.TaskDefinition if can(state.Parameters.TaskDefinition)
+      }
+      subnets = {
+        for name, state in jsondecode(resource.definition).States :
+        name => state.Parameters.NetworkConfiguration.AwsvpcConfiguration.Subnets if can(state.Parameters.NetworkConfiguration)
+      }
+      security_groups = {
+        for name, state in jsondecode(resource.definition).States :
+        name => state.Parameters.NetworkConfiguration.AwsvpcConfiguration.SecurityGroups if can(state.Parameters.NetworkConfiguration)
+      }
       public_ip_settings = distinct([
         for name, state in jsondecode(resource.definition).States :
         state.Parameters.NetworkConfiguration.AwsvpcConfiguration.AssignPublicIp

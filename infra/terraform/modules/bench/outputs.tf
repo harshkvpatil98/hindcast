@@ -36,3 +36,28 @@ output "artifacts_bucket" {
 output "log_group" {
   value = aws_cloudwatch_log_group.task.name
 }
+
+# --- For modules/study: the same task, with a model and a durable cache ------------
+
+output "container_definition" {
+  description = "The bench container as an object. modules/study overrides a few keys and restates none. Holds secret ARNs, never secret values."
+  value       = local.container
+}
+
+output "execution_role_name" {
+  description = "So a caller can let ECS resolve one more secret (a model API key) without this module knowing models exist."
+  value       = aws_iam_role.execution.name
+}
+
+output "db_user_arns" {
+  description = "The rds-db:connect resources for the application roles, for any other task role that logs in with IAM tokens."
+  value       = local.db_users
+}
+
+output "task_cpu" {
+  value = aws_ecs_task_definition.bench.cpu
+}
+
+output "task_memory" {
+  value = aws_ecs_task_definition.bench.memory
+}
