@@ -7,6 +7,7 @@ CI-checkable.
 
 from __future__ import annotations
 
+import atexit
 import json
 import shutil
 import subprocess
@@ -2564,7 +2565,7 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
         # so the corpus connection has no further use.
         stack.close()
         return LLMAgents(settings=settings, client=client, prepared=prepared)
-    return ToolUsingAgents(
+    decider = ToolUsingAgents(
         settings=settings,
         client=client,
         prepared=prepared,
@@ -2572,6 +2573,15 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
         policy=tools,
         closes=(stack,),
     )
+    # Released at process exit rather than by a `finally` at each of the three
+    # places a decider is run. `atexit` fires on the normal path and on an
+    # unhandled exception alike, which a `finally` would only match if all
+    # three were rewritten to wrap bodies that are fifty lines long -- and a
+    # missed one is a corpus connection held for the life of the command with
+    # nothing saying so. `close()` stays public so an in-process caller can
+    # release it earlier; it is idempotent, so both happening is harmless.
+    atexit.register(decider.close)
+    return decider
 
 
 def _leverage_of(graph: Any, actor_id: str) -> dict[str, float]:
