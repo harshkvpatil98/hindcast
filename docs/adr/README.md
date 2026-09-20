@@ -1,6 +1,6 @@
 # Architecture decision records
 
-Thirty-six records here, plus 0032 (live mode, proposed), which lives on the `m13/live-mode` branch. Each states the decision, the evidence behind it, and
+Forty-six records here, plus 0032 (live mode, proposed), which lives on the `m13/live-mode` branch. Each states the decision, the evidence behind it, and
 what it costs. They exist because this project's specification is detailed
 enough to be wrong in specific, checkable ways — and when it was, the record
 says so with the measurement that showed it.
@@ -55,3 +55,5 @@ this build. The rest record a choice the specification left open.
 | [0043](0043-registry-placeholder-legs.md) | **Found here.** 15 of 180 sealed scenarios are exchange placeholder legs ("Candidate B"): the volume screen read a leg's zero as missing. Owner's decision: keep the sealed set, exclude the stand-ins from scoring before the split is drawn, inside its pin; the registry fixes wait on branch `m14-registry-v2` | M14 |
 | [0044](0044-date-text-by-when-it-was-knowable.md) | **Found here.** CC-NEWS pages were dated by the date they state, but the stored text is the fetched text: 3.7% of a 2026 file were re-crawls of articles over 180 days old. Dated now by max(stated, fetched), provenance kept, and the stored corpus repaired in place by `cascade corpus redate`. *Corrects 0010* | M14 |
 | [0045](0045-quoted-evidence.md) | **Measured, then closed.** A document impersonating a system notice steered the forecast on 20 of 30 scenarios; quoting documents in a frame the renderer strips from their own text takes it to 0 of 30. Prompt revision r4 | M14 |
+| [0046](0046-publishing-and-recovery-drills.md) | The report artifact carries the labels — `baselines.csv` and `ablation_grid.csv` are one row per scenario *with how it resolved* — so it lands in a private, Object-Locked bucket the simulation is denied, is fetched rather than served, and the recovery path is drilled rather than asserted | M14 |
+| [0047](0047-reranking-is-a-permutation.md) | A managed reranker is admissible where a managed knowledge base was not: a knowledge base *replaces* the `published_at < as_of` filter, a reranker *permutes a set the database already filtered*. Enforced by the interface — it is handed bodies and returns numbers, so naming a post-cutoff chunk is unrepresentable. *Amends 0030* | M15 |
