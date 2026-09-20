@@ -19,12 +19,22 @@ There is no AWS account here, so the standard is verified-against-a-mock:
 * The **routing** is asserted against decoy environment variables, because
   ADR-0028's rule is that a stray `AWS_REGION` must not decide where the
   study's spend is checked.
+* The **window** is asserted through the same stub, and its one translation --
+  AWS's range is closed on both ends, this project's is half-open -- is checked
+  against botocore's own description of `endTime` rather than against a
+  remembered reading of the documentation.
+
+The second claim, added with the window: this reader states the slice it
+covers, and a slice it cannot narrow to (a configuration) is never absorbed
+into a wider answer. Without that, a phase-scoped ledger against a log group's
+lifetime total would be reported as a discrepancy in the meter -- §12.4's one
+diagnosis that is guaranteed not to be the cause.
 """
 
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Any
 
 import pytest
@@ -34,13 +44,19 @@ from cascade.config import ObservabilityConfig, Settings
 from cascade.trace.aws_spend import (
     AWS_INVOCATION_LOG_SOURCE,
     MODEL_INVOCATION_SCHEMA_TYPE,
+    _window,
     accumulate,
     invocation_log_reading,
     logs_client,
 )
+from cascade.trace.ledger import Scope, epoch_ms
 
 GROUP = "/aws/bedrock/modelinvocations"
 REGION = "us-east-1"
+
+SINCE = datetime(2026, 9, 1, tzinfo=UTC)
+UNTIL = datetime(2026, 9, 2, tzinfo=UTC)
+WINDOW = Scope(since=SINCE, until=UNTIL)
 
 # The decoys ADR-0028 names, plus the two endpoint variables botocore reads.
 # Any of them winning would point the reconciliation at a different account.
@@ -293,13 +309,19 @@ class TestReadingTheLogGroup:
         assert reading.written_by == "aws"
         assert reading.independent
 
-    def test_a_window_is_passed_as_epoch_milliseconds(
+
+class TestTheWindowReachesTheService:
+    """The scope is pushed into `FilterLogEvents`, with its convention translated.
+
+    The epoch values below are hand-checkable: 2026-09-01T00:00:00Z is
+    1,788,220,800 s, and a day is 86,400 s.
+    """
+
+    def test_both_bounds_are_passed_as_epoch_milliseconds(
         self, settings: Settings, aws_credentials: None
     ) -> None:
         live = configured(settings, group=GROUP, region=REGION)
         client = logs_client(live)
-        start = datetime(2026, 9, 1, tzinfo=UTC)
-        end = datetime(2026, 9, 2, tzinfo=UTC)
         with Stubber(client) as stub:
             stub.add_response(
                 "filter_log_events",
@@ -307,28 +329,168 @@ class TestReadingTheLogGroup:
                 {
                     "logGroupName": GROUP,
                     "startTime": 1_788_220_800_000,  # 2026-09-01T00:00:00Z
-                    "endTime": 1_788_307_200_000,  # 2026-09-02T00:00:00Z
+                    # One millisecond before 2026-09-02T00:00:00Z: see below.
+                    "endTime": 1_788_307_199_999,
                 },
             )
-            invocation_log_reading(live, client=client, start=start, end=end)
+            invocation_log_reading(live, client=client, scope=WINDOW)
             stub.assert_no_pending_responses()
 
-    def test_a_naive_window_bound_is_refused(
+    def test_the_closed_aws_range_is_narrowed_to_the_half_open_window(self) -> None:
+        """Measured from botocore's own service model, not assumed.
+
+        `FilterLogEvents` documents `endTime` as "events with a timestamp later
+        than this time are not returned" -- inclusive -- while `Scope` and
+        Langfuse's `toTimestamp` are half-open. Passing `until` through
+        unchanged would count a call made exactly on a phase boundary in
+        *both* adjacent phases, in the independent record only, and the
+        disagreement would be booked against the meter.
+        """
+        bounds = _window(WINDOW)
+        assert bounds["endTime"] == epoch_ms(WINDOW.until) - 1  # type: ignore[arg-type]
+        assert bounds["startTime"] == epoch_ms(WINDOW.since)  # type: ignore[arg-type]
+
+    def test_the_botocore_documentation_this_translation_rests_on_still_says_so(self) -> None:
+        """Guard the guard: the subtraction above is only right while AWS's
+        range is closed. If botocore's description of `endTime` ever changes,
+        this fails here rather than by one millisecond of spend in a report."""
+        import botocore.session
+
+        model = botocore.session.get_session().get_service_model("logs")
+        documentation = model.operation_model("FilterLogEvents").input_shape.members["endTime"]
+        assert "later than this time are not returned" in documentation.documentation
+
+    def test_one_bound_alone_is_passed_alone(
         self, settings: Settings, aws_credentials: None
     ) -> None:
-        """`timestamp()` reads a naive datetime as local time, which would scope
-        the independent record to hours the ledger does not cover -- and the
-        shift would be the machine's, so it would reproduce nowhere else.
-
-        It raises rather than reporting *unreachable*: the caller asked an
-        ill-formed question and AWS was never asked at all. Reporting a caller's
-        bug as an outage is the wrong diagnosis, which is the M8 lesson about a
-        harness failure recorded as a replay divergence.
-        """
+        """An open-ended phase -- "everything since the grid started" -- must not
+        acquire an upper bound this module invented."""
         live = configured(settings, group=GROUP, region=REGION)
         client = logs_client(live)
+        with Stubber(client) as stub:
+            stub.add_response(
+                "filter_log_events",
+                page(record()),
+                {"logGroupName": GROUP, "startTime": 1_788_220_800_000},
+            )
+            invocation_log_reading(live, client=client, scope=Scope(since=SINCE))
+            stub.assert_no_pending_responses()
+
+    def test_an_unbounded_scope_passes_no_bounds_at_all(
+        self, settings: Settings, aws_credentials: None
+    ) -> None:
+        """The M8 shape is unchanged: the stub below would reject the call if a
+        `startTime` had appeared."""
+        live = configured(settings, group=GROUP, region=REGION)
+        client = logs_client(live)
+        with Stubber(client) as stub:
+            stub.add_response("filter_log_events", page(record()), {"logGroupName": GROUP})
+            invocation_log_reading(live, client=client, scope=Scope())
+            stub.assert_no_pending_responses()
+
+    def test_the_reading_declares_the_window_it_covers(
+        self, settings: Settings, aws_credentials: None
+    ) -> None:
+        """What makes the scope enforceable one level up: the reading states the
+        slice it measured, rather than the caller assuming it was obeyed."""
+        live = configured(settings, group=GROUP, region=REGION)
+        client = logs_client(live)
+        with Stubber(client) as stub:
+            stub.add_response(
+                "filter_log_events",
+                page(record()),
+                {
+                    "logGroupName": GROUP,
+                    "startTime": 1_788_220_800_000,
+                    "endTime": 1_788_307_199_999,
+                },
+            )
+            reading = invocation_log_reading(live, client=client, scope=WINDOW)
+
+        assert reading.covers == WINDOW
+        assert reading.spend is not None
+        assert "2026-09-01T00:00:00Z <= t < 2026-09-02T00:00:00Z" in reading.spend.detail
+
+    def test_a_configuration_cannot_be_pushed_into_the_log_group(
+        self, settings: Settings, aws_credentials: None
+    ) -> None:
+        """A model-invocation record names the model, the account and the
+        identity, and nothing that names an ablation cell. The reading says it
+        covers the window and not the configuration; refusing the comparison is
+        `at_scope`'s job and is tested there."""
+        live = configured(settings, group=GROUP, region=REGION)
+        client = logs_client(live)
+        scope = Scope(since=SINCE, until=UNTIL, config_id="C01")
+        with Stubber(client) as stub:
+            stub.add_response(
+                "filter_log_events",
+                page(record()),
+                {
+                    "logGroupName": GROUP,
+                    "startTime": 1_788_220_800_000,
+                    "endTime": 1_788_307_199_999,
+                },
+            )
+            reading = invocation_log_reading(live, client=client, scope=scope)
+
+        assert reading.covers == WINDOW
+        assert reading.covers != scope
+
+    def test_an_empty_window_is_told_which_of_three_causes_to_check(
+        self, settings: Settings, aws_credentials: None
+    ) -> None:
+        """Unwindowed there are two plausible causes; windowed there are three,
+        and the new one is the operator's own bounds -- the only one they can
+        fix in the next command."""
+        live = configured(settings, group=GROUP, region=REGION)
+        client = logs_client(live)
+        with Stubber(client) as stub:
+            stub.add_response(
+                "filter_log_events",
+                page(),
+                {
+                    "logGroupName": GROUP,
+                    "startTime": 1_788_220_800_000,
+                    "endTime": 1_788_307_199_999,
+                },
+            )
+            reading = invocation_log_reading(live, client=client, scope=WINDOW)
+
+        assert reading.spend is not None
+        assert "bedrock-runtime" in reading.spend.detail
+        assert "window covers when they were made" in reading.spend.detail
+
+
+class TestANaiveBoundIsRefusedTwice:
+    """`timestamp()` reads a naive datetime as local time, which would scope the
+    independent record to hours the ledger does not cover -- and the shift would
+    be the machine's, so it would reproduce nowhere else (invariant 1's
+    reasoning, applied to a window bound).
+
+    It raises rather than reporting *unreachable*: the caller asked an
+    ill-formed question and AWS was never asked at all. Reporting a caller's bug
+    as an outage is the wrong diagnosis, which is the M8 lesson about a harness
+    failure recorded as a replay divergence.
+    """
+
+    def test_the_scope_refuses_one_before_any_client_exists(self) -> None:
         with pytest.raises(ValueError, match="naive"):
-            invocation_log_reading(live, client=client, start=datetime(2026, 9, 1))
+            Scope(since=datetime(2026, 9, 1))
+
+    def test_the_conversion_refuses_one_that_reached_it_anyway(self) -> None:
+        """The second guard, for a caller building the request dict by hand: a
+        `Scope` cannot hold a naive bound, so nothing in this module can reach
+        `epoch_ms` with one today, and that is a property of one line."""
+        with pytest.raises(ValueError, match="naive"):
+            epoch_ms(datetime(2026, 9, 1))
+
+    def test_an_aware_bound_in_another_zone_is_the_same_instant(self) -> None:
+        """Rejecting naive is not rejecting non-UTC: the same moment expressed
+        in Tokyo must scope the reconciliation identically, or two operators
+        would reconcile different slices of the same phase."""
+        tokyo = datetime(2026, 9, 1, 9, tzinfo=timezone(timedelta(hours=9)))
+        assert epoch_ms(tokyo) == epoch_ms(SINCE)
+        assert Scope(since=tokyo) == Scope(since=SINCE)
 
 
 class TestAbsenceIsNeverZero:
