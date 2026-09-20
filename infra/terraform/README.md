@@ -6,7 +6,9 @@ destroyed**. Design: [ADR-0034](../../docs/adr/0034-aurora-data-plane.md);
 toolchain and gates: [ADR-0033](../../docs/adr/0033-infrastructure-as-code-terraform.md);
 the platform: [ADR-0035](../../docs/adr/0035-platform-design.md); the way
 out, model access and the caches:
-[ADR-0042](../../docs/adr/0042-ingest-egress-model-access-and-durable-caches.md).
+[ADR-0042](../../docs/adr/0042-ingest-egress-model-access-and-durable-caches.md);
+publishing the deliverable and proving the recovery path:
+[ADR-0046](../../docs/adr/0046-publishing-and-recovery-drills.md).
 
 ```
 envs/bootstrap   encrypted, versioned state bucket (local state, run once)
@@ -18,7 +20,8 @@ modules/bench    ECR, ECS/Fargate task, artifacts bucket, least-privilege roles
 modules/governance  budget derived from configs/base.yaml, anomaly detection, alerts
 modules/guardrails  service control policies; attached to nothing until targets are named
 modules/eventlake   Object-Locked event log, Glue catalog, Athena workgroup, writer/analyst roles
-modules/recovery    tier-0 recovery bucket: locked, replicated cross-region, closed to the simulation
+modules/recovery    tier-0 recovery bucket: locked, replicated cross-region, closed to the simulation; the restore-drill role and a scheduled archive inventory
+modules/reports     where `cascade report` publishes: versioned, encrypted, Object-Locked, fetched by a named reader and never served
 modules/audit       CloudTrail (locked bucket, data events for the lake and recovery buckets), GuardDuty, Config
 modules/cicd        GitHub OIDC roles: read-only plan from pull requests, apply from a reviewed environment
 modules/pipeline    Step Functions chains for the ingest and the study (in envs/sandbox, opt-in)
@@ -28,23 +31,28 @@ modules/cache       the LLM cache on EFS, copied add-only into the recovery buck
 modules/study       the study task: the bench's container plus a model grant per provider and the cache mount (in envs/sandbox, opt-in)
 ```
 
-**Destroying the platform root:** the Config bucket denies `s3:DeleteObjectVersion`
-to every principal, and the trail, lake and recovery buckets are under Object
-Lock. `terraform destroy` cannot empty them; that is the point. Remove the
-Config bucket's policy and wait out (or, under GOVERNANCE, explicitly bypass)
-the retention before deleting them by hand.
+**Destroying the platform root:** the Config and inventory buckets deny
+`s3:DeleteObjectVersion` to every principal, and the trail, lake, recovery and
+reports buckets are under Object Lock. `terraform destroy` cannot empty them;
+that is the point. Remove the bucket policy and wait out (or, under GOVERNANCE,
+explicitly bypass) the retention before deleting them by hand. The reports
+bucket needs the extra step: its policy denies
+`s3:BypassGovernanceRetention` to every principal as well, so the policy has
+to go first and the trail records that it did (ADR-0046).
 
 ## What is verified, and what is not
 
 | | Status |
 |---|---|
 | Configuration valid against provider schemas (AWS 6.65.0) | **verified offline** |
-| Security properties (encryption, TLS, IAM auth, nothing public, pgvector pinned, fixed capacity, secrets never in plain env) | **verified offline** — 60 `terraform test` runs in `envs/sandbox`, 89 in `envs/platform`, against mock providers |
+| Security properties (encryption, TLS, IAM auth, nothing public, pgvector pinned, fixed capacity, secrets never in plain env) | **verified offline** — 62 `terraform test` runs in `envs/sandbox`, 107 in `envs/platform`, against mock providers |
 | The isolated tier never routes out, even with the egress tier on; only `CorpusBuild` and (without PrivateLink) the three model-calling states leave; the study grant is three routes in one workspace; the cache is encrypted and copied add-only; findings are admitted by ARN | **verified offline** — `terraform test`, and each broken on purpose once (ADR-0042) |
+| A study report is private, versioned and locked; the task that writes one cannot read one back; the restore role cannot write the archive it restores from; the archivist's key must name its seal | **verified offline** — `terraform test`, and each broken on purpose once (ADR-0046) |
 | The pgvector gate rejects an engine that is too old | **verified offline** — the test expects 16.6 to fail |
-| Every gateway, route and open CIDR lives in `modules/egress`; the two opt-ins default to null; no decision input has a default; every Checkov skip justified; images pinned by digest; every third-party action in every workflow pinned by SHA | **verified offline** — `tests/unit/test_infra_invariants.py` |
-| TFLint (AWS ruleset 0.48.0), Checkov 3.3.19 | **clean** — 925 passed, 0 failed, 66 justified skips |
-| AWS accepts the configuration at apply | **not verified** — no AWS account yet. In particular: that DataSync writes into the locked recovery bucket; that the regional DNS allow-list is complete; the Claude Platform on AWS PrivateLink service name |
+| Every gateway, route and open CIDR lives in `modules/egress`; the two opt-ins default to null; no decision input has a default; no report is ever served from a public endpoint; every Checkov skip justified; images pinned by digest; every third-party action in every workflow pinned by SHA | **verified offline** — `tests/unit/test_infra_invariants.py` |
+| TFLint (AWS ruleset 0.48.0), Checkov 3.3.19 | **clean** — 1,027 passed, 0 failed, 73 justified skips |
+| AWS accepts the configuration at apply | **not verified** — no AWS account yet. In particular: that DataSync writes into the locked recovery bucket; that S3 Inventory delivers under the destination policy here; that the regional DNS allow-list is complete; the Claude Platform on AWS PrivateLink service name |
+| Any restore actually works | **not verified** — no drill has been run. The procedure, its checks and the role it runs as are in [docs/architecture/dr-runbook.md](../../docs/architecture/dr-runbook.md) |
 | The bench image builds and runs | **not verified** — linted, not built |
 | Any Aurora latency or recall number | **does not exist** |
 
@@ -129,9 +137,11 @@ is a decision (`terraform.tfvars.example`). Start with
 refused; then switch to `BLOCK`. The NAT gateway bills per hour from `apply`
 to `destroy`, and the sources see one address (`nat_public_ip`).
 
-**6d. The study, with a model and a cache that outlives the task.** Set
-`study`: the provider (`aws`, `bedrock` or `anthropic`), its routing, and
-`recovery` copied whole from the platform root's `terraform output recovery`.
+**6d. The study, with a model, a cache that outlives the task, and somewhere
+to publish.** Set `study`: the provider (`aws`, `bedrock` or `anthropic`), its
+routing, `recovery` copied whole from the platform root's `terraform output
+recovery`, and `reports` copied whole from its `terraform output
+reports_publish`.
 The task runs on its own definition, records through the provider, and keeps
 `llm.cache_dir` on an EFS file system that a DataSync task copies into the
 recovery bucket on `sync_schedule_expression` (no default). `anthropic`, and
@@ -147,6 +157,24 @@ transcribed here.
 wait for it: `aws datasync start-task-execution --task-arn $(terraform output
 -json study | jq -r .sync_task_arn)`. The file system goes with the sandbox;
 the archive is only as new as its last run.
+
+**6f. Publish the report.** `cascade report` writes `reports/study_<ts>/`
+inside the task. `terraform output publish_report` prints the exact upload
+command; replace `STUDY_ID` with that directory. The task role may add objects
+under `reports/<sandbox>/` and may **not** read one back — a report carries the
+resolution labels per scenario, so the process that writes one is denied the
+read (ADR-0046). Readers attach the platform root's
+`reports_read_policy_arn` and `aws s3 sync` the directory; there is no site
+and no public endpoint, by decision. Every version is locked for
+`report_lock_retention_days`: a wrong figure is superseded by a new report,
+never withdrawn.
+
+**6g. The restore drill.** Nothing here has ever been restored.
+`docs/architecture/dr-runbook.md` has the ordered procedure, the check that
+proves each step, and the role it runs as
+(`terraform output recovery_restore_role_arn`), which reads tier 0 in both
+regions and cannot write either. Its last step is a deliberate failure: one
+`aws s3 cp` into the recovery bucket, which must be refused.
 
 **7. Partitioning experiment.** `experiment_clone = true` creates a
 copy-on-write clone; re-partition and bench it by overriding
@@ -178,6 +206,11 @@ runs; CloudWatch Logs ingestion. With `egress`: the NAT gateway per hour and
 per GB processed, one public IPv4 address per hour, DNS Firewall per domain
 and per million queries. With `study`: EFS storage and elastic throughput, and
 DataSync per GB plus S3 requests per object scanned on every run — which is
-why the schedule is yours to set. Nothing here is meant to run between
-measurements. ADR-0042 records the prices that were verified for its
-decisions, and the ones that were not.
+why the schedule is yours to set. In the platform root: S3 storage for the
+published reports and the tier-0 archive, and **S3 Inventory per million
+objects listed on every run**, which is the other schedule that is yours to
+set (`inventory_schedule`) and which grows with the archive. Nothing here is
+meant to run between measurements. ADR-0042 and ADR-0046 record the prices
+that were verified for their decisions, and the ones that were not — the S3
+pricing table did not render for ADR-0046, so no S3 figure is quoted anywhere
+in this repository.

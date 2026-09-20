@@ -64,6 +64,51 @@ variable "guardrail_target_ids" {
   default     = []
 }
 
+variable "report_lock_retention_days" {
+  description = "Object Lock retention on every published study report. Required: see modules/reports."
+  type        = number
+
+  validation {
+    condition     = var.report_lock_retention_days >= 1 && floor(var.report_lock_retention_days) == var.report_lock_retention_days
+    error_message = "report_lock_retention_days must be a whole number of days, at least 1."
+  }
+}
+
+variable "inventory_schedule" {
+  description = "How often the tier-0 archive is listed, \"Daily\" or \"Weekly\". Required: see modules/recovery."
+  type        = string
+
+  validation {
+    condition     = contains(["Daily", "Weekly"], var.inventory_schedule)
+    error_message = "inventory_schedule must be \"Daily\" or \"Weekly\": S3 Inventory offers no other frequency."
+  }
+}
+
+variable "restore_targets" {
+  description = <<-EOT
+    Where the restore-drill role may write (ADR-0046): the buckets a restore
+    lands in, and the CMKs they are encrypted under. Empty -- the default --
+    makes the role strictly read-only and the drill restores to a machine.
+  EOT
+  type = object({
+    bucket_arns  = list(string)
+    kms_key_arns = list(string)
+  })
+  default = { bucket_arns = [], kms_key_arns = [] }
+
+  # A restore that can write its own source is not a restore. The module
+  # refuses the exact bucket ARNs with a precondition; this refuses the whole
+  # naming family, one layer earlier and without needing the account or the
+  # region -- so it also catches the inventory bucket and any later sibling.
+  validation {
+    condition = alltrue([
+      for arn in var.restore_targets.bucket_arns :
+      !startswith(replace(arn, "/^arn:[^:]+:s3:::/", ""), "${var.name}-recovery")
+    ])
+    error_message = "restore_targets.bucket_arns must not name a recovery bucket: a restore that can write its own source is not a restore."
+  }
+}
+
 provider "aws" {
   region = var.region
   default_tags {
@@ -88,9 +133,14 @@ locals {
 
 data "aws_iam_policy_document" "key" {
   # CloudTrail and CloudWatch Logs must be able to use this key for the audit
-  # trail. The statements come from the module that knows what it needs, so the
-  # key policy cannot fall out of step with the trail it serves.
-  source_policy_documents = [module.audit.required_key_policy_statements_json]
+  # trail, and S3 must be able to use it to encrypt the tier-0 inventory. The
+  # statements come from the modules that know what they need, so the key
+  # policy cannot fall out of step with what it serves. Each depends on names
+  # and the account only, never on the key, so this is not a cycle.
+  source_policy_documents = [
+    module.audit.required_key_policy_statements_json,
+    module.recovery.required_key_policy_statements_json,
+  ]
 
   #checkov:skip=CKV_AWS_111:A KMS key policy's "kms:*" for the account root is AWS's default key policy: it delegates to IAM, and Resource "*" in a key policy means this key only.
   #checkov:skip=CKV_AWS_356:Resource "*" in a key policy refers to the key itself, not to all resources.
@@ -228,6 +278,22 @@ module "recovery" {
   bucket_suffix             = local.account
   kms_key_arn               = aws_kms_key.platform.arn
   simulation_principal_arns = var.simulation_principal_arns
+  inventory_schedule        = var.inventory_schedule
+  restore_targets           = var.restore_targets
+}
+
+# The study's deliverable (ADR-0046). Here rather than in the sandbox because
+# the sandbox is built to be destroyed and a published report must outlive it
+# -- the same argument that put the recovery bucket here.
+module "reports" {
+  source                     = "../../modules/reports"
+  name                       = var.name
+  bucket_suffix              = "${local.account}-${var.region}"
+  kms_key_arn                = aws_kms_key.platform.arn
+  report_lock_retention_days = var.report_lock_retention_days
+  # The study task both writes reports and appears in this list: it may
+  # publish and may not read one back, because a report carries the labels.
+  simulation_principal_arns = var.simulation_principal_arns
 }
 
 module "audit" {
@@ -239,11 +305,17 @@ module "audit" {
   # set of subscribers, one place to look.
   alerts_topic_arn       = module.governance.alerts_topic_arn
   guardduty_min_severity = var.guardduty_min_severity
-  # The lake and the recovery bucket deliberately have no S3 access logging:
-  # these data events, written to a locked trail, are their access record.
+  # The lake, the recovery buckets and the reports bucket deliberately have no
+  # S3 access logging: these data events, written to a locked trail, are their
+  # access record. The reports bucket is here for a second reason as well --
+  # its policy denies lifting the Object Lock, so the only way to withdraw a
+  # published figure is to edit that policy and then delete, and the trail is
+  # where both acts are recorded (ADR-0046).
   data_event_bucket_arns = [
     "arn:${data.aws_partition.current.partition}:s3:::${module.eventlake.events_bucket}",
     "arn:${data.aws_partition.current.partition}:s3:::${module.recovery.bucket}",
+    "arn:${data.aws_partition.current.partition}:s3:::${module.recovery.inventory_bucket}",
+    "arn:${data.aws_partition.current.partition}:s3:::${module.reports.bucket}",
   ]
 }
 
@@ -294,4 +366,31 @@ output "recovery" {
 
 output "events_bucket" {
   value = module.eventlake.events_bucket
+}
+
+# --- Publishing and recovery drills (ADR-0046) --------------------------------------
+
+# Feed this whole object to the sandbox's `study.reports`.
+output "reports_publish" {
+  value = module.reports.publish
+}
+
+output "reports_uri" {
+  description = "Where published reports live. Read them with `reports_read_policy_arn`; there is no public endpoint, by decision (ADR-0046)."
+  value       = module.reports.uri
+}
+
+output "reports_read_policy_arn" {
+  description = "Attach to whoever may read a published report. Read-only, and never granted to a simulation principal."
+  value       = module.reports.read_policy_arn
+}
+
+output "recovery_restore_role_arn" {
+  description = "The identity the restore drill runs as (docs/architecture/dr-runbook.md). Reads tier 0 in both regions; cannot write either."
+  value       = module.recovery.restore_role_arn
+}
+
+output "recovery_inventory_uri" {
+  description = "The scheduled listing of the tier-0 archive: what is there, how many objects, and under what retention."
+  value       = module.recovery.inventory_uri
 }

@@ -123,6 +123,8 @@ variables {
   replica_region               = "us-west-2"
   infrastructure_allowance_usd = 50
   guardduty_min_severity       = 7
+  report_lock_retention_days   = 365
+  inventory_schedule           = "Weekly"
 }
 
 run "the_platform_composes" {
