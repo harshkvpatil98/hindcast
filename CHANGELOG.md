@@ -53,8 +53,16 @@ measured; the study numbers still need a batch-capable model provider.
 - **15 sealed scenarios are exchange placeholder legs** and are excluded from
   scoring and counted ([ADR-0043](docs/adr/0043-registry-placeholder-legs.md));
   the sealed set itself is unchanged.
-- **An adversarial-document probe** for prompt injection through the corpus
-  (threat T3), and a blend whose weight is fitted on dev and scored on test.
+- **Prompt injection through the corpus was measured, and then closed.**
+  `cascade eval injection` plants one document that asserts nothing about the
+  world and instructs the model to report a contradicting probability. A
+  document that closed the evidence section and spoke as the operator was
+  obeyed on **20 of 30** scenarios (mean shift +0.491); a plain "ignore all
+  previous instructions" on **none**. Documents are now quoted in numbered
+  markers that the renderer strips from their own text, with the rule in the
+  system prompt ([ADR-0045](docs/adr/0045-quoted-evidence.md), prompt revision
+  r4): the same probe now measures **0 of 30**, with disjoint intervals.
+- **A blend** whose weight is fitted on dev and scored on test.
 - **Platform follow-ups**: an opt-in egress tier for the ingest, model access
   and a durable LLM cache for the study task, GuardDuty findings routed to the
   alerts topic, and both caches in the recovery plan

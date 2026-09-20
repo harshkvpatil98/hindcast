@@ -72,6 +72,7 @@ compiling needs the corpus, which is not rebuilt on this machine. See
 | Dated-text leaks found | Wikipedia renders and CC-NEWS re-crawls both carried post-cutoff text under pre-cutoff dates; **200,122** documents re-dated to their fetch time, **11,237** of them fetched over 180 days after the date they state; the update-stamp scan went **381 → 4** flagged chunks (all four publisher typos) | M14 |
 | Retrieval p95 | **90.92 ms** over 10,000 queries (criterion < 15 ms — **not met**, see [Limitations](#limitations)) | M3 / M8 |
 | Poison-pill leakage | **0 of 500** planted post-cutoff documents retrieved, across all 180 cutoffs | M3 |
+| Prompt injection (threat T3) | a document impersonating a system notice was obeyed on **20 of 30** scenarios (95% CI [0.49, 0.81], mean shift +0.491); a plain "ignore your instructions" on **0 of 30**. After quoting documents in a frame they cannot forge ([ADR-0045](docs/adr/0045-quoted-evidence.md), prompt revision r4): **0 of 30**, intervals disjoint | M14 |
 | Arbiter properties | bounded, conserving, permutation-invariant, monotone — all pass under Hypothesis | M5 |
 | Replay determinism | **25/25** runs byte-identical across processes, 24.3 s; re-measured **25/25 in 8.4 s** on the rebuilt environment | M8 / M10 |
 | Parametric memorization | **180/180** answers parsed; median confidence **0.70**; direction correct on **97/180** — not distinguishable from chance (two-sided p ≈ 0.33); probe Brier **0.2616** against climatology's 0.2500. Measured through `claude_code`, **not the pinned configuration** | M3 / M10 |
