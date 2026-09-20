@@ -451,6 +451,33 @@ class ToolUsingAgents:
     Chronofence; anything else is a leaking retrieval port, and it is reported
     rather than absorbed."""
 
+    closes: tuple[Any, ...] = field(default=())
+    """Resources whose lifetime is this decider's, closed by :meth:`close`.
+
+    The tool arm is the first decider that needs a corpus connection *during*
+    a run rather than only while preparing one. ADR-0019 retrieves once per
+    (scenario, actor) into the cached prefix and closes the Chronofence before
+    the first step, which is why no decider needed this before; a belt's
+    ``search`` closure holds the fence it was built from, so that fence has to
+    outlive preparation.
+
+    Held here rather than opened per tool call because a connection per call
+    is ~600k connections across an ablation cell, and rather than left to the
+    garbage collector because a connection closed at an unpredictable time is
+    a connection the next command may find missing from the pool."""
+
+    def close(self) -> None:
+        """Release what this decider opened. Idempotent.
+
+        Not a context manager: the decider is built by one function and used
+        by another, so the ``with`` would have to span a return. The callers
+        close it in a ``finally`` instead, which is the same guarantee written
+        where the lifetime actually is.
+        """
+        for resource in self.closes:
+            resource.__exit__(None, None, None)
+        self.closes = ()
+
     def __post_init__(self) -> None:
         if not self.policy.enabled or not self.policy.allow:
             raise ToolsDisabled(
