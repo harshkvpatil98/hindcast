@@ -28,6 +28,7 @@ from cascade.llm.types import BudgetExceeded, CacheMiss, PromptTooShortToCache, 
 
 if TYPE_CHECKING:  # pragma: no cover -- types only, never imported at startup
     from cascade.eval.ablation import CellSpec
+    from cascade.eval.market import CoverageSummary
     from cascade.eval.schema import MetricSet, ScoredForecast
     from cascade.eval.split import Partition, SplitDeclaration
     from cascade.eval.store import FrozenSplit
@@ -5075,6 +5076,8 @@ def report(
         split_interactions=_split_interactions(settings, split, declaration),
         evidence=evidence,
         withheld_configs=tuple(withheld),
+        market_coverage=_market_coverage(settings),
+        provenance=_report_provenance(settings),
     )
 
     root = Path(out) if out else repo_root() / settings.paths.reports
@@ -5136,6 +5139,92 @@ def _report_config_snapshot(settings: Settings) -> dict[str, Any]:
         "flags": settings.flags.model_dump(mode="json"),
         "llm": {"mode": settings.llm.mode, "prompt_rev": settings.llm.prompt_rev},
         "pinned_stack": {entry.label: entry.pin for entry in PINNED_STACK},
+    }
+
+
+def _market_coverage(settings: Settings) -> CoverageSummary:
+    """What the market benchmark covers, read from the stored prices.
+
+    Computed from `market_prices` rather than from a fetch, so the report needs
+    no network and reports the coverage of exactly the rows its Brier was taken
+    over. Every eval command already loads this table through
+    `available_configs`, so a missing table has failed long before here.
+    """
+    from datetime import timedelta
+
+    from cascade.eval.market import coverage_summary
+    from cascade.eval.store import load_market_prices
+
+    return coverage_summary(
+        load_market_prices(settings),
+        max_staleness=timedelta(hours=settings.market_baseline.max_staleness_hours),
+    )
+
+
+def _report_provenance(settings: Settings) -> dict[str, Any]:
+    """What the forecasts were made against: evidence, retrieval, prompt, tools.
+
+    Appendix D's manifest records the configuration. That is not enough to
+    reproduce a number: the same configuration over a corpus half the size is a
+    different experiment, and the same code under a different installed
+    pydantic is a different program. Both are cheap to record and impossible to
+    recover afterwards, so they are recorded.
+
+    A corpus that cannot be read is written as a stated absence, never as a
+    zero -- "the corpus holds no chunks" and "nobody could ask" are different
+    claims.
+    """
+    import sys
+
+    import psycopg
+
+    from cascade.corpus.store import corpus_stats
+
+    corpus: dict[str, Any]
+    try:
+        stats = corpus_stats(settings)
+    except (psycopg.Error, RuntimeError, OSError) as exc:
+        corpus = {"measured": False, "note": f"{type(exc).__name__}: {exc}"}
+    else:
+        corpus = {
+            "measured": True,
+            "n_chunks": stats.n_chunks,
+            "n_documents": stats.n_documents,
+            "earliest_published_at": None if stats.earliest is None else str(stats.earliest),
+            "latest_published_at": None if stats.latest is None else str(stats.latest),
+            "per_source": [
+                {"source": source, "documents": documents, "chunks": chunks}
+                for source, documents, chunks in stats.per_source
+            ],
+        }
+
+    installed: dict[str, str] = {}
+    for entry in PINNED_STACK:
+        try:
+            installed[entry.label] = metadata.version(entry.distribution)
+        except metadata.PackageNotFoundError:
+            installed[entry.label] = "absent"
+
+    return {
+        "corpus": corpus,
+        "retrieval": {
+            "mode": settings.retrieval.mode,
+            "k_agent": settings.retrieval.k_agent,
+            "k_compiler": settings.retrieval.k_compiler,
+            "hnsw_ef_search": settings.retrieval.hnsw_ef_search,
+        },
+        "llm": {
+            "provider": settings.llm.provider,
+            "mode": settings.llm.mode,
+            "prompt_rev": settings.llm.prompt_rev,
+        },
+        "tools": {"python": sys.version.split()[0], "installed_stack": installed},
+        "note": (
+            "The corpus, the retrieval settings and the prompt revision recorded "
+            "here are those in force when the report was written. A forecast "
+            "collapsed earlier was made under whatever was in force then; "
+            "`prompt_revisions` in `leakage_report.json` carries the history."
+        ),
     }
 
 

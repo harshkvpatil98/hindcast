@@ -154,6 +154,21 @@ def store(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
         lambda settings, **fields: state["reports"].append(fields),
     )
     monkeypatch.setattr("cascade.ensemble.store.scores_by_scenario", lambda settings, **_: {})
+    # The report reads the market benchmark's coverage and the corpus it was
+    # forecast against. Both are database reads and both are stubbed here, so
+    # that the "no database" guard above stays the thing that fails when a new
+    # read is added without one.
+    monkeypatch.setattr("cascade.eval.store.load_market_prices", lambda settings, **_: ())
+    monkeypatch.setattr(
+        "cascade.corpus.store.corpus_stats",
+        lambda settings: SimpleNamespace(
+            n_documents=3,
+            n_chunks=41,
+            per_source=(("ccnews", 3, 41),),
+            earliest=None,
+            latest=None,
+        ),
+    )
     return state
 
 

@@ -208,3 +208,100 @@ class TestThemeAndAccessibility:
         svg = reliability_svg(_report(), title="Reliability diagram")
         assert 'role="img"' in svg
         assert "<title>Reliability diagram</title>" in svg
+
+
+def _texts(svg: str) -> list[tuple[float, str]]:
+    """Every text node as (y, content), in document order."""
+    root = _parse(svg)
+    ns = "{http://www.w3.org/2000/svg}"
+    return [
+        (float(node.attrib["y"]), node.text or "")
+        for node in root.iter(f"{ns}text")
+        if "y" in node.attrib
+    ]
+
+
+class TestTheForestLabelsDoNotCollide:
+    """Every row's numbers were drawn at one y, stacking four labels into a
+    smear over the tick labels -- in the one display whose job is to show four
+    intervals apart."""
+
+    def test_each_row_s_numbers_are_on_that_row(self) -> None:
+        rows = [_comparison(f"row {index}", 0.01 * (index + 1), 0.5) for index in range(4)]
+        numeric = [(y, text) for y, text in _texts(forest_svg(rows, title="f")) if "[" in text]
+        assert len(numeric) == 4
+        assert len({y for y, _ in numeric}) == 4
+
+    def test_no_label_shares_a_line_with_another(self) -> None:
+        rows = [_comparison(f"row {index}", 0.01 * (index + 1), 0.5) for index in range(4)]
+        ys = [y for y, text in _texts(forest_svg(rows, title="f")) if "row " in text or "[" in text]
+        assert len(ys) == len(set(ys))
+
+    def test_each_row_carries_the_n_it_was_paired_on(self) -> None:
+        svg = forest_svg([_comparison("a", 0.02, 0.5)], title="f")
+        assert "n=180" in svg
+
+    def test_an_unadjusted_row_says_so_rather_than_dropping_the_field(self) -> None:
+        svg = forest_svg([_comparison("a", 0.02, None)], title="f")
+        assert "p* not measured" in svg
+
+
+class TestTheConvergenceAxesAreNamed:
+    def test_both_axes_carry_a_label(self) -> None:
+        svg = convergence_svg([(25, 0.04), (50, 0.02)], title="c")
+        assert "replicates in the ensemble" in svg
+        assert "mean |change in p|" in svg
+
+    def test_the_y_label_is_rotated_onto_the_y_axis(self) -> None:
+        """A quantity printed under the plot is read as the x quantity."""
+        svg = convergence_svg([(25, 0.04), (50, 0.02)], title="c")
+        rotated = [line for line in svg.split("<text") if "mean |change in p|" in line]
+        assert rotated == [] or "rotate(-90" in svg
+        assert "rotate(-90" in svg
+
+    def test_a_flat_series_does_not_print_an_axis_maximum_no_datum_reaches(self) -> None:
+        """peak 0 used to borrow a unit scale and label the top 1.0000."""
+        svg = convergence_svg([(25, 0.0), (50, 0.0)], title="c")
+        assert "1.0000" not in svg
+        assert "no measured maximum" in svg
+
+    def test_the_axis_top_is_the_measured_maximum(self) -> None:
+        svg = convergence_svg([(25, 0.0432), (50, 0.0211)], title="c")
+        assert "0.0432" in svg
+
+    def test_a_single_rung_says_there_is_nothing_to_converge_across(self) -> None:
+        svg = convergence_svg([(25, 0.04)], title="c")
+        assert "nothing to converge across" in svg
+
+
+class TestTheScatterNamesADegenerateAxis:
+    def test_no_spread_in_x_is_stated_on_the_figure(self) -> None:
+        svg = scatter_svg(
+            [0.0] * 5, [0.1, 0.4, 0.2, 0.9, 0.3], title="s", x_label="sigma", y_label="error"
+        )
+        assert "no spread on the x axis" in svg
+
+    def test_a_real_spread_carries_no_such_note(self) -> None:
+        svg = scatter_svg(
+            [0.0, 0.2, 0.4], [0.1, 0.4, 0.2], title="s", x_label="sigma", y_label="error"
+        )
+        assert "no spread on the x axis" not in svg
+
+
+class TestTickLabelsCarryTheAxisRange:
+    def test_a_narrow_axis_does_not_print_the_same_tick_six_times(self) -> None:
+        """Six "0.00" labels read as an axis with no range rather than as an
+        axis whose range is small."""
+        svg = scatter_svg(
+            [0.0, 0.002, 0.004, 0.006],
+            [0.1, 0.4, 0.2, 0.9],
+            title="s",
+            x_label="sigma",
+            y_label="error",
+        )
+        ticks = [text for _y, text in _texts(svg) if text.replace(".", "").isdigit()]
+        assert len(set(ticks)) > 2
+
+    def test_a_unit_axis_still_prints_two_decimals(self) -> None:
+        svg = scatter_svg([0.0, 1.0], [0.0, 1.0], title="s", x_label="x", y_label="y")
+        assert "0.20" in svg
