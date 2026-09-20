@@ -2987,6 +2987,15 @@ def simulate_all(
     limit: Annotated[
         int | None, typer.Option("--limit", help="Use at most N scenarios (smoke runs).")
     ] = None,
+    only: Annotated[
+        Path | None,
+        typer.Option(
+            "--only",
+            help="File of scenario ids, one per line: run exactly these. "
+            "`--limit` takes a prefix of the sorted ids, which is a biased "
+            "subset when the study is a subset.",
+        ),
+    ] = None,
 ) -> None:
     """Run the seeded ensemble across every compiled scenario (M6, PHASE 2).
 
@@ -3011,6 +3020,26 @@ def simulate_all(
             "no compiled graphs; run `cascade compile build` before simulating",
             EXIT_PRECONDITION,
         )
+    if only is not None:
+        # A named set, because a prefix of sorted ids is not a sample. Ids sort
+        # by source (`curated:` before `manifold:` before `polymarket:`), so
+        # `--limit 36` would run the curated and manifold scenarios and no
+        # others -- a domain-skewed subset that would look like a study over 36
+        # scenarios and read as a study over two sources.
+        wanted = {
+            line.strip() for line in only.read_text(encoding="utf-8").splitlines() if line.strip()
+        }
+        missing = sorted(wanted - set(scenario_ids))
+        if missing:
+            _fail(
+                f"{len(missing)} scenario(s) in {only} have no compiled graph: "
+                f"{missing[:5]}. Compile them or remove them from the file -- "
+                "silently running a smaller set than the file names would make "
+                "the study's scenario count a property of this file rather than "
+                "of what was measured.",
+                EXIT_PRECONDITION,
+            )
+        scenario_ids = [sid for sid in scenario_ids if sid in wanted]
     if limit is not None:
         scenario_ids = scenario_ids[:limit]
 
