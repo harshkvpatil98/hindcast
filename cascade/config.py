@@ -149,6 +149,27 @@ class MemoryConfig(_Model):
     summary_interval: int
 
 
+class ToolsConfig(_Model):
+    """What an agent may do besides choose an action (M15, ADR-0049).
+
+    Off by default, and it is not a free switch: a tool loop is multi-turn, so
+    an arm with tools cannot be submitted as one batch per step (ADR-0020) and
+    therefore cannot carry the 36,000-run headline. It exists to be measured
+    at ablation scale against an arm without it.
+    """
+
+    enabled: bool = False
+    # Model turns per decision, including the final one that emits the action.
+    # Bounded because an unbounded tool loop is an unbounded bill, and because
+    # the per-run cost model has to stay a function of the graph.
+    max_turns: int = Field(default=3, ge=1, le=8)
+    # Chunks a `lookup_evidence` call may return. `as_of` is NOT here and
+    # never will be: it is bound by the caller from the run's own cutoff, so
+    # there is no configuration through which an agent could widen it.
+    k_tool: int = Field(default=6, gt=0)
+    allow: tuple[str, ...] = ("lookup_evidence", "recall")
+
+
 class KernelConfig(_Model):
     steps: int
     max_step_delta: float
@@ -159,6 +180,7 @@ class KernelConfig(_Model):
     evidence_chars: int
     activation: ActivationConfig
     memory: MemoryConfig
+    tools: ToolsConfig = Field(default_factory=ToolsConfig)
 
 
 class Channel(_Model):
@@ -193,6 +215,15 @@ class RerankConfig(_Model):
     # Identifies the scorer in the cache key and the event log. For `local`
     # the reranker names itself and this is ignored.
     model_id: str = "bm25-local-v1"
+    # Routing for a managed reranker comes from `providers.bedrock.region`,
+    # not from a second copy here: ADR-0028's rule is that identity is ambient
+    # and routing explicit, and two places to set a region is one place for
+    # them to disagree.
+    #
+    # Managed rerankers bill per query, not per token, so this cannot ride on
+    # the token price table. A `Decimal` string, never a float: the meter is
+    # exact and a binary fraction of a cent compounds over 36,000 runs.
+    price_per_1k_queries: str = "0.00"
 
 
 class RetrievalConfig(_Model):
@@ -384,6 +415,14 @@ class BedrockProviderConfig(_Model):
     # it without a code change when a deployment publishes something else.
     model_ids: dict[str, str]
     pricing: dict[str, PricingEntry]
+    # A Bedrock Guardrail applied to the compile path (M15). ADR-0030
+    # deferred guardrails because the SDK's Bedrock client had no guardrail
+    # parameter and an unmeasured filter is a confound. Both halves are
+    # addressed by *measuring* it: the identifier is configured here, and a
+    # guardrail that alters any compiled graph is reported as a confound
+    # rather than shipped as a safety win.
+    guardrail_id: str | None = None
+    guardrail_version: str | None = None
 
 
 class ClaudeCodeProviderConfig(_Model):
@@ -400,6 +439,24 @@ class ClaudeCodeProviderConfig(_Model):
     # from its working directory, and this repository's build contract is
     # ~27k tokens that would be injected into every forecasting call.
     workdir: str | None
+
+
+class ObservabilityConfig(_Model):
+    """Where a second, independent record of spend can be read (M15).
+
+    M8 criterion 3 exits 3 today because there is exactly one record of what
+    was spent -- the meter's own -- and a gate that compares a number to
+    itself cannot fail. Bedrock model-invocation logging is written by AWS
+    rather than by this process, which is what makes it independent.
+
+    Every field is optional and absent means *unreachable*, never
+    *reconciled*: `LedgerReconciliation` already distinguishes those, and
+    "we could not check" must not read as "we checked".
+    """
+
+    aws_invocation_log_group: str | None = None
+    # Routing, explicit as everywhere else (ADR-0028).
+    aws_region: str | None = None
 
 
 class ProvidersConfig(_Model):
@@ -637,6 +694,7 @@ class Settings(BaseSettings):
     dossier: DossierConfig
     llm: LLMConfig
     providers: ProvidersConfig
+    observability: ObservabilityConfig = Field(default_factory=ObservabilityConfig)
     ledger: LedgerConfig
     market_baseline: MarketBaselineConfig
     corpus: CorpusConfig

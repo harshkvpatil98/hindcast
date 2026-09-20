@@ -208,6 +208,11 @@ retrieval:
     # between the smallest caller k and `max_k`.
     pool: 60
     model_id: bm25-local-v1
+    # Managed rerankers bill per query rather than per token, so this cannot
+    # ride on the token price table. Zero while the local reranker is the one
+    # in use; set from the provider's published price before any paid run, and
+    # written as a string so it reaches the meter as an exact Decimal.
+    price_per_1k_queries: "0.00"
 
 ensemble:
   replicates: 200
@@ -333,6 +338,14 @@ providers:
     profile: null
     model_ids: {} # logical -> Bedrock id; absent = "anthropic.<logical>"
     pricing: {}
+    # A Bedrock Guardrail applied to the compile path (M15). ADR-0030 deferred
+    # guardrails on two grounds: the SDK's Bedrock client had no guardrail
+    # parameter, and an unmeasured filter that alters one decomposition is a
+    # confound. Measuring it addresses the second -- a guardrail that provably
+    # changes no compiled graph is a safety control worth shipping, and one
+    # that changes a graph is reported as a confound, not as a win.
+    guardrail_id: null
+    guardrail_version: null
   # The Claude Code CLI run headless under a Claude subscription (ADR-0031).
   # Local-only, not the pinned configuration: the CLI cannot set temperature or
   # max_tokens, so it records under its own cache namespace and is never mixed
@@ -341,6 +354,15 @@ providers:
   claude_code:
     executable: claude
     workdir: null # null = fresh temp dir; must not sit below any CLAUDE.md
+
+# A second, independent record of spend (M15). M8 criterion 3 exits 3 today
+# because there is exactly one record -- the meter's own -- and a gate that
+# compares a number to itself cannot fail. Bedrock model-invocation logging is
+# written by AWS rather than by this process, which is what makes it
+# independent. Absent means *unreachable*, never *reconciled*.
+observability:
+  aws_invocation_log_group: null
+  aws_region: null # routing explicit, as everywhere else (ADR-0028)
 
 ledger: # scenario registry (spec §3.1)
   target_scenarios: 180
