@@ -142,8 +142,7 @@ class TestCacheKey:
         args: dict[str, object] = {
             "model_id": "m",
             "query": "q",
-            "chunk_ids": ["a", "b"],
-            "top_k": 5,
+            "documents": ["a", "b"],
         }
         assert rerank_cache_key(**args) == rerank_cache_key(**args)  # type: ignore[arg-type]
 
@@ -152,31 +151,45 @@ class TestCacheKey:
         [
             {"model_id": "other"},
             {"query": "different"},
-            {"chunk_ids": ["a", "c"]},
-            {"top_k": 6},
+            {"documents": ["a", "c"]},
         ],
     )
     def test_every_component_changes_the_key(self, changed: dict[str, object]) -> None:
         base: dict[str, object] = {
             "model_id": "m",
             "query": "q",
-            "chunk_ids": ["a", "b"],
-            "top_k": 5,
+            "documents": ["a", "b"],
         }
         assert rerank_cache_key(**base) != rerank_cache_key(**{**base, **changed})  # type: ignore[arg-type]
 
     def test_pool_order_changes_the_key(self) -> None:
         # A reranker is permitted to be position-sensitive, so two orders of
         # the same pool are two calls and must not share a recording.
-        first = rerank_cache_key(model_id="m", query="q", chunk_ids=["a", "b"], top_k=5)
-        second = rerank_cache_key(model_id="m", query="q", chunk_ids=["b", "a"], top_k=5)
+        first = rerank_cache_key(model_id="m", query="q", documents=["a", "b"])
+        second = rerank_cache_key(model_id="m", query="q", documents=["b", "a"])
         assert first != second
+
+    def test_a_rewritten_body_changes_the_key(self) -> None:
+        # Why the key is the text and not the chunk ids: `corpus redate`
+        # rewrites bodies in place, and an id-keyed recording would go on
+        # describing text that no longer exists.
+        first = rerank_cache_key(model_id="m", query="q", documents=["original"])
+        second = rerank_cache_key(model_id="m", query="q", documents=["rewritten"])
+        assert first != second
+
+    def test_a_nul_inside_a_body_cannot_forge_a_pool_boundary(self) -> None:
+        # Scraped HTML carries NUL bytes routinely (M2 found this in the COPY
+        # path). Without the length prefix, one document containing the
+        # separator would hash like two documents.
+        joined = rerank_cache_key(model_id="m", query="q", documents=["a\x00b"])
+        split = rerank_cache_key(model_id="m", query="q", documents=["a", "b"])
+        assert joined != split
 
     def test_the_separator_prevents_a_field_boundary_collision(self) -> None:
         # Without a delimiter, ("ab", "c") and ("a", "bc") would hash alike.
-        assert rerank_cache_key(
-            model_id="ab", query="c", chunk_ids=[], top_k=1
-        ) != rerank_cache_key(model_id="a", query="bc", chunk_ids=[], top_k=1)
+        assert rerank_cache_key(model_id="ab", query="c", documents=[]) != rerank_cache_key(
+            model_id="a", query="bc", documents=[]
+        )
 
 
 class TestTokenize:

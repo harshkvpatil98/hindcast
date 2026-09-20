@@ -62,8 +62,11 @@ This is falsifiable rather than asserted, and three tests hold it:
 byte-identical event-log hash across processes, and a remote reranker is a
 network call whose output can change when the provider updates a model. So the
 rerank result is treated exactly like a model call: content-addressed and
-cached by (query, ordered pool of chunk ids, rerank model id, top-k), served
+cached by (rerank model id, top-k, query, the ordered document bodies), served
 from disk on replay, and a cache miss in replay mode exits 4 like any other.
+The key is the *text*, not the chunk ids, because the response is a function
+of the text: `corpus redate` rewrites bodies in place, and an id-keyed
+recording would go on describing text that no longer exists.
 The rerank model id joins the cache domain, so changing rerankers invalidates
 recordings instead of silently reordering evidence underneath a stored graph.
 

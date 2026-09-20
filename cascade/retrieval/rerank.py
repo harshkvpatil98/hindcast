@@ -146,27 +146,40 @@ def rerank_cache_key(
     *,
     model_id: str,
     query: str,
-    chunk_ids: Sequence[str],
-    top_k: int,
+    documents: Sequence[str],
 ) -> str:
     """Content-address one rerank call (ADR-0047).
 
-    Keyed on the *pool's identity* rather than its text: the bodies are a pure
-    function of the chunk ids, and hashing megabytes of prose to look up a
-    ranking of twenty rows would make the cache more expensive than the call.
-    The ids are hashed in the order they will be sent, because a reranker is
-    permitted to be position-sensitive and two orders are two calls.
+    Keyed on exactly what the reranker is shown -- the query and the document
+    bodies, in the order they will be sent -- because that is what the
+    response is a function of. ``top_k`` is deliberately *not* in the key:
+    what is cached is :meth:`Reranker.score`, which returns one score per
+    document and knows nothing about truncation. Including it would record the
+    same scores twice under two keys whenever a caller asked for a different
+    k.
+
+    Keying on chunk ids instead would be cheaper, and wrong in one specific
+    way: a corpus repair that rewrites a body -- ``corpus redate`` does -- would
+    leave the old scores cached under an unchanged id, and the recording would
+    no longer describe the text that produced it.
+
+    Order is in the key because a reranker is permitted to be
+    position-sensitive, so two orders of one pool are two calls.
 
     ``model_id`` is in the key so changing reranker invalidates recordings
     instead of reordering evidence under a graph that was compiled against the
     old ordering.
     """
     digest = hashlib.blake2b(digest_size=16)
-    for part in (model_id, str(top_k), query):
+    for part in (model_id, query):
         digest.update(part.encode("utf-8"))
         digest.update(b"\x00")
-    for chunk_id in chunk_ids:
-        digest.update(chunk_id.encode("utf-8"))
+    for body in documents:
+        # The length prefix, not only the separator: a NUL inside a scraped
+        # body would otherwise let two different pools hash alike.
+        digest.update(str(len(body)).encode("ascii"))
+        digest.update(b":")
+        digest.update(body.encode("utf-8"))
         digest.update(b"\x00")
     return f"rerank-{digest.hexdigest()}"
 

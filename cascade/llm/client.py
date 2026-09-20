@@ -56,6 +56,7 @@ from cascade.llm.types import (
     ProviderNotReady,
     Usage,
 )
+from cascade.retrieval.rerank import RerankError, rerank_cache_key
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
     import httpx
@@ -65,6 +66,7 @@ __all__ = [
     "CliCompleted",
     "CliRunner",
     "LLMClient",
+    "RecordedReranker",
     "assert_cacheable_prefix",
     "estimate_tokens",
 ]
@@ -767,3 +769,106 @@ def _result_from_payload(
         served_from_cache=served_from_cache,
         tool_calls=tool_calls,
     )
+
+
+@dataclass
+class RecordedReranker:
+    """Record/replay around any reranker (ADR-0047).
+
+    Lives here, beside the one model door, for the reason ADR-0030 gave for
+    refusing ``ApplyGuardrail``: a second path that reaches a model-adjacent
+    service from somewhere else in the package is exactly what invariant 5
+    exists to prevent. ``cascade/retrieval/rerank.py`` stays pure and knows
+    nothing about a cache or a network; this wrapper is what makes a remote
+    reranker replayable.
+
+    The contract matches :meth:`LLMClient.complete` exactly, because a study
+    that can replay its decisions and not its evidence ordering cannot replay
+    at all:
+
+    * ``live`` scores every time and records nothing,
+    * ``record`` serves a hit from disk and stores a miss,
+    * ``replay`` is total with respect to the recorded corpus -- it returns a
+      recording or raises :class:`CacheMiss`, and never reaches the inner
+      reranker.
+
+    Wrapping a *local* reranker is not pointless: it is how the recorded
+    corpus stays complete when the provider is switched, and how a BM25 arm
+    and a managed arm are compared under the same machinery rather than one
+    of them getting a free pass.
+    """
+
+    inner: Any
+    cache: CallCache
+    mode: str
+    calls: int = 0
+    hits: int = 0
+
+    @property
+    def model_id(self) -> str:
+        """The inner reranker names itself; this wrapper is not a model."""
+        return str(self.inner.model_id)
+
+    def score(self, *, query: str, documents: Sequence[str]) -> Sequence[float]:
+        """One score per document, from the recording where there is one."""
+        key = rerank_cache_key(model_id=self.model_id, query=query, documents=documents)
+        self.calls += 1
+
+        if self.mode != "live":
+            recorded = self.cache.get(key)
+            if recorded is not None:
+                self.hits += 1
+                return _recorded_scores(recorded, expected=len(documents), key=key)
+            if self.mode == "replay":
+                raise CacheMiss(
+                    f"no recorded rerank for key {key} (model={self.model_id!r}, "
+                    f"{len(documents)} document(s)) in {self.cache.root}. Replay never "
+                    "falls back to a reranker -- re-record with CASCADE_LLM__MODE=record "
+                    "if this pool is new."
+                )
+
+        started = time.perf_counter()
+        scores = [float(value) for value in self.inner.score(query=query, documents=documents)]
+        latency_ms = (time.perf_counter() - started) * 1000.0
+
+        if self.mode == "record":
+            self.cache.put(
+                CachedCall(
+                    key=key,
+                    # Enough to identify the call without storing the pool
+                    # twice: the bodies are already in the key, and a
+                    # recording that repeated them would be megabytes per
+                    # query for no lookup that needs them.
+                    request_digest={
+                        "kind": "rerank",
+                        "model_id": self.model_id,
+                        "query": query,
+                        "documents": len(documents),
+                    },
+                    raw_response={"scores": scores},
+                    # Reranking is not token-billed -- the managed services
+                    # price per query -- so a token usage here would be a
+                    # fiction the meter would then sum. It is recorded as zero
+                    # and the query count is what a spend reconciliation reads.
+                    usage=Usage(input_tokens=0, output_tokens=0),
+                    latency_ms=latency_ms,
+                    recorded_at=datetime.now(UTC).isoformat(),
+                )
+            )
+        return scores
+
+
+def _recorded_scores(recorded: CachedCall, *, expected: int, key: str) -> list[float]:
+    """Read scores out of a recording, refusing one that cannot be applied.
+
+    A recording whose length disagrees with the pool is a corrupted or
+    mis-keyed entry, and returning it would let `apply_scores` raise far from
+    the cause. Checked here, where the key is still in hand.
+    """
+    raw = recorded.raw_response.get("scores")
+    if not isinstance(raw, list) or len(raw) != expected:
+        raise RerankError(
+            f"recorded rerank {key} holds {len(raw) if isinstance(raw, list) else 'no'} "
+            f"score(s) for a pool of {expected}; the recording does not describe this call"
+        )
+    return [float(value) for value in raw]
