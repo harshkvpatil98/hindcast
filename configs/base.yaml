@@ -188,6 +188,27 @@ retrieval:
   # is dropped from the informative-names reading. Both readings are printed.
   relevance_generic_name_rate: 0.05
 
+  # -- Reranking (M15, ADR-0047) ---------------------------------------------
+  # A second ranking stage over the fused pool. Admissible where a managed
+  # knowledge base was not (ADR-0030) because it *permutes* a set the database
+  # already filtered by `published_at < as_of` -- it is handed text and returns
+  # numbers, and has no argument through which a date could reach it.
+  #
+  # Off by default, and deliberately so: the evidence a prompt carries is part
+  # of the LLM cache key, so enabling this invalidates every recorded decision
+  # and every compiled graph, exactly as `mode` does. Whether it helps is an
+  # ablation measured on the dev split, not an assumption made here.
+  rerank:
+    enabled: false
+    # `local` is deterministic BM25 over the pool and needs no credential, so
+    # `make demo` is unaffected. `bedrock` routes through the one call site.
+    provider: local
+    # Shown to the reranker, then truncated to the caller's k. 60 matches
+    # `k_compiler`, so the compiler's pool is reranked whole; it must lie
+    # between the smallest caller k and `max_k`.
+    pool: 60
+    model_id: bm25-local-v1
+
 ensemble:
   replicates: 200
   ablation_replicates: 30

@@ -65,6 +65,13 @@ class RetrievedChunk(_Frozen):
     keyword_rank: int | None = None
     recency_rank: int | None = None
     fused_score: float | None = None
+    # Set only when a second ranking stage ran (ADR-0047). `rerank_rank` is the
+    # 1-based position the reranker gave this chunk; the ranks above are what
+    # it was given, so the pair is the displacement, and a provenance walk can
+    # say "the reranker moved this from 14th to 2nd" rather than only which
+    # chunks arrived.
+    rerank_rank: int | None = None
+    rerank_score: float | None = None
 
 
 class HybridCandidate(_Frozen):
@@ -123,6 +130,12 @@ class SearchResult(_Frozen):
     # recency -- worth being able to see afterwards.
     terms: tuple[str, ...] = ()
     candidates: int | None = None
+    # Set when a reranker ran (ADR-0047). `mode` still says how the *pool* was
+    # retrieved, because reranking is a separate fact about the same result:
+    # folding it into the mode literal would make "hybrid" and "hybrid+rerank"
+    # two retrieval modes when they are one retrieval and two rankings.
+    rerank_model: str | None = None
+    reranked_pool: int | None = None
 
     @property
     def chunk_ids(self) -> tuple[str, ...]:

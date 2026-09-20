@@ -24,6 +24,7 @@ from cascade.config import Settings
 from cascade.corpus.embed import EMBEDDING_DIM
 from cascade.retrieval.fusion import FusionParams, select
 from cascade.retrieval.keywords import entity_terms
+from cascade.retrieval.rerank import LexicalReranker, Reranker, apply_scores
 from cascade.retrieval.schema import HybridCandidate, RetrievedChunk, SearchResult
 
 __all__ = ["Chronofence", "Role", "TimeLockViolation", "fusion_params", "vector_literal"]
@@ -112,10 +113,22 @@ class Chronofence:
     class cannot quietly give it a second.
     """
 
-    def __init__(self, settings: Settings, *, role: Role = "sim") -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        *,
+        role: Role = "sim",
+        reranker: Reranker | None = None,
+    ) -> None:
         self._settings = settings
         self._role = role
         self._conn: Any = None
+        # Injected rather than constructed, like the compiler's `embed` and
+        # `retrieve` (M4): a reranker that reaches a network is a shell
+        # concern, and injecting it keeps this class testable against a
+        # deterministic one. None means "resolve from config", which for the
+        # local provider is a pure object this module may build itself.
+        self._reranker = reranker
 
     def __enter__(self) -> Chronofence:
         import psycopg
@@ -354,10 +367,67 @@ class Chronofence:
         baseline handed differently retrieved evidence would measure retrieval
         rather than architecture (§10.2). Under ``vector`` this *is*
         :meth:`search`; ``text`` and ``entities`` are not read.
+
+        Reranking, when enabled, happens **here** rather than inside either
+        search method (ADR-0047). A reranker permutes whatever pool the
+        configured mode produced, so it composes with both and there is one
+        place where a second ranking stage can enter the system.
         """
+        rerank = self._settings.retrieval.rerank
+        if not rerank.enabled:
+            return self._retrieve_pool(vector, text=text, entities=entities, as_of=as_of, k=k)
+
+        reranker = self._resolve_reranker()
+        # Ask for the wider pool, then let the reranker choose the caller's k
+        # out of it. `max` rather than the configured pool alone: a caller
+        # asking for more than the pool must not be silently truncated by a
+        # ranking stage it did not ask about.
+        base = self._retrieve_pool(
+            vector, text=text, entities=entities, as_of=as_of, k=max(k, rerank.pool)
+        )
+        scores = reranker.score(query=text, documents=[chunk.body for chunk in base.chunks])
+        chosen = apply_scores(base.chunks, scores, top_k=k)
+        return base.model_copy(
+            update={
+                "chunks": chosen,
+                "k": k,
+                "rerank_model": reranker.model_id,
+                "reranked_pool": len(base.chunks),
+            }
+        )
+
+    def _retrieve_pool(
+        self,
+        vector: Sequence[float],
+        *,
+        text: str,
+        entities: Sequence[str],
+        as_of: datetime,
+        k: int,
+    ) -> SearchResult:
+        """The configured mode's own result, before any reranking."""
         if self._settings.retrieval.mode == "hybrid":
             return self.search_hybrid(vector, text=text, entities=entities, as_of=as_of, k=k)
         return self.search(vector, as_of=as_of, k=k)
+
+    def _resolve_reranker(self) -> Reranker:
+        """The configured reranker, building the pure default where it applies.
+
+        A ``local`` reranker is arithmetic and this module may construct one;
+        anything that reaches a network must be injected, so that a
+        misconfiguration fails loudly here rather than opening a second egress
+        path out of a module whose job is to read the corpus.
+        """
+        if self._reranker is not None:
+            return self._reranker
+        rerank = self._settings.retrieval.rerank
+        if rerank.provider == "local":
+            return LexicalReranker(model_id=rerank.model_id)
+        raise RuntimeError(
+            f"retrieval.rerank.provider is {rerank.provider!r}, which reaches a service, but no "
+            "reranker was injected into Chronofence; construct it at the call site so the one "
+            "call site owns every request that leaves this process"
+        )
 
     def ef_search(self, function: str = "chronofence_search") -> int:
         """The ``hnsw.ef_search`` actually pinned into a deployed function.

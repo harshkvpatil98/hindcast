@@ -173,6 +173,28 @@ class ApertureConfig(_Model):
     public: Channel
 
 
+class RerankConfig(_Model):
+    """Second-stage ranking over an already time-locked pool (ADR-0047).
+
+    Off by default. Turning it on changes the evidence a prompt carries, and
+    evidence is part of the LLM cache key, so it invalidates every recorded
+    decision and every compiled graph exactly as `retrieval.mode` does.
+    """
+
+    enabled: bool = False
+    # `local` is the deterministic BM25 default and needs no credential;
+    # `bedrock` is a managed reranker reached through the one call site.
+    provider: Literal["local", "bedrock"] = "local"
+    # How many fused candidates the reranker is shown. Larger is a better
+    # chance of recovering a chunk the fusion ranked poorly, and a larger
+    # call; it is bounded above by `max_k` because that is the pool the SQL
+    # function actually draws.
+    pool: int = Field(default=60, gt=0)
+    # Identifies the scorer in the cache key and the event log. For `local`
+    # the reranker names itself and this is ignored.
+    model_id: str = "bm25-local-v1"
+
+
 class RetrievalConfig(_Model):
     k_agent: int
     k_compiler: int
@@ -216,6 +238,34 @@ class RetrievalConfig(_Model):
     diversity_max_per_story: int = Field(gt=0)
     diversity_simhash_bits: int = Field(ge=0, le=64)
     relevance_generic_name_rate: float = Field(gt=0.0, le=1.0)
+    # -- Reranking (M15, ADR-0047) -------------------------------------------
+    rerank: RerankConfig = Field(default_factory=RerankConfig)
+
+    @model_validator(mode="after")
+    def _rerank_pool_fits_what_the_function_draws(self) -> RetrievalConfig:
+        """A rerank pool wider than `max_k` would ask for rows that never come.
+
+        `chronofence_search` draws a bounded pool with a *constant* limit
+        (ADR-0026) and `max_k` is that constant. Asking the reranker for more
+        candidates than the query can return is not an error at runtime -- it
+        silently reranks a shorter list -- so it is refused here, where the
+        mismatch is visible as a configuration mistake rather than as a
+        retrieval that quietly got narrower.
+        """
+        if self.rerank.enabled and self.rerank.pool > self.max_k:
+            raise ValueError(
+                f"retrieval.rerank.pool ({self.rerank.pool}) exceeds retrieval.max_k "
+                f"({self.max_k}), which is the largest pool chronofence_search draws; "
+                "the reranker would be shown fewer candidates than configured"
+            )
+        smallest_k = min(self.k_agent, self.k_compiler)
+        if self.rerank.enabled and self.rerank.pool < smallest_k:
+            raise ValueError(
+                f"retrieval.rerank.pool ({self.rerank.pool}) is below the smallest k a "
+                f"caller asks for ({smallest_k}); reranking would truncate the evidence "
+                "before the caller's own k could"
+            )
+        return self
 
 
 class EnsembleConfig(_Model):
