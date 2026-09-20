@@ -354,3 +354,45 @@ def test_utility_terms_do_not_confer_reachability() -> None:
     violation = next(v for v in report.violations if v.rule == "reachability")  # type: ignore[attr-defined]
     assert "actor_9" in violation.subjects
     assert UtilityTerm(factor_id="factor_0", weight=0.5) in watcher.utility_terms
+
+
+def _graph_with_inbound(weights: list[float]) -> CausalGraph:
+    """A valid graph whose only inbound edges on `factor_0` are ``weights``."""
+    from cascade.decompose.schema import Edge
+
+    return make_graph(
+        n_factors=len(weights) + 1,
+        n_actors=max(8, len(weights) + 1),
+        edges=tuple(
+            Edge(src=f"factor_{index + 1}", dst="factor_0", sign=1, weight=weight, lag=1)
+            for index, weight in enumerate(weights)
+        ),
+    )
+
+
+def test_the_inbound_weight_cap_is_not_decided_by_rounding() -> None:
+    """The nine weights below are a real compiled graph's, into one factor of
+    the NBA Southeast Division scenario. They sum to exactly the 3.0 cap, and a
+    running `+=` accumulation lands at 3.0000000000000004 -- Python's own
+    `sum()` compensates, a hand-written loop does not. Four of 158 stored
+    graphs passed `compile build` and failed `compile verify` on this. Same
+    remedy as the Brier accumulation (M7) and the arbiter's efforts (M5)."""
+    import functools
+    import math
+    import operator
+
+    weights = [0.4, 0.4, 0.25, 0.4, 0.35, 0.5, 0.2, 0.25, 0.25]
+    assert functools.reduce(operator.add, weights, 0.0) > MAX_INBOUND_WEIGHT
+    assert math.fsum(weights) == MAX_INBOUND_WEIGHT
+
+    report = validate(_graph_with_inbound(weights), outcome_text=OUTCOME_TEXT, embed=fake_embed())
+    assert "edge_sanity" not in rules_fired(report)
+
+
+def test_the_cap_still_refuses_a_graph_that_is_genuinely_over() -> None:
+    # Edge weights are capped at 1.0 each, so "over the inbound cap" means
+    # several edges, which is how a real graph gets there.
+    report = validate(
+        _graph_with_inbound([1.0, 1.0, 1.0, 0.5]), outcome_text=OUTCOME_TEXT, embed=fake_embed()
+    )
+    assert "edge_sanity" in rules_fired(report)

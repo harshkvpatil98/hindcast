@@ -1873,6 +1873,19 @@ def _print_compile_stats(stats: Any, settings: Settings) -> None:
         console.print(histogram)
 
 
+def _scorable_count(settings: Settings) -> int:
+    """How many sealed scenarios a compile is expected to cover.
+
+    The 15 stand-ins are excluded from scoring (ADR-0043) and skipped by
+    compile, so measuring the graphs against all 180 would report a shortfall
+    nobody intends to close.
+    """
+    from cascade.ledger.store import load_scenarios
+
+    scenarios = load_scenarios(settings, role="admin")
+    return len(_scorable(scenarios, what="the compile gate"))
+
+
 def _shard(value: str | None) -> tuple[int, int] | None:
     """Parse ``k/n`` into an offset and a stride, or exit 3.
 
@@ -2055,7 +2068,9 @@ def compile_status(config: OverlayOpt = None) -> None:
     from cascade.decompose.store import compile_stats
 
     settings = _settings(config)
-    _print_compile_stats(compile_stats(settings), settings)
+    _print_compile_stats(
+        compile_stats(settings, expected_scenarios=_scorable_count(settings)), settings
+    )
 
 
 @compile_app.command("verify")
@@ -2091,7 +2106,7 @@ def compile_verify(config: OverlayOpt = None) -> None:
         )
 
     scenarios = {item.scenario_id: item for item in load_scenarios(settings, role="admin")}
-    stats = compile_stats(settings)
+    stats = compile_stats(settings, expected_scenarios=_scorable_count(settings))
 
     embedder = Embedder(
         model_name=settings.models.embedding, batch_size=settings.corpus.embed_batch_size
