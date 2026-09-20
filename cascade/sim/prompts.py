@@ -39,6 +39,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from cascade.aperture.projection import Observation
+from cascade.quoting import EVIDENCE_RULE, quote_documents
 from cascade.sim.actions import (
     RATIONALE_MAX_CHARS,
     Ally,
@@ -94,6 +95,10 @@ RULES = f"""\
 You are one party in a multi-party situation that is being simulated forward, \
 one step at a time, to a horizon. You are not a forecaster and you are not an \
 assistant. You act in your own interest, given what you can see.
+
+# Quoted documents
+
+{EVIDENCE_RULE}
 
 # The world
 
@@ -230,19 +235,15 @@ def persona_block(brief: ActorBrief, *, evidence_chars: int) -> str:
     utility = ", ".join(f"{factor} {weight:+.2f}" for factor, weight in brief.utility)
     levers = ", ".join(f"{factor} (leverage {weight:.2f})" for factor, weight in brief.levers)
     constraints = "\n".join(f"- {item}" for item in brief.constraints) or "- none stated"
-    if brief.evidence:
-        evidence = "\n\n".join(
-            f"[{published}] {source}\n{excerpt[:evidence_chars]}"
-            for published, source, excerpt in brief.evidence
-        )
-    elif brief.grounded:
-        evidence = "(no admissible evidence was found before the cutoff)"
+    if brief.grounded:
+        empty = "(no admissible evidence was found before the cutoff)"
     else:
-        evidence = (
+        empty = (
             "(evidence retrieval is disabled in this configuration; reason from "
             "what you already know, and treat the absence of documents as a "
             "property of this exercise rather than as a fact about the world)"
         )
+    evidence = quote_documents(brief.evidence, excerpt_chars=evidence_chars, empty=empty)
     counterparties = ", ".join(brief.counterparties) or "(none reachable)"
     report = (
         "# Situation report\n\nA summary of the public record before the cutoff, the same for "

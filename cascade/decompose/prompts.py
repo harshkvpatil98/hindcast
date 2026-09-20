@@ -34,6 +34,7 @@ from cascade.decompose.validator import (
     MAX_INBOUND_WEIGHT,
     OBJECTIVE_SIMILARITY_MAX,
 )
+from cascade.quoting import EVIDENCE_RULE, quote_documents
 
 # Spec §7.2: the simulation advances (resolve_ts - cutoff_ts) / 24 per step.
 # Quoted into the prompt so the compiler can size `volatility` against the
@@ -152,6 +153,8 @@ CRITIQUE_TOOL = _tool(
 # ---------------------------------------------------------------------------
 
 SYSTEM_PROMPT = f"""\
+{EVIDENCE_RULE}
+
 You are Lathe, the causal decomposition compiler for a strategic forecasting
 system. You convert a resolved-in-the-past forecasting question into a typed
 causal graph that a multi-agent simulation will execute for 24 discrete steps.
@@ -288,18 +291,24 @@ STOOD, not the path to a known ending.
 """
 
 
+# The compiler sees whole chunks; the cap is the chunker's own 512-token
+# ceiling in characters, so nothing is truncated that was stored.
+EVIDENCE_EXCERPT_CHARS = 4096
+
+
 def _render_evidence(chunks: list[tuple[str, str, str]]) -> str:
-    """Render retrieved evidence as ``[n] date source: body`` blocks."""
+    """Render retrieved evidence as numbered quoted documents (ADR-0045)."""
     if not chunks:
         return (
             "(No pre-cutoff evidence was retrievable for this scenario. Build the "
             "graph from the question and resolution criterion alone, and prefer "
             "generic structural actors over specific named ones you cannot verify.)"
         )
-    lines = []
-    for index, (published, source, body) in enumerate(chunks, start=1):
-        lines.append(f"[{index}] {published} · {source}\n{body.strip()}")
-    return "\n\n".join(lines)
+    return quote_documents(
+        [(published, source, body.strip()) for published, source, body in chunks],
+        excerpt_chars=EVIDENCE_EXCERPT_CHARS,
+        empty="",
+    )
 
 
 def draft_user_prompt(

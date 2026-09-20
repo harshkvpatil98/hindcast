@@ -48,6 +48,7 @@ from cascade.config import Settings
 from cascade.eval.market import MARKET_CONFIG_ID
 from cascade.ledger.schema import Scenario
 from cascade.llm.types import BatchItem, LLMRequest
+from cascade.quoting import EVIDENCE_RULE, quote_documents
 
 __all__ = [
     "BASELINES",
@@ -179,7 +180,7 @@ def system_prompt() -> str:
         "resolution criterion, and evidence published strictly before the "
         "forecast cutoff. Estimate the probability that the question resolved "
         'YES. Answer with a JSON object of the form {"p": <number between 0 '
-        "and 1>} and nothing else. Do not explain."
+        "and 1>} and nothing else. Do not explain.\n\n" + EVIDENCE_RULE
     )
 
 
@@ -217,13 +218,14 @@ def baseline_prompt(
     if situation:
         lines.extend(["# Situation report (public record before the cutoff)", "", situation, ""])
     lines.extend(["# Evidence published before the cutoff", ""])
-    if evidence:
-        lines.extend(
-            f"[{published}] {source}\n{excerpt[:evidence_chars]}\n"
-            for published, source, excerpt in evidence
+    lines.append(
+        quote_documents(
+            evidence,
+            excerpt_chars=evidence_chars,
+            empty="(no admissible evidence was found before the cutoff)",
         )
-    else:
-        lines.append("(no admissible evidence was found before the cutoff)\n")
+    )
+    lines.append("")
     lines.append("Respond with JSON only.")
     return "\n".join(lines)
 

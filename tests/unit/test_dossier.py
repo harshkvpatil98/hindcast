@@ -665,16 +665,20 @@ def test_the_compiler_reads_the_dossier_and_records_which_one(settings: Settings
 # ---------------------------------------------------------------------------
 
 
-def test_the_dossier_ships_off_and_cannot_be_enabled_under_the_old_prompt_revision() -> None:
+def test_the_dossier_ships_off_and_needs_its_own_prompt_revision() -> None:
     base = Settings()
     assert base.dossier.enabled is False
     assert "dossier" in base.budget.phase_ceiling_usd
+
     payload = base.model_dump()
     payload["dossier"]["enabled"] = True
+    payload["llm"]["prompt_rev"] = "r2"  # before the dossier existed
     with pytest.raises(ValueError, match=r"requires llm\.prompt_rev >= r3"):
         Settings.model_validate(payload)
-    payload["llm"]["prompt_rev"] = "r3"
-    assert Settings.model_validate(payload).dossier.enabled is True
+
+    for revision in ("r3", base.llm.prompt_rev):
+        payload["llm"]["prompt_rev"] = revision
+        assert Settings.model_validate(payload).dossier.enabled is True
 
 
 def test_migration_019_records_the_revision_and_grants_read_only() -> None:
