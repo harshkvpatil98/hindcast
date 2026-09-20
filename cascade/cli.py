@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 from collections.abc import Iterator, Mapping, Sequence
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from decimal import Decimal
 from importlib import metadata
 from pathlib import Path
@@ -2383,6 +2383,42 @@ def _maybe_chronofence(settings: Settings, *, enabled: bool) -> Iterator[Any]:
         yield fence
 
 
+def _tool_belt(
+    settings: Settings,
+    policy: Any,
+    *,
+    scenario: Any,
+    actor_id: str,
+    fence: Any,
+    embedder: Any,
+) -> Any:
+    """One actor's bound tool surface for one scenario (ADR-0049).
+
+    Preserves invariant 1 at the one place it could be lost for this arm:
+    ``as_of`` is taken from the sealed registry's own ``cutoff_ts`` and passed
+    keyword-only into the belt, which holds it privately. Nothing the model
+    emits reaches this argument -- the tool's argument model has a single
+    ``query`` field and forbids extras -- so an agent cannot widen its own
+    time lock by asking.
+
+    The fence is the same one the prefixes were built from, so the tool path
+    and the prefix path read the corpus through one connection and one mode
+    (`retrieve`, ADR-0047). Two connections would have been two chances for
+    the arms to diverge on configuration.
+    """
+    from cascade.sim.tools import ToolBelt, chronofence_evidence
+
+    return ToolBelt(
+        scenario_id=scenario.scenario_id,
+        actor_id=actor_id,
+        as_of=scenario.cutoff_ts,
+        search=chronofence_evidence(fence=fence, embed=lambda text: embedder.encode([text])[0]),
+        k=policy.k_tool,
+        excerpt_chars=settings.kernel.evidence_chars,
+        allow=policy.allow,
+    )
+
+
 def _agent_policy(settings: Settings, pairs: Any) -> Any:
     """Build one model-backed decider covering every (scenario, actor) given.
 
@@ -2408,11 +2444,29 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
     from cascade.aperture.policy import counterparties, derive_policies, levers_by_actor
     from cascade.llm.client import LLMClient
     from cascade.retrieval.queries import agent_evidence_query
-    from cascade.sim.agent import LLMAgents, prepare_actor
+    from cascade.sim.agent import (
+        LLMAgents,
+        ToolUsingAgents,
+        prepare_actor,
+        prepare_tool_actor,
+        tool_policy,
+    )
     from cascade.sim.prompts import brief_from
 
     _require_provider_ready(settings)
     grounded = settings.flags.grounding == "chronofence"
+    # The tool arm (ADR-0049) is an ablation, never the headline: a tool loop
+    # is multi-turn and cannot be submitted as one batch per step (ADR-0020).
+    # It also needs the corpus open during the run, which is why the fence
+    # below is kept rather than closed after preparation.
+    tools = tool_policy(settings) if settings.kernel.tools.enabled else None
+    if tools is not None and not grounded:
+        _fail(
+            "kernel.tools.enabled with grounding='parametric_only': the tool arm's whole "
+            "content is retrieval, so an ungrounded tool arm is an arm whose tools return "
+            "nothing. Turn one of the two off.",
+            EXIT_PRECONDITION,
+        )
     if grounded:
         from cascade.corpus.embed import Embedder
 
@@ -2431,7 +2485,13 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
     )
 
     prepared: dict[tuple[str, str], Any] = {}
-    with _maybe_chronofence(settings, enabled=grounded) as fence:
+    belts: dict[tuple[str, str], Any] = {}
+    # `ExitStack` rather than `with`, because the tool arm's fence must outlive
+    # this function: a belt's `search` closure holds it and is called during
+    # the run. The non-tool arm closes here exactly as it always has.
+    stack = ExitStack()
+    try:
+        fence = stack.enter_context(_maybe_chronofence(settings, enabled=grounded))
         for scenario, graph in pairs:
             policies = derive_policies(
                 graph, settings.aperture, asymmetry=settings.flags.information_asymmetry
@@ -2470,7 +2530,25 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
                     grounded=grounded,
                     situation=situations.get(scenario.scenario_id, ("", None))[0],
                 )
-                prepared[(scenario.scenario_id, actor.id)] = prepare_actor(brief, settings)
+                key = (scenario.scenario_id, actor.id)
+                if tools is None:
+                    prepared[key] = prepare_actor(brief, settings)
+                    continue
+                prepared[key] = prepare_tool_actor(brief, settings, policy=tools)
+                belts[key] = _tool_belt(
+                    settings,
+                    tools,
+                    scenario=scenario,
+                    actor_id=actor.id,
+                    fence=fence,
+                    embedder=embedder,
+                )
+
+    except BaseException:
+        # A preparation that raised must not leave the corpus connection open;
+        # the success path below decides who owns it instead.
+        stack.close()
+        raise
 
     short = [key for key in sorted(prepared) if not prepared[key].cacheable]
     if short:
@@ -2480,8 +2558,19 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
             "unmarked: marking them would pay the write premium for a cache the provider "
             "silently declines (ADR-0001)."
         )
-    return LLMAgents(
-        settings=settings, client=LLMClient(settings, phase="simulate"), prepared=prepared
+    client = LLMClient(settings, phase="simulate")
+    if tools is None:
+        # ADR-0019's arm: every chunk it will ever see is already in a prefix,
+        # so the corpus connection has no further use.
+        stack.close()
+        return LLMAgents(settings=settings, client=client, prepared=prepared)
+    return ToolUsingAgents(
+        settings=settings,
+        client=client,
+        prepared=prepared,
+        belts=belts,
+        policy=tools,
+        closes=(stack,),
     )
 
 
