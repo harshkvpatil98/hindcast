@@ -61,11 +61,13 @@ gateway, route and open CIDR inside `modules/egress`. Every third-party
 action in the credentialed workflow is pinned by SHA and tested for it.
 
 **Does not.**
-- **Prompt injection through the evidence corpus is not yet measured**
-  (threat T3). The blast radius is bounded by the action schema and the
-  deterministic arbiter; the probe that measures it (`cascade eval injection`)
-  is built and tested offline and runs once the corpus and a model are both
-  available.
+- **Prompt injection through the evidence corpus works** (threat T3), and is
+  now measured rather than feared: a document impersonating a system notice
+  moved the single-model forecaster to the attacker's number on 20 of 30
+  scenarios. The blast radius is bounded by the action schema and the
+  deterministic arbiter, and nothing is deployed against the vector itself --
+  delimiting the evidence block is a prompt revision, which is a recorded
+  change and a recompile.
 - **The egress tier is a lookup control, not a packet control** (T13): a
   compromised ingest task that already holds an address can reach it. The
   ingest still runs as the database admin; a `cascade_ingest` role without

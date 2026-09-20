@@ -2230,7 +2230,13 @@ def compile_audit(
         console.print("[bold green]audit: mean meets the §5.4 threshold[/bold green]")
         return
 
-    scenarios = {item.scenario_id: item for item in load_scenarios(settings, role="admin")}
+    # The sample is drawn from the scenarios the study scores: a stand-in
+    # excluded by ADR-0043 has no graph by design, and auditing the quality of
+    # a decomposition nobody compiled is not a review, it is a missing file.
+    scenarios = {
+        item.scenario_id: item
+        for item in _scorable(load_scenarios(settings, role="admin"), what="the audit sample")
+    }
     if not scenarios:
         _fail("scenario registry is empty", EXIT_PRECONDITION)
 
@@ -2244,12 +2250,21 @@ def compile_audit(
             continue
         graphs.append((scenario_id, scenarios[scenario_id].question, graph))
 
-    if missing:
+    if missing and not graphs:
         _fail(
-            f"{len(missing)} sampled scenario(s) have no compiled graph: "
-            + ", ".join(missing[:5])
-            + " -- run `cascade compile build` first",
+            "no sampled scenario has a compiled graph -- run `cascade compile build` first",
             EXIT_PRECONDITION,
+        )
+    if missing:
+        # A sampled scenario that could not be compiled is part of the record,
+        # not a reason to withhold the review: the sample is drawn before
+        # anything is compiled, so dropping the audit whenever one scenario
+        # hard-fails would make the audit conditional on the compile being
+        # perfect -- and it is the compile's failures a reviewer most wants to
+        # know about. The count travels with the worksheet.
+        console.print(
+            f"[yellow]{len(missing)} sampled scenario(s) have no graph[/yellow] and are "
+            "recorded as hard failures, not reviewed: " + ", ".join(missing)
         )
 
     rubric_path, worksheet_path = write_worksheet(
