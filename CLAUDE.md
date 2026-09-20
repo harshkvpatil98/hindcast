@@ -2199,3 +2199,73 @@ recording, so the graphs were recompiled under it.
 - **Retrieval p95** is not re-measured on the rebuilt corpus; `bench
   --relevance` reports its own latency (vector 48-101 ms p50), and the M3
   criterion is still the one M8 recorded as missed.
+
+### M15 — AWS Gen AI surfaces · *implemented, measured where measurable, and
+blocked on an AWS account for every number that needs one*
+
+Shipped: `cascade/retrieval/rerank.py` (pure: the `Reranker` protocol,
+`apply_scores`, a BM25 default) and reranking in `Chronofence.retrieve`;
+`RecordedReranker`, `BedrockReranker` and `BedrockGuardrail` in
+`llm/client.py`; per-query pricing in `llm/meter.py`; `cascade/trace/
+aws_spend.py` and multi-source reconciliation in `trace/ledger.py`;
+`cascade/sim/tools.py` and `ToolUsingAgents`; `cascade/eval/guardrails.py`
+and `cascade eval guardrails`; the Bedrock guardrail Terraform module;
+ADRs 0047-0050. Four blocks were built in parallel worktrees against disjoint
+file sets and merged without a conflict.
+
+**Measured acceptance values.**
+
+| # | Criterion | Measured | Verdict |
+|---|---|---|---|
+| 1 | A managed service inside retrieval cannot widen the time lock | **0 poison retrieved, 0 chunks at or after their cutoff, and the result a subset of the pool every time** -- measured over the live corpus with `PoisonHuntingReranker`, which scores the poison's own signature at 1,000 and everything else below zero. A positive control asserts it really does promote such text when it can see it | **PASS** |
+| 2 | Reranking is a permutation, for every reranker | **7 property tests** over scores drawn to collide (duplicates, both zeros, subnormals). **4 of 4 mutants killed**: tie-break removed, sort reversed, truncation dropped, non-finite guard disabled; source byte-identical afterwards | **PASS** |
+| 3 | A second, independent record of spend | **NOT MEASURABLE, and now says why.** Bedrock invocation logging covers only the `bedrock-runtime` endpoint; ADR-0028 routes at `bedrock-mantle`, and the other three providers are not Bedrock. The independent record would read empty for every provider the study can run, and an empty read is refused from both directions. M8 criterion 3 stays blocked, naming what would unblock it | **BLOCKED** |
+| 4 | A guardrail audit distinguishes *not assessed* from *nothing flagged* | **PASS, on real data.** `cascade eval guardrails` read **154** stored graphs and reported `NOT ASSESSED ... no guardrail is configured. Nothing was checked.`, exit 0 -- printing the denominator beside the count | **PASS** |
+| 5 | An agent cannot widen its own `as_of` | **15 leakage tests pass** against the live corpus, first execution. `as_of` is absent from the argument model, `extra="forbid"` makes a supplied one a validation error rather than a dropped key, and a backstop drops post-cutoff rows the injected port could return | **PASS** |
+| 6 | CI green | ruff, black, mypy strict (**122 files**); **2,297 offline**, **150 integration**, **51 leakage** | **PASS** |
+
+Scale: **23 commits, 66 files, +11,977 lines**.
+
+**Three defects found, each by one agent in a file owned by another.**
+
+- **`runs.llm_calls` had M8's defect re-opened.** Counting `int(from_model)`
+  was right only while every decision reaching the model cost one call. A
+  tool-using decision costs up to `kernel.tools.max_turns`, so the column had
+  become *the number of decisions that made at least one call* -- the same
+  defect, in the same column, in the direction that makes the study look
+  cheaper. The kernel books `model_turns`, and `Decision` refuses to be built
+  with its two accounts of itself disagreeing.
+- **Invariant 5 had a second door standing open.** The static check greps for
+  the Anthropic SDK and says nothing about `boto3`, so any module could call
+  `ApplyGuardrail`, `Rerank` or `InvokeModel` with CI green -- exactly what
+  ADR-0030 refused a guardrail over. Now refused for model-serving services
+  only; CloudWatch Logs and RDS are reached elsewhere and no model is behind
+  them. Proven by adding a synthetic violation, which failed by name.
+- **A half-switched rerank config would have recorded under the wrong key.**
+  `model_id` names the scorer *in the cache key*, so a config whose `model_id`
+  had moved to a managed reranker while `provider` still said `local` would
+  record BM25 scores under the managed model's key, and ADR-0047's promise
+  that changing reranker invalidates recordings would be false in the one
+  direction that matters.
+
+Also: `kernel.tools.allow` accepted a tool nothing implements -- ADR-0025's
+inert-factor failure mode, where every cell agrees because all are
+mis-configured alike. ADR-0046 turned out never to have been indexed, and both
+ADR counts were stale in opposite directions.
+
+**Deferred, with reasons:**
+
+- **The tool arm is not wired into `simulate`.** Not mechanical: ADR-0019 has
+  `_agent_policy` retrieve once per (scenario, actor) and then *close* the
+  Chronofence, while a tool-using agent needs retrieval during the run. A
+  connection per tool call is ~600k connections at ablation scale; the
+  decider owning a long-lived fence is right and changes its lifetime and both
+  call sites. Left for its own session rather than done at the end of this one.
+- **Every AWS number** -- no account. Both AWS adapters are verified against
+  the installed botocore service model and the published API reference, and
+  tested through `botocore.stub.Stubber` and a mocked client, so they are
+  *verified* and not *validated*.
+- **Whether reranking helps.** ADR-0047 makes it an ablation on the dev split,
+  and the relevance bench compares vector against hybrid by name; generalising
+  it to any two arms is the instrument that measurement needs.
+- **`--since/--until` on `trace cost`** -- `readings()` does not thread them.
