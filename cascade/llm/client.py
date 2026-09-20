@@ -34,6 +34,7 @@ import time
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -56,13 +57,15 @@ from cascade.llm.types import (
     ProviderNotReady,
     Usage,
 )
-from cascade.retrieval.rerank import RerankError, rerank_cache_key
+from cascade.retrieval.rerank import LexicalReranker, RerankError, rerank_cache_key
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
     import httpx
 
 __all__ = [
     "BATCH_MAX_REQUESTS",
+    "RERANK_BILLING_KIND",
+    "BedrockReranker",
     "CliCompleted",
     "CliRunner",
     "LLMClient",
@@ -89,6 +92,29 @@ _CHARS_PER_TOKEN = 3.6
 # failures. 429 is deliberately absent -- under a subscription it usually means
 # the plan's usage limit, which retrying in a loop only extends.
 _CLI_TRANSIENT_STATUSES = frozenset({500, 502, 503, 504, 529})
+
+
+# The label per-query rerank spend is booked under in the cost meter. One
+# constant, because the wrapper books the hits and the reranker books the
+# misses (see `RecordedReranker`), and two spellings would split one number
+# into two.
+RERANK_BILLING_KIND = "rerank"
+
+# Amazon Bedrock's Rerank API, read from the service model that ships with the
+# installed botocore (`bedrock-agent-runtime`, 2023-07-26) and from the AWS API
+# reference, never from memory. Every constant below is a published
+# constraint, and each one is here because exceeding it silently is worse than
+# failing on it:
+#
+#   sources       1..1000 items        -- a pool of 1,001 cannot be scored
+#   queries       exactly 1 item       -- one query per call, hence one billed unit
+#   textDocument  1..32,000 characters -- an empty or oversized body is refused by AWS
+#   index         0..1000, and is "the original index of the document from the
+#                 input sources array" -- which is why the response has to be
+#                 mapped back rather than read in the order it arrives
+_RERANK_SERVICE = "bedrock-agent-runtime"
+_RERANK_MAX_SOURCES = 1000
+_RERANK_MAX_DOCUMENT_CHARS = 32_000
 
 
 @dataclass(frozen=True)
@@ -771,6 +797,341 @@ def _result_from_payload(
     )
 
 
+class BedrockReranker:
+    """Amazon Bedrock's managed reranker, behind the one door (ADR-0047).
+
+    Satisfies :class:`cascade.retrieval.rerank.Reranker` and nothing wider:
+    a query, document *bodies*, one score per body, positionally. There is no
+    parameter through which it could be told an ``as_of``, a ``chunk_id`` or a
+    date, and no return value through which it could name a document the pool
+    does not contain -- which is the entire reason ADR-0047 admits a managed
+    service here and ADR-0030 refuses one at the filter. Widening this
+    signature is what would need a new record.
+
+    It lives in this module for the reason ADR-0030 gave for refusing
+    ``ApplyGuardrail``: a second path from somewhere else in the package to a
+    model-adjacent service is exactly what invariant 5 exists to prevent.
+
+    **Routing is explicit; identity is ambient** (ADR-0028). The region comes
+    from ``providers.bedrock``, never from ``AWS_REGION``, and configured
+    endpoint URLs in the environment or the shared config file are ignored --
+    botocore still resolves the endpoint, so partitions and FIPS remain its
+    problem rather than a template copied into this file. Credentials come
+    from the standard AWS chain, because a task role is the point of using IAM.
+
+    **The response is a permutation and is put back in order here.** Bedrock
+    answers with ``{index, relevanceScore}`` ranked by relevance, where
+    ``index`` points into the request's ``sources`` array. A missing or
+    repeated index is an error rather than a gap to fill: a defaulted score is
+    a silently reordered piece of evidence, and the ordering *is* the prompt.
+    """
+
+    def __init__(
+        self,
+        settings: Settings,
+        *,
+        meter: CostMeter | None = None,
+        client: Any | None = None,
+    ) -> None:
+        self._settings = settings
+        self._config = settings.retrieval.rerank
+        self._bedrock = settings.providers.bedrock
+        self._meter = meter
+        # Injected for tests, otherwise built on first use. Nothing here
+        # imports boto3: the module must cost nothing to import, and `make
+        # demo` -- which runs on the local reranker with no AWS account --
+        # must never construct one.
+        self._client: Any | None = client
+        self._price_per_1k = _rerank_price(self._config.price_per_1k_queries)
+
+    @property
+    def model_id(self) -> str:
+        """Identifies the scorer in the cache key and the event log.
+
+        Passed to Bedrock verbatim as ``modelArn``. The field's own published
+        pattern makes the ``arn:`` prefix optional, so a bare model id and a
+        full ARN are both admissible and the operator chooses; this code
+        constructs neither, because an ARN assembled here would have to guess
+        a partition and an account it cannot check.
+        """
+        return self._config.model_id
+
+    @property
+    def meter(self) -> CostMeter | None:
+        """The meter this reranker books its own queries into, if any."""
+        return self._meter
+
+    def score(self, *, query: str, documents: Sequence[str]) -> Sequence[float]:
+        """One relevance score per document, higher is better, same order.
+
+        Preserves the protocol's contract that the result describes the whole
+        pool: the full set of scores is requested rather than a truncated
+        top-N, because ``apply_scores`` is what applies ``top_k`` and a
+        response shorter than the pool cannot be a permutation of it.
+        """
+        bodies = list(documents)
+        if not bodies:
+            # No call is made, so no query is billed. A reranker with nothing
+            # to order must not reach a provider to say so.
+            return []
+        self._check_pool(bodies)
+        scored = self._rerank(self._boto3_client(), query=query, documents=bodies)
+        return _in_input_order(scored, expected=len(bodies))
+
+    # -- internals ----------------------------------------------------------
+
+    def _check_pool(self, documents: Sequence[str]) -> None:
+        """Refuse a pool Bedrock's own limits cannot describe.
+
+        Checked here rather than left to the service because the alternative
+        failure is a ``ValidationException`` naming a JSON path, arriving
+        after a round trip that was still billed.
+        """
+        if len(documents) > _RERANK_MAX_SOURCES:
+            raise RerankError(
+                f"pool of {len(documents)} exceeds Bedrock's limit of {_RERANK_MAX_SOURCES} "
+                "source(s) per Rerank call; a truncated request would score part of the pool "
+                "and could not be applied to it"
+            )
+        for position, body in enumerate(documents):
+            if not body:
+                raise RerankError(
+                    f"document at position {position} is empty; Bedrock requires at least one "
+                    "character per source, and a placeholder would be scored as if it were "
+                    "the evidence"
+                )
+            if len(body) > _RERANK_MAX_DOCUMENT_CHARS:
+                raise RerankError(
+                    f"document at position {position} is {len(body)} characters, over Bedrock's "
+                    f"{_RERANK_MAX_DOCUMENT_CHARS}-character limit; truncating it here would "
+                    "score text the agent never sees"
+                )
+
+    def _boto3_client(self) -> Any:
+        """Build the Bedrock client lazily, exactly once, with routing pinned.
+
+        Lazy for the reason :meth:`LLMClient._client` is: a reranker wrapped
+        for replay never reaches this method, so a recorded study replays with
+        no AWS account at all -- which is also why readiness is asserted here
+        and not in ``__init__``.
+        """
+        if self._client is not None:
+            return self._client
+        problems = self._readiness_problems()
+        if problems:
+            raise ProviderNotReady("bedrock", problems)
+
+        import boto3  # lazy by design -- see this method's docstring
+        from botocore.config import Config
+
+        session = boto3.session.Session(profile_name=self._bedrock.profile or None)
+        self._client = session.client(
+            _RERANK_SERVICE,
+            # The one place the region is named, so there is one place for it
+            # to be wrong. Without it boto3 reads AWS_REGION, and a developer's
+            # shell would decide where the study's spend lands (ADR-0028).
+            region_name=self._bedrock.region,
+            # An explicit endpoint outranks everything; without one botocore
+            # resolves the region's own, so partitions and FIPS stay its
+            # problem. `ignore_configured_endpoint_urls` is what stops
+            # AWS_ENDPOINT_URL and its per-service twin redirecting the call.
+            endpoint_url=self._bedrock.base_url or None,
+            config=Config(
+                ignore_configured_endpoint_urls=True,
+                # botocore counts attempts where the SDK counts retries.
+                retries={
+                    "max_attempts": self._settings.llm.max_retries + 1,
+                    "mode": "standard",
+                },
+                connect_timeout=self._settings.llm.timeout_s,
+                read_timeout=self._settings.llm.timeout_s,
+            ),
+        )
+        return self._client
+
+    def _readiness_problems(self) -> list[str]:
+        """Everything that stops a paid rerank call being routed and priced.
+
+        The same rule :func:`cascade.llm.providers.readiness_problems` keeps
+        for the model providers: no money is spent through a service that
+        could not be routed explicitly or priced exactly, and every problem is
+        reported at once so the configuration is fixed in one pass.
+
+        A zero price is a problem, not a default. Booking a paid service at
+        $0.00 is the shape M8 found in the ledger gate -- a number that agrees
+        with itself and cannot fail -- and here it would also spend the phase
+        ceiling without moving it.
+        """
+        problems: list[str] = []
+        if not self._bedrock.region:
+            problems.append("providers.bedrock.region is not set")
+        if not self.model_id.strip():
+            problems.append("retrieval.rerank.model_id is not set")
+        elif self.model_id == LexicalReranker.model_id:
+            problems.append(
+                f"retrieval.rerank.model_id is still {LexicalReranker.model_id!r}, the local "
+                "reranker's -- name the Bedrock rerank model this study is to be scored against"
+            )
+        if self._price_per_1k <= 0:
+            problems.append(
+                "retrieval.rerank.price_per_1k_queries is "
+                f"{self._config.price_per_1k_queries!r} -- read the per-query rate from "
+                "https://aws.amazon.com/bedrock/pricing/ before a paid run, so the phase "
+                "ledger is not a count of free queries"
+            )
+        return sorted(problems)
+
+    def _request_body(self, *, query: str, documents: Sequence[str]) -> dict[str, Any]:
+        """Project one call onto the Rerank request shape.
+
+        ``numberOfResults`` is the pool size rather than the caller's ``k``:
+        the published default is unstated, and a response that silently
+        returned a top-N would leave the rest of the pool unscored -- which
+        `apply_scores` would refuse, correctly, far from the cause.
+        """
+        return {
+            "queries": [{"type": "TEXT", "textQuery": {"text": query}}],
+            "sources": [
+                {
+                    "type": "INLINE",
+                    "inlineDocumentSource": {"type": "TEXT", "textDocument": {"text": body}},
+                }
+                for body in documents
+            ],
+            "rerankingConfiguration": {
+                "type": "BEDROCK_RERANKING_MODEL",
+                "bedrockRerankingConfiguration": {
+                    "modelConfiguration": {"modelArn": self.model_id},
+                    "numberOfResults": len(documents),
+                },
+            },
+        }
+
+    def _rerank(self, client: Any, *, query: str, documents: Sequence[str]) -> dict[int, float]:
+        """Call Rerank, following its continuation token, and collect the scores.
+
+        Preserves the one-score-per-document contract across pagination:
+        ``nextToken`` is part of this API, so a caller that read only the first
+        page would drop scores for a reason invisible in the response it kept.
+        A page that returns a token and no new result is a loop and is refused
+        rather than followed.
+
+        The query is booked the moment the first response is in hand, not once
+        the scores validate: a response this code goes on to refuse was still
+        served and still billed. A continuation is part of the same query, so
+        it books once however many pages arrive -- at the pool sizes
+        ``retrieval.rerank.pool`` permits, bounded above by ``max_k``, one page
+        is what is expected.
+        """
+        body = self._request_body(query=query, documents=documents)
+        scored: dict[int, float] = {}
+        token: str | None = None
+        billed = False
+
+        while True:
+            payload = dict(body)
+            if token is not None:
+                payload["nextToken"] = token
+            response: Mapping[str, Any] = client.rerank(**payload)
+            if not billed:
+                self._book_one_query()
+                billed = True
+
+            before = len(scored)
+            for entry in response.get("results") or []:
+                index, value = _rerank_result(entry, expected=len(documents))
+                if index in scored:
+                    raise RerankError(
+                        f"Bedrock returned index {index} twice for a pool of {len(documents)}; "
+                        "a response that scores one document twice is not a permutation of the "
+                        "pool it was given"
+                    )
+                scored[index] = value
+
+            token = str(response.get("nextToken") or "") or None
+            if token is None:
+                return scored
+            if len(scored) == before:
+                raise RerankError(
+                    f"Bedrock returned a continuation token and no new score after "
+                    f"{len(scored)} of {len(documents)}; following it again would not terminate"
+                )
+
+    def _book_one_query(self) -> None:
+        """Charge one query to the phase, at the configured per-query rate.
+
+        One call is one query: the request shape carries exactly one query
+        (the field is a fixed-size array of 1), whatever the pool size, which
+        is why the configured rate is per thousand *queries* and not per
+        document.
+        """
+        if self._meter is None:
+            return
+        self._meter.record_units(
+            kind=RERANK_BILLING_KIND, units=1, price_per_1k_usd=self._price_per_1k
+        )
+
+
+def _rerank_price(configured: str) -> Decimal:
+    """Read ``retrieval.rerank.price_per_1k_queries`` as an exact Decimal.
+
+    Parsed once, at construction, so a malformed rate fails before a call
+    rather than between the response and the ledger. Never a float: a binary
+    fraction of a cent compounds over a study's worth of queries, and the
+    meter's whole discipline is exactness.
+    """
+    try:
+        return Decimal(configured)
+    except InvalidOperation as exc:
+        raise ValueError(
+            f"retrieval.rerank.price_per_1k_queries is {configured!r}, which is not a decimal "
+            "number; the per-query rate is read as an exact Decimal and cannot be guessed"
+        ) from exc
+
+
+def _rerank_result(entry: Any, *, expected: int) -> tuple[int, float]:
+    """Read one ``{index, relevanceScore}`` pair, refusing one that cannot apply.
+
+    Both fields are required by the published response shape, so an entry
+    missing either describes something other than this pool. An index outside
+    the pool is the failure this check exists for: it would otherwise be
+    written into a score vector by position and silently attach one document's
+    relevance to another's text.
+    """
+    if not isinstance(entry, Mapping) or "index" not in entry or "relevanceScore" not in entry:
+        raise RerankError(
+            f"Bedrock returned a result without an index and a relevanceScore: {entry!r}; "
+            "a result that does not say which document it scored cannot be applied"
+        )
+    index = int(entry["index"])
+    if not 0 <= index < expected:
+        raise RerankError(
+            f"Bedrock returned index {index} for a pool of {expected}; the index names a "
+            "position in the request's own source list and this one names nothing"
+        )
+    return index, float(entry["relevanceScore"])
+
+
+def _in_input_order(scored: Mapping[int, float], *, expected: int) -> list[float]:
+    """Turn indexed results back into one score per document, positionally.
+
+    This is where the permutation is undone. Bedrock ranks its answer by
+    relevance, so the order it arrives in is the *result*, not the pool; the
+    caller's contract is positional. A missing index is an error rather than a
+    default, because a defaulted score sorts and therefore reorders -- and the
+    evidence order is the prompt, which is the thing the M8 replay hash is
+    taken over.
+    """
+    missing = [index for index in range(expected) if index not in scored]
+    if missing:
+        raise RerankError(
+            f"Bedrock scored {len(scored)} of {expected} document(s); "
+            f"{len(missing)} were never returned (first: {missing[:5]}). A missing score is "
+            "not a zero -- defaulting it would silently reorder the evidence"
+        )
+    return [scored[index] for index in range(expected)]
+
+
 @dataclass
 class RecordedReranker:
     """Record/replay around any reranker (ADR-0047).
@@ -796,11 +1157,22 @@ class RecordedReranker:
     corpus stays complete when the provider is switched, and how a BM25 arm
     and a managed arm are compared under the same machinery rather than one
     of them getting a free pass.
+
+    **Who books the spend.** A hit is booked here, at zero, because this is
+    the only place that knows a hit happened; a miss is booked by the inner
+    reranker, because that is where a provider is reached and a local one
+    costs nothing to reach. The two paths are disjoint -- a hit never consults
+    the inner reranker and a miss always does -- so one call is booked exactly
+    once, and the same :class:`CostMeter` can be handed to both without
+    double-counting.
     """
 
     inner: Any
     cache: CallCache
     mode: str
+    # Optional so a caller that is not measuring spend -- the leakage probes,
+    # the property tests -- needs no meter to wrap a reranker.
+    meter: CostMeter | None = None
     calls: int = 0
     hits: int = 0
 
@@ -818,7 +1190,14 @@ class RecordedReranker:
             recorded = self.cache.get(key)
             if recorded is not None:
                 self.hits += 1
-                return _recorded_scores(recorded, expected=len(documents), key=key)
+                scores = _recorded_scores(recorded, expected=len(documents), key=key)
+                # Counted, not ignored: a study replayed end to end would
+                # otherwise report no rerank activity at all, and the rerank
+                # hit rate is what says whether the recorded corpus covers the
+                # pools this run actually asked for.
+                if self.meter is not None:
+                    self.meter.record_unit_cache_hit(kind=RERANK_BILLING_KIND)
+                return scores
             if self.mode == "replay":
                 raise CacheMiss(
                     f"no recorded rerank for key {key} (model={self.model_id!r}, "
