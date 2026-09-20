@@ -202,6 +202,7 @@ cascade eval score --config-id C01   # §10.1 metrics for one configuration
 cascade eval significance  # paired bootstrap + Holm-Bonferroni (§10.4)
 cascade eval prompt-audit  # §1.3's before/after Brier for a prompt revision
 cascade eval equivalence --reference anthropic --candidate bedrock  # ADR-0029's condition; exits 3 on divergence
+cascade eval guardrails    # ADR-0050's post-hoc audit over stored graphs; exits 3 on a confound *or* an incomplete pass
 cascade eval split         # the declared dev/test split and its exclusions; exits 3 if it is not the pinned one (ADR-0038)
 cascade eval tune-guard --scenario ID   # refuse any set touching test, an excluded or an undeclared scenario
 cascade eval grid --supplementary   # also run S01 (12 chunks per agent), in its own Holm family
