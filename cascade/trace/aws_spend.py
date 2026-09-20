@@ -33,6 +33,14 @@ Routing is explicit and never ambient (ADR-0028). The region is passed from
 stray ``AWS_REGION`` or ``AWS_ENDPOINT_URL`` in a shell cannot decide which
 account's record the study's spend is checked against. Credentials stay
 ambient, as everywhere else.
+
+**And the record is scoped by time only.** A log group holds whatever it has
+held since it was created, so a phase's ledger set against it unwindowed is a
+comparison of two different quantities. The window is pushed into
+`FilterLogEvents`; the *configuration* cannot be pushed anywhere, because a
+model-invocation record names the model, the account and the identity and
+nothing that names an ablation cell. Every reading therefore declares the slice
+it covers and `ledger.at_scope` refuses one that covers more than was asked.
 """
 
 from __future__ import annotations
@@ -40,11 +48,10 @@ from __future__ import annotations
 import json
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Any
 
 from cascade.config import Settings
-from cascade.trace.ledger import PhaseSpend, ReadingStatus, SourceReading
+from cascade.trace.ledger import PhaseSpend, ReadingStatus, Scope, SourceReading, epoch_ms
 
 __all__ = [
     "AWS_INVOCATION_LOG_SOURCE",
@@ -190,16 +197,25 @@ def logs_client(settings: Settings, *, timeout_s: float = 30.0) -> Any:
     )
 
 
-def _epoch_ms(moment: datetime) -> int:
-    """Milliseconds since the epoch, refusing a naive datetime.
+def _window(scope: Scope) -> dict[str, Any]:
+    """`FilterLogEvents` bounds for a half-open scope, translated not assumed.
 
-    A naive bound would be read as local time by ``timestamp()`` and shift the
-    window by the machine's offset, which would silently scope the independent
-    record to hours the ledger does not cover.
+    Preserves the property that makes two adjacent phases partition the spend
+    rather than both claim a call on the boundary. Read from botocore's own
+    service model for `FilterLogEvents` (botocore 1.43.98): *"Events with a
+    timestamp before this time are not returned"* for ``startTime`` and
+    *"Events with a timestamp later than this time are not returned"* for
+    ``endTime`` -- a **closed** range on both ends, where :class:`Scope` and
+    Langfuse's ``toTimestamp`` are half-open. So ``endTime`` is the last
+    millisecond before ``until``, and the boundary event is counted once, in
+    the window that comes after it.
     """
-    if moment.tzinfo is None:
-        raise ValueError(f"window bound {moment!r} is naive; pass an aware datetime")
-    return int(moment.timestamp() * 1000)
+    bounds: dict[str, Any] = {}
+    if scope.since is not None:
+        bounds["startTime"] = epoch_ms(scope.since)
+    if scope.until is not None:
+        bounds["endTime"] = epoch_ms(scope.until) - 1
+    return bounds
 
 
 def _messages(pages: Iterable[Any]) -> Iterator[str]:
@@ -230,11 +246,10 @@ def invocation_log_reading(
     settings: Settings,
     *,
     client: Any | None = None,
-    start: datetime | None = None,
-    end: datetime | None = None,
+    scope: Scope = Scope(),
     timeout_s: float = 30.0,
 ) -> SourceReading:
-    """What AWS's own record says the phase cost in tokens, or why it cannot say.
+    """What AWS's own record says one slice cost in tokens, or why it cannot say.
 
     Preserves the distinction that M8's criterion 3 rests on: *not configured*
     (a deployment with no AWS account still has §12.4's gate), *unreachable*
@@ -245,6 +260,15 @@ def invocation_log_reading(
     Dropping a half-configured source would let someone who meant to add the
     second record, and mistyped one field, read a green gate that checked one
     fewer source than they believe.
+
+    The window is pushed into `FilterLogEvents` rather than filtered here: a
+    study-scale group is millions of records, and reading all of them to
+    discard most is the difference between a gate an operator runs and one
+    they skip. **The configuration cannot be pushed anywhere** -- a
+    model-invocation record carries the model, the account and the identity,
+    and nothing that names an ablation cell -- so the reading declares that it
+    covers the window alone and `at_scope` refuses to set it against a
+    configuration-scoped ledger.
 
     ``client`` is a seam for tests: with no AWS account, the only honest
     standard is verified-against-a-mock, so the caller may hand in a stubbed
@@ -268,16 +292,12 @@ def invocation_log_reading(
             "ambient environment (ADR-0028)",
         )
 
-    window: dict[str, Any] = {"logGroupName": group}
-    if start is not None:
-        window["startTime"] = _epoch_ms(start)
-    if end is not None:
-        window["endTime"] = _epoch_ms(end)
+    request: dict[str, Any] = {"logGroupName": group, **_window(scope)}
 
     try:
         logs = logs_client(settings, timeout_s=timeout_s) if client is None else client
         paginator = logs.get_paginator(_PAGINATED_OPERATION)
-        totals = accumulate(_messages(paginator.paginate(**window)))
+        totals = accumulate(_messages(paginator.paginate(**request)))
     except Exception as exc:  # noqa: BLE001 -- an unreadable log is not a discrepancy
         # The same shape as `langfuse_reading`'s guard and for the same reason:
         # a record that cannot be read must not fail the gate as a 100%
@@ -299,25 +319,31 @@ def invocation_log_reading(
             calls=totals.records,
             input_tokens=totals.input_tokens,
             output_tokens=totals.output_tokens,
-            detail=_detail(totals, group=group, region=region),
+            detail=_detail(totals, group=group, region=region, scope=scope),
         ),
+        covers=scope.window,
     )
 
 
-def _detail(totals: InvocationTotals, *, group: str, region: str) -> str:
+def _detail(totals: InvocationTotals, *, group: str, region: str, scope: Scope) -> str:
     """One line a reader can act on, including when the group is empty.
 
     An empty group is a *read*, and the arithmetic refuses it -- against a
     ledger with calls it is a 100% discrepancy, against an empty one it is
     vacuous -- so this line's job is to say which of the two plausible causes
-    to check rather than to change the verdict.
+    to check rather than to change the verdict. With a window applied there is
+    a third, and naming it matters more than the others: the group can be
+    correct, logging enabled, and the operator's bounds simply wrong.
     """
     parts = [f"{totals.records:,} model invocation(s) in {group} in {region}"]
+    if scope.windowed:
+        parts.append(scope.window.describes())
     if totals.records == 0:
         parts.append(
             "no model-invocation records: check that invocation logging is enabled, "
             "and that the calls were made through the bedrock-runtime endpoint, "
             "which is the only one it covers (ADR-0048)"
+            + (", and that the window covers when they were made" if scope.windowed else "")
         )
     if totals.models:
         parts.append("models " + ", ".join(totals.models))
