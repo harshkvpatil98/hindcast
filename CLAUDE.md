@@ -2115,6 +2115,48 @@ update-stamp scan (`tests/leakage/test_update_stamps.py`) went from **381
 flagged chunks to 4**, and all four are stamps later than the page's own fetch
 -- publisher typos the fetched text cannot contain.
 
+**M4's acceptance numbers exist for the first time**, compiled through the
+Claude Code CLI under the owner's subscription (622 calls, $0):
+
+| # | Criterion | Measured | Verdict |
+|---|---|---|---|
+| 1 | every scenario passes the validator within 2 repairs | **158 of the 165 scored**; 7 hard failures | **MISSED** |
+| 2 | mean actor count 14 +/- 2; factors in [4, 12] | **12.63** actors (range 10-17); 7.27 factors (range 4-11) | **PASS** |
+| 3 | recompiling an unchanged input reproduces the hash | 158 distinct hashes for 158 graphs; `compile verify` re-hashes and re-validates **158/158** | **PASS** |
+| 4 | 20-graph audit, mean >= 1.5 | worksheet written (19 graphs; the 20th sampled scenario is a hard failure and is recorded as one) | **awaiting a human reviewer** |
+
+Repair retries: 43 graphs needed none (27.2%), 82 one (51.9%), 33 two (20.9%).
+**The 7 failures are one pattern**: six are `factor_orthogonality` (two factors
+within cosine 0.8) and five of those six are "which team wins X" questions,
+where the honest decomposition has one driver and the compiler keeps inventing
+near-duplicates; the seventh is `edge_sanity`. They replay from cache, so they
+fail identically and cost nothing to re-attempt; changing the outcome means a
+compiler prompt revision, which §1.3 makes a recorded change.
+
+**`compile verify` caught a defect `compile build` could not.** Four of the 158
+stored graphs passed compilation and failed re-validation: their inbound edge
+weights sum to exactly the 3.0 cap, and the validator accumulated them with
+`+=` in a loop, which lands at 3.0000000000000004 in the order the model
+emitted the edges and at 3.0 in the canonical order they are stored in.
+Python's own `sum()` compensates; a hand-written loop does not. `math.fsum`
+makes the verdict a property of the graph rather than of the edge order -- the
+third instance of this class in the project, after the Brier accumulation (M7)
+and the arbiter's efforts (M5). All 158 pass now.
+
+**Threat T3 is measured, and the corpus can steer the forecast.** `cascade
+eval injection` over 30 scenarios (120 calls; the single-model forecaster,
+whose evidence block is formatted as the agents' prefix is):
+
+| attack | complied | 95% CI | moved >= 0.1 | mean shift |
+|---|---|---|---|---|
+| a document that closes the evidence section and speaks as the operator | **20/30** | [0.49, 0.81] | 21 | **+0.491** |
+| an appeal to a fabricated calibration authority | 7/30 | [0.12, 0.41] | 13 | +0.232 |
+| a plain "ignore your instructions" | **0/30** | [0.00, 0.11] | 6 | +0.065 |
+
+Impersonating the system is the vector; instructing the model is not. Nothing
+is deployed against it: delimiting the evidence block is a prompt revision and
+a recompile, and it is recorded here rather than fixed quietly.
+
 **Deferred, with reasons:**
 
 - **Every study number** -- the simulation is 36,000 runs of batched calls, and
