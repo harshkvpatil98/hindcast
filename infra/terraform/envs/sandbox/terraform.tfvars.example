@@ -13,9 +13,11 @@ acu                = 8
 #   dns_firewall_action = "ALERT"                 # then "BLOCK"
 # }
 
-# The study task and its durable cache. `recovery` is the platform root's
-# `terraform output recovery`, copied whole. The schedule is the RPO for the
-# LLM cache against a per-run cost that grows with it; hourly is the minimum.
+# The study task, its durable cache, and where its deliverable is published.
+# `recovery` is the platform root's `terraform output recovery` and `reports`
+# its `terraform output reports_publish`, each copied whole. The schedule is
+# the RPO for the LLM cache against a per-run cost that grows with it; hourly
+# is the minimum.
 # study = {
 #   model_provider           = "aws"              # aws | bedrock | anthropic
 #   model_region             = "us-east-1"
@@ -26,6 +28,11 @@ acu                = 8
 #     bucket_arn       = "arn:aws:s3:::cascade-recovery-ACCOUNT_ID-REGION"
 #     kms_key_arn      = "arn:aws:kms:REGION:ACCOUNT_ID:key/KEY_ID"
 #     llm_cache_prefix = "llm-cache"
+#   }
+#   reports = {
+#     bucket_arn  = "arn:aws:s3:::cascade-reports-ACCOUNT_ID-REGION"
+#     kms_key_arn = "arn:aws:kms:REGION:ACCOUNT_ID:key/KEY_ID"
+#     prefix      = "reports"
 #   }
 #   sync_schedule_expression = "rate(1 hour)"
 # }
