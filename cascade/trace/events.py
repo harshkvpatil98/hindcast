@@ -83,10 +83,32 @@ class DecisionEvent(_Frozen):
     def canonical(self) -> dict[str, Any]:
         """Sorted, primitive projection -- the unit the M8 replay hash is over.
 
-        ``latency_ms`` is deliberately **excluded**: it is wall-clock, it
-        differs between a recorded run and its replay by construction, and
-        including it would make the byte-identical criterion unachievable for
-        a reason that has nothing to do with determinism.
+        ``latency_ms`` and ``cache_hit`` are deliberately **excluded**: both
+        differ between a recorded run and its replay by construction, and
+        including either would make the byte-identical criterion unachievable
+        for a reason that has nothing to do with determinism.
+
+        ``latency_ms`` is wall-clock. ``cache_hit`` is subtler and was the
+        live defect: it records *when* a call happened, not what it produced.
+        A run that reaches the model records ``False`` on every decision and
+        replays ``True`` on every one, so it could never replay to its own
+        stored hash -- M8 criterion 1 failing for precisely the runs a study
+        consists of.
+
+        It had never fired because every run stored to date was made with the
+        stand-in decider, where the flag is ``False`` on both sides. Measured
+        on a model-backed single run before the fix: 171 events, 0 cache hits
+        recorded against 171 on replay, hashes ``26085526…`` and
+        ``3dd92581…``.
+
+        The wavefront was immune, and for a reason worth naming: ``prepare``
+        fills the cache before the first decision, so a batched run records
+        ``True`` as well. That is a second, previously unstated way ADR-0020's
+        preparation step is load-bearing -- and relying on it would have made
+        the replay guarantee a property of one driver rather than of the log.
+
+        ``tokens_in`` and ``tokens_out`` stay in: on replay they are read from
+        the recording, so they reproduce exactly.
         """
         return {
             "step": self.step,
@@ -96,7 +118,6 @@ class DecisionEvent(_Frozen):
             "action": self.action,
             "caused_by": [ref.as_json() for ref in self.caused_by],
             "factor_delta": {key: self.factor_delta[key] for key in sorted(self.factor_delta)},
-            "cache_hit": self.cache_hit,
             "tokens_in": self.tokens_in,
             "tokens_out": self.tokens_out,
             "coercion": self.coercion,

@@ -504,21 +504,34 @@ def test_the_unbatched_wavefront_reproduces_the_batched_hash(
     assert serial_transport.single_calls > 0
 
 
-def test_declining_to_prepare_changes_the_hash(settings: Settings, tmp_path: Path) -> None:
-    """The failing arm, so the test above is a measurement and not a tautology.
+def test_declining_to_prepare_no_longer_changes_the_hash(
+    settings: Settings, tmp_path: Path
+) -> None:
+    """A third door, reaching the same hash -- which is the repaired behaviour.
 
-    ``cache_hit`` is inside ``DecisionEvent.canonical``. A decider that skipped
-    preparation would let every ``decide`` reach the model, write
-    ``cache_hit=False`` into every event, and produce runs that fail M8's
-    byte-identical criterion against their own recordings -- while looking,
-    from the outside, exactly like a correct unbatched run.
+    This test previously asserted the opposite, and it was right to: while
+    ``cache_hit`` was inside ``DecisionEvent.canonical``, a decider that
+    skipped preparation reached the model on every turn, wrote
+    ``cache_hit=False`` into every event, and produced a different hash.
+
+    That was the symptom of a real defect rather than a property worth
+    keeping. The same divergence made *any* model-backed run unreplayable
+    against its own recording: ``False`` on the way in, ``True`` on the way
+    out. Excluding the flag fixed it, and this arm is now the evidence -- a
+    decider that fills no cache and reaches the model on every single turn
+    still produces the same log, because the log records what the agents
+    decided and not how the call was served.
+
+    The arm is kept rather than deleted precisely because it exercises the
+    path the fix was about.
     """
     batched, _t, _r, _res = _hash_of_one_run(settings, tmp_path / "batched")
     unprepared, transport, _r2, _res2 = _hash_of_one_run(
         settings, tmp_path / "unprepared", cls=UnpreparedAgents
     )
 
-    assert unprepared != batched
+    assert unprepared == batched
+    # It really did take the third door: nothing batched, everything single.
     assert transport.submissions == 0
     assert transport.single_calls > 0
 
