@@ -1,6 +1,6 @@
 # Architecture decision records
 
-Forty-six records here, plus 0032 (live mode, proposed), which lives on the `m13/live-mode` branch. Each states the decision, the evidence behind it, and
+Forty-seven records here, plus 0032 (live mode, proposed), which lives on the `m13/live-mode` branch. Each states the decision, the evidence behind it, and
 what it costs. They exist because this project's specification is detailed
 enough to be wrong in specific, checkable ways — and when it was, the record
 says so with the measurement that showed it.
@@ -57,3 +57,4 @@ this build. The rest record a choice the specification left open.
 | [0045](0045-quoted-evidence.md) | **Measured, then closed.** A document impersonating a system notice steered the forecast on 20 of 30 scenarios; quoting documents in a frame the renderer strips from their own text takes it to 0 of 30. Prompt revision r4 | M14 |
 | [0046](0046-publishing-and-recovery-drills.md) | The report artifact carries the labels — `baselines.csv` and `ablation_grid.csv` are one row per scenario *with how it resolved* — so it lands in a private, Object-Locked bucket the simulation is denied, is fetched rather than served, and the recovery path is drilled rather than asserted | M14 |
 | [0047](0047-reranking-is-a-permutation.md) | A managed reranker is admissible where a managed knowledge base was not: a knowledge base *replaces* the `published_at < as_of` filter, a reranker *permutes a set the database already filtered*. Enforced by the interface — it is handed bodies and returns numbers, so naming a post-cutoff chunk is unrepresentable. *Amends 0030* | M15 |
+| [0048](0048-a-second-record-of-spend.md) | **Found here.** The two records §12.4 reconciles are both written by this process from the same `Usage` object, so they corroborate rather than verify. Reconciliation now compares N sources, lists every one it asked whether or not it answered, and reports `independently_verified` apart from `reconciled`. Bedrock invocation logging does not cover the `bedrock-mantle` endpoint ADR-0028 routes to, so M8 criterion 3 stays blocked — now naming what would unblock it | M15 |

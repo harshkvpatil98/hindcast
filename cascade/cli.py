@@ -5446,17 +5446,19 @@ def trace_cost(
         str | None, typer.Option("--config-id", help="Restrict to one configuration.")
     ] = None,
 ) -> None:
-    """Reconcile the run ledger against Langfuse (spec §12.4, M8).
+    """Reconcile the run ledger against every other record of the spend (§12.4).
 
-    Two independent records of the same spend: the meter prices every call from
-    the pinned table and writes the total to `runs.cost_usd`; the tracer emits
-    one Langfuse generation per call carrying the same cost. §12.4 blocks the
-    report on a discrepancy above 2%, so this exits **3** there.
+    The meter prices every call from the pinned table and writes the total to
+    `runs.cost_usd`. Each other record is asked once and listed, whether or not
+    it answered -- a source that vanished from the output when it could not be
+    read is how a partial check comes to look like a full one (ADR-0048).
 
-    An *unreachable* Langfuse is reported as unreconciled rather than as a
-    discrepancy: `tracing.py` is allowed to degrade to a no-op because
-    observability must never fail a run, and "we could not check" is not
-    "we checked".
+    Langfuse is written by *this* process from the same `Usage` object, so it
+    corroborates the meter rather than verifying it; `independently_verified`
+    is reported separately from `reconciled` for that reason. §12.4 blocks the
+    report on a discrepancy above 2%, so this exits **3** there, and exits 3
+    equally for an unreachable source and for a vacuous comparison -- "we could
+    not check" and "there was nothing to check" are not "we checked".
     """
     from cascade.trace.ledger import reconcile
 
@@ -5465,58 +5467,57 @@ def trace_cost(
 
     table = Table(title="Cost ledger reconciliation (spec §12.4)")
     table.add_column("Source", style="cyan")
+    table.add_column("written by")
     table.add_column("USD", justify="right")
     table.add_column("calls", justify="right")
     table.add_column("tokens in / out", justify="right")
     table.add_column("detail", overflow="fold")
     table.add_row(
         result.local.source,
+        "this process",
         f"${result.local.total_usd:.6f}",
         f"{result.local.calls:,}",
         f"{result.local.input_tokens:,} / {result.local.output_tokens:,}",
         result.local.detail,
     )
-    if result.remote is None:
-        table.add_row("langfuse", "not measured", "-", "-", "unreachable or not configured")
-    else:
+    for comparison in result.comparisons:
+        reading = comparison.reading
+        spend = reading.spend
+        if spend is None:
+            table.add_row(reading.name, reading.written_by, "not read", "-", "-", reading.note)
+            continue
+        # A source whose basis is tokens has no price of its own. Pricing it
+        # from the meter's own table would compare the table with itself and
+        # agree by construction, so the column says so rather than showing a
+        # number nobody measured (ADR-0048).
         table.add_row(
-            result.remote.source,
-            f"${result.remote.total_usd:.6f}",
-            f"{result.remote.calls:,}",
-            f"{result.remote.input_tokens:,} / {result.remote.output_tokens:,}",
-            result.remote.detail,
+            reading.name,
+            reading.written_by,
+            "not measured" if spend.total_usd is None else f"${spend.total_usd:.6f}",
+            f"{spend.calls:,}",
+            f"{spend.input_tokens:,} / {spend.output_tokens:,}",
+            reading.note or spend.detail,
         )
     console.print(table)
+    console.print(result.verdict)
 
-    relative = result.relative_difference
-    if result.vacuous:
-        console.print("[yellow]no spend recorded on either side[/yellow]")
-    console.print(
-        "difference: "
-        + (
-            "[yellow]not measured[/yellow]"
-            if relative is None
-            else f"[bold]{relative:.4%}[/bold] against a {result.tolerance:.0%} tolerance"
-        )
-    )
-
-    if result.remote is None:
+    if result.unreachable:
         _fail(
-            "Langfuse reported no total, so the ledger is unreconciled. §12.4 makes "
-            "reconciliation a gate on the report; bring Langfuse up (`make up`) and "
-            "re-run, or record the phase as unreconciled in the report.",
+            f"{', '.join(result.unreachable)} could not be read, so the ledger is "
+            "unreconciled. §12.4 makes reconciliation a gate on the report, and a "
+            "source that was asked and did not answer is not a source that agreed.",
             EXIT_PRECONDITION,
         )
     if result.vacuous:
         _fail(
-            "neither record holds any spend, so there is nothing to reconcile. Zero "
+            "no record holds any spend, so there is nothing to reconcile. Zero "
             "agrees with zero to 0.0000% and passing on that would be a gate that "
             "cannot fail -- run a phase that reaches the model first.",
             EXIT_PRECONDITION,
         )
     if not result.within_tolerance:
         _fail(
-            f"ledger and Langfuse differ by {relative:.4%}, above the "
+            f"the meter disagrees with {', '.join(result.compared)} by more than the "
             f"{result.tolerance:.0%} tolerance; §12.4 calls that a bug in the meter",
             EXIT_PRECONDITION,
         )

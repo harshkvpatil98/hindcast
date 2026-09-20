@@ -183,11 +183,21 @@ class TestCostLedger:
         self, live_settings: Settings
     ) -> None:
         result = reconcile(live_settings)
-        if result.remote is None:
+        # Gated on whether anything was *compared*, not on whether one named
+        # source answered. Since ADR-0048 there are several records, so
+        # Langfuse being unreadable no longer implies nothing was measured --
+        # a second source can still have answered, and this assertion would
+        # have failed for a reason that is not a defect.
+        if not result.compared:
             assert result.relative_difference is None
             assert not result.reconciled
         else:
             assert result.relative_difference is not None
+        # The distinction the test is named for: a source that was asked and
+        # did not answer is listed, not dropped, and blocks reconciliation.
+        for name in result.unreachable:
+            assert name in result.verdict
+        assert not (result.unreachable and result.reconciled)
 
     def test_a_ledger_with_no_spend_does_not_reconcile(self, live_settings: Settings) -> None:
         """Zero agrees with zero; the gate must still refuse."""
