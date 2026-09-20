@@ -283,12 +283,14 @@ def pairs_where_hybrid_names_the_party() -> tuple[list[ArmPair], dict[str, tuple
             mode="hybrid",
             terms=(party.lower(),),
         )
-        pairs.append(ArmPair(query=relevance_query(sid), vector=vector, hybrid=hybrid))
+        pairs.append(ArmPair(query=relevance_query(sid), baseline=vector, candidate=hybrid))
     return pairs, names
 
 
 def summarise(pairs: list[ArmPair], names: dict[str, tuple[str, ...]], **overrides: object):  # type: ignore[no-untyped-def]
     arguments: dict[str, object] = {
+        "baseline_arm": "vector",
+        "candidate_arm": "hybrid",
         "party_names": names,
         "salt": "unit-test-salt",
         "b_resamples": 2000,
@@ -313,11 +315,11 @@ class TestSummary:
         literal, screened = by_reading["all registry names"], by_reading["informative names"]
 
         assert report.generic == ("other",)
-        assert literal.vector_mean == literal.hybrid_mean == 1.0
+        assert literal.baseline_mean == literal.candidate_mean == 1.0
         assert literal.interval is not None and literal.interval.point == 0.0
 
-        assert screened.vector_mean == pytest.approx(1 / 3)
-        assert screened.hybrid_mean == pytest.approx(2 / 3)
+        assert screened.baseline_mean == pytest.approx(1 / 3)
+        assert screened.candidate_mean == pytest.approx(2 / 3)
         assert screened.interval is not None
         assert screened.interval.point == pytest.approx(1 / 3)
         assert screened.n_paired == 12
@@ -326,10 +328,10 @@ class TestSummary:
         pairs, names = pairs_where_hybrid_names_the_party()
         (kind,) = summarise(pairs, names).kinds
         by_metric = {item.metric: item for item in kind.comparisons if item.names == "-"}
-        assert by_metric["median_age_days"].vector_mean == pytest.approx(400)
-        assert by_metric["median_age_days"].hybrid_mean == pytest.approx(5)
-        assert by_metric["distinct_documents"].vector_mean == pytest.approx(2)
-        assert by_metric["distinct_documents"].hybrid_mean == pytest.approx(3)
+        assert by_metric["median_age_days"].baseline_mean == pytest.approx(400)
+        assert by_metric["median_age_days"].candidate_mean == pytest.approx(5)
+        assert by_metric["distinct_documents"].baseline_mean == pytest.approx(2)
+        assert by_metric["distinct_documents"].candidate_mean == pytest.approx(3)
         cost = by_metric["mean_distance"]
         assert cost.interval is not None and cost.interval.point > 0, (
             "the fixture's hybrid arm sits further from the query; a report that "
@@ -347,8 +349,8 @@ class TestSummary:
         varied = [
             ArmPair(
                 query=pair.query,
-                vector=pair.vector,
-                hybrid=result(
+                baseline=pair.baseline,
+                candidate=result(
                     chunk(f"h{index}", "x", days_old=1.0 + index * index * 1.7, distance=0.4),
                     mode="hybrid",
                 ),
@@ -381,8 +383,8 @@ class TestSummary:
         tripled = [
             ArmPair(
                 query=relevance_query(pair.query.scenario_id, "agent"),
-                vector=pair.vector,
-                hybrid=pair.hybrid,
+                baseline=pair.baseline,
+                candidate=pair.candidate,
             )
             for pair in pairs
             for _ in range(3)
@@ -397,8 +399,8 @@ class TestSummary:
         mixed = pairs + [
             ArmPair(
                 query=relevance_query(pair.query.scenario_id, "compiler"),
-                vector=pair.vector,
-                hybrid=pair.hybrid,
+                baseline=pair.baseline,
+                candidate=pair.candidate,
             )
             for pair in pairs[:4]
         ]
@@ -409,7 +411,9 @@ class TestSummary:
     def test_hybrid_queries_that_found_no_term_are_counted(self) -> None:
         pairs, names = pairs_where_hybrid_names_the_party()
         pairs[0] = ArmPair(
-            query=pairs[0].query, vector=pairs[0].vector, hybrid=result(mode="hybrid", terms=())
+            query=pairs[0].query,
+            baseline=pairs[0].baseline,
+            candidate=result(mode="hybrid", terms=()),
         )
         assert summarise(pairs, names).kinds[0].queries_without_terms == 1
 
