@@ -462,9 +462,27 @@ class TestCli:
         assert outcome.exit_code == EXIT_PRECONDITION
         assert "cascade retrieval index --fts" in " ".join(outcome.output.split())
 
-    def test_a_report_prints_both_arms_the_interval_and_the_caveat(
+    def test_a_report_prints_both_arms_by_name_the_interval_and_the_caveat(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
+        """The arm names must reach the output, not only the two columns.
+
+        `hybrid - vector` used to be implicit in the field names, so a report
+        printed from `RelevanceReport` said what it compared only by accident
+        of vocabulary. With a second pairing in the tool that is a report
+        nobody can interpret, so the names are data and the printer has to
+        show them.
+
+        This is red until `cascade/cli.py::_print_relevance_report` follows the
+        rename, and that is the point: the printer reads these fields off an
+        `Any`, so nothing else would catch it before `cascade retrieval bench
+        --relevance` raised `AttributeError` at the end of a database pass.
+        The mapping is `MetricComparison.vector_mean -> baseline_mean`,
+        `.hybrid_mean -> candidate_mean`, `KindReport.vector_latency ->
+        baseline_latency`, `.hybrid_latency -> candidate_latency`; the two
+        column headers and the `hybrid - vector` delta header come from
+        `report.baseline_arm` and `report.candidate_arm`.
+        """
         from typer.testing import CliRunner
 
         import cascade.retrieval.bench as bench
@@ -478,11 +496,13 @@ class TestCli:
             names="informative names",
             n_paired=170,
             unmeasurable=10,
-            vector_mean=0.4123,
-            hybrid_mean=0.6789,
+            baseline_mean=0.4123,
+            candidate_mean=0.6789,
             interval=BootstrapInterval(point=0.2666, lo=0.2101, hi=0.3212, b=10000, p_value=0.0001),
         )
         report = bench.RelevanceReport(
+            baseline_arm="hybrid",
+            candidate_arm="hybrid+rerank(bm25-local-v1)",
             kinds=(
                 bench.KindReport(
                     kind="baseline",
@@ -492,8 +512,8 @@ class TestCli:
                     comparisons=(comparison,),
                     mean_overlap=0.31,
                     queries_without_terms=5,
-                    vector_latency=summarise_latency([50.0, 60.0]),
-                    hybrid_latency=summarise_latency([300.0, 900.0]),
+                    baseline_latency=summarise_latency([50.0, 60.0]),
+                    candidate_latency=summarise_latency([300.0, 900.0]),
                 ),
             ),
             scenarios=180,
@@ -508,7 +528,14 @@ class TestCli:
         outcome = CliRunner().invoke(app, ["retrieval", "bench", "--relevance"])
         text = " ".join(outcome.output.split())
         assert outcome.exit_code == 0, outcome.output
-        for expected in ("0.4123", "0.6789", "+0.2666", "pm et", "not evidence about forecast"):
+        for expected in (
+            "0.4123",
+            "0.6789",
+            "+0.2666",
+            "pm et",
+            "not evidence about forecast",
+            "bm25-local-v1",
+        ):
             assert expected in text, expected
 
     def test_the_index_command_offers_the_full_text_build(self) -> None:

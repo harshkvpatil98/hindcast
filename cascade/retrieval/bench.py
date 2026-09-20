@@ -23,9 +23,10 @@ from __future__ import annotations
 import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from typing import Any
+from datetime import datetime
+from typing import Any, Literal, Protocol, assert_never
 
-from cascade.config import Settings
+from cascade.config import RetrievalConfig, Settings
 from cascade.corpus.embed import Embedder
 from cascade.eval.schema import BootstrapInterval
 from cascade.eval.stats import bootstrap_differences, bootstrap_seed
@@ -46,22 +47,38 @@ from cascade.retrieval.queries import (
     build_queries,
     relevance_queries,
 )
-from cascade.retrieval.schema import LatencySummary, PartitionIndex, SearchResult
+from cascade.retrieval.rerank import Reranker
+from cascade.retrieval.schema import (
+    LatencySummary,
+    PartitionIndex,
+    RetrievalMode,
+    SearchResult,
+)
 from cascade.retrieval.search import Chronofence
 
 __all__ = [
     "MIN_RECALL_SAMPLE",
+    "PAIRINGS",
     "RELEVANCE_METRICS",
+    "Arm",
     "ArmPair",
     "BenchResult",
     "HybridNotReady",
+    "InertArm",
     "KindReport",
     "MetricComparison",
+    "PairingName",
     "RelevanceReport",
+    "RetrievalPort",
+    "hybrid_arm",
     "hybrid_readiness",
+    "mode_arm",
+    "pairing_arms",
+    "reranked_arm",
     "run_bench",
     "run_relevance",
     "summarise_relevance",
+    "vector_arm",
 ]
 
 # Below this many scored queries, recall@k is too noisy to decide a criterion
@@ -228,15 +245,35 @@ def run_bench(
 
 
 # ---------------------------------------------------------------------------
-# bench --relevance: vector against hybrid, on the study's own queries (M14)
+# bench --relevance: two retrieval arms, on the study's own queries (M14, M15)
 #
-# This is how `retrieval.mode` gets decided, so it has to be decidable without
-# a forecast. It reads scenarios and compiled graphs -- never a label -- and
-# runs as `cascade_sim`, which has no grant on `scenario_labels` (invariant 2):
-# the comparison cannot be fitted to outcomes because it cannot see one.
+# This is how `retrieval.mode` was decided (ADR-0040) and how
+# `retrieval.rerank.enabled` is to be decided (ADR-0047), so it has to be
+# decidable without a forecast. It reads scenarios and compiled graphs -- never
+# a label -- and runs as `cascade_sim`, which has no grant on
+# `scenario_labels` (invariant 2): the comparison cannot be fitted to outcomes
+# because it cannot see one.
+#
+# *Which* two arms are compared is a parameter. It was hardcoded as `vector`
+# and `hybrid` -- in the field names, in the pairing, and throughout -- and the
+# moment a second pairing existed those names stopped describing anything: a
+# column headed `hybrid_mean` in a report comparing reranked hybrid against
+# un-reranked hybrid is a number no reader can interpret and no diff can catch.
+# The axis is baseline/candidate, the two arm *names* travel on the report, and
+# every interval is on `candidate - baseline`.
 # ---------------------------------------------------------------------------
 
 # (attribute of RelevanceScore, label, whether it reads the party names).
+#
+# Every one is a property of the retrieved *set*, computed without a label,
+# which is what lets a pairing be judged before any forecast exists. It is also
+# why recall against `chronofence_search_exact` is deliberately absent: the
+# oracle is exhaustive search by embedding distance, and a reranker that is
+# working reorders away from embedding distance on purpose, so recall would
+# fall for exactly the arm that improved the evidence (ADR-0047). For the same
+# reason `mean_distance` is labelled a cost rather than a defect -- it is what
+# any reordering costs in the space the index ranks in, and for a rerank
+# pairing it is expected to rise.
 RELEVANCE_METRICS: tuple[tuple[str, str, bool], ...] = (
     ("party_mention_rate", "chunks naming a party", True),
     ("median_age_days", "median age at cutoff (days)", False),
@@ -280,20 +317,226 @@ def hybrid_readiness(*, deployed: bool, partitions: Sequence[PartitionIndex]) ->
     return tuple(reasons)
 
 
+class InertArm(RuntimeError):
+    """A candidate arm returned a result the factor under test never touched.
+
+    ADR-0025's failure mode, one level down. ``causal_decomposition`` and
+    ``grounding`` were configured, documented and read nowhere, so six cells
+    would have executed as duplicates and the headline deltas would have come
+    back as precise nulls with confidence intervals and Holm-adjusted p-values
+    attached -- indistinguishable from an honest "this does not help", which is
+    publishable. A rerank arm whose reranker never ran fails identically, and a
+    small interval straddling zero is exactly what it would report. Raised on
+    the first query rather than diagnosed after the pass.
+    """
+
+
+class RetrievalPort(Protocol):
+    """The corpus reads an arm may make, structurally rather than by class.
+
+    Mirrors :class:`~cascade.retrieval.search.Chronofence` so an arm can be
+    exercised against a stub, and -- as in :mod:`cascade.sim.tools` -- mirrors
+    it rather than wrapping it so invariant 1 reaches the port too: ``as_of``
+    is keyword-only with no default here, so a stub written for a test has
+    nowhere to put one either.
+    """
+
+    def search(self, vector: Sequence[float], *, as_of: datetime, k: int) -> SearchResult: ...
+
+    def search_hybrid(
+        self,
+        vector: Sequence[float],
+        *,
+        text: str,
+        entities: Sequence[str] = (),
+        as_of: datetime,
+        k: int,
+    ) -> SearchResult: ...
+
+    def retrieve(
+        self,
+        vector: Sequence[float],
+        *,
+        text: str,
+        entities: Sequence[str] = (),
+        as_of: datetime,
+        k: int,
+    ) -> SearchResult: ...
+
+
+ArmRetrieve = Callable[[RetrievalPort, RelevanceQuery, Sequence[float]], SearchResult]
+
+
+@dataclass(frozen=True)
+class Arm:
+    """One named way of retrieving, and what it needs before the first query.
+
+    The name is the load-bearing field. A comparison that records only two
+    columns of numbers is a comparison that cannot be read six months later or
+    diffed against another pairing, so the arm carries what it is and the
+    report prints it.
+
+    ``retrieve`` takes the port as an argument rather than closing over a
+    connection, which is what lets every arm of a pairing be driven through one
+    open :class:`~cascade.retrieval.search.Chronofence` -- see
+    :func:`run_relevance` -- and lets an arm be tested without a database.
+
+    ``needs_hybrid`` and ``needs_rerank`` are preconditions the driver must
+    satisfy *before* the pass, not capabilities: a pairing whose arms are both
+    vector must not be refused for a missing full-text index it never touches,
+    and a rerank arm must not discover on query one that its stage is switched
+    off in config.
+    """
+
+    name: str
+    retrieve: ArmRetrieve
+    needs_hybrid: bool = False
+    needs_rerank: bool = False
+
+
+def vector_arm() -> Arm:
+    """`chronofence_search`: nearest by embedding distance, nothing else."""
+
+    def run(port: RetrievalPort, query: RelevanceQuery, vector: Sequence[float]) -> SearchResult:
+        return port.search(vector, as_of=query.as_of, k=query.k)
+
+    return Arm(name="vector", retrieve=run, needs_hybrid=False)
+
+
+def hybrid_arm() -> Arm:
+    """`chronofence_search_hybrid`: two time-locked pools, fused (ADR-0040)."""
+
+    def run(port: RetrievalPort, query: RelevanceQuery, vector: Sequence[float]) -> SearchResult:
+        return port.search_hybrid(
+            vector,
+            text=query.query.keyword_text,
+            entities=query.query.entities,
+            as_of=query.as_of,
+            k=query.k,
+        )
+
+    return Arm(name="hybrid", retrieve=run, needs_hybrid=True)
+
+
+def mode_arm(mode: RetrievalMode) -> Arm:
+    """The arm ``retrieval.mode`` names -- the study's own pool, un-reranked.
+
+    Exhaustive over :data:`~cascade.retrieval.schema.RetrievalMode` on purpose.
+    A third mode added to that literal without a branch here would otherwise
+    fall through to the vector arm and be compared against itself, which is the
+    inert-factor failure again with no exception to raise.
+    """
+    if mode == "hybrid":
+        return hybrid_arm()
+    if mode == "vector":
+        return vector_arm()
+    assert_never(mode)
+
+
+def reranked_arm(mode: RetrievalMode, *, model_id: str) -> Arm:
+    """The configured mode's pool, permuted by the reranker (ADR-0047).
+
+    This is ``Chronofence.retrieve`` itself, not a reconstruction of it: the
+    arm under test has to be the call the study will make, or the ablation
+    measures a stage nothing runs. The fence is the one
+    :func:`run_relevance` already holds, constructed with the stage enabled, so
+    the pool the reranker permutes comes off the same connection the baseline
+    arm read -- reranking is a permutation applied in Python and needs no
+    second session.
+
+    A result carrying no ``rerank_model`` means the stage did not run and the
+    comparison is an arm against itself; that is :class:`InertArm`, not a null.
+    """
+    pool = mode_arm(mode)
+
+    def run(port: RetrievalPort, query: RelevanceQuery, vector: Sequence[float]) -> SearchResult:
+        found = port.retrieve(
+            vector,
+            text=query.query.keyword_text,
+            entities=query.query.entities,
+            as_of=query.as_of,
+            k=query.k,
+        )
+        if found.rerank_model is None:
+            raise InertArm(
+                "the rerank arm returned a result with no rerank_model, so no reranker ran: "
+                "this arm and the baseline are the same retrieval and every interval would "
+                "be a null with a confidence interval attached (ADR-0025). Check "
+                "retrieval.rerank in the settings the bench was given"
+            )
+        return found
+
+    return Arm(
+        name=f"{mode}+rerank({model_id})",
+        retrieve=run,
+        needs_hybrid=pool.needs_hybrid,
+        needs_rerank=True,
+    )
+
+
+PairingName = Literal["hybrid", "rerank"]
+
+# Named for the factor under test, not for the arms: `hybrid` asks whether the
+# keyword pool helps, `rerank` whether a second ranking stage does.
+PAIRINGS: tuple[PairingName, ...] = ("hybrid", "rerank")
+
+
+def pairing_arms(pairing: PairingName, settings: Settings) -> tuple[Arm, Arm]:
+    """The (baseline, candidate) arms of one pairing. Pure.
+
+    The baseline is always the arm the study runs today, so the sign of every
+    reported interval means "what the change would do" rather than depending on
+    which way round the caller happened to list them.
+    """
+    if pairing == "hybrid":
+        return vector_arm(), hybrid_arm()
+    if pairing == "rerank":
+        mode = settings.retrieval.mode
+        return mode_arm(mode), reranked_arm(mode, model_id=settings.retrieval.rerank.model_id)
+    assert_never(pairing)
+
+
+def rerank_enabled(settings: Settings) -> Settings:
+    """``settings`` with the rerank stage on, for the fence a rerank arm reads.
+
+    The bench has to measure the stage whichever way the switch currently sits.
+    A comparison runnable only once reranking was already enabled could never
+    be the measurement that decides whether to enable it, and ADR-0047 makes it
+    exactly that. Nothing else is touched, so the pool size, the model id and
+    the provider are the configured ones and the arm is the deployable one.
+
+    Rebuilt through ``model_validate`` rather than ``model_copy``, because
+    ``RetrievalConfig``'s cross-field rules on ``rerank.pool`` are written
+    ``if self.rerank.enabled`` and a copy does not re-validate. A config
+    carrying a pool wider than ``max_k`` loads cleanly while the stage is off,
+    and turning it on here without the check would surface at the first query
+    as ``k exceeds retrieval.max_k`` -- an error naming neither the pool nor
+    the reason, hundreds of queries into a pass.
+    """
+    retrieval = settings.retrieval
+    turned_on = RetrievalConfig.model_validate(
+        retrieval.model_dump() | {"rerank": retrieval.rerank.model_dump() | {"enabled": True}}
+    )
+    return settings.model_copy(update={"retrieval": turned_on})
+
+
 @dataclass(frozen=True)
 class ArmPair:
-    """One query answered by both arms."""
+    """One query answered by both arms, baseline first."""
 
     query: RelevanceQuery
-    vector: SearchResult
-    hybrid: SearchResult
+    baseline: SearchResult
+    candidate: SearchResult
 
 
 @dataclass(frozen=True)
 class MetricComparison:
     """One metric, both arms, paired over scenarios.
 
-    ``interval`` is on ``hybrid - vector``. ``unmeasurable`` counts scenarios
+    ``interval`` is on ``candidate - baseline``; *which* arms those are is
+    named once on :class:`RelevanceReport` rather than repeated in these field
+    names, because a field called ``hybrid_mean`` in a report comparing two
+    rerank arms is a number nobody can read. ``unmeasurable`` counts scenarios
     left out of the pairing because the metric had no value in one arm or the
     other -- no usable party name, or nothing retrieved -- and is reported
     beside the means rather than folded into them.
@@ -304,8 +547,8 @@ class MetricComparison:
     names: str
     n_paired: int
     unmeasurable: int
-    vector_mean: float | None
-    hybrid_mean: float | None
+    baseline_mean: float | None
+    candidate_mean: float | None
     interval: BootstrapInterval | None
 
 
@@ -322,14 +565,27 @@ class KindReport:
     """Mean Jaccard overlap of the two arms' chunk ids: how different the
     evidence actually is. Near 1.0 means the switch would change little."""
     queries_without_terms: int
-    """Hybrid queries that found no entity term, and so ran as the vector pool
-    re-ranked by recency and diversity."""
-    vector_latency: LatencySummary
-    hybrid_latency: LatencySummary
+    """Candidate-arm queries that ran a keyword pool and found no entity term,
+    so the pool was the vector one re-ranked by recency and diversity. Counted
+    on the candidate because that is the arm under test, and counted only where
+    a keyword pool actually ran: a vector-mode candidate contributes nothing
+    here rather than reporting every one of its queries as termless."""
+    baseline_latency: LatencySummary
+    candidate_latency: LatencySummary
 
 
 @dataclass(frozen=True)
 class RelevanceReport:
+    """Everything one pairing measured, and which two arms it compared.
+
+    The arm names are fields rather than prose because the report is read
+    without its command line: "hybrid - vector" used to be implicit in the
+    field names, and a second pairing made that unreadable rather than merely
+    terse.
+    """
+
+    baseline_arm: str
+    candidate_arm: str
     kinds: tuple[KindReport, ...]
     scenarios: int
     graphs: int
@@ -351,7 +607,7 @@ def _per_scenario(
     names_by_scenario: dict[str, tuple[str, ...]],
     metric: str,
 ) -> dict[str, tuple[float | None, float | None]]:
-    """``scenario -> (vector, hybrid)``, each the mean over that scenario's queries.
+    """``scenario -> (baseline, candidate)``, each the mean over its queries.
 
     The scenario is the unit because it is the independent one: an ``agent``
     reading has a dozen queries per scenario that share a question, and
@@ -361,8 +617,8 @@ def _per_scenario(
     for pair in pairs:
         names = names_by_scenario.get(pair.query.scenario_id, ())
         scores: tuple[RelevanceScore, RelevanceScore] = (
-            score_retrieval(pair.vector, names),
-            score_retrieval(pair.hybrid, names),
+            score_retrieval(pair.baseline, names),
+            score_retrieval(pair.candidate, names),
         )
         bucket = collected.setdefault(pair.query.scenario_id, ([], []))
         for arm, score in enumerate(scores):
@@ -389,12 +645,22 @@ def _compare(
     salt: str,
     b_resamples: int,
 ) -> MetricComparison:
+    """One metric's paired comparison, ``candidate - baseline``.
+
+    The bootstrap seed is derived from the salt, the query kind, the metric and
+    the name reading -- deliberately **not** from the arm names. ADR-0040
+    publishes interval endpoints measured under this seed; feeding the arms
+    into it would move every one of them on the next run and leave a document
+    that claims reproducibility disagreeing with the tool. The consequence is
+    that two pairings over the same scenarios resample on the same indices,
+    which is common random numbers between them, not a collision.
+    """
     per_scenario = _per_scenario(pairs, names_by_scenario, metric)
     paired = [
-        (vector, hybrid)
+        (baseline, candidate)
         for scenario_id in sorted(per_scenario)
-        for vector, hybrid in (per_scenario[scenario_id],)
-        if vector is not None and hybrid is not None
+        for baseline, candidate in (per_scenario[scenario_id],)
+        if baseline is not None and candidate is not None
     ]
     unmeasurable = len(per_scenario) - len(paired)
     if not paired:
@@ -404,11 +670,11 @@ def _compare(
             names=names,
             n_paired=0,
             unmeasurable=unmeasurable,
-            vector_mean=None,
-            hybrid_mean=None,
+            baseline_mean=None,
+            candidate_mean=None,
             interval=None,
         )
-    differences = [hybrid - vector for vector, hybrid in paired]
+    differences = [candidate - baseline for baseline, candidate in paired]
     interval = bootstrap_differences(
         differences,
         point=_mean(differences),
@@ -421,8 +687,8 @@ def _compare(
         names=names,
         n_paired=len(paired),
         unmeasurable=unmeasurable,
-        vector_mean=_mean([vector for vector, _ in paired]),
-        hybrid_mean=_mean([hybrid for _, hybrid in paired]),
+        baseline_mean=_mean([baseline for baseline, _ in paired]),
+        candidate_mean=_mean([candidate for _, candidate in paired]),
         interval=interval,
     )
 
@@ -437,6 +703,8 @@ def _overlap(left: SearchResult, right: SearchResult) -> float:
 def summarise_relevance(
     pairs: Sequence[ArmPair],
     *,
+    baseline_arm: str,
+    candidate_arm: str,
     party_names: dict[str, tuple[str, ...]],
     salt: str,
     b_resamples: int,
@@ -445,6 +713,10 @@ def summarise_relevance(
     elapsed_s: float,
 ) -> RelevanceReport:
     """Turn paired results into the report. No I/O; seeded, so reproducible.
+
+    The two arm names are required rather than defaulted, because a report that
+    does not say what it compared is the one failure this generalisation exists
+    to prevent.
 
     The mention rate is reported twice -- over every registry name, and over
     the informative ones (:func:`~cascade.retrieval.metrics.generic_names`) --
@@ -458,7 +730,7 @@ def summarise_relevance(
     bodies: dict[str, dict[str, str]] = {}
     for pair in pairs:
         pool = bodies.setdefault(pair.query.scenario_id, {})
-        for chunk in (*pair.vector.chunks, *pair.hybrid.chunks):
+        for chunk in (*pair.baseline.chunks, *pair.candidate.chunks):
             pool[chunk.chunk_id] = chunk.body
     generic = generic_names(
         {sid: [bodies[sid][cid] for cid in sorted(bodies[sid])] for sid in sorted(bodies)},
@@ -499,14 +771,22 @@ def summarise_relevance(
                 scenarios=len({pair.query.scenario_id for pair in of_kind}),
                 queries=len(of_kind),
                 comparisons=tuple(comparisons),
-                mean_overlap=_mean([_overlap(pair.vector, pair.hybrid) for pair in of_kind]),
-                queries_without_terms=sum(1 for pair in of_kind if not pair.hybrid.terms),
-                vector_latency=summarise_latency([pair.vector.elapsed_ms for pair in of_kind]),
-                hybrid_latency=summarise_latency([pair.hybrid.elapsed_ms for pair in of_kind]),
+                mean_overlap=_mean([_overlap(pair.baseline, pair.candidate) for pair in of_kind]),
+                queries_without_terms=sum(
+                    1
+                    for pair in of_kind
+                    if pair.candidate.mode == "hybrid" and not pair.candidate.terms
+                ),
+                baseline_latency=summarise_latency([pair.baseline.elapsed_ms for pair in of_kind]),
+                candidate_latency=summarise_latency(
+                    [pair.candidate.elapsed_ms for pair in of_kind]
+                ),
             )
         )
 
     return RelevanceReport(
+        baseline_arm=baseline_arm,
+        candidate_arm=candidate_arm,
         kinds=tuple(kinds),
         scenarios=len({pair.query.scenario_id for pair in pairs}),
         graphs=graphs,
@@ -525,26 +805,51 @@ def summarise_relevance(
 def run_relevance(
     settings: Settings,
     *,
+    pairing: PairingName = "hybrid",
+    reranker: Reranker | None = None,
     limit: int | None = None,
     encode: Callable[[list[str]], Any] | None = None,
     progress: object = None,
 ) -> RelevanceReport:
-    """Run both retrieval arms over the study's real queries and compare them.
+    """Run one pairing's two arms over the study's real queries and compare.
 
     Preserves invariant 2 by construction: every read here is made as
-    ``cascade_sim`` -- scenarios, graphs and both search functions -- and that
+    ``cascade_sim`` -- scenarios, graphs and every search function -- and that
     role has no grant on ``scenario_labels``. The one exception is the
     readiness check, which reads the *catalogue* (which partitions carry which
     index) through the admin-only partition view, exactly as `retrieval verify`
     does; it touches no table of the study.
 
     Raises :class:`HybridNotReady` before the first query when migration 018 or
-    a full-text index is missing.
+    a full-text index is missing **and an arm of this pairing needs it**. A
+    rerank pairing under ``retrieval.mode: vector`` touches neither, and
+    refusing it for a missing index it never reads would make an unrelated
+    precondition look like a result.
 
-    Both arms run on one connection, back to back per query, so they see the
-    same corpus and the same cache state. ``limit`` takes the first N
-    scenarios by id -- a smoke run, deterministic, and labelled as partial by
-    the scenario count in the report.
+    Both arms run on **one connection, back to back per query**, so they see
+    the same corpus and the same server cache. That survives the rerank
+    pairing intact rather than being traded for it: reranking is a permutation
+    applied in Python to a pool the same fence returned (ADR-0047), so the
+    fence is constructed once with the stage enabled, the baseline arm calls
+    ``search``/``search_hybrid``, which never rerank, and the candidate calls
+    ``retrieve``, which does. Two fences would have put the arms on two
+    sessions with two prepared-statement caches and no interleaving, and the
+    reported latency difference would have carried that.
+
+    The baseline always runs first, so the candidate reads a cache the baseline
+    may have warmed. That asymmetry is not new -- the vector/hybrid pairing has
+    always had it -- and it flatters the candidate, so a candidate measured as
+    *slower* is measured conservatively. A rerank candidate is additionally
+    slower by design: it asks the database for ``max(k, rerank.pool)`` rows and
+    then scores them, and that whole cost is what its latency reports.
+
+    ``reranker`` is passed through to the fence. The ``local`` provider needs
+    none -- :class:`~cascade.retrieval.search.Chronofence` builds the pure
+    default -- and anything that reaches a service must be injected here, so
+    the one call site keeps owning every request that leaves this process.
+
+    ``limit`` takes the first N scenarios by id -- a smoke run, deterministic,
+    and labelled as partial by the scenario count in the report.
     """
     from cascade.decompose.store import load_graphs
     from cascade.ledger.store import load_scenarios
@@ -552,12 +857,16 @@ def run_relevance(
 
     started = time.monotonic()
     retrieval = settings.retrieval
+    baseline, candidate = pairing_arms(pairing, settings)
 
-    with Chronofence(settings, role="sim") as probe:
-        deployed = probe.hybrid_deployed()
-    reasons = hybrid_readiness(deployed=deployed, partitions=measure(settings) if deployed else ())
-    if reasons:
-        raise HybridNotReady(reasons)
+    if baseline.needs_hybrid or candidate.needs_hybrid:
+        with Chronofence(settings, role="sim") as probe:
+            deployed = probe.hybrid_deployed()
+        reasons = hybrid_readiness(
+            deployed=deployed, partitions=measure(settings) if deployed else ()
+        )
+        if reasons:
+            raise HybridNotReady(reasons)
 
     scenarios = sorted(load_scenarios(settings, role="sim"), key=lambda item: item.scenario_id)
     if limit is not None:
@@ -580,22 +889,20 @@ def run_relevance(
         encode = embedder.encode
     vectors = encode([item.query.text for item in queries])
 
+    # One fence for the whole pass. When either arm needs the rerank stage the
+    # fence is built with it on; the baseline's `search`/`search_hybrid` ignore
+    # it, so both arms still share the one session.
+    needs_rerank = baseline.needs_rerank or candidate.needs_rerank
+    fence_settings = rerank_enabled(settings) if needs_rerank else settings
+
     pairs: list[ArmPair] = []
-    with Chronofence(settings, role="sim") as fence:
+    with Chronofence(fence_settings, role="sim", reranker=reranker) as fence:
         for item, vector in zip(queries, vectors, strict=True):
-            pairs.append(
-                ArmPair(
-                    query=item,
-                    vector=fence.search(vector, as_of=item.as_of, k=item.k),
-                    hybrid=fence.search_hybrid(
-                        vector,
-                        text=item.query.keyword_text,
-                        entities=item.query.entities,
-                        as_of=item.as_of,
-                        k=item.k,
-                    ),
-                )
-            )
+            # Sequenced explicitly rather than left to argument evaluation
+            # order: which arm runs first decides which one reads a warm cache.
+            first = baseline.retrieve(fence, item, vector)
+            second = candidate.retrieve(fence, item, vector)
+            pairs.append(ArmPair(query=item, baseline=first, candidate=second))
             if progress is not None:
                 advance = getattr(progress, "advance", None)
                 if callable(advance):
@@ -603,6 +910,8 @@ def run_relevance(
 
     return summarise_relevance(
         pairs,
+        baseline_arm=baseline.name,
+        candidate_arm=candidate.name,
         party_names={scenario.scenario_id: scenario.party_names for scenario in scenarios},
         salt=settings.study.salt,
         b_resamples=settings.ensemble.bootstrap_b,
