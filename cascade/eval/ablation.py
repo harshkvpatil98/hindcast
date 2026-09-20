@@ -318,9 +318,10 @@ def comparison_family(
                 "intersection: only scenarios whose own prediction market quoted a "
                 "usable price strictly before the cutoff are on either side, and n is "
                 "how many that is. Scenarios with no market, no price history or a "
-                "stale price are excluded and counted by `cascade eval market-prices`, "
-                f"never imputed. Negative means the market beat {headline} on those "
-                "scenarios. In the Holm family like every other comparison (§10.4)."
+                'stale price are excluded and counted under "What the market '
+                'benchmark covers" above, never imputed. Negative means the market '
+                f"beat {headline} on those scenarios. In the Holm family like every "
+                "other comparison (§10.4)."
             )
         out.append(
             ComparisonSpec(

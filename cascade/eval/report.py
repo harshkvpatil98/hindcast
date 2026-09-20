@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Any
 
 from cascade.eval.ablation import HEADLINE_CELL
+from cascade.eval.market import MARKET_CONFIG_ID, CoverageSummary
 from cascade.eval.schema import (
     AblationCell,
     CalibrationReport,
@@ -40,6 +41,8 @@ from cascade.eval.split import Partition, PartitionInteraction, SplitDeclaration
 
 __all__ = [
     "FIGURE_FORMAT",
+    "WITHHELD_RULE",
+    "FigureNote",
     "StudyArtifact",
     "git_sha",
     "report_id",
@@ -47,6 +50,29 @@ __all__ = [
 ]
 
 FIGURE_FORMAT = "svg"
+
+WITHHELD_RULE = (
+    "A stored configuration that is not a declared study configuration is a "
+    "tuning variant. It is scored on dev only, so that a report cannot become "
+    "the place variants get compared on held-out scenarios; declaring it in "
+    "`cascade/eval/ablation.py` or `cascade/eval/supplementary.py` is the price "
+    "of reporting it on test."
+)
+
+
+@dataclass(frozen=True, slots=True)
+class FigureNote:
+    """One figure slot: whether it was drawn, and if not, why not.
+
+    Preserves the rule that the artifact's own index describes the directory
+    that exists. A figure list that names four files when two were written
+    reads as two missing files rather than as two measurements that did not
+    happen, and those are different statements.
+    """
+
+    filename: str
+    written: bool
+    note: str
 
 
 def report_id(*, now: datetime | None = None) -> str:
@@ -145,6 +171,19 @@ class StudyArtifact:
     were therefore not scored on this partition (see
     ``split.require_declared_config``)."""
 
+    market_coverage: CoverageSummary | None = None
+    """What the market benchmark covers, over the whole sealed set: usable,
+    stale, and each reason a price could not be had. Carried on the artifact so
+    that it is printed *beside* the market's Brier rather than left in the
+    output of a separate command -- a Brier over 143 of 180 scenarios that does
+    not say so is the drift nothing downstream can detect."""
+
+    provenance: Mapping[str, Any] = field(default_factory=dict)
+    """What the forecasts were made against: corpus size and span, retrieval
+    mode, prompt revision, and the installed versions of the pinned stack. A
+    report whose numbers cannot be tied to the evidence and the code that
+    produced them is a report nobody can reproduce."""
+
     def headline_metrics(self) -> MetricSet | None:
         for item in self.metrics:
             if item.config_id == self.headline_config:
@@ -169,7 +208,41 @@ def _json(payload: Any) -> str:
     return json.dumps(payload, indent=2, sort_keys=True, default=str) + "\n"
 
 
-def _metric_payload(item: MetricSet) -> dict[str, Any]:
+def _coverage_payload(coverage: CoverageSummary | None) -> Any:
+    """The market benchmark's coverage as primitive data, or a stated absence."""
+    if coverage is None:
+        return {
+            "measured": False,
+            "note": (
+                "Coverage was not read. The Brier beside this is over whatever "
+                "prices are stored; run `cascade eval market-prices` to measure "
+                "what it covers."
+            ),
+        }
+    payload = coverage.model_dump(mode="json")
+    payload["measured"] = True
+    payload["note"] = (
+        "Counts every sealed scenario exactly once: usable + stale + the "
+        "unobtainable reasons sum to n_scenarios. Only a usable price is "
+        "scored; nothing is imputed."
+    )
+    return payload
+
+
+def _metric_payload(item: MetricSet, *, coverage: CoverageSummary | None = None) -> dict[str, Any]:
+    """One configuration's metrics as primitive data.
+
+    The market benchmark's coverage travels inside its own metric block. §1's
+    rule that a report never implies a number it did not measure applies to the
+    denominator as much as to the numerator: a Brier is a claim about the
+    scenarios it was taken over, and this is where those are counted.
+    """
+    if item.config_id == MARKET_CONFIG_ID:
+        return {**_metric_body(item), "market_coverage": _coverage_payload(coverage)}
+    return _metric_body(item)
+
+
+def _metric_body(item: MetricSet) -> dict[str, Any]:
     return {
         "config_id": item.config_id,
         "n": item.n,
@@ -196,7 +269,7 @@ def _metric_payload(item: MetricSet) -> dict[str, Any]:
     }
 
 
-def _headline_markdown(artifact: StudyArtifact) -> str:
+def _headline_markdown(artifact: StudyArtifact, figures: Sequence[FigureNote] = ()) -> str:
     """Appendix D's ``headline.md``: the numbers, each with its paragraph.
 
     Written so that a blocked study reads as blocked. If the headline
@@ -222,6 +295,8 @@ def _headline_markdown(artifact: StudyArtifact) -> str:
         "produced it is absent and named below, never substituted.",
         "",
     ]
+
+    lines += _standin_banner(artifact)
 
     if artifact.blocked:
         lines += ["## Not produced", ""]
@@ -288,24 +363,46 @@ def _headline_markdown(artifact: StudyArtifact) -> str:
                 "",
             ]
 
+    lines += _baselines_section(artifact)
+    lines += _cells_section(artifact)
+
     lines += ["## Replicate policy", ""]
     lines += [
         artifact.replicate_policy
         or "No replicate policy was recorded, because no ablation cell was executed.",
         "",
     ]
+    if artifact.headline_config != HEADLINE_CELL:
+        lines += [
+            f"The notes below call `{HEADLINE_CELL}` the headline cell because that is "
+            "Appendix C's design. This report leads with "
+            f"`{artifact.headline_config}`, which is a different choice and does not "
+            f"move the cap: `{artifact.headline_config}` ran at whatever its own row in "
+            "the table above says.",
+            "",
+        ]
     lines += [f"- {note}" for note in artifact.replicate_notes]
     lines += [""]
 
     lines += ["## Reading the deltas", ""]
     lines += [
-        "Deltas are leave-one-out against the full configuration. Information "
-        "asymmetry is nested inside causal decomposition — the visibility policy "
-        "is derived from the compiled graph — so **the two leave-one-out deltas "
-        "do not sum**, and the decomposition-net-of-asymmetry figure is published "
-        "here rather than left for a reader to compute.",
+        f"Every delta below is against `{artifact.headline_config}`, the configuration "
+        "this report leads with. Information asymmetry is nested inside causal "
+        "decomposition — the visibility policy is derived from the compiled graph — so "
+        "**the two leave-one-out deltas do not sum**, and the "
+        "decomposition-net-of-asymmetry figure is published here rather than left for a "
+        "reader to compute.",
         "",
     ]
+    if artifact.headline_config != HEADLINE_CELL:
+        lines += [
+            f"`{artifact.headline_config}` is **not** Appendix C's full configuration "
+            f"(`{HEADLINE_CELL}`), so these are not the leave-one-out deltas §6.4 "
+            "defines. They are differences against whichever configuration was "
+            "available to lead this report, and none of them measures the contribution "
+            "of a factor the full configuration holds.",
+            "",
+        ]
     main = _family(artifact, "appendix_c")
     if main:
         lines += _comparison_table(artifact, main)
@@ -361,38 +458,265 @@ def _headline_markdown(artifact: StudyArtifact) -> str:
             f"(p {_fmt(finding.pearson_p, '{:.4g}')}).",
             "",
             f"{finding.flagged} of {finding.n} forecasts were flagged multi-modal "
-            f"(sigma > {finding.sigma_threshold} or dip p < 0.05). Brier on the flagged "
-            f"subset {_fmt(finding.brier_flagged, '{:.6f}')} against "
-            f"{_fmt(finding.brier_unflagged, '{:.6f}')} on the rest. The claim under "
-            "test is that the flag identifies the forecasts to distrust; the numbers "
-            "above are what it measured, whichever way they fell.",
+            f"(sigma > {finding.sigma_threshold} or dip p < 0.05). Brier on the "
+            f"{finding.flagged} flagged {_fmt(finding.brier_flagged, '{:.6f}')} against "
+            f"{_fmt(finding.brier_unflagged, '{:.6f}')} on the "
+            f"{finding.n - finding.flagged} unflagged. The claim under test is that the "
+            "flag identifies the forecasts to distrust; the numbers above are what it "
+            "measured, whichever way they fell.",
             "",
         ]
 
-    lines += [
+    lines += _artifact_section(artifact, figures)
+    return "\n".join(lines)
+
+
+def _rows_cell(count: int, empty: str) -> str:
+    """A row count, or the reason there is none. Never a bare zero."""
+    return str(count) if count else f"0 — {empty}"
+
+
+def _artifact_section(artifact: StudyArtifact, figures: Sequence[FigureNote]) -> list[str]:
+    """An index of the directory that exists, with each file's own row count.
+
+    Preserves the report's one promise about itself. The previous index named
+    ten files and four figures unconditionally, so a run that wrote a
+    header-only CSV and no figure at all still published a table claiming
+    otherwise — a reader would read the empty directory as a packaging fault
+    rather than as a measurement that did not happen.
+    """
+    calibration_rows = 0 if artifact.calibration is None else len(artifact.calibration.bins)
+    tier_rows = 0 if artifact.evidence is None else len(artifact.evidence.tiers)
+    lines = [
         "## Artifact",
         "",
-        "| File | Contents |",
-        "|---|---|",
-        "| `manifest.json` | scenario hash, git sha, model versions, config |",
-        "| `metrics.json` | every metric, every cell, machine-readable |",
-        "| `baselines.csv` | the §10.2 baselines and the market at the cutoff, per scenario |",
-        "| `ablation_grid.csv` | the twelve Appendix C cells, per scenario |",
-        "| `calibration.csv` | 10 bins: count, mean_pred, obs_freq, Wilson bounds |",
-        "| `per_domain.csv` | Brier by domain with counts (sealed labels; see ADR-0043) |",
-        "| `per_evidence_tier.csv` | Brier by evidence tier with counts |",
-        "| `significance.json` | paired bootstrap CIs, Holm-adjusted p-values |",
-        "| `leakage_report.json` | poison-pill hits and memorisation scores |",
-        "| `cost_ledger.json` | per-phase spend |",
-        f"| `figures/*.{FIGURE_FORMAT}` | reliability, forest, convergence, sigma vs error |",
+        "What this directory holds, as written. A row count of 0 means the file carries "
+        "its header and nothing else, for the reason given.",
         "",
+        "| File | Rows | Contents |",
+        "|---|---|---|",
+        "| `manifest.json` | - | scenario hash, git sha, model versions, config, " "provenance |",
+        f"| `metrics.json` | {len(artifact.metrics)} | every metric, every cell, "
+        "machine-readable |",
+        f"| `baselines.csv` | {_rows_cell(len(artifact.baseline_rows), 'no baseline was scored')} "
+        "| the §10.2 baselines and the market at the cutoff, per scenario |",
+        f"| `ablation_grid.csv` | {_rows_cell(len(artifact.grid_rows), 'no cell was scored')} "
+        "| the Appendix C cells, per scenario |",
+        f"| `calibration.csv` | "
+        f"{_rows_cell(calibration_rows, 'the headline configuration has no forecasts')} "
+        "| bins: count, mean_pred, obs_freq, Wilson bounds |",
+        f"| `per_domain.csv` | "
+        f"{_rows_cell(len(artifact.per_domain), 'the headline configuration has no forecasts')} "
+        "| Brier by domain with counts (sealed labels; see ADR-0043) |",
+        f"| `per_evidence_tier.csv` | "
+        f"{_rows_cell(tier_rows, 'the evidence tiering was not produced')} "
+        "| Brier by evidence tier with counts |",
+        f"| `significance.json` | "
+        f"{_rows_cell(len(artifact.comparisons), 'no comparison had both sides')} "
+        "| paired bootstrap CIs, Holm-adjusted p-values |",
+        "| `leakage_report.json` | - | the three structural mechanisms; poison-pill and "
+        "memorisation are measured elsewhere and read as null here |",
+        "| `cost_ledger.json` | - | per-phase spend, from the meter checkpoints |",
+        "",
+        f"Figures, as `figures/*.{FIGURE_FORMAT}` (ADR-0024):",
+        "",
+        "| Figure | Written | Why |",
+        "|---|---|---|",
     ]
-    return "\n".join(lines)
+    lines += [
+        f"| `{note.filename}` | {'yes' if note.written else '**no**'} | {note.note} |"
+        for note in figures
+    ]
+    return [*lines, ""]
 
 
 def _fmt(value: float | None, pattern: str) -> str:
     """Format a measurement, or say plainly that there is not one."""
     return "not measured" if value is None else pattern.format(value)
+
+
+def _standin_banner(artifact: StudyArtifact) -> list[str]:
+    """Name every stand-in configuration in the artifact, above everything else.
+
+    The headline section already warns when the *lead* figure came from a
+    stand-in decider. That is not enough: a report whose headline configuration
+    has no forecasts at all still ships a grid CSV, a per-domain table and four
+    figures built entirely from stand-in runs, and says nothing. M5 stamps the
+    policy on a run because a footnote is not a mechanism; the same argument
+    applies to the document.
+    """
+    standins = [item for item in artifact.metrics if item.provisional]
+    if not standins:
+        return []
+    listed = ", ".join(
+        f"`{item.config_id}` ({', '.join(item.policies)}, n={item.n})" for item in standins
+    )
+    return [
+        f"> **{len(standins)} of the {len(artifact.metrics)} scored configuration(s) in "
+        f"this artifact were produced by a stand-in decider, not the study's agents:** "
+        f"{listed}. Every number derived from them — in `metrics.json`, "
+        "`ablation_grid.csv`, the delta table and the figures — verifies the harness "
+        "end to end. None of them is a result about Cascade.",
+        "",
+    ]
+
+
+def _coverage_bullets(coverage: CoverageSummary) -> list[str]:
+    """The market benchmark's denominator, spelled out.
+
+    Preserves the rule that a Brier is printed with the set it was taken over.
+    Every sealed scenario appears in exactly one line here, so a reader can add
+    the lines up and get the registry back.
+    """
+    hours = coverage.max_staleness_seconds / 3600.0
+    bullets = [
+        f"- **{coverage.n_usable} usable** of {coverage.n_scenarios} sealed scenarios — "
+        f"a YES probability observed strictly before the cutoff and at most "
+        f"{hours:g} h old. This is the benchmark's whole denominator.",
+        f"- {coverage.n_stale} priced but **stale** (older than {hours:g} h): excluded.",
+    ]
+    bullets += [
+        f"- {count} **unobtainable: {reason}**: excluded, never imputed."
+        for reason, count in coverage.unobtainable
+    ]
+    bullets += [
+        "",
+        "| Source | scenarios | usable | stale |",
+        "|---|---|---|---|",
+    ]
+    bullets += [
+        f"| {source} | {total} | {usable} | {stale} |"
+        for source, total, usable, stale in coverage.by_source
+    ]
+    bullets += [
+        "",
+        "Every sealed scenario appears in exactly one of the lines above. A scenario "
+        "with no usable price is left out of the market's Brier and out of every "
+        "comparison against it; it is never filled with 0.5 or with the base rate.",
+        "",
+    ]
+    return bullets
+
+
+def _baselines_section(artifact: StudyArtifact) -> list[str]:
+    """§10.2's baselines, each with the scenarios its own number was taken over.
+
+    Preserves two things a reader needs and neither the delta table nor
+    ``metrics.json`` prose supplies. First, the absolute Brier of every
+    reference: a delta of +0.06 against the market says nothing about whether
+    either side beat climatology. Second, that **no two rows here are paired**
+    — the market covers the scenarios with a usable price and a capped cell
+    covers its subsample — so each row carries its own n and the table says in
+    words that the rows are not comparable by subtraction.
+    """
+    if not artifact.baselines:
+        return []
+    lines = [
+        "## Baselines",
+        "",
+        "§10.2's five, and the market at the cutoff beside them (M14). Each row is "
+        f"measured on the **{artifact.partition}** partition, over **its own** "
+        "scenarios: the market covers only those with a usable price and a capped cell "
+        "only its subsample. **The rows are not paired and their Briers must not be "
+        "subtracted from one another** — the paired, bootstrapped differences are in "
+        "the delta table below and in `significance.json`.",
+        "",
+        "| Baseline | config | n | base rate | Brier | BSS vs climatology | decider |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for _baseline_id, name, config_id, measured in artifact.baselines:
+        if measured is None:
+            lines.append(f"| {name} | `{config_id}` | - | - | not produced | not produced | - |")
+            continue
+        lines.append(
+            f"| {name} | `{config_id}` | {measured.n} | {measured.base_rate:.4f} | "
+            f"{measured.brier:.6f} | {_fmt(measured.bss_vs_climatology, '{:.4f}')} | "
+            f"{', '.join(measured.policies)} |"
+        )
+    lines += [
+        "",
+        "`decider`: `agent` is the study's agents; `heuristic` or `mixed` is a stand-in "
+        "and the row is a mechanism check, not a result; `none` means no decider of "
+        "this study's produced the number at all — climatology is arithmetic over the "
+        "sealed base rate and the market is other people's money. `-` means the row "
+        "was not produced.",
+        "",
+    ]
+    market = next(
+        (
+            measured
+            for _id, _name, config_id, measured in artifact.baselines
+            if config_id == MARKET_CONFIG_ID
+        ),
+        None,
+    )
+    if market is not None or artifact.market_coverage is not None:
+        lines += ["### What the market benchmark covers", ""]
+        if artifact.market_coverage is None:
+            lines += [
+                "**Coverage was not measured.** The market row above is over whatever "
+                "prices are stored, and this report cannot say how many of the sealed "
+                "scenarios that is. Run `cascade eval market-prices`.",
+                "",
+            ]
+        else:
+            lines += _coverage_bullets(artifact.market_coverage)
+            if market is not None:
+                lines += [
+                    f"Of those usable prices, **{market.n}** fall on scenarios this "
+                    f"report scored on the {artifact.partition} partition, and that is "
+                    "the n behind the market's Brier above — not the usable count, and "
+                    "not the sealed count.",
+                    "",
+                    "**The scenarios the market covers are not a random sample of the "
+                    "sealed set.** A scenario has a usable price because it had a "
+                    f"liquid market, and those {market.n} resolve YES at "
+                    f"{market.base_rate:.4f} against the sealed set's "
+                    f"{artifact.base_rate:.4f}. The market's Brier is therefore a "
+                    "figure about an easier or harder population than any Brier taken "
+                    "over the whole partition, and only the paired delta below compares "
+                    "it with anything.",
+                    "",
+                ]
+    return lines
+
+
+def _cells_section(artifact: StudyArtifact) -> list[str]:
+    """Appendix C's cells as *executed*, bridging stored runs to scored n.
+
+    Preserves the count a reader would otherwise have to reconcile alone. A
+    cell stores forecasts for the scenarios the grid ran; fewer survive into a
+    figure, because the placeholder legs are excluded from every scored figure
+    and the rest are split between dev and test. Both numbers are printed side
+    by side, with the partition named, so the gap is visible rather than
+    inferred.
+    """
+    executed = [cell for cell in artifact.cells if cell.scenarios_executed]
+    if not executed:
+        return []
+    lines = [
+        "## Cells as executed",
+        "",
+        f"`stored` is the scenarios the grid ran and collapsed into forecasts. `scored "
+        f"on {artifact.partition}` is how many of those reached a number in this "
+        "report: the rest are either excluded placeholder legs or in the other "
+        "partition. The two columns are different counts and neither substitutes for "
+        "the other.",
+        "",
+        f"| Cell | D | replicates run | stored | scored on {artifact.partition} | "
+        "decider | Brier |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for cell in executed:
+        measured = cell.metrics
+        lines.append(
+            f"| {cell.cell_id} | {cell.replicates_design} | "
+            f"{'-' if cell.replicates_executed is None else cell.replicates_executed} | "
+            f"{cell.scenarios_executed} | {0 if measured is None else measured.n} | "
+            f"{'-' if measured is None else ', '.join(measured.policies)} | "
+            f"{_fmt(None if measured is None else measured.brier, '{:.6f}')} |"
+        )
+    return [*lines, ""]
 
 
 _PARTITION_PHRASE: dict[Partition, str] = {
@@ -548,8 +872,7 @@ def _split_section(artifact: StudyArtifact) -> list[str]:
         lines += [
             f"{len(artifact.withheld_configs)} stored configuration(s) are not declared "
             "study configurations and were **not scored on this partition**: "
-            f"{', '.join(artifact.withheld_configs)}. A tuning variant is scored on dev "
-            "only; declaring it in code is the price of reporting it on test.",
+            f"{', '.join(artifact.withheld_configs)}. {WITHHELD_RULE}",
             "",
         ]
     return lines
@@ -653,6 +976,21 @@ def _split_payload(artifact: StudyArtifact) -> dict[str, Any] | None:
         "domains": [row.model_dump(mode="json") for row in split.domains],
         "interactions": [row.model_dump(mode="json") for row in artifact.split_interactions],
         "configs_withheld_from_this_partition": list(artifact.withheld_configs),
+        "configs_withheld_rule": WITHHELD_RULE,
+    }
+
+
+def _withheld_payload(artifact: StudyArtifact) -> dict[str, Any]:
+    """Which configurations this partition did not score, and under what rule.
+
+    A list of ids says what happened; it does not say why, and a reader who
+    finds a stored configuration missing from the metrics has no way to tell a
+    policy from an omission.
+    """
+    return {
+        "configs": list(artifact.withheld_configs),
+        "partition": artifact.partition,
+        "rule": WITHHELD_RULE,
     }
 
 
@@ -667,6 +1005,9 @@ def write_report(artifact: StudyArtifact, *, root: Path) -> Path:
     directory = Path(root) / artifact.report_id
     figures = directory / "figures"
     figures.mkdir(parents=True, exist_ok=True)
+    # Drawn first, so `headline.md` indexes the directory that exists rather
+    # than the one the writer intended.
+    drawn = _write_figures(artifact, figures)
 
     (directory / "manifest.json").write_text(
         _json(
@@ -693,35 +1034,52 @@ def write_report(artifact: StudyArtifact, *, root: Path) -> Path:
                 "not_produced": list(artifact.blocked),
                 "partition": artifact.partition,
                 "split": _split_payload(artifact),
+                "provenance": dict(artifact.provenance),
+                "figures": [
+                    {"filename": note.filename, "written": note.written, "note": note.note}
+                    for note in drawn
+                ],
             }
         ),
         encoding="utf-8",
     )
 
-    (directory / "headline.md").write_text(_headline_markdown(artifact), encoding="utf-8")
+    (directory / "headline.md").write_text(_headline_markdown(artifact, drawn), encoding="utf-8")
 
     (directory / "metrics.json").write_text(
         _json(
             {
                 "partition": artifact.partition,
+                "withheld": _withheld_payload(artifact),
                 "headline_by_partition": [
                     {
                         "partition": partition,
                         "is_headline": partition == artifact.partition,
-                        "metrics": None if measured is None else _metric_payload(measured),
+                        "metrics": (
+                            None
+                            if measured is None
+                            else _metric_payload(measured, coverage=artifact.market_coverage)
+                        ),
                     }
                     for partition, measured in artifact.headline_partitions
                 ],
                 "evidence": (
                     None if artifact.evidence is None else artifact.evidence.model_dump(mode="json")
                 ),
-                "configs": [_metric_payload(item) for item in artifact.metrics],
+                "configs": [
+                    _metric_payload(item, coverage=artifact.market_coverage)
+                    for item in artifact.metrics
+                ],
                 "baselines": [
                     {
                         "baseline_id": baseline_id,
                         "name": name,
                         "config_id": config_id,
-                        "metrics": None if metrics is None else _metric_payload(metrics),
+                        "metrics": (
+                            None
+                            if metrics is None
+                            else _metric_payload(metrics, coverage=artifact.market_coverage)
+                        ),
                     }
                     for baseline_id, name, config_id, metrics in artifact.baselines
                 ],
@@ -859,55 +1217,134 @@ def write_report(artifact: StudyArtifact, *, root: Path) -> Path:
     (directory / "leakage_report.json").write_text(_json(dict(artifact.leakage)), encoding="utf-8")
     (directory / "cost_ledger.json").write_text(_json(dict(artifact.cost_ledger)), encoding="utf-8")
 
-    _write_figures(artifact, figures)
     return directory
 
 
-def _write_figures(artifact: StudyArtifact, figures: Path) -> None:
-    """Write whatever figures the measured data supports, and only those.
+def _write_figures(artifact: StudyArtifact, figures: Path) -> tuple[FigureNote, ...]:
+    """Write whatever figures the measured data supports, and say what it did not.
 
     A figure with no data is not written. An empty axis in a report reads as a
     result -- "we looked and found nothing" -- when the truth is that the
-    measurement did not happen, and `headline.md` already says which.
+    measurement did not happen. Nor is a *degenerate* one written: a single
+    convergence rung is not a curve, and a sigma column with no spread plots as
+    a stripe against the y axis that reads as a scatter. Both would be pictures
+    of a measurement rather than of a result, so each slot returns the reason it
+    is empty and `headline.md` prints it.
     """
-    from cascade.eval.figures import convergence_svg, forest_svg, reliability_svg, scatter_svg
+    from cascade.eval.figures import (
+        convergence_svg,
+        forest_svg,
+        has_spread,
+        reliability_svg,
+        scatter_svg,
+    )
 
+    notes: list[FigureNote] = []
+
+    name = f"reliability.{FIGURE_FORMAT}"
     if artifact.calibration is not None and artifact.calibration.n:
-        (figures / f"reliability.{FIGURE_FORMAT}").write_text(
+        (figures / name).write_text(
             reliability_svg(
                 artifact.calibration,
-                title=f"Reliability — {artifact.headline_config} ({artifact.calibration.n} scenarios)",
+                title=(
+                    f"Reliability — {artifact.headline_config} "
+                    f"({artifact.calibration.n} scenarios, {artifact.partition})"
+                ),
             ),
             encoding="utf-8",
         )
+        notes.append(
+            FigureNote(name, True, f"{artifact.calibration.n} scenarios, 10 bins with counts")
+        )
+    else:
+        notes.append(
+            FigureNote(
+                name,
+                False,
+                f"`{artifact.headline_config}` has no scored forecasts on the "
+                f"{artifact.partition} partition, so there is no calibration to draw",
+            )
+        )
+
+    name = f"ablation_forest.{FIGURE_FORMAT}"
     ablation_rows = _family(artifact, "appendix_c")
     if ablation_rows:
-        (figures / f"ablation_forest.{FIGURE_FORMAT}").write_text(
-            forest_svg(ablation_rows, title="Ablation effect sizes (paired bootstrap)"),
+        (figures / name).write_text(
+            forest_svg(
+                ablation_rows,
+                title=(
+                    f"Effect sizes against {artifact.headline_config} "
+                    f"(paired bootstrap, {artifact.partition})"
+                ),
+            ),
             encoding="utf-8",
         )
-    if artifact.convergence:
-        (figures / f"convergence.{FIGURE_FORMAT}").write_text(
+        notes.append(FigureNote(name, True, f"{len(ablation_rows)} comparison(s) in the family"))
+    else:
+        notes.append(
+            FigureNote(name, False, "no comparison in the Appendix C family had both sides scored")
+        )
+
+    name = f"convergence.{FIGURE_FORMAT}"
+    if len(artifact.convergence) > 1:
+        (figures / name).write_text(
             convergence_svg(
                 [(n, change) for n, change, _, _ in artifact.convergence],
                 title="Ensemble convergence (§9.3)",
             ),
             encoding="utf-8",
         )
-    if artifact.scored and artifact.dispersion is not None:
+        notes.append(FigureNote(name, True, f"{len(artifact.convergence)} rungs on the ladder"))
+    elif artifact.convergence:
+        notes.append(
+            FigureNote(
+                name,
+                False,
+                f"the ladder reached one rung ({artifact.convergence[0][0]} replicates); "
+                "a convergence curve needs at least two to show a change",
+            )
+        )
+    else:
+        notes.append(
+            FigureNote(name, False, "no scenario has enough replicates to reach the first rung")
+        )
+
+    name = f"sigma_vs_error.{FIGURE_FORMAT}"
+    sigmas = [item.sigma for item in artifact.scored]
+    if artifact.scored and artifact.dispersion is not None and has_spread(sigmas):
         finding = artifact.dispersion
         annotation = (
             f"Spearman rho = {_fmt(finding.spearman_rho, '{:.4f}')}, "
             f"p = {_fmt(finding.spearman_p, '{:.4g}')}"
         )
-        (figures / f"sigma_vs_error.{FIGURE_FORMAT}").write_text(
+        (figures / name).write_text(
             scatter_svg(
-                [item.sigma for item in artifact.scored],
+                sigmas,
                 [item.abs_error for item in artifact.scored],
-                title="Is sigma informative? (§9.2)",
+                title=f"Is sigma informative? (§9.2, {artifact.partition})",
                 x_label="sigma across replicates",
                 y_label="absolute forecast error",
                 annotation=annotation,
             ),
             encoding="utf-8",
         )
+        notes.append(FigureNote(name, True, f"{len(sigmas)} scenarios"))
+    elif artifact.scored and artifact.dispersion is not None:
+        notes.append(
+            FigureNote(
+                name,
+                False,
+                f"every one of the {len(sigmas)} sigmas is identical, so the x axis has "
+                "no spread and the chart could not relate the two",
+            )
+        )
+    else:
+        notes.append(
+            FigureNote(
+                name,
+                False,
+                f"`{artifact.headline_config}` has no scored forecasts on the "
+                f"{artifact.partition} partition",
+            )
+        )
+    return tuple(notes)
