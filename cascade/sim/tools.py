@@ -148,6 +148,39 @@ class RecallArgs(_Args):
     query: Annotated[str, Field(min_length=1, max_length=QUERY_MAX_CHARS)]
 
 
+def _wire_schema(model: type[BaseModel]) -> dict[str, Any]:
+    """The payload schema with everything the model has no business reading.
+
+    ``model_json_schema()`` promotes a class docstring to ``description`` and
+    every field name to a ``title``, so the generated schema carried this
+    module's *reasoning* onto the wire: the cutoff's argument name, the class
+    that holds it, and the sentence explaining that asking for it is a mypy
+    error. :func:`_bad_arguments` is careful to echo neither the rejected key
+    nor the cutoff -- and the static prefix was handing over the canonical
+    field name on every request the arm makes, which is the more useful half
+    for anything probing the boundary.
+
+    It is also the cheap half to lose. Measured with the project's own
+    estimator, the two schemas are 455 tokens with the prose and 253 without,
+    in a prefix that is cached but still written once per (scenario, actor).
+
+    The docstrings stay where they are: they are for whoever changes this
+    file, and that is a different audience from the model.
+    """
+    schema = model.model_json_schema()
+    schema.pop("title", None)
+    schema.pop("description", None)
+    properties = schema.get("properties", {})
+    # Sorted (invariant 7) even though each field is edited independently and
+    # the result cannot depend on the order: the static check is deliberately
+    # blunt, and uniform compliance is what keeps it worth having.
+    for name in sorted(properties):
+        field = properties[name]
+        if isinstance(field, dict):
+            field.pop("title", None)
+    return schema
+
+
 def _tool(name: str, description: str, model: type[BaseModel]) -> dict[str, Any]:
     """Build one tool definition from the model that validates its payload.
 
@@ -155,8 +188,12 @@ def _tool(name: str, description: str, model: type[BaseModel]) -> dict[str, Any]
     to and the schema the executor enforces are one object, so they cannot come
     to disagree about which fields exist -- and the field that must not exist is
     what this module is about.
+
+    ``description`` is the model-facing prose, written for the model and passed
+    in; the schema itself is stripped of the prose the generator would
+    otherwise lift out of this file (:func:`_wire_schema`).
     """
-    return {"name": name, "description": description, "input_schema": model.model_json_schema()}
+    return {"name": name, "description": description, "input_schema": _wire_schema(model)}
 
 
 LOOKUP_EVIDENCE_TOOL: dict[str, Any] = _tool(

@@ -131,9 +131,26 @@ def test_the_tool_schema_the_model_sees_is_generated_from_that_model() -> None:
     A hand-written schema beside the model would let a field exist in the
     payload the model is invited to send and not in the one the executor
     validates -- which for a field named `as_of` is the whole failure.
+
+    Asserted structurally rather than by equality with `model_json_schema()`:
+    since M15 the wire schema drops the prose that generator lifts out of this
+    module's docstrings, so the two are deliberately not the same object. What
+    must not differ is which fields exist and whether extras are refused, and
+    that is what is checked -- against the model, not against a literal.
     """
     (lookup,) = [tool for tool in tool_schemas([LOOKUP_EVIDENCE])]
-    assert lookup["input_schema"] == LookupEvidenceArgs.model_json_schema()
+    generated = LookupEvidenceArgs.model_json_schema()
+    wire = lookup["input_schema"]
+
+    assert wire["properties"].keys() == generated["properties"].keys()
+    assert wire.get("required") == generated.get("required")
+    assert wire["additionalProperties"] == generated["additionalProperties"]
+    # The constraints travel too: a `maxLength` dropped on the way to the wire
+    # would invite a payload the executor then refuses.
+    for name, field in generated["properties"].items():
+        for constraint in ("type", "minLength", "maxLength"):
+            if constraint in field:
+                assert wire["properties"][name][constraint] == field[constraint]
 
 
 @pytest.mark.parametrize(
@@ -476,3 +493,49 @@ def test_a_tool_query_claims_no_entity_because_there_is_no_field_to_lift_one_fro
     assert query.text == "who is backing the coalition?"
     assert query.keyword_text == query.text
     assert query.entities == ()
+
+
+class TestTheWireSchemaCarriesNoInternalVocabulary:
+    """What the model is told about its own time lock, and what it is not.
+
+    The tool's `description` is written *for* the model and deliberately says
+    the cutoff exists and cannot be set -- an agent that did not know would
+    waste turns asking. What must not travel is this module's own vocabulary:
+    `model_json_schema()` promotes a class docstring to `description` and every
+    field name to a `title`, so the generated schema carried the cutoff's
+    argument name, the class holding it, and the sentence explaining that
+    asking for it is a type error.
+
+    That matters because `_bad_arguments` is careful to echo neither the
+    rejected key nor the cutoff. Handing over the canonical field name in the
+    static prefix of every request would have made that care pointless.
+    """
+
+    def schemas_text(self) -> str:
+        from cascade.sim.tools import TOOL_NAMES, tool_schemas
+
+        return str(list(tool_schemas(TOOL_NAMES)))
+
+    @pytest.mark.parametrize("secret", ["as_of", "ToolBelt", "mypy", "invariant"])
+    def test_the_modules_own_vocabulary_never_reaches_the_wire(self, secret: str) -> None:
+        assert secret not in self.schemas_text()
+
+    def test_the_model_is_still_told_the_cutoff_exists_and_is_not_settable(self) -> None:
+        # The disclosure that is deliberate: without it an agent spends turns
+        # asking for a parameter that does not exist.
+        text = self.schemas_text()
+        assert "cutoff" in text
+        assert "cannot be set" in text
+
+    def test_the_closed_object_survives_the_strip(self) -> None:
+        # `additionalProperties: false` is `extra="forbid"`'s only expression
+        # in JSON Schema and is the barrier ADR-0049 rests on. Stripping prose
+        # must not strip that.
+        from cascade.sim.tools import LookupEvidenceArgs, _wire_schema
+
+        schema = _wire_schema(LookupEvidenceArgs)
+        assert schema["additionalProperties"] is False
+        assert set(schema["properties"]) == {"query"}
+        assert schema["properties"]["query"]["maxLength"] > 0
+        assert "title" not in schema
+        assert "description" not in schema
