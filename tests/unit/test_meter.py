@@ -299,3 +299,102 @@ def test_estimate_refuses_a_zero_unit_sample() -> None:
             total_units=36_000,
             ceiling_usd=Decimal("240.0"),
         )
+
+
+# ---------------------------------------------------------------------------
+# The ceiling belongs to the phase, not to the process (M12)
+#
+# Found while designing retries for the Step Functions chain: every meter
+# started at zero and nothing read a checkpoint back, so re-running a phase
+# that had aborted at its ceiling granted the whole ceiling again.
+# ---------------------------------------------------------------------------
+
+_CALL = Usage(input_tokens=100_000, output_tokens=10_000)  # $0.15 at haiku list
+
+
+def test_a_rerun_after_a_breach_starts_from_the_recorded_spend(settings: Settings) -> None:
+    first = CostMeter(settings, "simulate", ceiling_usd=Decimal("0.20"))
+    first.record(model=HAIKU, usage=_CALL, batch=False)
+    with pytest.raises(BudgetExceeded):
+        first.record(model=HAIKU, usage=_CALL, batch=False)  # $0.30 > $0.20
+
+    rerun = CostMeter(settings, "simulate", ceiling_usd=Decimal("0.20"))
+    assert rerun.carried_usd == Decimal("0.30")
+    assert rerun.total_usd == 0  # this process has spent nothing yet
+    with pytest.raises(BudgetExceeded) as caught:
+        rerun.record(model=HAIKU, usage=_CALL, batch=False)
+    # The old behaviour reported $0.15 here and carried on spending.
+    assert caught.value.spent == Decimal("0.450000")
+
+
+def test_raising_the_ceiling_is_how_a_breached_phase_continues(settings: Settings) -> None:
+    first = CostMeter(settings, "simulate", ceiling_usd=Decimal("0.10"))
+    with pytest.raises(BudgetExceeded):
+        first.record(model=HAIKU, usage=_CALL, batch=False)
+
+    raised = CostMeter(settings, "simulate", ceiling_usd=Decimal("1.00"))
+    raised.record(model=HAIKU, usage=_CALL, batch=False)
+    assert raised.phase_usd == Decimal("0.30")
+
+
+def test_a_crash_loses_at_most_one_percent_of_the_ceiling(settings: Settings) -> None:
+    """No breach, no clean exit: the process just stops. Its spend must survive."""
+    ceiling = Decimal("100")
+    crashed = CostMeter(settings, "simulate", ceiling_usd=ceiling)
+    for _ in range(20):  # $3.00, recorded as it crossed each $1
+        crashed.record(model=HAIKU, usage=_CALL, batch=False)
+    del crashed
+
+    restarted = CostMeter(settings, "simulate", ceiling_usd=ceiling)
+    lost = Decimal("3.00") - restarted.carried_usd
+    assert Decimal(0) <= lost < ceiling / 100
+
+
+def test_progress_is_recorded_a_bounded_number_of_times(
+    settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    writes: list[Decimal] = []
+    original = CostMeter.write_checkpoint
+
+    def counting(self: CostMeter) -> Path:
+        writes.append(self.phase_usd)
+        return original(self)
+
+    monkeypatch.setattr(CostMeter, "write_checkpoint", counting)
+    meter = CostMeter(settings, "simulate", ceiling_usd=Decimal("1000"))
+    for _ in range(2_000):  # $300 over 2,000 calls
+        meter.record(model=HAIKU, usage=_CALL, batch=False)
+    assert 25 <= len(writes) <= 31  # one per $10, not one per call
+
+
+def test_phases_do_not_share_spend(settings: Settings) -> None:
+    compile_meter = CostMeter(settings, "compile", ceiling_usd=Decimal("0.10"))
+    with pytest.raises(BudgetExceeded):
+        compile_meter.record(model=HAIKU, usage=_CALL, batch=False)
+    assert CostMeter(settings, "simulate").carried_usd == 0
+
+
+def test_an_unreadable_checkpoint_refuses_to_start_at_zero(settings: Settings) -> None:
+    meter = CostMeter(settings, "simulate")
+    path = meter.checkpoint_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("{ not json", encoding="utf-8")
+    with pytest.raises(ValueError, match="Refusing to start the phase at zero"):
+        CostMeter(settings, "simulate")
+
+
+def test_a_checkpoint_from_before_the_exact_field_is_still_honoured(settings: Settings) -> None:
+    meter = CostMeter(settings, "simulate")
+    path = meter.checkpoint_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"phase": "simulate", "spent_usd": "12.345678"}), encoding="utf-8")
+    assert CostMeter(settings, "simulate").carried_usd == Decimal("12.345678")
+
+
+def test_exact_spend_survives_the_round_trip(settings: Settings) -> None:
+    """The six-decimal figure is for reading; carrying it would compound rounding."""
+    cached = Usage(input_tokens=0, output_tokens=0, cache_read_input_tokens=7)  # $0.0000007
+    first = CostMeter(settings, "simulate", ceiling_usd=Decimal("0.0000001"))
+    with pytest.raises(BudgetExceeded):
+        first.record(model=HAIKU, usage=cached, batch=False)
+    assert CostMeter(settings, "simulate").carried_usd == Decimal("0.0000007")

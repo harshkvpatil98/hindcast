@@ -84,9 +84,9 @@ def test_an_empty_api_key_is_reported_as_absent(settings: Settings, value: str) 
             "llm": settings.llm.model_copy(update={"mode": "record"}),
         }
     )
-    client = LLMClient(blank, phase="bench")
+    # Refused at construction (ADR-0028): before the first call, not at it.
     with pytest.raises(LLMError, match="CASCADE_ANTHROPIC_API_KEY"):
-        client._client()
+        LLMClient(blank, phase="bench")._client()
 
 
 def test_a_real_api_key_is_accepted(settings: Settings) -> None:

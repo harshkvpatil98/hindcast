@@ -39,6 +39,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from cascade.aperture.projection import Observation
+from cascade.quoting import EVIDENCE_RULE, quote_documents
 from cascade.sim.actions import (
     RATIONALE_MAX_CHARS,
     Ally,
@@ -94,6 +95,10 @@ RULES = f"""\
 You are one party in a multi-party situation that is being simulated forward, \
 one step at a time, to a horizon. You are not a forecaster and you are not an \
 assistant. You act in your own interest, given what you can see.
+
+# Quoted documents
+
+{EVIDENCE_RULE}
 
 # The world
 
@@ -208,6 +213,10 @@ class ActorBrief(BaseModel):
     question_context: str
     evidence: tuple[tuple[str, str, str], ...]
     """(published_iso, source, excerpt) -- pre-cutoff, retrieved once per run."""
+    situation: str = ""
+    """The rendered scenario dossier (ADR-0037), shared by every actor in the
+    scenario. Empty with the dossier off, and the block it would occupy is then
+    omitted entirely, so the prefix is byte-identical to the pre-dossier one."""
     grounded: bool = True
     """False under Appendix C's `grounding: parametric_only`. Distinguishes
     "retrieval ran and found nothing admissible" from "retrieval was switched
@@ -226,20 +235,23 @@ def persona_block(brief: ActorBrief, *, evidence_chars: int) -> str:
     utility = ", ".join(f"{factor} {weight:+.2f}" for factor, weight in brief.utility)
     levers = ", ".join(f"{factor} (leverage {weight:.2f})" for factor, weight in brief.levers)
     constraints = "\n".join(f"- {item}" for item in brief.constraints) or "- none stated"
-    if brief.evidence:
-        evidence = "\n\n".join(
-            f"[{published}] {source}\n{excerpt[:evidence_chars]}"
-            for published, source, excerpt in brief.evidence
-        )
-    elif brief.grounded:
-        evidence = "(no admissible evidence was found before the cutoff)"
+    if brief.grounded:
+        empty = "(no admissible evidence was found before the cutoff)"
     else:
-        evidence = (
+        empty = (
             "(evidence retrieval is disabled in this configuration; reason from "
             "what you already know, and treat the absence of documents as a "
             "property of this exercise rather than as a fact about the world)"
         )
+    evidence = quote_documents(brief.evidence, excerpt_chars=evidence_chars, empty=empty)
     counterparties = ", ".join(brief.counterparties) or "(none reachable)"
+    report = (
+        "# Situation report\n\nA summary of the public record before the cutoff, the same for "
+        "every party. Each line was checked against the documents it came from.\n\n"
+        f"{brief.situation}\n\n"
+        if brief.situation
+        else ""
+    )
     return f"""\
 # You
 
@@ -260,7 +272,7 @@ Constraints you operate under:
 
 The simulation runs {brief.horizon} steps.
 
-# What was known before the cutoff
+{report}# What was known before the cutoff
 
 Everything below was published before the situation's cutoff date. It is the \
 only outside information you have, it does not update as the simulation runs, \
@@ -327,6 +339,7 @@ def brief_from(
     question_context: str,
     evidence: Sequence[tuple[str, str, str]],
     grounded: bool = True,
+    situation: str = "",
 ) -> ActorBrief:
     """Assemble one actor's brief from the compiled graph and its evidence."""
     return ActorBrief(
@@ -344,5 +357,6 @@ def brief_from(
         horizon=horizon,
         question_context=question_context,
         evidence=tuple(evidence),
+        situation=situation,
         grounded=grounded,
     )

@@ -1,0 +1,19 @@
+{
+ "body": {
+  "error": {
+   "code": "maxlag",
+   "host": "10.64.16.89",
+   "info": "Waiting for 10.64.16.89: 0.669601 seconds lagged.",
+   "lag": 0.669601,
+   "type": "db"
+  }
+ },
+ "headers": {
+  "content-type": "application/json; charset=utf-8",
+  "mediawiki-api-error": "maxlag",
+  "retry-after": "5",
+  "x-database-lag": "0"
+ },
+ "note": "A forced maxlag refusal (maxlag=-1), recorded 2026-09-19: HTTP 200, an error object, Retry-After 5.",
+ "status": 200
+}

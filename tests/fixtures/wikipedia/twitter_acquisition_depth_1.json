@@ -1,0 +1,586 @@
+{
+ "exchanges": [
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "Twitter shareholders"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "Twitter board"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "Financing banks"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2022–23 Twitter season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2022–23 Elon Musk season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2022 in Twitter"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2022 in Elon Musk"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2022 Twitter season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2022 Twitter"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2022 Elon Musk season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2022 Elon Musk"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2021–22 Twitter season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2021–22 Elon Musk season"
+      },
+      {
+       "lastrevid": 1375317508,
+       "length": 352144,
+       "ns": 0,
+       "pageid": 909036,
+       "title": "Elon Musk"
+      },
+      {
+       "lastrevid": 1372865856,
+       "length": 22590,
+       "ns": 0,
+       "pageid": 2981758,
+       "title": "Delaware Court of Chancery"
+      },
+      {
+       "lastrevid": 1375440060,
+       "length": 363,
+       "ns": 0,
+       "pageid": 74434175,
+       "redirect": true,
+       "title": "Twitter"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "info",
+    "titles": "2021–22 Elon Musk season|2021–22 Twitter season|2022 Elon Musk|2022 Elon Musk season|2022 Twitter|2022 Twitter season|2022 in Elon Musk|2022 in Twitter|2022–23 Elon Musk season|2022–23 Twitter season|Delaware Court of Chancery|Elon Musk|Financing banks|Twitter|Twitter board|Twitter shareholders"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220707231536|1096982842"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 909036,
+       "revisions": [
+        {
+         "parentid": 1096982842,
+         "revid": 1096986923,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Business magnate (born 1971)}}\n{{pp-vandalism|small=yes}}\n{{Pp-move-indef}}\n{{Good article}}\n{{Use American English|date=June 2021}}\n{{Use mdy dates|date=June 2022}}\n{{Infobox person\n| name               = Elon Musk\n| honorific_suffix   = {{post-nominals|FRS|size=100%}}\n| image              = Elon Musk Royal Society (crop2).jpg\n| alt                = \n| caption            = Musk in 2018\n| birth_name         = Elon Reeve Musk\n| birth_date         = {{Birth date and age|1971|6|28}}\n| birth_place        = [[Pretoria]], [[Transvaal (province)|Transvaal]], South Africa\n| death_date         = \n| death_place        = \n| occupation         = \n| years_active       = \n| citizenship        = <!--Do NOT add South Africa or Canada - see talk page-->United States<ref>{{cite web |title=90184L102 (CUSIP Number)|url=https://www.sec.gov/Archives/edgar/data/1418091/000110465922041911/tm2211482d1_sc13g.htm |website=www.sec.gov |publisher=[[US Securities and Exchange Commission]] | access-date=April 4, 2022 |date=March 14, 2022 |quote=Item 2. (c) Citizenship United States}}</ref>\n| education          = {{Plainlist|\n* [[Queen's University at Kingston|Queens University]]\n* [[University of Pennsylvania]] ([[Bachelor of Science|BS]], [[Bachelor of Arts|BA]])\n* [[Stanford University]] ([[PhD]], dropped out)}}\n| title              = {{Unbulleted list\n  <!-- Do not add any of Musk's self-appointed titles without first reaching a consensus on the talk page. -->\n   | Founder, CEO, and Chief Engineer of [[SpaceX]]\n   | CEO and product architect of [[Tesla, Inc.]]\n   | Founder of [[The Boring Company]] and [[X.com]] (now part of [[PayPal]])\n   | Co-founder of [[Neuralink]], [[OpenAI]], and [[Zip2]]\n   | President of [[#Philanthropy|Musk Foundation]]\n  }}\n| spouse             = {{plainlist|\n* {{marriage|[[Justine Musk|Justine Wilson]]|2000|2008|end=div.}}\n* {{marriage|[[Talulah Riley]]|2010|2012|end=div.}} {{marriage|<!--Talulah Riley-->|2013|2016|end=div.}}\n}}\n| partner            = [[Grimes]] (2018–2022)<ref name=\"GrimesVanityFair2022\" />\n[[Shivon Zilis]] (?) <ref https://www.businessinsider.com/elon-musk-shivon-zilis-secret-twins-neuralink-tesla />\n| children           = 10<!--Do not remove the note. You have to verify the accuracy of 10 children.-->{{efn|One child is deceased.<ref>{{cite news|last=Petter|first=Olivia|date=July 26, 2020|title='There's Not Much I Can Do': Elon Musk Admits Grimes Does Majority Of Childcare For Two-month Old Son|url=https://www.independent.co.uk/life-style/elon-musk-son-grimes-childcare-interview-a9638321.html|work=[[The Independent]] | access-date=January 8, 2021|archive-url=https://web.archive.org/web/20201116002628/https://www.independent.co.uk/life-style/elon-musk-son-grimes-childcare-interview-a9638321.html|archive-date=November 16, 2020|url-status=live}}</ref><ref name=Times220707/>}}\n| mother             = [[Maye Musk]]\n| father             = Errol Musk\n| relatives          = {{plainlist|\n* [[Tosca Musk]] (sister)\n* [[Kimbal Musk]] (brother)\n* [[Lyndon Rive]] (cousin)\n}}\n| family             = [[Musk family]]\n| website            = \n| awards             = [[List of awards and honors received by Elon Musk|List of honors and awards]]\n| signature          = Elon Musk Signature.svg\n| signature_alt      = \n}}\n{{Elon Musk series}}\n'''Elon Reeve Musk''' {{postnominals|FRS}} ({{IPAc-en|ˈ|iː|l|ɒ|n}} {{Respell|EE|lon}}; born June 28, 1971) is a <!--Talk page consensus is that \"South African-born\" or \"Canadian\" should not be placed in this first sentence; please leave citizenship and place of birth for later in the lead, per MOS:BLPLEAD-->[[business magnate]] and [[investor]].<!-- Talk page consensus to not describe Musk as an engineer but mention his title at SpaceX --> He is the founder, CEO, and [[Chief technology officer|Chief Engineer]] at [[SpaceX]]; [[angel investor]]<!-- Talk page consensus is that \"founder\" or \"co-founder\" should not be placed here; see [[Talk:Elon Musk#Musk is Tesla's retroactive co-founder 🤦‍♂️]] -->, CEO, and Product Architect of [[Tesla, Inc.]]; founder of [[The Boring Company]]; and co-founder of [[Neuralink]] and [[OpenAI]]. With an estimated net worth of around US$221.4<!-- Do not update his net worth every day – stick to once a week at most. Last updated: 4 July 2022 -->&nbsp;billion as of July 2022,<ref>{{Cite web|title=Elon Musk|website=[[Forbes]] | url=https://www.forbes.com/profile/elon-musk/}}</ref> Musk is the wealthiest person in the world according to both the ''[[Bloomberg Billionaires Index]]'' and ''[[Forbes]]''{{'}} real-time billionaires list.<ref>{{cite news |title=Bloomberg Billionaires Index |url=https://www.bloomberg.com/billionaires/ |work=Bloomberg|access-date=June 5, 2022}}</ref><ref>{{cite web |title=Real Time Billionaires |url=https://www.forbes.com/real-time-billionaires/ |website=Forbes |access-date=June 5, 2022}}</ref>\n\nMusk was born to [[White South Africans|White South African]] parents in [[Pretoria]], where he grew up. He briefly attended the [[University of Pretoria]] before moving to Canada at age 17, acquiring citizenship through his Canadian-born mother. Two years later, he matriculated at [[Queen's University at Kingston|Queen's University]] and transferred to the [[University of Pennsylvania]], where he received bachelor's degrees in Economics and Physics. He moved to California in 1995 to attend [[Stanford University]] but decided instead to pursue a business career, co-founding the web software company [[Zip2]] with his brother [[Kimbal Musk|Kimbal]]. The startup was acquired by [[Compaq]] for $307&nbsp;million in 1999. The same year, Musk co-founded online bank [[X.com]], which merged with [[Confinity]] in 2000 to form [[PayPal]]. The company was bought by [[eBay]] in 2002 for $1.5&nbsp;billion.\n\nIn 2002, Musk founded SpaceX, an [[aerospace]] manufacturer and space transport services company, of which he serves as CEO and Chief Engineer. In 2004, he was an early investor in electric vehicle manufacturer Tesla Motors, Inc. (now Tesla, Inc.). He became its chairman and product architect, eventually assuming the position of CEO in 2008. In 2006, he helped create [[SolarCity]], a solar energy company that was later acquired by Tesla and became [[Tesla Energy]]. In 2015, he co-founded OpenAI, a nonprofit research company promoting [[friendly artificial intelligence]] (AI). In 2016, he co-founded Neuralink, a [[neurotechnology]] company focused on developing [[brain–computer interfaces]], and founded The Boring Company, a [[tunnel construction]] company. He  [[Acquisition of Twitter by Elon Musk|agreed to purchase]] the major American social networking service [[Twitter]] in 2022 for $44&nbsp;billion. Musk has proposed the [[Hyperloop]], a high-speed [[vactrain]] transportation system, and is the president of the [[#Musk Foundation|Musk Foundation]], an organization which donates to scientific research and education.\n\nMusk has been criticized for making unscientific<!-- Musk's views on both COVID and AI are unscientific, his AI views informed by science fiction --> and controversial statements, such as spreading [[COVID-19 misinformation|misinformation about the COVID-19 pandemic]]. In 2018, he was sued by the [[US Securities and Exchange Commission]] (SEC) for falsely tweeting that he had secured funding for a private takeover of Tesla; he settled with the SEC but did not admit guilt, and he temporarily stepped down from his Tesla chairmanship. In 2019, he won a defamation case brought against him by a British caver who had advised in the [[Tham Luang cave rescue]].\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-07-07T23:55:26Z"
+        }
+       ],
+       "title": "Elon Musk"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "Elon Musk"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 74434175,
+       "title": "Twitter"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "Twitter"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "batchcomplete": true,
+    "continue": {
+     "continue": "-||",
+     "lecontinue": "20260311022728|178379338"
+    },
+    "query": {
+     "logevents": [
+      {
+       "logid": 177838394,
+       "logpage": 9988187,
+       "ns": 0,
+       "pageid": 74434175,
+       "params": {
+        "suppressredirect": true,
+        "target_ns": 0,
+        "target_title": "X (social network)"
+       },
+       "revid": 1340432192,
+       "timestamp": "2026-02-25T18:17:19Z",
+       "title": "Twitter"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "ledir": "newer",
+    "lelimit": "1",
+    "leprop": "ids|title|timestamp|details",
+    "lestart": "2022-07-08T00:00:00Z",
+    "letitle": "Twitter",
+    "letype": "move",
+    "list": "logevents",
+    "maxlag": "5"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220702092151|1096102492"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 9988187,
+       "revisions": [
+        {
+         "parentid": 1096102492,
+         "revid": 1096445922,
+         "slots": {
+          "main": {
+           "content": "{{Short description|American social networking service}}\n{{About|the social networking service|the company which owns and operates it|Twitter, Inc.}}\n{{Redirect2|Tweeting|Tweeted|the animal behavior|Bird vocalization||Tweet (disambiguation)}}\n{{pp-semi-indef}}\n{{pp-move-indef}}\n{{Good article}}\n{{Use American English|date=June 2015}}\n{{Use mdy dates|date=June 2022}}\n{{Infobox website\n| name = Twitter\n| logo = Twitter-logo.svg\n| screenshot = Twitter Home Page (Moments version, countries without dedicated feed).png\n| caption = The default page shown to logged-out users\n| collapsible = no\n| company_type =  <!-- Go to Twitter Inc for the main page --> \n| website_type = [[Social networking service]]\n| native_clients = {{hlist|[[iOS]]|[[Android (operating system)|Android]]|[[Windows Phone]]|[[Microsoft Windows]]|[[macOS]]|[[Internet|web]]}}\n| language = Multilingual\n| foundation = {{Start date and age|2006|03|21}}\n| location = \n| area_served = Worldwide, except [[Censorship of Twitter|blocking countries]]\n| founder = {{Unbulleted list|class=nowrap|[[Jack Dorsey]]|[[Noah Glass]]|[[Biz Stone]]|[[Evan Williams (Internet entrepreneur)|Evan Williams]]}}\n| CEO = [[Parag Agrawal]] ([[Chief executive officer|CEO]])<ref>{{cite web|url=https://www.cnbc.com/2021/11/29/twitter-ceo-jack-dorsey-is-expected-to-step-down-sources-say.html|title=Twitter CTO Parag Agrawal will replace Jack Dorsey as CEO|date= November 29, 2021|publisher=cnbc.com}}</ref>\n| owner = [[Twitter, Inc.]]<!-- DO NOT ADD ELON MUSK HERE -->\n| parent = \n| industry = \n| url = {{Official URL}}\n| registration = Required\n| num_users = 229&nbsp;million monetizable [[daily active users|DAU]] (Q1 2022)\n| launch_date = {{Start date and age|2006|07|15}}\n| current_status = Active\n| programming_language = {{hlist|[[Java (programming language)|Java]]|[[Ruby (programming language)|Ruby]]|[[Scala (programming language)|Scala]]|[[JavaScript]]}}\n| footnotes = <ref name=Dorsey2006/><ref name=10K>{{cite web|url=https://www.sec.gov/ix?doc=/Archives/edgar/data/1418091/000141809122000029/twtr-20211231.htm|title=US SEC: FY2021 Form 10-K Twitter, Inc.|publisher=[[U.S. Securities and Exchange Commission]]|access-date=March 27, 2022}}</ref><ref>{{Cite web|url=https://about.twitter.com/en_us/company.html|title=Twitter – Company|website=about.twitter.com|access-date=July 30, 2019}}</ref><ref name=\"Twitter coding\"/><ref name=\"infoq-jvm\">{{cite web|first=Charles|last=Humble|title=Twitter Shifting More Code to JVM, Citing Performance and Encapsulation As Primary Drivers|date=July 4, 2011|work=InfoQ|access-date=January 15, 2013|url=http://www.infoq.com/articles/twitter-java-use}}</ref><ref name=launch/><ref>{{Cite web|url=https://www.cnbc.com/2022/04/28/twitter-twtr-earnings-q1-2022.html|title=Twitter reports user bump, revenue miss for Q1, days after accepting Musk's takeover bid|work=CNBC|author=Lauren Feiner|date=April 28, 2022}}</ref>\n}}\n\n'''Twitter''' is a [[microblogging]] and [[social networking service]] on which users post and interact with messages known as \"tweets\", owned by American company [[Twitter, Inc.]] [[Registered user]]s can post, like, and retweet tweets, however, unregistered users have the ability to only read tweets that are publicly available. Users interact with Twitter through browser or mobile [[Frontend and backend|frontend]] software, or programmatically via its [[API]]s. Prior to April 2020, services were accessible via [[SMS]].<ref>[https://www.theverge.com/2020/4/27/21238131/twitter-sms-notifications-disabled-jack-dorsey-hack \"Twitter turns off its original SMS service in most countries\"] Retrieved January 14, 2021.</ref> Tweets were originally restricted to 140 [[character (computing)|characters]], but the limit was doubled to 280 for non-[[CJK characters|CJK languages]] in November 2017.<ref>[https://blog.twitter.com/official/en_us/topics/product/2017/tweetingmadeeasier.html \"Tweeting Made Easier\"] Retrieved November 7, 2017.</ref> Audio and video tweets remain limited to 140 seconds for most accounts.\n\nTwitter was created by [[Jack Dorsey]], [[Noah Glass]], [[Biz Stone]], and [[Evan Williams (Internet entrepreneur)|Evan Williams]] in March 2006 and launched in July of that year. Twitter, Inc. is based in [[San Francisco, California]] and has more than 25 offices around the world.<ref>[https://about.twitter.com/company \"About Twitter\"] {{Webarchive|url=https://web.archive.org/web/20160403002854/https://about.twitter.com/company |date=April 3, 2016 }} Retrieved April 24, 2014.</ref> {{As of|2012|alt=By 2012}}, more than 100 million users posted 340 million tweets a day,<ref>{{cite web|url= https://blog.twitter.com/2012/twitter-turns-six |title=Twitter turns six |date=March 21, 2012 |publisher=Twitter}}</ref> and the service handled an average of 1.6 billion [[Web search query|search queries]] per day.<ref name=\"Twitter_500\" /><ref>{{cite web |url=https://blog.twitter.com/2011/engineering-behind-twitter%E2%80%99s-new-search-experience |title=The Engineering Behind Twitter's New Search Experience |date=May 31, 2011 |access-date=June 7, 2014 |work=Twitter Engineering Blog |publisher=Twitter |url-status=dead |archive-url=https://web.archive.org/web/20140325080255/https://blog.twitter.com/2011/engineering-behind-twitter%E2%80%99s-new-search-experience |archive-date=March 25, 2014 }}</ref><ref>[http://blog.twitter.com/2012/03/twitter-turns-six.html \"Twitter turns six\"] Twitter.com, March 21, 2012. Retrieved December 18, 2012.</ref> In 2013, it was one of the ten [[List of most popular websites|most-visited websites]] and has been described as \"the SMS of the Internet\".<ref>{{cite news |url=http://www.business-standard.com/india/news/swine-flu%5Cs-tweet-tweet-causes-online-flutter/356604/ |title=Swine Flu's Tweet Tweet Causes Online Flutter |date=April 29, 2009 |first=Leslie |last=D'Monte |work=[[Business Standard]] |quote=Also known as the 'SMS of the internet', Twitter is a free social networking service |access-date=February 4, 2011}}</ref> {{As of|2019||alt= By the start of 2019}}, Twitter had more than 330 million monthly active users.<ref name=\"Twitter\">{{cite news|url=https://www.usatoday.com/story/tech/news/2017/10/26/twitter-overcounted-active-users-since-2014-shares-surge/801968001/|title=Twitter overcounted active users since 2014, shares surge on profit hopes|newspaper=USA Today}}</ref> In practice, the vast majority of tweets are written by a minority of users.<ref>Carlson, Nicholas. \"[https://www.cbsnews.com/news/stunning-new-numbers-on-who-uses-twitter/ 10% Of Twitter Users Account For 90% Of Twitter Activity]\", [[Business Insider]] (June 2, 2009).</ref><ref>Wojcik, Stefan and Hughes, Adam.  \"[https://www.pewresearch.org/internet/2019/04/24/sizing-up-twitter-users/ Sizing Up Twitter Users]\", [[Pew Research Center]] (April 25, 2019).</ref>\n\nOn April 25, 2022, the Twitter board of directors agreed to [[Acquisition of Twitter by Elon Musk|a $44 billion buyout]] by [[Elon Musk]], the CEO of [[SpaceX]] and [[Tesla, Inc.|Tesla]], potentially making it one of the biggest deals to turn a company private.<ref>{{Cite news |last1=Isaac |first1=Mike |last2=Hirsch |first2=Lauren |date=April 25, 2022 |title=Musk's deal for Twitter is worth about $44 billion. |language=en-US |work=The New York Times |url=https://www.nytimes.com/live/2022/04/25/business/elon-musk-twitter/musks-deal-for-twitter-is-worth-about-44-billion?smid=url-copy |access-date=2022-04-26 |issn=0362-4331}}</ref><ref>{{Cite web |last=Feiner |first=Lauren |date=April 25, 2022 |title=Twitter accepts Elon Musk's buyout deal |url=https://www.cnbc.com/2022/04/25/twitter-accepts-elon-musks-buyout-deal.html |access-date=April 25, 2022 |website=CNBC |language=en}}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-07-04T14:37:24Z"
+        }
+       ],
+       "title": "X (social network)"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "pageids": "9988187",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220522194443|1089258090"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 2981758,
+       "revisions": [
+        {
+         "parentid": 1089258090,
+         "revid": 1089258795,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Court of equity in Delaware, United States}}\nThe '''Delaware Court of Chancery''' is a [[court of equity]] in the [[United States|American]] state of [[Delaware]].  It is one of Delaware's three constitutional courts, along with the [[Delaware Supreme Court|Supreme Court]] and [[Delaware Superior Court|Superior Court]].\n\n==Jurisdiction==\nThe Court's jurisdiction is a hybrid of constitutional provisions, statutes, and case law.\n\nAccording to the Delaware Judicial Information Center\n\n<blockquote>The Court of Chancery has jurisdiction to hear and determine all matters and causes in equity. The general equity jurisdiction of the Court is measured in terms of the general equity jurisdiction of the [[Court of Chancery|High Court of Chancery]] of Great Britain as it existed prior to the separation of the [[United States|American]] colonies. The [[Delaware General Assembly|General Assembly]] may confer upon the Court of Chancery additional statutory jurisdiction. In today's practice, the litigation in the Court of Chancery consists largely of corporate matters, trusts, estates, and other fiduciary matters, disputes involving the purchase and sale of land, questions of title to real estate, and commercial and contractual matters in general. When issues of fact to be tried by a jury arise, the Court of Chancery may order such facts to trial by issues at the Bar of the [[Superior Court of Delaware]]. (10 Del. C., 369).<ref name=welcome>{{cite web |url=http://courts.delaware.gov/Chancery/ |title=Welcome to the Delaware Court of Chancery |publisher=Delaware State Courts |access-date=2011-11-30}}</ref></blockquote>\n\nArticle IV, Section 10 of the Delaware Constitution establishes the Court and provides that it \"shall have all the jurisdiction and powers vested by the laws of this State in the Court of Chancery.\"<ref>{{cite web |url=http://delcode.delaware.gov/constitution/constitution-05.shtml#P504_73243 |title=§ 10. Composition and jurisdiction of Court of Chancery; initiation and decisions in causes and proceedings. |work=State of Delaware Constitution: Article IV Judiciary |publisher=Online Delaware Code |access-date=2011-11-30}}</ref> The Court has one Chancellor, who is the chief judicial officer of the Court, and four Vice Chancellors.  It also has two Masters in Chancery, who are assigned by the Chancellor and Vice Chancellors to assist in matters as needed.\n\n===Equitable jurisdiction===\nTitle 10, Section 341 of the Delaware Code states that the Court \"shall have jurisdiction to hear and determine all matters and causes in equity.\"<ref name=\"Delaware Code Title 10\">{{cite web|url=http://delcode.delaware.gov/title10/c003/sc03/index.shtml |title=CHAPTER 3. COURT OF CHANCERY Subchapter III. General Jurisdiction and Powers |work=Title 10 Courts and Judicial Procedure |publisher=Online Delaware Code |access-date=2011-09-19}}</ref>  Subsequent decisions have held that the Court's equitable jurisdiction is the same as that held by the English High Court of Chancery at the time of American independence in 1776.{{citation needed|date=October 2010}}\n\nThe Court's most significant power is its ability to issue preliminary and permanent [[injunction]]s and [[temporary restraining order]]s.  This is frequently exercised in the context of disputes involving [[mergers and acquisitions]] or sales of corporations, wherein a corporate suitor or a shareholder will attempt to enjoin—that is, prevent—the sale or merger of a corporation, claiming that their stock value has been diluted or that they have superior rights to purchase the corporation.  In a typical sale or merger dispute, a plaintiff will seek a temporary restraining order, sometimes on an ''[[ex parte]]'' basis, to prevent the transaction from taking place and preserve the ''status quo''.  If the Court grants that relief, the plaintiff will then seek a preliminary injunction to maintain the current state of affairs until a trial can take place.\n\nTitle 10, Section 342 of the Delaware Code provides that the Court shall not hear any matters for which an adequate remedy exists at law or which can be heard by any other Delaware court.<ref name=\"Delaware Code Title 10\" />  As a practical matter, this means that the Court cannot grant relief in the form of money damages to compensate a party for a loss or where another court has coterminous jurisdiction.  However, under the rules of equity, the court can grant monetary relief in the form of [[restitution]] by ruling that another party has unjustly gained money that belongs to the plaintiff.\n\nApart from its general equitable jurisdiction, the Court has jurisdiction over a number of other matters.  First, the Court has sole power to appoint guardians of the property and person for mentally or physically disabled Delaware residents.  Similarly, the Court may also appoint guardians for minors, although the Family Court has coterminous jurisdiction over such matters. [[Will contest]]s and disputes over interpretations of [[Trust law|trust]]s are also heard by the Court.\n\nIn 1952, the Court of Chancery held in ''[[Gebhart v. Belton]]'' that the operation of segregated school systems in Delaware was unlawful, two full years before the U.S. Supreme Court would do so in ''[[Brown v. Board of Education]].''\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-05-22T19:48:53Z"
+        }
+       ],
+       "title": "Delaware Court of Chancery"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "Delaware Court of Chancery"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220707102332|1096899154"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 832774,
+       "revisions": [
+        {
+         "parentid": 1096899154,
+         "revid": 1096899217,
+         "slots": {
+          "main": {
+           "content": "{{short description|American private space company}}\n{{about|the rocket and spacecraft manufacturer|the British art gallery|Spacex (art gallery)}}\n{{redirect|Space Exploration Technologies|the general topics|Space exploration|and|Space technology}}\n{{good article}}\n\n{{Use American English|date=August 2019}}\n{{Use dmy dates|date=December 2021}}\n\n{{Infobox company\n| name = Space Exploration Technologies Corp.\n| logo = SpaceX logo black.svg\n| logo_caption = \n| logo_size = 290px\n| image = Iridium-4 Mission (25557986177).jpg\n| image_caption = Headquarters in December 2017; plumes from a flight of a Falcon 9 rocket are visible overhead\n| image_size = 290px\n| trading_name = SpaceX\n| type = [[Private company|Private]]\n| foundation = {{Start date and age|2002|3|14|df=yes}} in [[El Segundo, California]], U.S.<ref>{{cite web|title=Delaware Business Search (File # 3500808 – Space Exploration Technologies Corp)|url=https://icis.corp.delaware.gov/eCorp/EntitySearch/NameSearch.aspx|publisher=Delaware Department of State: Division of Corporations|access-date=1 Feb 2022|url-status=live|archive-date=20 September 2016|archive-url=https://web.archive.org/web/20160920145319/https://icis.corp.delaware.gov/Ecorp/EntitySearch/NameSearch.aspx}}</ref>\n| founder = [[Elon Musk]]\n| location_city = [[Hawthorne, California]], [[United States]]<br />{{coord|33.9207|-118.3278|region:US_type:landmark|display=inline,title}}\n| key_people = {{unbulleted list\n| Elon Musk<br />([[Chief executive officer|CEO]],  [[Chairman]] and [[Chief technology officer|CTO]], 2002–present)<ref>{{cite web|url=https://www.dw.com/en/who-is-elon-musk-and-what-made-him-big/a-53591199|title=Who is Elon Musk, and what made him big? &#124; Business&#124; Economy and finance news from a German perspective &#124; DW &#124|date= 27 May 2020|website=[[Deutsche Welle]]|access-date=28 May 2020|archive-date=28 May 2020|archive-url=https://web.archive.org/web/20200528162211/https://www.dw.com/en/who-is-elon-musk-and-what-made-him-big/a-53591199|url-status=live}}</ref>\n| [[Gwynne Shotwell]]<br />([[President (corporate title)|president]] and [[Chief operating officer|COO]])<ref>{{cite web|title=Gwynne Shotwell: Executive Profile & Biography|url=https://www.bloomberg.com/profile/person/16317111|publisher=Bloomberg|access-date=1 March 2017|archive-date=16 July 2019|archive-url=https://web.archive.org/web/20190716213453/https://www.bloomberg.com/profile/person/16317111|url-status=live}}</ref>\n}}\n| industry = [[Space industry|Space]], [[Telecommunication|communications]]\n| products = {{unbulleted list\n| [[SpaceX launch vehicles|Several launch vehicles]]\n| [[SpaceX rocket engines|Several rocket engines]]\n| [[SpaceX Dragon 2|Dragon capsules]]\n| [[SpaceX Starship|Starship]] (in development)\n| [[Starlink]]\n}}\n| services = [[Orbital spaceflight|Orbital]] [[rocket launch]], [[Starlink|satellite internet]]\n| owner = Elon Musk Trust<br />(47.4% equity; 78.3% voting control)<ref>{{cite web|url=https://fcc.report/IBFS/SAT-MOD-20200417-00037/2274435.pdf|title=Ownership, Directors and Officers|date=17 April 2020|website=[[FCC]]|archive-date=19 December 2020|archive-url=https://web.archive.org/web/20201219201029/https://fcc.report/IBFS/SAT-MOD-20200417-00037/2274435.pdf|url-status=live|access-date=8 January 2022}}</ref>\n| revenue = US$2 billion (2018)<ref>{{cite web|title=SpaceX is the No. 1 rocket company by revenue, with $2 billion last year, Jefferies estimates|date=20 May 2019|url=https://www.cnbc.com/2019/05/20/spacex-revenue-2-billion-from-rockets-last-year-jefferies-estimate.html|publisher=cnbc.com|access-date=20 May 2019|archive-date=20 May 2019|archive-url=https://web.archive.org/web/20190520210445/https://www.cnbc.com/2019/05/20/spacex-revenue-2-billion-from-rockets-last-year-jefferies-estimate.html|url-status=live}}</ref>\n| num_employees = 12,000<ref>{{cite web |title=[Exclusive] Elon Musk: A future worth getting excited about - TED - Tesla Gigafactory interview |url=https://www.youtube.com/watch?v=YRvf00NooN8&t=3370s |website=Youtube |publisher=TED |access-date=19 April 2022 |archive-date=19 April 2022 |archive-url=https://web.archive.org/web/20220419130700/https://www.youtube.com/watch?v=YRvf00NooN8&t=3370s |url-status=live }}</ref>\n| num_employees_year = April 2022\n| homepage = {{official URL}}\n}}\n{{Elon Musk series}}\n'''Space Exploration Technologies Corp.''' ([[doing business as]] '''SpaceX''') is an American [[Space industry|spacecraft manufacturer]], [[space launch]] provider, and a [[Telecommunication|satellite communications]] corporation headquartered in [[Hawthorne, California]]. SpaceX was founded in 2002 by [[Elon Musk]], with the goal of reducing space transportation costs to enable the [[colonization of Mars]]. SpaceX manufactures the [[Falcon 9]] and [[Falcon Heavy]] launch vehicles, [[SpaceX rocket engines|several rocket engines]], [[SpaceX Dragon 2|Cargo Dragon]], crew spacecraft, and [[Starlink]] communications satellites.\n\nSpaceX is developing a satellite internet constellation named [[Starlink]] to provide commercial internet service. In January 2020, the Starlink constellation became the largest satellite constellation ever launched, and as of May 2022 it comprises over 2,400 [[small satellite]]s in orbit.<ref name=\"sn2676101\">{{cite news|last=McDowell|first=Jonathan|date=18 May 2022|title=Starlink Launch Statistics|publisher=planet4589|url=https://planet4589.org/space/stats/star/starstats.html|url-status=live|access-date=18 May 2022|archive-date=21 April 2021|archive-url=https://web.archive.org/web/20210421005810/https://planet4589.org/space/stats/star/starstats.html}}</ref>\nThe company is also developing [[SpaceX Starship|Starship]], a privately funded, [[Fully-reusable orbital launch vehicle|fully reusable]], [[super heavy-lift launch vehicle|super heavy-lift launch system]] for [[interplanetary spaceflight|interplanetary]] and [[orbital spaceflight]]. Starship is intended to become SpaceX's primary orbital vehicle once operational, supplanting the existing [[Falcon 9]], [[Falcon Heavy]], and [[SpaceX Dragon 2|Dragon]] fleet. Starship will have the highest payload capacity of any orbital rocket ever built on its debut, scheduled for 2022 pending launch license.<ref>{{cite web|date=2022-06-13|title=SpaceX Starship Super Heavy at Boca Chica_FONSI_ROD Final|url=https://www.faa.gov/sites/faa.gov/files/2022-06/20220613%20SpaceX%20Starship%20Super%20Heavy%20at%20Boca%20Chica_FONSI_ROD%20Final.pdf|website=faa.gov|access-date=13 June 2022|archive-date=13 June 2022|archive-url=https://web.archive.org/web/20220613194540/https://www.faa.gov/sites/faa.gov/files/2022-06/20220613%20SpaceX%20Starship%20Super%20Heavy%20at%20Boca%20Chica_FONSI_ROD%20Final.pdf|url-status=live}}</ref>\n\nSpaceX's achievements include the first privately funded [[liquid-propellant rocket]] to reach orbit around Earth,<ref>{{cite web |url=https://www.nasa.gov/offices/c3po/home/spacex_falcon1_flight_4.html |title=SpaceX Successfully Launches Falcon 1 to Orbit |publisher=[[NASA]] |date=September 28, 2008 |access-date=2022-04-29 |archive-url=https://web.archive.org/web/20110603142912/https://www.nasa.gov/offices/c3po/home/spacex_falcon1_flight_4.html |archive-date=3 June 2011 |url-status=dead}}</ref> the first private company to successfully launch, orbit, and recover a spacecraft, the first private company to send a spacecraft to the International Space Station, the first [[VTVL|vertical take-off and vertical propulsive landing]] for an orbital rocket booster, first reuse of such booster, and the first private company to send astronauts to orbit and to the [[International Space Station]]. SpaceX has flown and landed the Falcon 9 series of rockets [[List of Falcon 9 and Falcon Heavy launches|over one hundred times]].\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-07-07T10:24:25Z"
+        }
+       ],
+       "title": "SpaceX"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "SpaceX"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220706131226|1096759216"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 5533631,
+       "revisions": [
+        {
+         "parentid": 1096759216,
+         "revid": 1096771429,
+         "slots": {
+          "main": {
+           "content": "{{Short description|American automotive and energy company}}\n{{Redirect|Tesla Motors|[[Nikola Tesla]]'s motors|Induction motor|and|AC motor}}\n{{Good article}}\n{{Use American English|date=October 2018}}\n{{Use mdy dates|date=March 2022}}\n{{Infobox company\n| name = Tesla, Inc.\n| logo = Tesla Motors.svg\n| logo_size = 109px\n| image = \n| image_size = \n| image_caption = \n| former_name = Tesla Motors, Inc. (July 2003 – February 2017)\n| type = [[Public company|Public]]\n| traded_as = {{ubl\n | {{NASDAQ|TSLA}}\n | [[Nasdaq-100]] component\n | [[S&P 100]] component\n | [[S&P 500]] component\n}}\n| ISIN = US88160R1014\n| industry = {{ubl\n | [[Automotive industry|Automotive]]\n | [[Renewable energy industry|Renewable energy]]\n}}\n| founded = {{Start date and age|2003|07|01}} in [[San Carlos, California]], U.S.\n| founders = See [[#Founding (2003–2004)|§ Founding]]<!-- has complications and is disputed, do not put individual names here -->\n| hq_location = [[Giga Texas|13101 Tesla Road]]\n| hq_location_city = [[Austin, Texas]]\n| hq_location_country = United States\n| num_locations = 655 retail stores/galleries and service centers (2021)\n| area_served = {{Unbulleted list|[[North America]]|[[Europe]]|[[Oceania]]|[[East Asia]]|[[Middle East|West Asia]]|}}\n| key_people = <!-- Do not add \"Technoking\" or \"Master of Coin\" to the titles in this list until reaching consensus on the Talk page.-->\n{{ubl\n | [[Robyn Denholm]] ([[Chairman|Chair]])\n | [[Elon Musk]] ([[Chief executive officer|CEO]])\n | [[Zach Kirkhorn]] ([[Chief financial officer|CFO]])\n | [[Drew Baglino]] ([[Chief technology officer|CTO]])\n}}\n| products = {{Flatlist|\n* [[Tesla Model S|Model S]]\n* [[Tesla Model 3|Model 3]]\n* [[Tesla Model X|Model X]]\n* [[Tesla Model Y|Model Y]]\n* [[Tesla Powerwall|Powerwall]], [[Tesla Powerpack|Powerpack]], and [[Tesla Megapack|Megapack]]\n* [[Tesla Energy|Solar panels and Solar Roof]]\n}}\n| production = {{ubl\n | {{increase}} 930,422 vehicles (2021)\n | {{increase}} 3.99 GWh battery energy storage systems (2021)\n | {{increase}} 345 MW solar (2021)\n}}\n| services = {{Flatlist|\n*[[#Vehicle servicing|Vehicle servicing]]\n*[[#Charging|Charging]]\n*[[#Insurance|Insurance]]\n*[[#Software updates and upgrades|Software updates and upgrades]]\n*[[#Connectivity|Premium Connectivity]]\n}}\n| revenue = {{increase}} {{US$|53.8&nbsp;billion|link=yes}} (2021)\n| operating_income = {{increase}} {{US$|6.52&nbsp;billion}} (2021)\n| net_income = {{increase}} {{US$|5.52&nbsp;billion}} (2021)\n| assets = {{increase}} {{US$|62.1&nbsp;billion}} (2021)\n| equity = {{increase}} {{US$|30.2&nbsp;billion}} (2021)\n| owner = {{ubl\n | Elon Musk (17%)<ref>{{cite web|url=https://www.sec.gov/Archives/edgar/data/1318605/000156459021045926/tsla-def14a_20210826.htm#OWNERSHIP_SECURITIES|title=tsla-def14a_20210826.htm|website=www.sec.gov}}</ref>{{efn|The 2021 proxy states that as of its date, 73.5 million of Musk's 244 million shares listed as owned are exercisable options; excluding these his ownership percentage is 16.1%}}\n}}\n| num_employees = {{increase}} 110,000<ref>{{cite web |title=[Exclusive] Elon Musk: A future worth getting excited about – TED – Tesla Gigafactory interview |url=https://www.youtube.com/watch?v=YRvf00NooN8&t=3370s |website=Youtube |publisher=TED |access-date=19 April 2022}}</ref>\n| num_employees_year = April 2022\n| subsid = {{ubl\n | [[DeepScale]]\n | [[Tesla Energy]]\n | [[Tesla Grohmann Automation]]\n}}\n| website = {{URL|https://www.tesla.com/|tesla.com}}\n| footnotes = <ref>{{cite web |title=The Making Of Tesla: Invention, Betrayal, And The Birth Of The Roadster |first=Drake |last=Baer|url=https://www.businessinsider.com/tesla-the-origin-story-2014-10\n|date=November 11, 2014\n|access-date=October 3, 2018 |website=businessinsider.com}}</ref><ref>{{cite web |title=Tesla Energy Generation And Storage Business: Q4 2020 Results |url=https://insideevs.com/news/482496/tesla-energy-generation-storage-q4-2020-results/ | date=January 27, 2021}}</ref><ref>{{cite web |title=Elon Musk |url=https://www.forbes.com/profile/elon-musk/ |website=[[Forbes]]}}</ref><ref>{{cite web | url=https://www.sec.gov/Archives/edgar/data/1318605/000156459021044307/tsla-pre14a_20210813.htm | title=SCHEDULE 14A INFORMATION | publisher=[[U.S. Securities and Exchange Commission]]}}</ref><ref name=10K>{{cite web |title=Annual report Form 10-K 2021 Tesla Inc. |url=https://www.sec.gov/Archives/edgar/data/1318605/000095017022000796/tsla-20211231.htm| publisher=[[U.S. Securities and Exchange Commission]]}}</ref>\n}}\n{{Elon Musk series}}\n'''Tesla, Inc.''' ({{IPAc-en|ˈ|t|ɛ|s|l|ə}} {{respell|TESS|lə}} or {{IPAc-en|ˈ|t|ɛ|z|l|ə}} {{respell|TEZ|lə}}{{efn|According to company representatives, both pronunciations are correct,<ref>{{cite web|title=What's the correct way to pronounce 'Tesla'? We asked.|url=https://finance.yahoo.com/news/whats-correct-way-pronounce-tesla-asked-181021888.html|access-date=October 6, 2021|website=finance.yahoo.com|language=en-US}}</ref> though [[Nikola Tesla]]'s surname is properly pronounced TESS-lə.}}) is an American multinational [[automotive]] and [[clean energy]] company headquartered in [[Austin, Texas|Austin]], [[Texas]]. Tesla designs and manufactures [[electric vehicle]]s ([[electric car]]s and [[electric truck|trucks]]), battery [[energy storage]] from home to [[Grid-scale storage|grid-scale]], [[solar panel]]s and [[Solar roof shingles|solar roof tiles]], and related products and services. Tesla is one of the [[list of public corporations by market capitalization|world's most valuable companies]] and remains the world's most valuable automaker with a [[market capitalization]] of more than US$760&nbsp;billion. The company had the most worldwide sales of [[battery electric vehicle]]s and [[plug-in electric vehicle]]s, capturing 23% of the battery-electric (purely electric) market and 16% of the plug-in market (which includes [[plug-in hybrid]]s) in 2020. Through its subsidiary [[Tesla Energy]], the company develops and is a major installer of [[photovoltaic system]]s in the United States. Tesla Energy is also one of the largest global suppliers of battery energy storage systems, with 3.99 [[gigawatt-hours]] (GWh) installed in 2021.\n\nTesla was incorporated in July 2003 by [[Martin Eberhard]] and [[Marc Tarpenning]] as Tesla Motors. The company's name is a tribute to inventor and electrical engineer [[Nikola Tesla]]. In February 2004, via a $6.5 million investment, [[Elon Musk]] became the largest shareholder of the company. He has served as CEO since 2008. According to Musk, the purpose of Tesla is to help expedite the move to sustainable transport and energy, obtained through electric vehicles and solar power. Tesla began production of its first car model, the [[Tesla Roadster (first generation)|Roadster]] sports car, in 2009. This was followed by the [[Tesla Model S|Model S]] sedan in 2012, the [[Tesla Model X|Model X]] [[Sport utility vehicle|SUV]] in 2015, the [[Tesla Model 3|Model 3]] sedan in 2017, and the [[Tesla Model Y|Model Y]] [[Crossover (automobile)|crossover]] in 2020. The Model 3 is the all-time best-selling plug-in electric car worldwide, and, in June 2021, became the first electric car to sell 1&nbsp;million units globally.<ref name=1miModel3 /> Tesla's global sales were 936,222 cars in 2021, a 87% increase over the previous year,<ref name=Tesla4Q2021final /> and cumulative sales totaled 2.3&nbsp;million cars at the end of 2021.<ref name=Tesla2021 /> In October 2021, Tesla's market capitalization reached $1 trillion, the [[Trillion dollar companies|sixth company]] to do so in U.S. history.\n\nTesla has been the subject of many lawsuits and controversies arising from statements and acts of CEO Elon Musk and from allegations of [[creative accounting]], [[whistleblower]] retaliation, [[worker rights]] violations, and unresolved and dangerous technical problems with their products. In September 2021, the [[National Highway Traffic Safety Administration]] (NHTSA) ordered Tesla to submit data pertaining to all sold US vehicles equipped with [[Tesla Autopilot|Autopilot]] following the agency's investigations into [[Autopilot crashes|traffic deaths involving the use of Autopilot]].<ref name=\":21\">{{cite web |last1=Barry |first1=Keith |title=Federal Government Opens Safety Defect Investigation Into Tesla Autopilot Crashes |url=https://www.consumerreports.org/autonomous-driving/nhtsa-safety-defect-investigation-tesla-autopilot-crashes-a6996819019/ |website=Consumer Reports |access-date=22 May 2022 |date=16 August 2021}}</ref>\n\n{{TOC limit|3}}\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-07-06T14:53:09Z"
+        }
+       ],
+       "title": "Tesla, Inc."
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "Tesla, Inc."
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220707214031|1096973481"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 70614210,
+       "revisions": [
+        {
+         "parentid": 1096973481,
+         "revid": 1096979132,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Business acquisition in 2022}}\n{{Use American English|date=April 2022}}\n{{Use mdy dates|date=April 2022}}\n{{Infobox acquisition\n| name      = Proposed acquisition of Twitter<br />by Elon Musk\n| logo      = Twitter-logo.svg\n| logo_size = 80px\n| initiator = [[Elon Musk]]\n| target    = [[Twitter, Inc.]]\n| type      = [[All-cash deal|All-cash]] full acquisition\n| cost      = {{US$|44&nbsp;billion|link=yes}}\n| initiated = April 14, 2022\n| completed = \n}}\n{{Elon Musk series}}\nOn April 14, 2022, business magnate [[Elon Musk]] offered to purchase American [[social media]] company [[Twitter, Inc.]], for $43&nbsp;billion, after previously acquiring 9.1&nbsp;percent of the company's stock for $2.64&nbsp;billion, becoming its largest shareholder. Twitter <!-- This is needed as the event took place before April 14 -->had<!-- This is needed as the event took place before April 14 --> then invited Musk to join their [[board of directors]], which Musk at first accepted before subsequently declining. Twitter then announced a \"[[Shareholder rights plan|poison pill]]\" strategy the next day. On April 25, Twitter's board of directors unanimously accepted Musk's buyout offer of $44&nbsp;billion, with the company set to be [[Private company|privatized]].\n\nReception to the proposed buyout has been mixed. The buyout has received praise for Musk's planned reforms and vision for the company, while also drawing criticism over fears of a potential rise in [[disinformation]] and [[Online harassment|harassment]] on the platform. {{As of|2022|7}}, the acquisition is pending approval from regulators and shareholders.\n\n== Prelude ==\n\n=== Background ===\n{{See also|Elon Musk#Twitter}}\n[[Elon Musk]] published his first [[Tweet (Twitter)|tweet]] on his personal [[Twitter]] account in June 2010,<ref>{{Cite web |last=D'Onfro |first=Jillian |last2=Ranj |first2=Brandt |date=January 20, 2022 |title=The very first tweets from famous tech execs like Elon Musk and Marissa Mayer |url=https://www.businessinsider.com/the-first-tweets-of-famous-tech-execs-2013-9 |url-access=limited |url-status=live |archive-url=https://web.archive.org/web/20160122063411/https://www.businessinsider.com/the-first-tweets-of-famous-tech-execs-2013-9 |archive-date=January 22, 2022 |access-date=April 25, 2022 |website=[[Business Insider]]}}</ref> and had more than 80&nbsp;million followers at the time of the purchase.<ref>{{Cite web |last=Imbert |first=Fred |date=April 4, 2022 |title=Twitter shares close up 27% after Elon Musk takes 9% stake in social media company |url=https://www.cnbc.com/2022/04/04/twitter-shares-soar-more-than-25percent-after-elon-musk-takes-9percent-stake-in-social-media-company.html |url-status=live |archive-url=https://web.archive.org/web/20220404102019/https://www.cnbc.com/2022/04/04/twitter-shares-soar-more-than-25percent-after-elon-musk-takes-9percent-stake-in-social-media-company.html |archive-date=April 4, 2022 |access-date=April 25, 2022 |publisher=[[CNBC]]}}</ref> In 2017, in response to a tweet suggesting Musk buy [[Twitter Inc.|Twitter]], he replied, \"How much is it?\"<ref>{{Cite web |last=Mankarious |first=Sarah-Grace |last2=Chacón |first2=Marco |last3=Duffy |first3=Clare |last4=Thorbecke |first4=Catherine |date=April 26, 2022 |title=Here's what Elon Musk has tweeted over the years ... about Twitter |url=https://www.cnn.com/interactive/2022/04/business/elon-musk-tweets-twitter/index.html |url-status=live |archive-url=https://web.archive.org/web/20220427000804/https://www.cnn.com/interactive/2022/04/business/elon-musk-tweets-twitter/index.html |archive-date=April 27, 2022 |access-date=April 27, 2022 |publisher=[[CNN Business]]}}</ref> On March 24, 2022, Musk began tweeting statements critical of Twitter,<ref name=\"Yahoo\" /> polling his followers on whether Twitter adhered to the principle that \"[[free speech]] is essential to a functioning democracy\".<ref>{{Cite web |last=Duffy |first=Kate |date=April 5, 2022 |title=Elon Musk asks Twitter users whether they'd like an 'edit' button. Twitter's CEO says results of the poll will be 'important.' |url=https://www.businessinsider.com/elon-musk-polls-twitter-edit-button-ceo-agrawal-results-important-2022-4 |url-access=limited |url-status=live |archive-url=https://web.archive.org/web/20220405095339/https://www.businessinsider.com/elon-musk-polls-twitter-edit-button-ceo-agrawal-results-important-2022-4 |archive-date=April 5, 2022 |access-date=April 25, 2022 |website=[[Business Insider]]}}</ref> Days later, he discussed the future of social media with Twitter co-founder and former CEO [[Jack Dorsey]] and explored the possibility of joining Twitter's [[board of directors]] with [[private equity firm]] [[Silver Lake (investment firm)|Silver Lake]] co-CEO Egon Durban. He relayed this idea to Twitter [[board chair]] [[Bret Taylor]] as well as Twitter CEO [[Parag Agrawal]] on March 27, proposing to either [[Private company|take the company private]] or start a rival social media platform.<ref name=\"Timeline\" />\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-07-07T22:35:29Z"
+        }
+       ],
+       "title": "Acquisition of Twitter by Elon Musk"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "Acquisition of Twitter by Elon Musk"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220702065157|1096088236"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 416486,
+       "revisions": [
+        {
+         "parentid": 1096088236,
+         "revid": 1096106429,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Entrepreneur who has achieved wealth and prominence from a particular industry}}\n{{Redirect|Tycoon}}\n{{Redirect|Industrialist|other subjects|Industrialist (disambiguation)}}\n{{For|magnate in the mass media industry|Media proprietor}}\nA '''business magnate''', also known as a '''tycoon''', is a person who has achieved immense wealth through the ownership of multiple lines of enterprise. The term characteristically refers to a powerful [[entrepreneur]] or [[investor]] who controls, through personal enterprise ownership or a dominant shareholding position, a firm or industry whose goods or services are widely consumed. Such individuals may also be known as ''[[Robber baron (industrialist)|barons]]'', ''[[Captain of industry|captains of industry]]'', ''[[Tsar|czars]]'', ''[[Mughal Empire|moguls]]'', ''[[Business oligarch|oligarchs]]'', ''[[plutocrats]]'' or ''[[Tai-pan|taipans]].''\n\n==Etymology==\n[[File:James Finlayson (1771-1852).jpg|thumb|upright|[[James Finlayson (industrialist)|James Finlayson]] (1771–1852), a Scottish [[Quaker]] and industrialist, best known as a founder of [[Finlayson (company)|Finlayson]].<ref>{{cite web |url=http://www.mtv3.fi/koti/ajankohtaista.shtml?1035944 |title=Finlayson juhlii klassikkokuosien merkeissä |date=January 18, 2010 |work=MTV3.fi - Koti |publisher=Bonnier AB |language=Finnish |accessdate=July 11, 2012 |archive-url=https://web.archive.org/web/20100123213556/http://www.mtv3.fi/koti/ajankohtaista.shtml?1035944 |archive-date=2010-01-23 |url-status=dead }}</ref>]]\nThe term ''[[magnate]]'' derives from the [[Latin]] word ''magnates'' (plural of ''magnas''), meaning \"great man\" or \"great nobleman\".\n\nThe term ''mogul'' is an English corruption of ''mughal'', Persian or Arabic for \"Mongol\". It alludes to emperors of the [[Mughal Empire]] in [[Medieval India]], who possessed great power and storied riches capable of producing wonders of opulence such as the [[Taj Mahal]].\n\nThe term ''tycoon'' derives from the [[Japanese language|Japanese]] word {{Nihongo|''[[taikun]]''|大君}}, which means \"great lord\", used as a title for the ''[[shōgun]]''.<ref>{{cite book |title=American English Spelling: An Informal Description |last=Cummings |first= Donald Wayne |year=1988 |publisher=JHU Press |isbn=978-0-8018-3443-1 |page=277 |url=https://books.google.com/books?id=1OVIqCV57pYC |access-date=22 May 2012}}</ref><ref>{{cite web |url=http://www.merriam-webster.com/dictionary/tycoon |title=tycoon |work=Merriam-Webster |access-date=22 May 2012 |quote=Origin of TYCOON Japanese taikun}}</ref> The word entered the English language in 1857<ref>{{cite web |url=http://www.merriam-webster.com/dictionary/tycoon |title=tycoon |work=Merriam-Webster |access-date=22 May 2012 |quote=First Known Use: 1857}}</ref> with the return of [[Matthew C. Perry|Commodore Perry]] to the United States. US President [[Abraham Lincoln]] was humorously referred to as ''the Tycoon'' by his aides [[John Nicolay]] and [[John Hay]].<ref>{{cite news |title=Return of the Samurai |first=Adam |last=Goodheart |url=http://opinionator.blogs.nytimes.com/2010/11/10/return-of-the-samurai/ |newspaper=The New York Times |date=10 November 2010 |access-date=22 May 2012}}</ref> The term spread to the business community, where it has been used ever since.\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-07-02T10:07:10Z"
+        }
+       ],
+       "title": "Business magnate"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "Business magnate"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220414202910|1082742880"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 11476251,
+       "revisions": [
+        {
+         "parentid": 1082742880,
+         "revid": 1094199633,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Broadcast medium}}\n{{redirect|Status update|the 2018 film|Status Update}}\n'''Microblogging''' is an online [[Broadcasting|broadcast medium]] that exists as a specific form of [[blogging]]. A micro-blog differs from a traditional blog in that its content is typically smaller in both actual and aggregated file size. Micro-blogs \"allow users to exchange small elements of content such as short sentences, individual images, or video links\",<ref name=\"kaplan10early\">{{cite web|url=http://michaelhaenlein.net/Publications/Kaplan,%20Andreas%20-%20The%20early%20bird%20catches%20the%20...%20news.pdf|title=The early bird catches the news: Nine things you should know about micro-blogging|author1=Kaplan Andreas M. |author2=Haenlein Michael |year=2011|work=Business Horizons, 54(2)}}. Retrieved June 5, 2014</ref> which may be the major reason for their popularity.<ref name='IJMR Article'>{{cite journal |author=Aichner, T. |author2=Jacob, F.|title=Measuring the Degree of Corporate Social Media Use|journal=International Journal of Market Research|date=March 2015|volume=57|issue=2|pages=257–275|doi=10.2501/IJMR-2015-018|s2cid=166531788}}</ref> These small messages are sometimes called ''micro posts''.<ref name=\"kaplan10early\" /><ref name='micropost'>{{cite web|url=http://www.vis.uni-stuttgart.de/~lohmansn/publications/MicroblogAnalyzer.pdf|title=Visual Analysis of Microblog Content Using Time-Varying Co-occurrence Highlighting in Tag Clouds|author=S. Lohmann|year=2012| work=AVI 2012 Conference|display-authors=etal}}</ref>\n\nAs with traditional blogging, micro-bloggers post about topics ranging from the simple, such as \"what I'm doing right now\", to the thematic, such as \"sports cars\". Commercial micro-blogs also exist to promote websites, services, and products and to promote [[collaboration]] within an organization.\nSome microblogging services offer privacy settings, which allow users to control who can read their microblogs or alternative ways of publishing entries besides the web-based interface. These may include [[text messaging]], [[instant messaging]], [[e-mail]], [[digital audio]], or [[digital video]].\n\n== Origin ==\nThe first micro-blogs were known as ''tumblelogs''. The term was coined by [[why the lucky stiff]] in a blog post on April&nbsp;12, 2005, while describing Leah Neukirchen's Anarchaia.<ref>[http://viewsourcecode.org/why/redhanded/inspect/tumbleloggingAssortedLarvae.html Stop, For Blogging's Sake].</ref>\n\n{{cquote|Blogging has mutated into simpler forms (specifically, link- and the mob- and AUD- and vid- variant), but I don’t think I’ve seen a blog like Chris Neukirchen’s [sic] Anarchaia, which fudges together a bunch of disparate forms of citation (links, quotes, flickerings) into a very long and narrow and distracted tumblelog.}}\n\n[[Jason Kottke]] described tumblelogs on October 19, 2005:<ref>{{cite web|url=http://www.kottke.org/05/10/tumblelogs |title=Tumblelogs |publisher=kottke.org |date=2005-10-19 |access-date=2013-11-27}}</ref>\n\n{{cquote|A tumblelog is a quick and dirty stream of consciousness, a bit like a remaindered links style [[linklog]] but with more than just links. They remind me of an older style of blogging, back when people did sites by hand, before [[Movable Type]] made post titles all but mandatory, blog entries turned into short magazine articles, and posts belonged to a conversation distributed throughout the entire [[blogosphere]]. [[Jorn Barger|Robot Wisdom]] and Bifurcated Rivets are two older style weblogs that feel very much like these tumblelogs with minimal commentary, little cross-blog chatter, the barest whiff of a finished published work, almost pure editing...just a way to quickly publish the \"stuff\" that you run across every day on the web}}\n\nHowever, by 2006 and 2007, the word '' microblog'' was used more widely for services provided by established sites like [[Tumblr]] and [[Twitter]].\n\nAs of May 2007, there were 111 micro-blogging sites in various countries.{{citation needed|date=December 2011}} Among the most notable services are [[Twitter]], [[Tumblr]], [[FriendFeed]], [[Plurk]], [[Jaiku]] and [[identi.ca]]. Different versions of services and software with micro-blogging features have been developed. [[Plurk]] has a timeline view that integrates video and picture sharing. Flipter uses micro-blogging as a platform for people to post topics and gather audience's opinions.  PingGadget is a location-based micro-blogging service. [[Pownce]], developed by [[Digg]] founder [[Kevin Rose]] among others, integrated micro-blogging with [[file sharing]] and event invitations. Pownce was merged into [[SixApart]] in December 2008.<ref>{{cite web |archive-url=https://web.archive.org/web/20130108201549/http://www.pownce.com/ |url=http://www.pownce.com/ |title=Pownce website |publisher=Pownce.com |archive-date= 8 January 2013 |access-date=2013-11-27}}</ref>\n\nOther [[social networking service|social networking websites]] [[Facebook]], [[MySpace]], [[LinkedIn]], [[Diaspora (software)|Diaspora]], JudgIt, Yahoo Pulse, [[Google Buzz]], [[Google+]] and [[XING]], also have their own micro-blogging feature, better known as \"status updates\". Status updates are usually more restricted than actual micro-blogging in terms of writing.{{cn|date=January 2021}} Any activity involving posting short messages can be classified as microblogging, although it is usually not considered a microblogging “site” or “service” if it is a secondary rather than principal service provided there.{{cn|date=January 2021}}\n\nServices such as [[Lifestreaming|Lifestream]] and [[Snapchat]] will aggregate micro-blogs from multiple social networks into a single list, while other services, such as [[Ping. fm]], will send out your micro-blog to multiple social networks.{{citation needed|date=December 2011}}\n\nInternet users in China are facing a different situation. Foreign micro-blogging services like Twitter, Facebook, Plurk, Tumblr, and Google+ are [[Internet censorship in the People's Republic of China|censored in China]]. The users use [[Microblogging in China|Chinese Weibo services]] such as [[Sina Weibo]] and [[Tencent Weibo]]. Tailored to Chinese people, these webs are like hybrids of Twitter and Facebook. They implement basic Twitter features and allow users to comment to others' posts, as well as a post with [[Emoticons#Graphical replacement|graphical emoticons]], attach an image, music and video files.{{citation needed|date=December 2011}} A survey by the Data Center of China Internet from 2010 showed that Chinese micro-blog users most often pursued content created by friends, experts in a specific field, or related to celebrities.\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-06-21T08:36:36Z"
+        }
+       ],
+       "title": "Microblogging"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "Microblogging"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220526122502|1089935156"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 332730,
+       "revisions": [
+        {
+         "parentid": 1089935156,
+         "revid": 1090494709,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Person who allocates capital with the expectation of a financial return}}\n{{For|the Swedish investment company|Investor AB}}\n{{More citations needed|date=March 2015}}\n{{Capitalism}}\n{{Financial market participants}}\n{{Finance sidebar}}\n\nAn '''investor''' is a person that allocates capital with the expectation of a future financial return (profit) or to gain an advantage (interest).<ref name=\"Reasonable\">{{Cite journal |title=Reasonable Investor(s) |journal=Boston University Law Review |volume=95 |issue=461 |page=466 |first=Tom C.W. |last=Lin |date=2015 }}</ref><ref name=\"Cambridge\">{{cite dictionary |title=Investor |dictionary=Cambridge English Dictionary |url=https://dictionary.cambridge.org/us/dictionary/english/investor |publisher=Cambridge University Press |access-date=29 November 2019 }}</ref> Through this allocated capital most of the time the investor purchases some species of property.<ref>Jonathan Fisher QC, Jane Bewsey, Malcolm Waters QC, Elizabeth Ovey (2003): ''The Law of Investor Protection.'' 2nd edition. London: Sweet & Maxwell</ref> Types of investments include [[Stock|equity]], [[Bond (finance)|debt]], [[Security (finance)|securities]], [[real estate]], [[infrastructure]], [[currency]], [[commodity]], [[Exonumia|token]], derivatives such as put and call [[Option (finance)|options]], [[Futures contract|futures]], [[Forward contract|forwards]], etc. This definition makes no distinction between the investors in the primary and secondary markets.  That is, someone who provides a business with capital and someone who buys a stock are both investors.  An investor who owns a stock is a [[shareholder]].\n\n==Types of investors==\nThere are two types of investors: retail investors and [[institutional investor]]s.<ref>{{Cite web |url=https://www.investopedia.com/ask/answers/06/institutionalinvestor.asp |title=Institutional vs. Retail Investors: What's the Difference? |first=Barclay |last=Palmer |website=Investopedia }}</ref>\n\n===Retail investor===\n* Individual investors (including [[Trust law|trusts]] on behalf of individuals, and umbrella companies formed by two or more to pool investment funds)\n* [[Angel investor]]s (individuals and groups)\n* [[Sweat equity]] investor<ref>{{Cite web |last=Hayes |first=Adam |title=Retail Investor Definition |url=https://www.investopedia.com/terms/r/retailinvestor.asp |access-date=2020-12-17 |website=Investopedia }}</ref>\n\n===Institutional investor===\n* Pension plans making investments on behalf of employees\n* [[Business]]es that make investments, either directly or via a captive fund\n* Endowment funds used by universities, churches, etc.\n* [[Mutual fund]]s, [[hedge fund]]s, and other funds, ownership of which may or may not be [[Public company|publicly traded]] (these funds typically pool money raised from their owner-subscribers to invest in securities)\n* [[Sovereign wealth fund]]s\n* Large money managers<ref>{{Cite web |title=Institutional Investor - Overview, Types, Investing Risks |url=https://corporatefinanceinstitute.com/resources/knowledge/trading-investing/institutional-investor/ |access-date=2020-12-17 |website=Corporate Finance Institute }}</ref>\n\nInvestors might also be classified according to their [[Investor profile|styles]]. In this respect, an important distinctive [[Behavioral economics|investor psychology]] trait is [[risk aversion|risk attitude]].\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-05-29T20:37:31Z"
+        }
+       ],
+       "title": "Investor"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "Investor"
+   },
+   "status": 200
+  }
+ ],
+ "note": "The curated Twitter-acquisition scenario (cutoff 2022-07-08) at depth 1, driven through plan_unit and load_snapshots.",
+ "recorded": "2026-09-19",
+ "source": "https://en.wikipedia.org/w/api.php"
+}

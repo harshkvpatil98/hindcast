@@ -37,10 +37,25 @@ import random
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Literal, Protocol
 
 from cascade.ledger.schema import Scenario
 
-__all__ = ["BenchQuery", "build_queries", "query_templates"]
+__all__ = [
+    "BenchQuery",
+    "EvidenceQuery",
+    "GraphLike",
+    "QueryKind",
+    "RelevanceQuery",
+    "agent_evidence_query",
+    "baseline_evidence_query",
+    "build_queries",
+    "compiler_evidence_query",
+    "query_templates",
+    "relevance_queries",
+]
+
+QueryKind = Literal["compiler", "agent", "baseline"]
 
 
 @dataclass(frozen=True)
@@ -157,4 +172,167 @@ def build_queries(
             BenchQuery(scenario_id=scenario.scenario_id, text=text, as_of=scenario.cutoff_ts)
         )
 
+    return tuple(out)
+
+
+# ---------------------------------------------------------------------------
+# The study's real evidence queries (M14)
+#
+# Three places fetch evidence: the compiler, each actor's prefix, and the two
+# single-model baselines. Each builds its query here rather than inline, for
+# two reasons. `bench --relevance` has to measure *these* queries -- a bench
+# with its own idea of what an agent asks measures a different system -- and
+# one definition is the only way the two cannot drift. And the embedded text
+# is part of what a recorded run depends on: `text` below is byte-for-byte
+# what each call site embedded before this module existed, so `retrieval.mode:
+# vector` retrieves exactly what it always did.
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class EvidenceQuery:
+    """One evidence request, in the two forms the two pools need.
+
+    ``text`` is embedded. ``keyword_text`` and ``entities`` choose the keyword
+    terms. They differ on purpose: an actor's objective sentence belongs in the
+    embedding, where its meaning helps, and is poor keyword material, where
+    only its proper nouns do; a resolution criterion is embedded by the
+    baselines and is kept out of the keyword terms altogether, because its
+    proper nouns ("Associated Press", "12:00 PM ET") name the resolver and the
+    deadline rather than the parties.
+    """
+
+    text: str
+    keyword_text: str
+    entities: tuple[str, ...] = ()
+
+
+def compiler_evidence_query(question: str) -> EvidenceQuery:
+    """What the graph compiler retrieves on: the question alone (§5.2)."""
+    return EvidenceQuery(text=question, keyword_text=question)
+
+
+def agent_evidence_query(question: str, actor_name: str, actor_objective: str) -> EvidenceQuery:
+    """What one actor's cached prefix retrieves on (ADR-0019).
+
+    The actor's name is an explicit entity, taken whole; the objective is
+    offered as text, so only the names inside it become terms. The newline
+    keeps a capitalised run from spanning the question and the objective.
+    """
+    return EvidenceQuery(
+        text=f"{question} {actor_name} {actor_objective}",
+        keyword_text=f"{question}\n{actor_objective}",
+        entities=(actor_name,),
+    )
+
+
+def baseline_evidence_query(question: str, resolution_criterion: str) -> EvidenceQuery:
+    """What the single-model baselines retrieve on (§10.2)."""
+    return EvidenceQuery(text=f"{question} {resolution_criterion}", keyword_text=question)
+
+
+class ActorLike(Protocol):
+    """The two fields of a compiled actor a query is built from."""
+
+    @property
+    def id(self) -> str: ...
+    @property
+    def name(self) -> str: ...
+    @property
+    def objective(self) -> str: ...
+
+
+class GraphLike(Protocol):
+    """The part of a ``CausalGraph`` this module reads.
+
+    A protocol rather than the class so the bench's query set can be built and
+    tested without the decomposition package, and cannot come to depend on
+    anything else a graph holds.
+    """
+
+    @property
+    def scenario_id(self) -> str: ...
+    @property
+    def actors(self) -> Sequence[ActorLike]: ...
+
+
+@dataclass(frozen=True)
+class RelevanceQuery:
+    """One real evidence query, with the cutoff and k it is issued under."""
+
+    scenario_id: str
+    kind: QueryKind
+    query: EvidenceQuery
+    as_of: datetime
+    k: int
+
+    def __post_init__(self) -> None:
+        if self.as_of.tzinfo is None:
+            raise ValueError(f"as_of must be timezone-aware, got naive {self.as_of!r}")
+
+
+def relevance_queries(
+    scenarios: Sequence[Scenario],
+    graphs: Sequence[GraphLike],
+    *,
+    k_agent: int,
+    k_compiler: int,
+) -> tuple[RelevanceQuery, ...]:
+    """Every evidence query the study issues, in a reproducible order.
+
+    Per scenario: the compiler's query, the baselines' query, and -- where a
+    compiled graph exists -- one query per actor. Scenarios are walked by id
+    and actors by id (invariant 7), so the set and its order are a function of
+    the registry and the stored graphs alone.
+
+    Nothing here reads an outcome: a ``Scenario`` has no field to read one
+    from, and a graph is compiled from pre-cutoff evidence.
+
+    A scenario with no compiled graph contributes no ``agent`` queries rather
+    than invented ones. The caller reports how many scenarios each kind
+    covered, so an ``agent`` reading over forty graphs is not mistaken for one
+    over the registry.
+    """
+    if k_agent <= 0 or k_compiler <= 0:
+        raise ValueError(f"k must be positive, got k_agent={k_agent}, k_compiler={k_compiler}")
+
+    by_scenario: dict[str, GraphLike] = {}
+    for graph in graphs:
+        if graph.scenario_id in by_scenario:
+            raise ValueError(f"two graphs for scenario {graph.scenario_id!r}")
+        by_scenario[graph.scenario_id] = graph
+
+    out: list[RelevanceQuery] = []
+    for scenario in sorted(scenarios, key=lambda item: item.scenario_id):
+        out.append(
+            RelevanceQuery(
+                scenario_id=scenario.scenario_id,
+                kind="compiler",
+                query=compiler_evidence_query(scenario.question),
+                as_of=scenario.cutoff_ts,
+                k=k_compiler,
+            )
+        )
+        out.append(
+            RelevanceQuery(
+                scenario_id=scenario.scenario_id,
+                kind="baseline",
+                query=baseline_evidence_query(scenario.question, scenario.resolution_criterion),
+                as_of=scenario.cutoff_ts,
+                k=k_agent,
+            )
+        )
+        graph_for_scenario = by_scenario.get(scenario.scenario_id)
+        if graph_for_scenario is None:
+            continue
+        for actor in sorted(graph_for_scenario.actors, key=lambda item: item.id):
+            out.append(
+                RelevanceQuery(
+                    scenario_id=scenario.scenario_id,
+                    kind="agent",
+                    query=agent_evidence_query(scenario.question, actor.name, actor.objective),
+                    as_of=scenario.cutoff_ts,
+                    k=k_agent,
+                )
+            )
     return tuple(out)

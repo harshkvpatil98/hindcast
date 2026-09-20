@@ -1,6 +1,6 @@
 # ADR-0023 — CC-NEWS units are one WARC file, and the queue is ordered by scenario demand
 
-**Status:** accepted · **Milestone:** M2 (found at M7) · **Supersedes nothing**
+**Status:** accepted · **Milestone:** M2 (found at M7) · **Supersedes nothing** — *file selection amended by [ADR-0036](0036-cutoff-anchored-file-selection.md): demand ignored distance from the cutoff, and a month's twelve files all came from its first two days*
 
 ## Context
 

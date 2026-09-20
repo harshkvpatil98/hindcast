@@ -19,10 +19,11 @@ number a careful reader will compute anyway".
 from __future__ import annotations
 
 import hashlib
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from typing import Literal
 
+from cascade.eval.market import MARKET_CONFIG_ID
 from cascade.eval.schema import Grounding
 
 __all__ = [
@@ -257,7 +258,10 @@ def grid_scenarios(
 
 
 def comparison_family(
-    *, available: Sequence[str], headline: str = HEADLINE_CELL
+    *,
+    available: Sequence[str],
+    headline: str = HEADLINE_CELL,
+    eligible: Collection[str] | None = None,
 ) -> tuple[ComparisonSpec, ...]:
     """The family Holm-Bonferroni is applied across (spec §10.4).
 
@@ -276,8 +280,18 @@ def comparison_family(
     ``headline`` is a parameter rather than the constant so the family can be
     built against whichever configuration is actually being reported. A partial
     grid has a headline too.
+
+    ``eligible`` closes the family. §10.4's family is "twelve cells plus five
+    baselines" -- a list, not "whatever has forecasts". Without it, every
+    configuration anyone ever stored joins the family: a supplementary cell, or
+    a tuning variant scored once on dev and forgotten, would each raise the
+    Holm multiplier on all twelve ablation results. The report passes the
+    declared cells and baselines; ``None`` keeps the open reading for callers
+    that have nothing else stored.
     """
     have = set(available)
+    if eligible is not None:
+        have &= set(eligible) | {headline}
     out: list[ComparisonSpec] = []
     named = {
         (spec.config_a, spec.config_b)
@@ -290,17 +304,31 @@ def comparison_family(
             continue
         if headline not in have:
             continue
+        reading = (
+            f"Brier({config_id}) - Brier({headline}). Positive means "
+            f"{config_id} is worse than the reported configuration. Included "
+            "in the Holm family so the adjustment covers every comparison the "
+            "report prints (§10.4)."
+        )
+        if config_id == MARKET_CONFIG_ID:
+            # The one comparison whose population is set by someone else's
+            # data, so the reading has to say which scenarios are in it.
+            reading = (
+                f"Brier(market at the cutoff) - Brier({headline}), paired on the "
+                "intersection: only scenarios whose own prediction market quoted a "
+                "usable price strictly before the cutoff are on either side, and n is "
+                "how many that is. Scenarios with no market, no price history or a "
+                'stale price are excluded and counted under "What the market '
+                'benchmark covers" above, never imputed. Negative means the market '
+                f"beat {headline} on those scenarios. In the Holm family like every "
+                "other comparison (§10.4)."
+            )
         out.append(
             ComparisonSpec(
                 name=f"{config_id} vs {headline}",
                 config_a=config_id,
                 config_b=headline,
-                reading=(
-                    f"Brier({config_id}) - Brier({headline}). Positive means "
-                    f"{config_id} is worse than the reported configuration. Included "
-                    "in the Holm family so the adjustment covers every comparison the "
-                    "report prints (§10.4)."
-                ),
+                reading=reading,
             )
         )
     return tuple(out)

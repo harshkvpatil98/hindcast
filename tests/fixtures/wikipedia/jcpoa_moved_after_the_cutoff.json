@@ -1,0 +1,202 @@
+{
+ "exchanges": [
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "lastrevid": 1350588005,
+       "length": 204,
+       "ns": 0,
+       "pageid": 47236730,
+       "redirect": true,
+       "title": "JCPOA"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "info",
+    "titles": "JCPOA"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20150715065827|671522027"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 47236730,
+       "revisions": [
+        {
+         "parentid": 671522027,
+         "revid": 671837843,
+         "slots": {
+          "main": {
+           "content": "#REDIRECT [[Joint Comprehensive Plan of Action]]\n{{R from initialism}}",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2015-07-17T10:10:45Z"
+        }
+       ],
+       "title": "JCPOA"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2018-01-11T23:59:59Z",
+    "titles": "JCPOA"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 47256815,
+       "revisions": [
+        {
+         "parentid": 0,
+         "revid": 671763453,
+         "slots": {
+          "main": {
+           "content": "#REDIRECT [[Joint Comprehensive Plan of Action]]",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2015-07-16T20:44:17Z"
+        }
+       ],
+       "title": "Joint Comprehensive Plan of Action"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2018-01-11T23:59:59Z",
+    "titles": "Joint Comprehensive Plan of Action"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "logevents": [
+      {
+       "logid": 178917780,
+       "logpage": 42015113,
+       "ns": 0,
+       "pageid": 47256815,
+       "params": {
+        "suppressredirect": true,
+        "target_ns": 0,
+        "target_title": "Iran nuclear deal"
+       },
+       "revid": 1345015362,
+       "timestamp": "2026-03-23T21:03:01Z",
+       "title": "Joint Comprehensive Plan of Action"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "ledir": "newer",
+    "lelimit": "1",
+    "leprop": "ids|title|timestamp|details",
+    "lestart": "2018-01-12T00:00:00Z",
+    "letitle": "Joint Comprehensive Plan of Action",
+    "letype": "move",
+    "list": "logevents",
+    "maxlag": "5"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20180101092748|818067681"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 42015113,
+       "revisions": [
+        {
+         "parentid": 818067681,
+         "revid": 818924915,
+         "slots": {
+          "main": {
+           "content": "{{Use dmy dates|date=December 2017}}\n{{Infobox document\n|document_name        = Joint Comprehensive Plan {{nowrap|of Action}}\n|image                = Iran Talks Vienna 14 July 2015 (19067069963).jpg\n|image_alt            = \n|caption              = Officials announcing the agreement.\n|date_created         = 14 July 2015\n|date_ratified        = N/A (ratification not required)\n|date_effective       = {{plainlist|\n*18 October 2015 <small>(Adoption)</small><ref>{{cite news |url=http://www.irna.ir/en/News/81804426/ |title=EU officially announces October 18 adoption day of JCPOA |publisher=Islamic Republic News Agency |date=18 October 2015}}</ref>\n*16 January 2016 <small>(Implementation)</small><ref>{{cite news |url=http://www.irna.ir/en/News/81923263/ |title=UN chief welcomes implementation day under JCPOA |publisher=Islamic Republic News Agency |date=17 January 2016}}</ref>\n}}\n|date_repeal          = \n|location_of_document = [[Vienna]], [[Austria]]\n|writer               = \n|signers              = [[Iran]], [[P5+1]], [[European Union]]\n|purpose              = [[Nuclear non-proliferation]]}}\n{{Nuclear program of Iran}}\n\nThe '''Joint Comprehensive Plan of Action''' ('''JCPOA'''; {{lang-fa|برنامه جامع اقدام مشترک |barnāme jāme‘ eqdām moshtarak}}, [[acronym]]: {{lang|fa|برجام}} '''BARJAM'''<ref>{{IPA-fa|bæɾˈdʒɒːm|pron}}</ref><ref>{{cite news |url=http://www.tehrantimes.com/index_View.asp?code=248149 |title=Zarif: We've never claimed nuclear deal only favors Iran |work=[[Tehran Times]] |date=22 July 2015}}</ref>), known commonly as the '''Iran deal''' or '''Iran nuclear deal''', is an international agreement on the [[nuclear program of Iran]] reached in [[Vienna]] on 14 July 2015 between [[Iran]], the [[P5+1]] (the five [[permanent members of the United Nations Security Council]]—[[China]], [[France]], [[Russia]], [[United Kingdom]], [[United States]]—plus [[Germany]]),{{efn|The P5+1 are also sometimes referred to as the \"E3+3\" (for the \"[[EU three]]\" countries (France, the UK, and Germany) plus the three non-EU countries (the U.S., Russia, and China)). The terms are interchangeable. This article uses the \"P5+1\" phrase.<ref>Joshua Keating, [https://foreignpolicy.com/2009/09/30/you-say-p51-i-say-e33/ \"You say P5+1, I say E3+3\"], ''Foreign Policy'' (30 September 2009).</ref><ref>Jeffrey Lewis, [http://lewis.armscontrolwonk.com/archive/7773/e3eu3-or-p51 \"E3/EU+3 or P5+1\"], ''Arms Control Wonk'' (13 July 2015).</ref>}} and the [[European Union]].\n\nFormal negotiations toward the Joint Comprehensive Plan of Action on Iran's nuclear program began with the adoption of the [[Joint Plan of Action]], an interim agreement signed between Iran and the P5+1 countries in November 2013. For the next twenty months, Iran and the P5+1 countries engaged in negotiations, and in April 2015 agreed on an [[Iran nuclear deal framework]] for the final agreement and in July 2015, Iran and the P5+1 agreed on the plan.\n\nUnder the agreement, Iran agreed to eliminate its stockpile of medium-[[enriched uranium]], cut its stockpile of low-enriched uranium by 98%, and reduce by about two-thirds the number of its [[gas centrifuge]]s for 13 years. For the next 15 years, Iran will only enrich uranium up to 3.67%. Iran also agreed not to build any new [[pressurized heavy-water reactor|heavy-water facilities]] for the same period of time. Uranium-enrichment activities will be limited to a single facility using first-generation centrifuges for 10 years. Other facilities will be converted to avoid [[Nuclear proliferation|proliferation]] risks. To monitor and verify Iran's compliance with the agreement, the [[International Atomic Energy Agency]] (IAEA) will have regular access to all Iranian nuclear facilities. The agreement provides that in return for verifiably abiding by its commitments, Iran will receive relief from U.S., European Union, and [[United Nations Security Council]] nuclear-related economic [[Sanctions against Iran|sanctions]].\n\nOn 13 October 2017, U.S. President Donald Trump announced that the United States would not make the certification provided for under [[Iran Nuclear Agreement Review Act of 2015|U.S. domestic law]], but stopped short of terminating the deal.<ref>{{cite web|url=http://heavy.com/news/2017/10/trump-iran-live-stream-strategy-nuclear-deal/|title=LIVE STREAM: President Trump Announces Iran Nuclear Deal Strategy|first=Chris|last=Bucher|date=13 October 2017|publisher=|accessdate=6 January 2018}}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2018-01-06T11:51:43Z"
+        }
+       ],
+       "title": "Iran nuclear deal"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "pageids": "42015113",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2018-01-11T23:59:59Z"
+   },
+   "status": 200
+  }
+ ],
+ "note": "The JCPOA scenario's cutoff is 2018-01-12. The article was then at 'Joint Comprehensive Plan of Action'; on 2026-03-23 it was moved to 'Iran nuclear deal' and the old title given to a page whose as-of text is a 2015 redirect to itself. The move log names the moved page (42015113).",
+ "recorded": "2026-09-19",
+ "source": "https://en.wikipedia.org/w/api.php"
+}

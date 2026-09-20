@@ -1,0 +1,8 @@
+# Deliberately unlike configs/base.yaml: the governance test points the module
+# here to prove the budget FOLLOWS the study configuration. A test against the
+# real file alone cannot tell "derived" from "hardcoded to today's value" --
+# found by mutation: a literal 330 passed.
+budget:
+  phase_ceiling_usd:
+    compile: 1.5
+    simulate: 2.5

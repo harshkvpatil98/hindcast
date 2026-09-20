@@ -10,6 +10,11 @@ follow from that:
 * The key covers exactly what changes the response. ``cache_control`` markers
   do not (ADR-0007), so they are stripped before hashing and prompt-cache
   tuning stays a pure cost change.
+* A provider that cannot honour the whole key domain records under a
+  namespace of its own (ADR-0031). The Claude Code CLI cannot set
+  ``temperature`` or ``max_tokens``; without a namespace its responses would
+  sit under keys claiming values the model never received, and would be served
+  as API recordings the moment the provider was switched.
 """
 
 from __future__ import annotations
@@ -27,16 +32,35 @@ from cascade.llm.types import CachedCall, LLMRequest
 # Re-exported: the cache key is defined in terms of this serialisation, so a
 # reader of this module should not have to go looking for it. There is exactly
 # one definition, in cascade/canonical.py.
-__all__ = ["CacheStats", "CallCache", "cache_key", "canonical_json"]
+__all__ = ["CacheStats", "CallCache", "cache_domain", "cache_key", "canonical_json"]
+
+# The key under which a namespace enters the domain. Chosen so it cannot
+# collide with an LLMRequest field, which would let a request forge one.
+_NAMESPACE_FIELD = "provider_namespace"
 
 
-def cache_key(request: LLMRequest) -> str:
+def cache_domain(request: LLMRequest, *, namespace: str | None = None) -> dict[str, object]:
+    """The exact mapping a key is computed over, as stored on each recording.
+
+    Preserves the invariant that a recording states what it is a recording
+    of. ``namespace`` is added only when set, so every recording made through
+    the shared API namespace keeps the key it has always had (ADR-0029).
+    """
+    domain: dict[str, object] = dict(request.cache_domain())
+    if namespace is not None:
+        domain[_NAMESPACE_FIELD] = namespace
+    return domain
+
+
+def cache_key(request: LLMRequest, *, namespace: str | None = None) -> str:
     """Return the spec §8.3 content address for ``request``.
 
     Preserves the invariant that the key domain is exactly the fields that
-    determine the response -- see ``LLMRequest.cache_domain``.
+    determine the response -- see ``LLMRequest.cache_domain`` -- plus, for a
+    provider that cannot honour all of them, which provider answered.
     """
-    return hashlib.sha256(canonical_json(request.cache_domain()).encode("utf-8")).hexdigest()
+    domain = cache_domain(request, namespace=namespace)
+    return hashlib.sha256(canonical_json(domain).encode("utf-8")).hexdigest()
 
 
 @dataclass

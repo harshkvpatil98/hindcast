@@ -26,6 +26,7 @@ from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Any, Literal
+from urllib.parse import quote
 
 import yaml
 from pydantic import (
@@ -45,10 +46,13 @@ from pydantic_settings import (
 
 __all__ = [
     "LLMMode",
+    "LLMProvider",
     "Settings",
     "child_environment",
+    "claude_cli_environment",
     "env_file_path",
     "load_settings",
+    "overlay_kind",
     "repo_root",
 ]
 
@@ -59,6 +63,11 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 _NON_FIELD_ENV_VARS = frozenset({"CASCADE_CONFIG", "CASCADE_ENV_FILE"})
 
 LLMMode = Literal["record", "replay", "live"]
+# Who serves the model (ADR-0028, ADR-0031). The first three are SDK clients
+# from the one `anthropic` package; `claude_code` is the Claude Code CLI run
+# headless on the operator's machine. All four are reached only through
+# LLMClient, so invariant 5's single door is unaffected by the choice.
+LLMProvider = Literal["anthropic", "aws", "bedrock", "claude_code"]
 Grounding = Literal["chronofence", "parametric_only"]
 CacheTTL = Literal["5m", "1h"]
 
@@ -140,6 +149,27 @@ class MemoryConfig(_Model):
     summary_interval: int
 
 
+class ToolsConfig(_Model):
+    """What an agent may do besides choose an action (M15, ADR-0049).
+
+    Off by default, and it is not a free switch: a tool loop is multi-turn, so
+    an arm with tools cannot be submitted as one batch per step (ADR-0020) and
+    therefore cannot carry the 36,000-run headline. It exists to be measured
+    at ablation scale against an arm without it.
+    """
+
+    enabled: bool = False
+    # Model turns per decision, including the final one that emits the action.
+    # Bounded because an unbounded tool loop is an unbounded bill, and because
+    # the per-run cost model has to stay a function of the graph.
+    max_turns: int = Field(default=3, ge=1, le=8)
+    # Chunks a `lookup_evidence` call may return. `as_of` is NOT here and
+    # never will be: it is bound by the caller from the run's own cutoff, so
+    # there is no configuration through which an agent could widen it.
+    k_tool: int = Field(default=6, gt=0)
+    allow: tuple[str, ...] = ("lookup_evidence", "recall")
+
+
 class KernelConfig(_Model):
     steps: int
     max_step_delta: float
@@ -150,6 +180,7 @@ class KernelConfig(_Model):
     evidence_chars: int
     activation: ActivationConfig
     memory: MemoryConfig
+    tools: ToolsConfig = Field(default_factory=ToolsConfig)
 
 
 class Channel(_Model):
@@ -162,6 +193,37 @@ class ApertureConfig(_Model):
     hop1: Channel
     hop2: Channel
     public: Channel
+
+
+class RerankConfig(_Model):
+    """Second-stage ranking over an already time-locked pool (ADR-0047).
+
+    Off by default. Turning it on changes the evidence a prompt carries, and
+    evidence is part of the LLM cache key, so it invalidates every recorded
+    decision and every compiled graph exactly as `retrieval.mode` does.
+    """
+
+    enabled: bool = False
+    # `local` is the deterministic BM25 default and needs no credential;
+    # `bedrock` is a managed reranker reached through the one call site.
+    provider: Literal["local", "bedrock"] = "local"
+    # How many fused candidates the reranker is shown. Larger is a better
+    # chance of recovering a chunk the fusion ranked poorly, and a larger
+    # call; it is bounded above by `max_k` because that is the pool the SQL
+    # function actually draws.
+    pool: int = Field(default=60, gt=0)
+    # Identifies the scorer in the cache key and the event log. For `local`
+    # the reranker names itself and this is ignored.
+    model_id: str = "bm25-local-v1"
+    # Routing for a managed reranker comes from `providers.bedrock.region`,
+    # not from a second copy here: ADR-0028's rule is that identity is ambient
+    # and routing explicit, and two places to set a region is one place for
+    # them to disagree.
+    #
+    # Managed rerankers bill per query, not per token, so this cannot ride on
+    # the token price table. A `Decimal` string, never a float: the meter is
+    # exact and a binary fraction of a cent compounds over 36,000 runs.
+    price_per_1k_queries: str = "0.00"
 
 
 class RetrievalConfig(_Model):
@@ -185,6 +247,56 @@ class RetrievalConfig(_Model):
     target_recall_at_k: float = Field(gt=0.0, le=1.0)
     poison_pill_count: int = Field(gt=0)
     signature_similarity_threshold: float = Field(gt=0.0, le=1.0)
+    # -- Hybrid retrieval (M14, migration 018) -------------------------------
+    # `vector` is `chronofence_search`, unchanged. `hybrid` fuses its pool with
+    # a time-locked keyword pool. The evidence an agent sees is part of its
+    # prompt and so of the LLM cache key: switching mode invalidates every
+    # recorded decision and every compiled graph, which is why it is a
+    # deliberate setting and not a default that moves under a study.
+    mode: Literal["vector", "hybrid"]
+    # Mirrors of literals in migration 018, asserted equal by a static test
+    # (ADR-0026 keeps every LIMIT out of the plan, so they cannot be read from
+    # here at query time).
+    hybrid_term_candidates: int = Field(gt=0)
+    hybrid_max_terms: int = Field(gt=0, le=32)
+    rrf_k: int = Field(gt=0)
+    rrf_vector_weight: float = Field(gt=0.0)
+    rrf_keyword_weight: float = Field(gt=0.0)
+    # Zero switches recency off. The upper bound that keeps recency from
+    # outvoting a relevance list depends on `rrf_k` and `max_k` together, so it
+    # is enforced where both are known: `fusion.FusionParams`.
+    rrf_recency_weight: float = Field(ge=0.0)
+    diversity_max_per_story: int = Field(gt=0)
+    diversity_simhash_bits: int = Field(ge=0, le=64)
+    relevance_generic_name_rate: float = Field(gt=0.0, le=1.0)
+    # -- Reranking (M15, ADR-0047) -------------------------------------------
+    rerank: RerankConfig = Field(default_factory=RerankConfig)
+
+    @model_validator(mode="after")
+    def _rerank_pool_fits_what_the_function_draws(self) -> RetrievalConfig:
+        """A rerank pool wider than `max_k` would ask for rows that never come.
+
+        `chronofence_search` draws a bounded pool with a *constant* limit
+        (ADR-0026) and `max_k` is that constant. Asking the reranker for more
+        candidates than the query can return is not an error at runtime -- it
+        silently reranks a shorter list -- so it is refused here, where the
+        mismatch is visible as a configuration mistake rather than as a
+        retrieval that quietly got narrower.
+        """
+        if self.rerank.enabled and self.rerank.pool > self.max_k:
+            raise ValueError(
+                f"retrieval.rerank.pool ({self.rerank.pool}) exceeds retrieval.max_k "
+                f"({self.max_k}), which is the largest pool chronofence_search draws; "
+                "the reranker would be shown fewer candidates than configured"
+            )
+        smallest_k = min(self.k_agent, self.k_compiler)
+        if self.rerank.enabled and self.rerank.pool < smallest_k:
+            raise ValueError(
+                f"retrieval.rerank.pool ({self.rerank.pool}) is below the smallest k a "
+                f"caller asks for ({smallest_k}); reranking would truncate the evidence "
+                "before the caller's own k could"
+            )
+        return self
 
 
 class EnsembleConfig(_Model):
@@ -193,6 +305,51 @@ class EnsembleConfig(_Model):
     ablation_scenarios: int
     bootstrap_b: int
     sigma_multimodal_threshold: float
+
+
+class DossierConfig(_Model):
+    """The per-scenario situation report (ADR-0037).
+
+    ``enabled`` is off until the development partition says otherwise: whether
+    the report helps is an empirical question, and the only honest place to
+    answer it is on scenarios the headline is not computed over. Turning it on
+    changes the compiler's and every agent's prompt, so it requires a prompt
+    revision newer than the one the unreported prompts were recorded under --
+    enforced by ``Settings``, because an audit trail that depends on someone
+    remembering is not one.
+    """
+
+    enabled: bool
+    since_prompt_rev: int = Field(ge=1)
+    per_query_k: int = Field(gt=0)
+    max_party_queries: int = Field(ge=0)
+    pool_chunks: int = Field(gt=0)
+    max_per_document: int = Field(gt=0)
+    excerpt_chars: int = Field(gt=0)
+    # Verification thresholds. Fixed before any forecast exists and never
+    # revisited against accuracy: they decide what counts as supported by the
+    # record, which is a validity rule, not a performance knob.
+    min_support_ratio: float = Field(ge=0.0, le=1.0)
+    max_claims_per_section: int = Field(gt=0)
+    # Characters of rendered report placed in each prompt. Every agent call
+    # carries it in the cached prefix, so this is a per-call cost (ADR-0019).
+    prompt_chars: int = Field(gt=0)
+    max_tokens: int = Field(gt=0)
+
+
+class EvalConfig(_Model):
+    """The declared dev/test split (``cascade/eval/split.py``).
+
+    ``dev_scenarios`` is how many of the sealed scenarios tuning may look at.
+    ``split_sha256`` pins the exact membership that size produced under the
+    study salt; every evaluation path recomputes the split and exits 3 when it
+    differs, so neither the size nor the salt can be changed after forecasts
+    exist without the change being refused. ``None`` is "never declared", and
+    is refused too.
+    """
+
+    dev_scenarios: int = Field(gt=0)
+    split_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
 
 
 class BudgetConfig(_Model):
@@ -214,10 +371,101 @@ class FlagsConfig(_Model):
 
 class LLMConfig(_Model):
     mode: LLMMode
+    # Not part of the cache key (ADR-0029): the key carries the logical model,
+    # and the provider only decides where the request is sent and how it is
+    # billed.
+    provider: LLMProvider
     cache_dir: str
     prompt_rev: str
     max_retries: int
     timeout_s: float
+
+
+class AWSProviderConfig(_Model):
+    """Routing for Claude Platform on AWS (ADR-0028).
+
+    Routing only. Identity is the ambient IAM principal resolved by the
+    standard AWS credential chain -- an instance or task role in the cloud, a
+    profile on a workstation -- so no credential ever appears in this file.
+
+    Every routing value is passed to the SDK explicitly. Left unset, the SDK
+    falls back to ``AWS_REGION`` and ``ANTHROPIC_AWS_WORKSPACE_ID`` from
+    whatever shell it runs in, which would decide where the study's spend
+    lands without that choice appearing in any reviewed file.
+    """
+
+    region: str | None
+    workspace_id: str | None
+    base_url: str | None
+    profile: str | None
+    # Empty by design. Rates are read from the provider's live pricing page at
+    # the time a provider is enabled, never transcribed from memory: a wrong
+    # rate is a silent ledger error that surfaces only at reconciliation.
+    pricing: dict[str, PricingEntry]
+
+
+class BedrockProviderConfig(_Model):
+    """Routing for Amazon Bedrock (ADR-0028). Same identity rule as AWS."""
+
+    region: str | None
+    base_url: str | None
+    profile: str | None
+    # Logical model -> Bedrock model id. Absent entries render as
+    # ``anthropic.<logical>``, the documented Bedrock form; an entry overrides
+    # it without a code change when a deployment publishes something else.
+    model_ids: dict[str, str]
+    pricing: dict[str, PricingEntry]
+    # A Bedrock Guardrail applied to the compile path (M15). ADR-0030
+    # deferred guardrails because the SDK's Bedrock client had no guardrail
+    # parameter and an unmeasured filter is a confound. Both halves are
+    # addressed by *measuring* it: the identifier is configured here, and a
+    # guardrail that alters any compiled graph is reported as a confound
+    # rather than shipped as a safety win.
+    guardrail_id: str | None = None
+    guardrail_version: str | None = None
+
+
+class ClaudeCodeProviderConfig(_Model):
+    """The Claude Code CLI, run headless under a Claude subscription (ADR-0031).
+
+    Local-only by design: it authenticates as the person logged in to Claude
+    Code on this machine, which is not an identity that belongs inside cloud
+    infrastructure. The deployed design uses ``aws`` or ``bedrock``.
+    """
+
+    executable: str
+    # Where the CLI runs. Null means a fresh temporary directory per client.
+    # It must not sit below any CLAUDE.md: the CLI auto-discovers them upward
+    # from its working directory, and this repository's build contract is
+    # ~27k tokens that would be injected into every forecasting call.
+    workdir: str | None
+
+
+class ObservabilityConfig(_Model):
+    """Where a second, independent record of spend can be read (M15).
+
+    M8 criterion 3 exits 3 today because there is exactly one record of what
+    was spent -- the meter's own -- and a gate that compares a number to
+    itself cannot fail. Bedrock model-invocation logging is written by AWS
+    rather than by this process, which is what makes it independent.
+
+    Every field is optional and absent means *unreachable*, never
+    *reconciled*: `LedgerReconciliation` already distinguishes those, and
+    "we could not check" must not read as "we checked".
+    """
+
+    aws_invocation_log_group: str | None = None
+    # Routing, explicit as everywhere else (ADR-0028).
+    aws_region: str | None = None
+
+
+class ProvidersConfig(_Model):
+    aws: AWSProviderConfig
+    bedrock: BedrockProviderConfig
+    claude_code: ClaudeCodeProviderConfig
+
+
+SSLMode = Literal["disable", "allow", "prefer", "require", "verify-ca", "verify-full"]
 
 
 class DatabaseConfig(_Model):
@@ -227,6 +475,42 @@ class DatabaseConfig(_Model):
     admin_user: str
     sim_user: str
     eval_user: str
+    # Always written into the connection URL, even when it equals libpq's own
+    # default: an explicit parameter outranks an ambient PGSSLMODE, so the
+    # shell cannot weaken a deployment that asked for verify-full (ADR-0034).
+    sslmode: SSLMode
+    # CA bundle for verify-ca / verify-full. For Aurora, the RDS global bundle.
+    sslrootcert: str | None
+    # `iam` replaces the two application roles' stored secrets with short-lived
+    # RDS tokens signed by the ambient IAM principal (ADR-0034). Identity is
+    # ambient; routing -- the region the token is signed for -- is explicit, as
+    # in ADR-0028. The admin role always uses its stored secret: on Aurora that
+    # secret is generated and rotated by RDS itself, and granting rds_iam to a
+    # role disables its password, which would break that rotation.
+    auth: Literal["stored", "iam"]
+    iam_region: str | None
+
+    @model_validator(mode="after")
+    def _coherent(self) -> DatabaseConfig:
+        """Refuse configurations that would fail late or weaken silently."""
+        if self.sslmode in ("verify-ca", "verify-full") and not self.sslrootcert:
+            raise ValueError(
+                f"database.sslmode={self.sslmode!r} needs database.sslrootcert: without a CA "
+                "bundle libpq cannot verify anything and the connection fails at the first use"
+            )
+        if self.auth == "iam":
+            if not self.iam_region:
+                raise ValueError(
+                    "database.auth='iam' needs database.iam_region: the token is signed for a "
+                    "region, and that must not come from an ambient AWS_REGION (ADR-0028)"
+                )
+            if self.sslmode not in ("verify-ca", "verify-full"):
+                raise ValueError(
+                    "database.auth='iam' needs sslmode verify-ca or verify-full: an IAM token "
+                    "is a bearer credential, and sending one to an unverified server hands it "
+                    "to whoever answers"
+                )
+        return self
 
 
 class LangfuseConfig(_Model):
@@ -259,10 +543,71 @@ class LedgerConfig(_Model):
     metaculus_page_size: int
 
 
+class MarketBaselineConfig(_Model):
+    """The market-at-cutoff benchmark (M14). Reasons are in ``configs/base.yaml``.
+
+    Every value here decides which prices may be *scored*, so each is an
+    explicit, versioned constraint in the same sense as :class:`LedgerConfig`:
+    chosen from how the sources sample, never from an outcome.
+    """
+
+    max_staleness_hours: float = Field(gt=0)
+    lookback_days: int = Field(ge=1)
+    fidelity_minutes: int = Field(ge=1)
+    lookback_fidelity_minutes: int = Field(ge=1)
+    manifold_bets_limit: int = Field(ge=1, le=1000)
+    requests_per_second: float = Field(gt=0)
+
+    @model_validator(mode="after")
+    def _lookback_covers_the_staleness_window(self) -> MarketBaselineConfig:
+        if self.lookback_days * 24 < self.max_staleness_hours:
+            raise ValueError(
+                f"market_baseline.lookback_days ({self.lookback_days}) is shorter than "
+                f"max_staleness_hours ({self.max_staleness_hours}): the fallback window "
+                "could never find a price the first window missed"
+            )
+        return self
+
+
 class CorpusConfig(_Model):
     """Evidence-corpus ingest settings (spec §3.2)."""
 
     target_chunks: int
+    # `target_chunks` is a floor that `corpus verify` asserts; nothing ever made
+    # it a stopping rule, so an unbounded build walks every generated unit --
+    # measured at M10: ~1,460 CC-NEWS files, ~140 GB, against 27 GB of free
+    # disk, on a project whose git store was once destroyed by a full disk.
+    # The build now stops starting new units at this many stored chunks. It is
+    # a ceiling on *work*, not a result: coverage is still judged by
+    # `corpus coverage`, and raising this and re-running resumes where it left.
+    max_chunks: int
+    # How CC-NEWS files are chosen (ADR-0036). `anchored` picks files by their
+    # crawl time relative to each scenario's cutoff; `sweep` is ADR-0023's
+    # month-by-month queue, kept because it needs no listings and is what
+    # every corpus before M12 was built with.
+    ccnews_planning: Literal["sweep", "anchored"]
+    anchor_half_life_days: float = Field(gt=0)
+    anchor_floor_days: float = Field(gt=0)
+    anchor_floor_min_rescued: int = Field(ge=1)
+    anchor_equity: float = Field(ge=1.0)
+    # Files planned per run. The chunk ceiling normally stops a run first; this
+    # bounds the plan, since file sizes vary two-fold and cannot be known ahead.
+    anchor_plan_files: int = Field(ge=0)
+    # Stop starting new units below this much free space on the volume holding
+    # the repository (with Docker Desktop, the same disk the database grows
+    # on). Null disables the check, for a remote database.
+    min_free_disk_gb: float | None
+
+    @model_validator(mode="after")
+    def _ceiling_clears_the_floor(self) -> CorpusConfig:
+        if self.max_chunks < self.target_chunks:
+            raise ValueError(
+                f"corpus.max_chunks ({self.max_chunks:,}) is below corpus.target_chunks "
+                f"({self.target_chunks:,}): the build would stop before `corpus verify` "
+                "could ever pass"
+            )
+        return self
+
     # SEC EDGAR requires a contact address in the User-Agent; see
     # cascade/corpus/fetch.py. Put a real address here before a long ingest.
     contact: str
@@ -278,11 +623,22 @@ class CorpusConfig(_Model):
     enabled_sources: tuple[str, ...]
     gdelt_max_records: int
     fetch_workers: int
+    # Threads chunking a write batch, one batch ahead of the embedding call.
+    # 1 is the serial loop with no thread in it. Any value stores the same
+    # bytes -- it moves *when* a document is chunked, never what comes out.
+    chunk_workers: int = Field(ge=1)
     ccnews_max_files: int
     ccnews_max_records_per_file: int
     coverage_lookback_months: int
     coverage_min_chunks: int
-    wikipedia_max_articles_per_scenario: int
+    # Snapshot passes planned per scenario. Depth 1 is the articles the
+    # scenario's own text names; each further depth is the next window of
+    # links from their as-of leads. Depth is in the unit key, so raising this
+    # adds units and never reopens a finished one. The width of a pass is a
+    # constant of the key scheme (`wikipedia.PASS_TITLES`), not a setting --
+    # a setting would change what a `done` key had covered.
+    wikipedia_depth: int = Field(ge=1, le=99)
+    wikipedia_requests_per_second: float = Field(gt=0, le=5.0)
 
 
 class PathsConfig(_Model):
@@ -332,10 +688,15 @@ class Settings(BaseSettings):
     aperture: ApertureConfig
     retrieval: RetrievalConfig
     ensemble: EnsembleConfig
+    eval: EvalConfig
     budget: BudgetConfig
     flags: FlagsConfig
+    dossier: DossierConfig
     llm: LLMConfig
+    providers: ProvidersConfig
+    observability: ObservabilityConfig = Field(default_factory=ObservabilityConfig)
     ledger: LedgerConfig
+    market_baseline: MarketBaselineConfig
     corpus: CorpusConfig
     database: DatabaseConfig
     langfuse: LangfuseConfig
@@ -352,6 +713,25 @@ class Settings(BaseSettings):
     db_eval_password: SecretStr | None = Field(default=None)
     langfuse_public_key: SecretStr | None = Field(default=None)
     langfuse_secret_key: SecretStr | None = Field(default=None)
+
+    @model_validator(mode="after")
+    def _dossier_needs_its_prompt_revision(self) -> Settings:
+        """Refuse to run reported prompts under an unreported prompt revision.
+
+        Preserves §1.3's audit: enabling the dossier changes what the compiler
+        and every agent read, and ``prompt_revisions`` is only a record of
+        prompt changes if a change cannot happen without a new revision.
+        """
+        if not self.dossier.enabled:
+            return self
+        digits = "".join(ch for ch in self.llm.prompt_rev if ch.isdigit())
+        if not digits or int(digits) < self.dossier.since_prompt_rev:
+            raise ValueError(
+                f"dossier.enabled requires llm.prompt_rev >= r{self.dossier.since_prompt_rev} "
+                f"(got {self.llm.prompt_rev!r}): the situation report changes the compiler and "
+                "agent prompts, and migration 019 records that change as its own revision"
+            )
+        return self
 
     @model_validator(mode="after")
     def _reject_unrecognised_overrides(self) -> Settings:
@@ -448,19 +828,48 @@ class Settings(BaseSettings):
         candidate = Path(raw)
         return candidate if candidate.is_absolute() else REPO_ROOT / candidate
 
+    def pricing_table(self) -> dict[str, PricingEntry]:
+        """The price table of the active provider (ADR-0028).
+
+        Preserves the invariant that a call is priced at the rate of whoever
+        served it. Bedrock is partner-operated and priced separately, so
+        falling back to the first-party table for it would book every Bedrock
+        call at the wrong rate and reconcile against nothing.
+        """
+        provider = self.llm.provider
+        if provider == "anthropic":
+            return self.pricing
+        if provider == "aws":
+            return self.providers.aws.pricing
+        if provider == "bedrock":
+            return self.providers.bedrock.pricing
+        # A subscription bills no tokens, so every model it serves costs zero
+        # in the ledger -- which is the truth, and what makes the M8 ledger
+        # reconciliation report "nothing to reconcile" rather than inventing a
+        # spend. The CLI's notional list-price cost is kept on each recording.
+        zero = PricingEntry(input_per_mtok=Decimal(0), output_per_mtok=Decimal(0))
+        return {self.models.agent: zero, self.models.compiler: zero}
+
     def price_for(self, model: str) -> PricingEntry:
-        """Return the price table entry for ``model``.
+        """Return the active provider's price table entry for ``model``.
 
         Raises rather than defaulting: an unpriced model silently costing $0
         would corrupt the cost ledger, which blocks the report at M8.
         """
+        table = self.pricing_table()
         try:
-            return self.pricing[model]
+            return table[model]
         except KeyError:
-            known = ", ".join(sorted(self.pricing))
+            known = ", ".join(sorted(table)) or "none"
+            section = (
+                "pricing"
+                if self.llm.provider == "anthropic"
+                else f"providers.{self.llm.provider}.pricing"
+            )
             raise KeyError(
-                f"no pricing entry for model {model!r}; known models: {known}. "
-                "Add it to configs/base.yaml -- an unpriced model breaks the cost ledger."
+                f"no pricing entry for model {model!r} under provider "
+                f"{self.llm.provider!r}; known models: {known}. Add it to {section} "
+                "in configs/base.yaml -- an unpriced model breaks the cost ledger."
             ) from None
 
     def phase_ceiling(self, phase: str) -> Decimal:
@@ -472,22 +881,99 @@ class Settings(BaseSettings):
                 f"no budget ceiling configured for phase {phase!r}; known phases: {known}"
             ) from None
 
-    def database_url(self, role: Literal["admin", "sim", "eval"]) -> str:
+    def _database_user(self, role: Literal["admin", "sim", "eval"]) -> str:
+        return {
+            "admin": self.database.admin_user,
+            "sim": self.database.sim_user,
+            "eval": self.database.eval_user,
+        }[role]
+
+    def database_secret(self, role: Literal["admin", "sim", "eval"]) -> str:
+        """The credential ``role`` logs in with: its password, or a fresh IAM token.
+
+        Preserves the invariant that a credential is produced in exactly one
+        place. A token is minted per call and is valid for 15 minutes, which
+        only has to cover the connect: an established session outlives it.
+        """
+        if self.database.auth == "iam" and role != "admin":
+            return _rds_auth_token(
+                host=self.database.host,
+                port=self.database.port,
+                user=self._database_user(role),
+                region=self.database.iam_region or "",
+            )
+        password = {
+            "admin": self.db_admin_password,
+            "sim": self.db_sim_password,
+            "eval": self.db_eval_password,
+        }[role]
+        return password.get_secret_value() if password else ""
+
+    def database_url(
+        self, role: Literal["admin", "sim", "eval"], *, with_secret: bool = True
+    ) -> str:
         """Build a libpq URL for one of the three roles.
 
         Kept here rather than in the DB layer so credentials never need an
-        environment read outside this module.
+        environment read outside this module. The secret is percent-encoded:
+        an RDS-generated password or an IAM token carries ``#``, ``?``, ``%``
+        and ``&``, any of which would silently re-parse the URL around it.
+
+        ``with_secret=False`` is for anything that lands in a process's
+        argument list, where every local user can read it; the caller passes
+        :meth:`database_secret` through ``PGPASSWORD`` instead.
         """
-        user, password = {
-            "admin": (self.database.admin_user, self.db_admin_password),
-            "sim": (self.database.sim_user, self.db_sim_password),
-            "eval": (self.database.eval_user, self.db_eval_password),
-        }[role]
-        secret = password.get_secret_value() if password else ""
+        user = quote(self._database_user(role), safe="")
+        userinfo = user
+        if with_secret:
+            userinfo = f"{user}:{quote(self.database_secret(role), safe='')}"
+        params = [f"sslmode={self.database.sslmode}"]
+        if self.database.sslrootcert:
+            params.append(f"sslrootcert={quote(self.database.sslrootcert, safe='/')}")
         return (
-            f"postgresql://{user}:{secret}@{self.database.host}:"
-            f"{self.database.port}/{self.database.name}"
+            f"postgresql://{userinfo}@{self.database.host}:"
+            f"{self.database.port}/{self.database.name}?{'&'.join(params)}"
         )
+
+
+def _rds_auth_token(*, host: str, port: int, user: str, region: str) -> str:
+    """Mint an RDS IAM authentication token for ``user`` (ADR-0034).
+
+    boto3 is imported lazily -- it lives in the ``aws`` extra, and nothing
+    local needs it. Signing is local computation over the ambient IAM
+    credentials; no request is sent.
+    """
+    try:
+        import boto3
+    except ImportError as exc:
+        raise RuntimeError(
+            "database.auth='iam' needs boto3: install the `aws` extra (uv sync --extra aws)"
+        ) from exc
+    client = boto3.client("rds", region_name=region)
+    return str(client.generate_db_auth_token(DBHostname=host, Port=port, DBUsername=user))
+
+
+OVERLAY_DIRECTORIES: tuple[str, ...] = ("ablations", "supplementary", "tuning")
+"""Where an overlay name is looked up, in order.
+
+``ablations`` holds Appendix C's twelve cells and nothing else. ``supplementary``
+holds comparisons declared in ``cascade/eval/supplementary.py``. ``tuning``
+holds variants under development, which the evaluation harness will run and
+score on the dev partition only (``cascade/eval/split.py``).
+"""
+
+
+def overlay_kind(overlay: str) -> str | None:
+    """Which overlay directory ``overlay`` resolves from, or ``None``.
+
+    Preserves the distinction the dev/test guard rests on: whether a
+    configuration is a declared study configuration or a tuning variant is a
+    fact about where its file lives, read from disk, not a claim a caller makes.
+    """
+    for kind in OVERLAY_DIRECTORIES:
+        if (REPO_ROOT / "configs" / kind / f"{overlay}.yaml").is_file():
+            return kind
+    return None
 
 
 @lru_cache(maxsize=8)
@@ -498,9 +984,19 @@ def _cached_settings(overlay: str | None) -> Settings:
     base = Settings()
     if overlay is None:
         return base
-    overlay_path = REPO_ROOT / "configs" / "ablations" / f"{overlay}.yaml"
-    if not overlay_path.is_file():
-        raise FileNotFoundError(f"ablation overlay not found: {overlay_path}")
+    # Appendix C's twelve cells live in `ablations/` and a test asserts there are
+    # exactly twelve files there. Supplementary cells are declared beside them
+    # rather than among them, so adding one cannot be mistaken for a thirteenth
+    # ablation cell -- or enter the twelve's Holm family by being listed.
+    candidates = [REPO_ROOT / "configs" / kind / f"{overlay}.yaml" for kind in OVERLAY_DIRECTORIES]
+    overlay_path = next((path for path in candidates if path.is_file()), None)
+    if overlay_path is None:
+        raise FileNotFoundError(
+            f"ablation overlay not found: {candidates[0]} (nor a supplementary or tuning "
+            f"overlay named {overlay!r}; looked in configs/"
+            + ", configs/".join(OVERLAY_DIRECTORIES)
+            + ")"
+        )
     with overlay_path.open("r", encoding="utf-8") as handle:
         patch = yaml.safe_load(handle) or {}
     merged = _deep_merge(base.model_dump(mode="python"), patch)
@@ -552,10 +1048,41 @@ def child_environment(**overrides: str) -> dict[str, str]:
     return env
 
 
+# Variables that attach a process to a running Claude Code session. A child CLI
+# that inherited them would try to report into *this* session rather than run
+# as an independent headless call.
+_CLAUDE_SESSION_PREFIXES = ("CLAUDECODE", "CLAUDE_CODE_", "CLAUDE_PID", "CLAUDE_EFFORT")
+
+# Credentials that would silently switch the CLI from the subscription to
+# per-token API billing -- the "#1 auth trap" in the SDK's own documentation.
+# The pay-as-you-go path is `llm.provider: anthropic`; keeping the two apart is
+# what makes switching between them a configuration change and not a surprise.
+_CLI_CREDENTIAL_OVERRIDES = ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN")
+
+
+def claude_cli_environment() -> dict[str, str]:
+    """The environment ``claude -p`` runs with (ADR-0031).
+
+    Inherits PATH, HOME and the keychain access the subscription login needs,
+    then removes the session-attachment variables and any API credential, and
+    turns extended thinking off. Thinking is off on the API path, so leaving
+    the CLI's default on would change the model's behaviour between providers
+    (measured: 235 of 254 output tokens were thinking on a one-line answer).
+    """
+    env = {
+        name: value
+        for name, value in sorted(os.environ.items())
+        if not name.startswith(_CLAUDE_SESSION_PREFIXES) and name not in _CLI_CREDENTIAL_OVERRIDES
+    }
+    env["MAX_THINKING_TOKENS"] = "0"
+    return env
+
+
 def load_settings(overlay: str | None = None) -> Settings:
     """Load configuration, optionally overlaid with an ablation cell.
 
-    ``overlay`` names a file in ``configs/ablations/`` without its extension.
+    ``overlay`` names a file in one of :data:`OVERLAY_DIRECTORIES` under
+    ``configs/``, without its extension.
     Results are cached so repeated calls in one process return an identical
     object -- config is immutable within a run by construction.
     """

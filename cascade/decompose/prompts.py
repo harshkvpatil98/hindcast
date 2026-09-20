@@ -34,6 +34,7 @@ from cascade.decompose.validator import (
     MAX_INBOUND_WEIGHT,
     OBJECTIVE_SIMILARITY_MAX,
 )
+from cascade.quoting import EVIDENCE_RULE, quote_documents
 
 # Spec §7.2: the simulation advances (resolve_ts - cutoff_ts) / 24 per step.
 # Quoted into the prompt so the compiler can size `volatility` against the
@@ -152,6 +153,8 @@ CRITIQUE_TOOL = _tool(
 # ---------------------------------------------------------------------------
 
 SYSTEM_PROMPT = f"""\
+{EVIDENCE_RULE}
+
 You are Lathe, the causal decomposition compiler for a strategic forecasting
 system. You convert a resolved-in-the-past forecasting question into a typed
 causal graph that a multi-agent simulation will execute for 24 discrete steps.
@@ -288,18 +291,24 @@ STOOD, not the path to a known ending.
 """
 
 
+# The compiler sees whole chunks; the cap is the chunker's own 512-token
+# ceiling in characters, so nothing is truncated that was stored.
+EVIDENCE_EXCERPT_CHARS = 4096
+
+
 def _render_evidence(chunks: list[tuple[str, str, str]]) -> str:
-    """Render retrieved evidence as ``[n] date source: body`` blocks."""
+    """Render retrieved evidence as numbered quoted documents (ADR-0045)."""
     if not chunks:
         return (
             "(No pre-cutoff evidence was retrievable for this scenario. Build the "
             "graph from the question and resolution criterion alone, and prefer "
             "generic structural actors over specific named ones you cannot verify.)"
         )
-    lines = []
-    for index, (published, source, body) in enumerate(chunks, start=1):
-        lines.append(f"[{index}] {published} · {source}\n{body.strip()}")
-    return "\n\n".join(lines)
+    return quote_documents(
+        [(published, source, body.strip()) for published, source, body in chunks],
+        excerpt_chars=EVIDENCE_EXCERPT_CHARS,
+        empty="",
+    )
 
 
 def draft_user_prompt(
@@ -309,14 +318,28 @@ def draft_user_prompt(
     cutoff_iso: str,
     party_names: tuple[str, ...],
     chunks: list[tuple[str, str, str]],
+    situation: str = "",
 ) -> str:
-    """The per-scenario message for the draft pass (spec §5.2)."""
+    """The per-scenario message for the draft pass (spec §5.2).
+
+    ``situation`` is the rendered dossier (ADR-0037). Empty, the message is
+    byte-identical to the one sent before the dossier existed, so a
+    configuration with it off keeps resolving its recordings.
+    """
     parties = ", ".join(party_names) if party_names else "(none recorded)"
+    report = (
+        "# Situation report\nBuilt from a wider set of pre-cutoff documents than the "
+        "evidence below; every line was checked against the documents it came from.\n\n"
+        f"{situation}\n\n"
+        if situation
+        else ""
+    )
     return (
         f"# Question\n{question}\n\n"
         f"# Resolution criterion\n{resolution_criterion}\n\n"
         f"# Cutoff\n{cutoff_iso} — all evidence below predates this instant.\n\n"
         f"# Parties named in the registry\n{parties}\n\n"
+        f"{report}"
         f"# Evidence\n{_render_evidence(chunks)}\n\n"
         "Emit the causal graph with the emit_causal_graph tool."
     )

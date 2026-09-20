@@ -54,6 +54,10 @@ PINNED_STACK: tuple[StackEntry, ...] = (
     StackEntry("httpx", "httpx", ">=0.27"),
     StackEntry("pyyaml", "PyYAML", ">=6.0"),
     StackEntry("langfuse", "langfuse", ">=2.50,<3"),
+    # SigV4 signing for the AWS providers (ADR-0028). Pulled in by the SDK's
+    # own `aws`/`bedrock` extras; absent, only `llm.provider: anthropic` works.
+    StackEntry("boto3", "boto3", ">=1.28.57,<2", required=False, extra="aws"),
+    StackEntry("botocore", "botocore", ">=1.31.57,<2", required=False, extra="aws"),
     StackEntry("pytest", "pytest", ">=8.2", required=False, extra="dev"),
     StackEntry("hypothesis", "hypothesis", ">=6.100", required=False, extra="dev"),
     StackEntry("mypy", "mypy", ">=1.10", required=False, extra="dev"),

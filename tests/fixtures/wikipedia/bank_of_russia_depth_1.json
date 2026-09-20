@@ -1,0 +1,457 @@
+{
+ "exchanges": [
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2026–27 Meeting season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2026–27 Bank of Russia season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2026 in Meeting"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2026 in Bank of Russia"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2026 Meeting season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2026 Meeting"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2026 Bank of Russia season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2026 Bank of Russia"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2025–26 Meeting season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2025–26 Bank of Russia season"
+      },
+      {
+       "lastrevid": 1374341007,
+       "length": 440416,
+       "ns": 0,
+       "pageid": 25391,
+       "title": "Russia"
+      },
+      {
+       "lastrevid": 1356533993,
+       "length": 11317,
+       "ns": 0,
+       "pageid": 228005,
+       "title": "Meeting"
+      },
+      {
+       "lastrevid": 137892281,
+       "length": 35,
+       "ns": 0,
+       "pageid": 911912,
+       "redirect": true,
+       "title": "Bank of Russia"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "info",
+    "titles": "2025–26 Bank of Russia season|2025–26 Meeting season|2026 Bank of Russia|2026 Bank of Russia season|2026 Meeting|2026 Meeting season|2026 in Bank of Russia|2026 in Meeting|2026–27 Bank of Russia season|2026–27 Meeting season|Bank of Russia|Meeting|Russia"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20040819132347|16705025"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 911912,
+       "revisions": [
+        {
+         "parentid": 16705025,
+         "revid": 137892281,
+         "slots": {
+          "main": {
+           "content": "#redirect[[Central Bank of Russia]]",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2007-06-13T13:21:22Z"
+        }
+       ],
+       "title": "Bank of Russia"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-05-04T18:20:18Z",
+    "titles": "Bank of Russia"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20260424154426|1350878674"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 749283,
+       "revisions": [
+        {
+         "parentid": 1350878674,
+         "revid": 1351490731,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Central Bank of the Russian Federation}}\n{{Use dmy dates|date=April 2020}}\n{{Infobox central bank\n| name = Central Bank of the Russian Federation\n| native_name = {{nobold|Центральный банк Российской Федерации}}\n| logo = CBRF logo.svg\n| logo_size = 222px\n| image = Moscow RussiaCentralBank M00.jpg\n| caption = Head office erected in 1894 as the Moscow branch of the [[State Bank of the Russian Empire]]\n| headquarters = 12 [[Neglinnaya Street]], Moscow, Russia\n| coordinates = {{Coord|55|45|47|N|37|37|17|E|type:landmark_region:RU_source:kolossus-frwiki|display=inline,title}}\n| established = {{Start date and age|1860}} (original institution)<br/>{{Start date and age|df=y|1990|7|13}} (Bank of the RSFSR)<br/> {{Start date and age|df=y|1991|12|25}} (current name)\n| executive_title = Governor\n| executive = [[Elvira Nabiullina]]\n| bank_of = [[Russia]]<ref>{{cite web |url=https://d-nb.info/1138787981/34 |title=The Organisation and Structure ofCentral Banks |last=Weidner |first=Jan |date=2017-04-20 |website=portal.dnb.de |publisher=Technische Universität Darmstadt |agency= |location=Darmstadt |pages=296 |language=en |type= |format=pdf |access-date=2021-12-21 |url-status=live |archive-url=https://web.archive.org/web/20200528003901/https://d-nb.info/1138787981/34 |archive-date=28 May 2020 }}</ref>\n| currency = [[Russian ruble]]\n| currency_iso = RUB\n| reserves = {{US$|387.1 billion|link=yes}} ({{as of|2025|10|lc=y}})<ref>{{cite web|url=https://www.ceicdata.com/en/indicator/russia/foreign-exchange-reserves |title=Russia Foreign Exchange Reserves, 2002 – 2025|author=CEIC Data|access-date=20 January 2026|url-status=live}}</ref>{{efn|The Russian CB formally continues to include the approx. $320 billion in assets frozen abroad in its reserves figure}}\n| reserve_requirements = [[International Reserves of the Russian Federation|International Reserves]]\n| borrowing_rate = 14.50%<ref>{{Cite web |title=Bank of Russia cuts the key rate by 50 bp to 14.50% p.a. |url=https://www.cbr.ru/eng/press/pr/?file=24042026_133000key_e.htm |date=24 April 2026 |access-date=24 April 2026 |publisher=Bank of Russia}}</ref>\n| deposit_rate = \n| excess_reserves = \n| website = {{url|https://cbr.ru/eng/|cbr.ru/eng}}\n| predecessor = [[State Bank of the USSR]]\n| successor = \n| footnotes = \n}}\n\nThe '''Central Bank of the Russian Federation''' ({{Langx|ru|Центральный банк Российской Федерации}}), commonly known as the '''Bank of Russia''' ({{langx|ru|Банк России|}}) or '''CB''' ({{Langx|ru|ЦБ}}),<ref name=\"about\">{{Cite web |title=About Bank of Russia |url=https://cbr.ru/eng/about_BR/ |access-date=2022-05-28 |website=cbr.ru |archive-date=28 May 2022 |archive-url=https://web.archive.org/web/20220528004744/https://cbr.ru/eng/about_BR/ |url-status=live }}</ref><ref>{{Cite web |title=О Банке России {{!}} Банк России |url=https://cbr.ru/about_br/ |access-date=2022-05-28 |website=cbr.ru |archive-date=3 June 2022 |archive-url=https://web.archive.org/web/20220603070817/http://cbr.ru/about_BR/ |url-status=live }}</ref> also called the '''Central Bank of Russia''' (CBR),<ref>{{Cite web |title=Constitution of the Russian Federation |url=http://archive.government.ru/eng/gov/base/54.html#:~:text=exclusively%20by%20the-,Central%20Bank%20of%20the%20Russian%20Federation,-.%20The%20introduction%20and |access-date=2022-05-28 |website=Government of the Russian Federation archive.government.ru |archive-date=25 October 2014 |archive-url=https://web.archive.org/web/20141025145422/http://archive.government.ru/eng/gov/base/54.html#:~:text=exclusively%20by%20the-,Central%20Bank%20of%20the%20Russian%20Federation,-.%20The%20introduction%20and |url-status=live }}</ref><ref>{{Cite web |title=Конституция Российской Федерации / Constitution of the Russian Federation (in Russian) |url=http://archive.government.ru/special/gov/base/54.html#:~:text=%D0%A6%D0%B5%D0%BD%D1%82%D1%80%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%BC%20%D0%B1%D0%B0%D0%BD%D0%BA%D0%BE%D0%BC%20%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D0%B9%D1%81%D0%BA%D0%BE%D0%B9%20%D0%A4%D0%B5%D0%B4%D0%B5%D1%80%D0%B0%D1%86%D0%B8%D0%B8 |access-date=2022-05-28 |website=Government of the Russian Federation archive.government.ru |archive-date=29 July 2021 |archive-url=https://web.archive.org/web/20210729084754/http://archive.government.ru/special/gov/base/54.html#:~:text=%D0%A6%D0%B5%D0%BD%D1%82%D1%80%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%BC%20%D0%B1%D0%B0%D0%BD%D0%BA%D0%BE%D0%BC%20%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D0%B9%D1%81%D0%BA%D0%BE%D0%B9%20%D0%A4%D0%B5%D0%B4%D0%B5%D1%80%D0%B0%D1%86%D0%B8%D0%B8 |url-status=live }}</ref><ref name=\":0\">{{Cite web |date=2022-03-03 |title=Federal Register / Vol. 87, No. 42 / Thursday, March 3, 2022 / Notices |url=https://www.govinfo.gov/content/pkg/FR-2022-03-03/pdf/2022-04412.pdf |access-date=2022-05-27 |website=United States Department of the Treasury |archive-date=3 March 2022 |archive-url=https://web.archive.org/web/20220303092023/https://www.govinfo.gov/content/pkg/FR-2022-03-03/pdf/2022-04412.pdf |url-status=live }}</ref> is the [[central bank]] of the [[Russia|Russian Federation]]. The bank was established on 13 July 1990.<ref name=\":0\" /> It traces its beginnings to the [[State Bank of the Russian Empire]] established in 1860.<ref>History of the Bank of Russia. 1860–2010. In 2 vols. Ed.: Y. A. Petrov, S. Tatarinov. 2010.</ref> \n\nThe bank is headquartered on [[Neglinnaya Street]] in Moscow. Its functions are described in the [[Constitution of Russia]] (Article 75),<ref>{{Cite web |title=Constitution of the Russian Federation |url=http://archive.government.ru/eng/gov/base/54.html#:~:text=and%20cultural%20values.-,Article%2075,-1.%20The%20monetary |access-date=2022-05-28 |website=Government of the Russian Federation archive.government.ru |archive-date=25 October 2014 |archive-url=https://web.archive.org/web/20141025145422/http://archive.government.ru/eng/gov/base/54.html#:~:text=and%20cultural%20values.-,Article%2075,-1.%20The%20monetary |url-status=live }}</ref> as well as in federal law.<ref name=\"about\"/>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2026-04-28T08:27:01Z"
+        }
+       ],
+       "title": "Central Bank of Russia"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-05-04T18:20:18Z",
+    "titles": "Central Bank of Russia"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20260109171027|1332055354"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 228005,
+       "revisions": [
+        {
+         "parentid": 1332055354,
+         "revid": 1332380424,
+         "slots": {
+          "main": {
+           "content": "{{short description|Event in which two or more people assemble, planned in advance to facilitate discussion}}\n{{About|meetings in general|meetings in organizations that use parliamentary procedure|Meeting (parliamentary procedure)|multi-event athletic competitions|Track and field#Meetings|other uses}}\n[[File:Sitzung von Wiki Loves Broadcast im Kontor Hamburg.jpg|thumb|Hybrid meeting: People meet in person and connect digitally with others]]\n\nA '''meeting''' is when two or more [[Homo sapiens|people]] come together to discuss one or more topics, often in a formal or business setting, but meetings also occur in a variety of other environments. Meetings can be used as form of [[group decision-making]] and as a setting for sharing of [[Business intelligence|information]]<ref>Dima Eremin (June 27, 2024)\n·[https://www.bluedothq.com/blog/business-meeting-most-common-types-and-how-to-run-it-effectively Business Meeting: Most Common Types And How To Run It Effectively] bluedothq</ref> or [[Intelligence (information)|intelligence]].\n\n== Definition ==\n\nA meeting refers to a gathering with a specific agenda and not just mere gathering of people casually talking to each other.<ref name=\"pi\"/> Meetings may occur face-to-face or virtually, as mediated by communications technology, such as a [[conference call|telephone conference call]], a [[Skype|skyped conference call]] or a [[videoconferencing|videoconference]]. Merriam-Webster dictionary defines a meeting as \"an act or process of coming together\" - for example \"as [...] an assembly for a common purpose [...]\".<ref name=\"pu\">[http://www.merriam-webster.com/dictionary/meeting Meeting – Definition and More from the Free Merriam-Webster Dictionary]. (n.d.). Dictionary and Thesaurus – Merriam-Webster Online. Retrieved 2016-02-04.</ref>\n\n[[Meeting planner]]s and other meeting [[professional]]s may use the term \"meeting\" to denote an event booked at a hotel, [[convention center]] or any other venue dedicated to such gatherings.<ref name=\"pi\">[http://www.bls.gov/oco/ocos298.htm Meeting and Convention Planners]. (2009, December 17). [[U.S. Bureau of Labor Statistics]]. Retrieved April 21, 2010.</ref><ref>\n{{cite book\n| last1                 = Montgomery\n| first1                = Rhonda J.\n| last2                 = Strick\n| first2                = Sandra K.\n| title                 = Meetings, Conventions, and Expositions: An Introduction to the Industry\n| url                   = https://books.google.com/books?id=bgWRbYjTLVsC\n| location              = New York\n| publisher             = [[John Wiley & Sons|Wiley]]\n| date      = 1994\n| isbn                  = 9780471284390\n| access-date            = 2016-02-04\n}}\n</ref>\n\nAnthropologist Helen B. Schwartzman defines a meeting as \"a communicative event involving three or more people who agree to assemble for a purpose ostensibly related to the functioning of an organization or group.\"<ref name=\":0\">{{Cite book|last=Schwartzman|first=Helen B.|title=The Meeting : Gatherings in Organizations and Communities|date=1989|publisher=Springer US|isbn=978-1-4899-0885-8|pages=7|oclc=859586941}}</ref> For her, meetings are characterized by \"multiparty talk that is episodic in nature, and participants either develop or use specific conventions for regulating this talk.\"<ref name=\":0\" />\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2026-01-11T15:20:08Z"
+        }
+       ],
+       "title": "Meeting"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-05-04T18:20:18Z",
+    "titles": "Meeting"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20260502153746|1352177072"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 25391,
+       "revisions": [
+        {
+         "parentid": 1352177072,
+         "revid": 1352177325,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Country in Eastern Europe and North Asia}}\n{{About|the country}}\n{{pp-extended|small=yes}}\n{{pp-move}}\n{{Use British English|date=September 2022}}\n{{Use dmy dates|date=January 2026|cs1-dates=l}}\n{{Infobox country\n| conventional_long_name = Russian Federation\n| common_name            = Russia\n| linking_name           = Russia\n| native_name            = {{lang|ru|Российская Федерация}}\n| image_flag             = Flag of Russia.svg\n| image_coat             = Coat of Arms of the Russian Federation.svg\n| national_anthem        = <br />{{nowrap|{{lang|ru|Государственный гимн Российской Федерации}}}}<br />{{tlit|ru|Gosudarstvennyy gimn Rossiyskoy Federatsii}}<br />\"[[State Anthem of the Russian Federation]]\"{{parabr}}{{center|[[File:National Anthem of Russia (2000), instrumental, one verse.ogg]]}}\n| image_map              = {{Switcher|[[File:Russian Federation (orthographic projection) - All Territorial Disputes.svg|frameless]]{{parabr}}{{Legend|#336830|Recognised territory}}\n{{Legend|#61E760|Claimed but internationally unrecognised<!--Start of note--------------------------->{{Efn|[[Crimea]], which was [[Annexation of Crimea by the Russian Federation|annexed by Russia]] in 2014, remains [[United Nations General Assembly Resolution 68/262|internationally recognised]] as a part of Ukraine.<ref name=\"Pifer-2020\">{{cite web |last=Pifer |first=Steven |url=https://www.brookings.edu/blog/order-from-chaos/2020/03/17/crimea-six-years-after-illegal-annexation/ |title=Crimea: Six years after illegal annexation |publisher=[[Brookings Institution]] |date=17 March 2020 |access-date=30 November 2021 |archive-date=14 April 2022 |archive-url=https://web.archive.org/web/20220414045104/https://www.brookings.edu/blog/order-from-chaos/2020/03/17/crimea-six-years-after-illegal-annexation/ |url-status=live}}</ref> Donetsk, Luhansk, Kherson, and Zaporizhzhia oblasts, which were [[Russian annexation of Donetsk, Kherson, Luhansk and Zaporizhzhia oblasts|annexed]]—though are only partially occupied—in 2022, also remain [[United Nations General Assembly Resolution ES-11/4|internationally recognised]] as a part of Ukraine. The southernmost [[Kuril Islands]] have been the subject of a [[Kuril Islands dispute|territorial dispute]] with Japan since their occupation by the Soviet Union at the end of World War II.<ref name=\"Chapple-2019\" />}}\n<!--End of note---------------------------->}}|Show globe|[[File:Map of Russia-en.svg|frameless]]|Show region with labels|[[File:Europe-Russia.svg|frameless]]|Show map of Europe|default=1}}<!--End of map switcher template-->\n| map_caption            =\n| capital                = [[Moscow]]\n| coordinates            = {{Coord|55|45|21|N|37|37|02|E|type:city}}\n| largest_city           = capital\n| languages_type         = Official language<br />{{nobold|and national language}}\n| languages              = [[Russian language|Russian]]<ref name=\"Chevalier-2006\">{{cite journal |last=Chevalier |first=Joan F. |title=Russian as the National Language: An Overview of Language Planning in the Russian Federation |jstor=43669126 |journal=Russian Language Journal |pages=25–36 |volume=56 |year=2006 |issue=1 |publisher=American Councils for International Education ACTR / ACCELS |doi=10.70163/0036-0252.1233}}</ref>\n| languages2_type        = {{nobold|Recognised regional languages}}\n| languages2             = 35 [[Languages of Russia#Official languages|regional official languages]]<ref>{{cite web |title=What Languages Are Spoken in Russia? |url=https://www.worldatlas.com/articles/what-languages-are-spoken-in-russia.html |website=WorldAtlas |access-date=19 February 2024 |date=1 August 2017 |archive-date=19 February 2024 |archive-url=https://web.archive.org/web/20240219124154/https://www.worldatlas.com/articles/what-languages-are-spoken-in-russia.html |url-status=live}}</ref>\n| ethnic_groups          = {{unbulleted list\n | 71.7% [[Russians|Russian]]\n | 3.2% [[Tatars|Tatar]]\n | 1.1% [[Bashkirs|Bashkir]]\n | 1.1% [[Chechens|Chechen]]\n | 11.3% [[Ethnic groups in Russia|other]]\n | 11.6% not reported\n }}\n| ethnic_groups_year     = 2021; including [[Crimea]]\n| ethnic_groups_ref      = <ref>{{cite web |script-title=ru:Национальный состав населения |url=https://rosstat.gov.ru/storage/mediabank/Tom5_tab1_VPN-2020.xlsx |publisher=[[Federal State Statistics Service (Russia)|Federal State Statistics Service]] |access-date=30 December 2022 |archive-date=30 December 2022 |archive-url=https://web.archive.org/web/20221230204643/https://rosstat.gov.ru/storage/mediabank/Tom5_tab1_VPN-2020.xlsx |url-status=live |language=ru}}</ref>\n| religion               = {{ublist|item_style=white-space:nowrap;\n|{{Tree list}}\n*63% [[Christianity in Russia|Christianity]]\n**61% [[Russian Orthodox Church|Eastern</br>Orthodoxy]]\n**2% [[List of Christian denominations|other Christian]]\n{{Tree list/end}}\n*23% [[Irreligion in Russia|no religion]]\n*8% [[Islam in Russia|Islam]]\n*2% [[Religion in Russia|other religion]]\n*5% not answered\n}}\n| religion_year          = 2026\n| religion_ref           = <ref name=\"FOM\">{{cite web |author=<!-- Staff writer(s); no by-line. --> |year=2026 |title=Русская православная церковь |trans-title=Russian Orthodox Church |url=https://fom.ru/TSennosti/15325 |access-date=April 11, 2026 |website=[[:ru:Фонд «Общественное мнение»|Public Opinion Foundation]] |language=ru }}</ref>\n| demonym                = Russian\n| government_type        = Federal [[semi-presidential republic]]<ref name=\"cia\"/> under an [[Authoritarianism|authoritarian]]<ref>{{cite web |title=Russia: Freedom in the World 2023 Country Report |website=Freedom House |date=9 March 2023 |url=https://freedomhouse.org/country/russia/freedom-world/2023 |access-date=17 April 2023 |archive-date=11 March 2023 |archive-url=https://web.archive.org/web/20230311093511/https://freedomhouse.org/country/russia/freedom-world/2023 |url-status=live}}</ref><ref name=\"Kuzio-2016\"/> dictatorship<ref name=\"Krzywdzinski\">{{cite book |first=Martin |last=Krzywdzinski |year=2020 |title=Consent and Control in the Authoritarian Workplace: Russia and China Compared |publisher=[[Oxford University Press]] |page=252 |isbn=978-0-19-252902-2 |url={{GBurl |id=gz5MDwAAQBAJ |p=252}} |quote=''officially a democratic state with the rule of law, in practice an authoritarian dictatorship''}}</ref><ref name=\"o730\">{{cite journal |last=Fischer |first=Sabine |title=Russia on the road to dictatorship |journal=SWP Comment |year=2022 |publisher=Stiftung Wissenschaft und Politik (SWP), German Institute for International and Security Affairs |doi=10.18449/2022C30 |url=https://www.swp-berlin.org/10.18449/2022C30/ |access-date=24 July 2024 |page= |archive-date=24 July 2024 |archive-url=https://web.archive.org/web/20240724183023/https://www.swp-berlin.org/10.18449/2022C30/ |url-status=live}}</ref><!--- Before adding [[Dominant-party system]] here, discuss in the talk page, additions before any consensus will be challenged and removed. --->\n| leader_title1          = [[President of Russia|President]]\n| leader_name1           = [[Vladimir Putin]]\n| leader_title2          = [[Prime Minister of Russia|Prime Minister]]\n| leader_name2           = [[Mikhail Mishustin]]\n| legislature            = [[Federal Assembly (Russia)|Federal Assembly]]\n| upper_house            = [[Federation Council (Russia)|Federation Council]]\n| lower_house            = [[State Duma]]\n| sovereignty_type       = [[History of Russia|Formation]]\n| established_event1     = {{nowrap|[[Kievan Rus']]}}\n| established_date1      = 882\n| established_event2     = {{nowrap|[[Vladimir-Suzdal]]}}\n| established_date2      = 1125\n| established_event3     = [[Grand Principality of Moscow]]\n| established_date3      = 1263\n| established_event4     = [[Tsardom of Russia]]\n| established_date4      = 16 January 1547\n| established_event5     = [[Russian Empire]]\n| established_date5      = 2 November 1721\n| established_event6     = {{nowrap|[[February Revolution|Monarchy abolished]]}}\n| established_date6      = 15 March 1917\n| established_event7     = {{nowrap|[[Soviet Union]]}}\n| established_date7      = 30 December 1922\n| established_event8     = {{nowrap|[[Declaration of State Sovereignty of the Russian Soviet Federative Socialist Republic|Declaration of State<br />Sovereignty]]}}\n| established_date8      = 12 June 1990\n| established_event9     = {{nowrap|[[Belovezha Accords|Russian Federation]]}}\n| established_date9      = 12 December 1991\n| established_event10    = [[Constitution of Russia|Current constitution]]\n| established_date10     = 12 December 1993\n| area_km2               = 17,098,246\n| area_footnote          = <ref>{{cite web |url=https://unstats.un.org/unsd/publications/pocketbook/files/world-stats-pocketbook-2016.pdf#page=182 |title=World Statistics Pocketbook 2016 edition |publisher=United Nations Department of Economic and Social Affairs. Statistics Division |access-date=24 April 2018 |archive-date=4 August 2019 |archive-url=https://web.archive.org/web/20190804041700/https://unstats.un.org/unsd/publications/pocketbook/files/world-stats-pocketbook-2016.pdf#page=182 |url-status=live}}</ref> (within internationally recognised borders)\n| percent_water          = 13<ref>{{cite web |title=The Russian federation: general characteristics |url=http://www.gks.ru/scripts/free/1c.exe?XXXX09F.2.1/010000R |archive-url=https://web.archive.org/web/20110728064121/http://www.gks.ru/scripts/free/1c.exe?XXXX09F.2.1%2F010000R |archive-date=28 July 2011 |website=Federal State Statistics Service |access-date=5 April 2008}}</ref> (including swamps)\n| population_estimate    = {{plainlist|\n* {{DecreaseNeutral}} 146,028,325<ref>Including 2,459,276 people living on the [[Annexation of Crimea by the Russian Federation|annexed Crimean Peninsula]]</ref>\n* {{nowrap|(including Crimea)<ref name=\"gks.ru-popul\">{{cite web |url=https://rosstat.gov.ru/storage/mediabank/PrPopul2025_Site.xlsx |format=XLSX |script-title=ru:Предварительная оценка численности постоянного населения  на 1 января 2025 года |trans-title=Preliminary estimate of the permanent population as of January 1, 2025 |language=ru |work=[[Federal State Statistics Service (Russia)|Russian Federal State Statistics Service]] |access-date=10 March 2025 |archive-date=7 April 2025 |archive-url=https://web.archive.org/web/20250407172042/https://rosstat.gov.ru/storage/mediabank/PrPopul2025_Site.xlsx |url-status=live}}</ref>}}\n* {{DecreaseNeutral}} 143,569,049\n* (excluding Crimea)}}\n| population_estimate_year = 2025\n| population_estimate_rank = 9th\n| population_density_km2 = 8.4\n| population_density_sq_mi = 21.5\n| population_density_rank = 187th\n| GDP_PPP                = {{increase}} $7.525 trillion<ref name=\"IMFWEO.RU\">{{cite web |url=https://data.imf.org/en/Data-Explorer?datasetUrn=IMF.RES:WEO(9.0.0) |title=World Economic Outlook Database (April 2026 Edition) |publisher=[[International Monetary Fund]] |website=www.imf.org |date=14 April 2026 |access-date=18 April 2026}}</ref>\n| GDP_PPP_year           = 2026\n| GDP_PPP_rank           = 4th\n| GDP_PPP_per_capita     = {{increase}} $52,479<ref name=\"IMFWEO.RU\"/>\n| GDP_PPP_per_capita_rank = 43rd\n| GDP_nominal            = {{increase}} $2.656 trillion<ref name=\"IMFWEO.RU\"/>\n| GDP_nominal_year       = 2026\n| GDP_nominal_rank       = 9th\n| GDP_nominal_per_capita = {{increase}} $18,525<ref name=\"IMFWEO.RU\"/>\n| GDP_nominal_per_capita_rank = 66th\n| Gini                   = 36.0 <!--number only-->\n| Gini_year              = 2020\n| Gini_change            = decrease <!--increase/decrease/steady-->\n| Gini_ref               = <ref>{{cite web |url=https://data.worldbank.org/indicator/SI.POV.GINI?locations=RU |title=GINI index (World Bank estimate) – Russian Federation |publisher=World Bank |access-date=23 June 2022 |archive-date=20 April 2017 |archive-url=https://web.archive.org/web/20170420201540/https://data.worldbank.org/indicator/SI.POV.GINI?locations=RU |url-status=live}}</ref>\n| HDI                    = 0.832\n| HDI_year               = 2023<!-- Please use the year to which the data refers, not the publication year. -->\n| HDI_change             = increase\n| HDI_ref                = <ref name=\"UNHDR\">{{Cite web |date=6 May 2025 |title=Human Development Report 2025 |url=https://hdr.undp.org/system/files/documents/global-report-document/hdr2025reporten.pdf |url-status=live |archive-url=https://web.archive.org/web/20250506051232/https://hdr.undp.org/system/files/documents/global-report-document/hdr2025reporten.pdf |archive-date=6 May 2025 |access-date=6 May 2025 |publisher=[[United Nations Development Programme]]}}</ref>\n| HDI_rank               = 64th\n| currency               = [[Russian ruble]] ([[₽]])\n| currency_code          = RUB\n| utc_offset             = [[Time in Russia|+2 to +12]]\n| drives_on              = right\n| calling_code           = [[Telephone numbers in Russia|+7]]\n| cctld                  = {{unbulleted list |[[.ru]]|{{langx|ru|[[.рф]]|label=none}}}}\n}}\n'''Russia''',{{efn|{{langx|ru|Россия|Rossiya|engvar=gb}}, {{IPA|ru|rɐˈsʲijə|}}}} or the '''Russian Federation''',<!-- Both names are equally official - see: [[Talk:Russia/Archive 12#Equality of the names]]. -->{{efn|{{langx|ru|Российская Федерация|Rossiyskaya Federatsiya|engvar=gb}}, {{IPA|ru|rɐˈsʲijskəjə fʲɪdʲɪˈratsɨjə|IPA}}}} is a country in [[Eastern Europe]] and [[North Asia]]. It is the [[list of countries and dependencies by area|largest country in the world]], spanning [[Time in Russia|eleven time zones]] and sharing [[Borders of Russia|land borders with fourteen countries]].{{efn|The fourteen countries bordering Russia are<ref>{{Citation |title=Russia |year=2022 |url=https://www.cia.gov/the-world-factbook/countries/russia/#geography |work=The World Factbook |publisher=Central Intelligence Agency |access-date=14 October 2022 |archive-date=9 January 2021 |archive-url=https://web.archive.org/web/20210109173026/https://www.cia.gov/the-world-factbook/countries/russia/#geography |url-status=dead}}</ref> [[Norway]] and [[Finland]] to the northwest; [[Estonia]], [[Latvia]], [[Belarus]] and [[Ukraine]] to the west, as well as [[Lithuania]] and [[Poland]] (with [[Kaliningrad Oblast]]); [[Georgia (country)|Georgia]] and [[Azerbaijan]] to the southwest; [[Kazakhstan]] and [[Mongolia]] to the south; [[China]] and [[North Korea]] to the southeast. Russia also shares [[Maritime boundary|maritime boundaries]] with Japan and the United States. Russia also shares borders with the two [[partially recognized states|partially recognised]] breakaway states of [[South Ossetia]] and [[Abkhazia]] that it occupies in Georgia.}} With a population of over 140 million, Russia is the [[List of European countries by population|most populous country in Europe]] and the [[List of countries and dependencies by population|ninth-most populous in the world]]. It is a [[Urbanization by sovereign state|highly urbanised]] country, with sixteen of its urban areas having more than 1 million inhabitants. [[Moscow]], the [[List of metropolitan areas in Europe|most populous m\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2026-05-02T15:40:21Z"
+        }
+       ],
+       "title": "Russia"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-05-04T18:20:18Z",
+    "titles": "Russia"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20260406074009|1347366330"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 5666,
+       "revisions": [
+        {
+         "parentid": 1347366330,
+         "revid": 1350739744,
+         "slots": {
+          "main": {
+           "content": "{{short description|Government body that manages currency and monetary policy}}\n{{Use dmy dates|date=June 2020}}\n{{Public finance}}\n{{Banking}}\n{{Macroeconomics sidebar}}\n\nA '''central bank''', '''reserve bank''', '''national bank''', '''state bank''', or '''monetary authority''' is an institution that manages the [[monetary policy]] of a [[country]] or [[monetary union]].<ref>Compare:{{cite book|last1=Uittenbogaard|first1=Roland|title=Evolution of Central Banking?: De Nederlandsche Bank 1814–1852|url=https://books.google.com/books?id=YlkEBgAAQBAJ|location=Cham (Switzerland)|publisher=Springer|date=2014|page=4|isbn=9783319106175|access-date=3 February 2019|quote=Although it is difficult to define central banking,&nbsp;... a functional definition is most useful.&nbsp;... Capie et al. (1994) define a central bank as the government's bank, the monopoly note issuer and lender of last resort.|archive-date=1 July 2023|archive-url=https://web.archive.org/web/20230701075447/https://books.google.com/books?id=YlkEBgAAQBAJ|url-status=live}}</ref> In contrast to a [[commercial bank]], a central bank possesses a [[monopoly]] on increasing the [[monetary base]]. Many central banks also have supervisory or regulatory powers to ensure the stability of [[commercial bank]]s in their jurisdiction, to prevent [[bank run]]s, and, in some cases, to enforce policies on financial [[consumer protection]], and against [[bank fraud]], [[money laundering]], or [[terrorism financing]]. Central banks play a crucial role in macroeconomic forecasting, which is essential for guiding monetary policy decisions, especially during times of economic turbulence.<ref>{{Cite journal|last1=Lucia|first1=Alessi|last2=Eric|first2=Ghysels|last3=Luca|first3=norante|last4=Richard|first4=Peach|last5=Simon|first5=Potter|date=2014|title=Central Bank Macroeconomic Forecasting During the Global Financial Crisis: The European Central Bank and Federal Reserve Bank of New York Experiences|url=https://doi.org/10.1080/07350015.2014.959124|journal=Journal of Business & Economic Statistics|volume=32|issue=4|pages=483–500|doi=10.1080/07350015.2014.959124|hdl=10419/154121|hdl-access=free|url-access=subscription}}</ref>\n\nCentral banks in most [[developed nations]] are usually set up to be institutionally independent from political interference,<ref>David Fielding, \"Fiscal and Monetary Policies in Developing Countries\" in ''The New Palgrave Dictionary of Economics'' (Springer, 2016), p. 405: \"The current norm in OECD countries is an institutionally independent central bank&nbsp;... In recent years some non-OECD countries have introduced&nbsp;... a degree of central bank independence and accountability.\"</ref><ref>{{cite journal|title=Public governance of central banks: an approach from new institutional economics|journal=The Bulletin of the Faculty of Commerce|volume=89|issue=4|url=https://www.bis.org/publ/work299.pdf|archive-url=https://ghostarchive.org/archive/20221009/https://www.bis.org/publ/work299.pdf|archive-date=2022-10-09|url-status=live|date=March 2007}}</ref><ref>{{cite book|last=Apel|first=Emmanuel|title=Central Banking Systems Compared: The ECB, The Pre-Euro Bundesbank and the Federal Reserve System|date=November 2007|publisher=Routledge|isbn=978-0415459228|page=14|chapter=1}}</ref> even though governments typically have governance rights over them, legislative bodies exercise scrutiny, and central banks frequently do show responsiveness to politics.<ref>{{cite web|url=http://www.federalreserve.gov/faqs/about_14986.htm|title=Ownership and independence of FED|work=Board of Governors of the Federal Reserve System|access-date=29 September 2013|archive-date=25 March 2020|archive-url=https://web.archive.org/web/20200325091555/https://www.federalreserve.gov/faqs/about_14986.htm|url-status=live}}</ref><ref>[[Deutsche Bundesbank#Governance]]</ref><ref>{{Cite book|last1=Binder|first1=Sarah A.|url=https://press.princeton.edu/books/hardcover/9780691163192/the-myth-of-independence|title=The Myth of Independence: How Congress Governs the Federal Reserve|last2=Spindel|first2=Mark|date=2017|publisher=Princeton University Press|isbn=978-0-691-16319-2|location=Princeton Oxford}}</ref>\n\nIssues like central bank independence, central bank policies, and rhetoric in central bank governors' discourse or the premises of [[Macroeconomic policy|macroeconomic policies]]<ref>{{cite web|last=Scholvinck|first=Johan|title=Making the Case for the Integration of Social and Economic Policy|url=http://www.icsw.org/publications/sdr/2002-june/un-division.htm|archive-url=https://web.archive.org/web/20071118193838/http://www.icsw.org/publications/sdr/2002-june/un-division.htm|archive-date=18 November 2007|website=UN Division for Social Policy and Development}}</ref> ([[Monetary policy|monetary]] and [[fiscal policy]]) of the [[State (polity)|state]], are a focus of contention and criticism by some policymakers,<ref>{{Cite web|last=Inskeep|first=Steve|date=June 24, 2022|title=The Fed's latest interest rate hike has some congressional lawmakers worried|url=https://www.npr.org/2022/06/24/1107244506/the-feds-latest-interest-rate-hike-has-some-congressional-lawmakers-worried|access-date=March 11, 2023|website=NPR|archive-date=11 March 2023|archive-url=https://web.archive.org/web/20230311172946/https://www.npr.org/2022/06/24/1107244506/the-feds-latest-interest-rate-hike-has-some-congressional-lawmakers-worried|url-status=live}}</ref> researchers,<ref>{{Cite web|date=2023-02-24|title=Fed's rate hikes likely to cause a recession, research says|url=https://apnews.com/article/inflation-federal-reserve-system-canada-business-2f3096f01c56c76432dce0a51a9dca24|access-date=2023-03-11|website=AP NEWS|language=en|archive-date=14 March 2023|archive-url=https://web.archive.org/web/20230314010544/https://apnews.com/article/inflation-federal-reserve-system-canada-business-2f3096f01c56c76432dce0a51a9dca24|url-status=live}}</ref> and specialized business, economics, and finance media.<ref>{{Cite journal|last1=Koop|first1=Christel|last2=Scotto di Vettimo|first2=Michele|date=2022-09-20|title=How do the media scrutinise central banking? Evidence from the Bank of England|journal=European Journal of Political Economy|volume=77|language=en|article-number=102296|doi=10.1016/j.ejpoleco.2022.102296|issn=0176-2680|s2cid=252426183|doi-access=free}}</ref><ref>{{unbulleted list citebundle|{{cite journal|last1=Hayo|first1=Bernd|last2=Hefeker|first2=Carsten|date=March 2001|title=Do We Really Need Central Bank Independence? A Critical Re-examination|url=https://ideas.repec.org/p/wpa/wuwpma/0103006.html|journal=WWZ-Discussion Paper 01/03|access-date=27 June 2015|archive-date=30 June 2015|archive-url=https://web.archive.org/web/20150630040608/https://ideas.repec.org/p/wpa/wuwpma/0103006.html|url-status=live}}|{{cite journal|last=Mangano|first=Gabriel|date=1 July 1998|title=Measuring Central Bank Independence: A Tale of Subjectivity and of Its Consequences|url=http://doc.rero.ch/record/302189/files/50-3-468.pdf|journal=Oxford Economic Papers|volume=50|issue=3|pages=468–492|doi=10.1093/oxfordjournals.oep.a028657|access-date=18 September 2020|archive-date=16 August 2021|archive-url=https://web.archive.org/web/20210816172441/http://doc.rero.ch/record/302189/files/50-3-468.pdf|url-status=live}}|{{cite journal|last1=Heinemann|first1=Friedrich|last2=Ullrich|first2=Katrin|date=3 November 2005|title=Does it Pay to Watch Central Bankers' Lips? The Information Content of ECB Wording|url=https://www.econstor.eu/bitstream/10419/24166/1/dp0570.pdf|journal=ZEW – Centre for European Economic Research Discussion Paper No. 05-070|doi=10.2139/ssrn.832905|s2cid=219366102|access-date=27 October 2017|archive-date=17 August 2017|archive-url=https://web.archive.org/web/20170817030221/https://www.econstor.eu/bitstream/10419/24166/1/dp0570.pdf|url-status=live}}|{{cite journal|last=Cecchetti|first=Stephen G.|year=1998|title=Policy Rules and Targets: Framing the Central Banker's Problem|url=https://www.newyorkfed.org/medialibrary/media/research/epr/98v04n2/9806cecc.pdf|journal=FRBNY Economic Policy Review|volume=4|issue=2|pages=1–14|access-date=24 March 2018|archive-date=8 August 2017|archive-url=https://web.archive.org/web/20170808121554/https://www.newyorkfed.org/medialibrary/media/research/epr/98v04n2/9806cecc.pdf|url-status=live}}}}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2026-04-23T18:34:15Z"
+        }
+       ],
+       "title": "Central bank"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-05-04T18:20:18Z",
+    "titles": "Central bank"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20251220195351|1328597169"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 10137442,
+       "revisions": [
+        {
+         "parentid": 1328597169,
+         "revid": 1333700766,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Former Russian state financial institution}}\n[[File:Садовая 21 02.jpg|thumb|The former head office building of the State Bank, now the [[Saint Petersburg State University of Economics]]]]\nThe '''State Bank of the Russian Empire''' ({{langx|ru|Государственный банк Российской Империи}}) was the dominant financial institution of the [[Russian Empire]] from its founding in 1860 until the Empire's end in 1917. \n\nA [[public bank]] headquartered in [[Saint Petersburg]], it initially coexisted within the Empire with the [[Bank Polski]] until the latter was deprived of its residual monetary role in 1870, and with the [[Bank of Finland]] which soon defined a separate monetary zone for the [[Finnish markka]]. In 1897, with the Russian adoption of the [[gold standard]], the State Bank fully took the attributes of a [[central bank]], while keeping a significant additional role of commercial and development lending that made it the main source of credit to the Russian economy.<ref name=Garvy2>{{citation |title=Banking Under the Tsars and the Soviets |url=https://www.jstor.org/stable/2117258 |author=George Garvy |journal=Journal of Economic History |issue=4 |date=December 1972 |volume=32 |pages=869–893 |publisher=Cambridge University Press|doi=10.1017/S0022050700071187 |jstor=2117258 |url-access=subscription }}</ref>{{rp|882}}<ref>{{Cite journal|title=Financing Late Industrialization: Evidence from the State Bank of the Russian Empire|url=https://www.cambridge.org/core/journals/journal-of-economic-history/article/financing-late-industrialization-evidence-from-the-state-bank-of-the-russian-empire/F7AB6F2E7D24458D031531BF01610F0E|journal=The Journal of Economic History|date=2025|issn=0022-0507|pages=1170–1206|volume=85|issue=4|doi=10.1017/S0022050725100909|language=en|first=Marvin|last=Suesse|first2=Theocharis|last2=Grigoriadis|doi-access=free|hdl=10419/315202|hdl-access=free}}</ref>\n\nDuring the [[Russian Revolution]], the State Bank forcibly absorbed the former business of all Russia's private-sector banks, was renamed '''People's Bank''' ({{langx|ru|Народный банк}}), then was liquidated in January 1920. After an extended gap during the era of [[war communism]], it was eventually revived in Russia as the Soviet [[Gosbank]] in October 1921, whereas other organizations took central banking roles in newly independent [[Estonia]], [[Latvia]], [[Lithuania]], and [[Second Polish Republic|Poland]], as well as [[Bessarabia]] within [[Greater Romania]].\n\n==Creation and early years==\n[[File:Stiglitz AL.jpg|thumb|1865 portrait of [[Alexander von Stieglitz]] (1814–1884), the first Governor of the State Bank]]\n[[File:Сожжение кредитных билетов во дворе Государственного банка, 1870.jpg|thumb|Burning of retired banknotes in front of the State Bank, 1870]]\n\nFollowing the inflation that led to the abolition of the [[Russian Assignation Bank]], Russia from 1818 onwards did not have a bank of issue of its own. After the deflationary 1820s and 1830s, the finance ministry's State Credit Note Bureau was established in 1843 and printed paper money distributed by the [[State Commercial Bank of the Russian Empire|State Commercial Bank]], but from January 1855 these were no longer backed by silver reserves.<ref name=AKJT>{{citation |author=Antti Kuusterä & Juha Tarkka |title=Bank of Finland 200 Years: Imperial Cashier to Central Bank |url=https://ypfsresourcelibrary.blob.core.windows.net/fcic/YPFS/Bank%20of%20Finland%20200%20years%20part%20I%20%E2%80%93%20Imperial%20Cashier%20to%20Central%20Bank.pdf |year=2011 |publisher=Bank of Finland}}</ref>{{rp|216}} The state-owned banking system, including the State Commercial Bank and the [[State Loan Bank of the Russian Empire|State Loan Bank]], collapsed in a [[bank run]] in 1858–1859.{{R|AKJT|p=218}}\n\nThe State Bank of the Russian Empire was established on {{OldStyleDate|12 June|1860|31 May}} at the behest of [[List of finance ministers of Russia|Minister of Finance]] [[Alexander Knyazhevich]] by ''ukaz'' of Emperor [[Alexander II of Russia|Alexander II]].<ref>{{cite web |website=Bank of Russia |title=History of the Bank of Russia |url=https://www.cbr.ru/eng/about_br/history/ }}</ref><ref>{{cite book |author=<!-- not stated --> |date=1909 |title=The Cambridge Modern History, Volume 11 |url= |location= |publisher=The MacMillan Company |page=619 |isbn= |access-date=}}</ref> This ukaz also ratified the statutes of the State Bank. The bank was subordinate to the [[Ministry of Finance of the Russian Empire|Ministry of Finance]] and was under the supervision of the Council of State Credit Institutions. It was the only [[public bank|state-owned]] central bank of its era, together with the [[Sveriges Riksbank]] and the [[Bank of Finland]], which predated it within the Empire.<ref name=Seppo>{{citation |url=https://www.bis.org/review/r141114d.htm |date={{date|2014/10/23}} |author=Seppo Honkapohja |title=Bank of Finland's 200 years}}</ref>{{R|Garvy|p=14}} It was also the largest credit institution in the Empire. Its first Governor was [[History of the Jews in Russia|Russian Jewish]] financier [[Alexander von Stieglitz]].<ref>{{cite web |url=https://history.info/on-this-day/1860-the-first-governor-of-the-state-bank-of-the-russian-empire-was-a-jewish-baron/ |website=History.info |title=1860: The First Governor of the State Bank of the Russian Empire was a Jewish Baron|date=11 June 2020 }}</ref><ref>{{cite web |title=Alexander von Stieglitz: Banker, industrialist, philanthropist |url=http://www.saint-petersburg.com/famous-people/alexander-von-stieglitz/ |website=Saint-Petersburg.com}}</ref>\n\nAccording to the statutes, the State Bank was intended for short-term credit (no more than 9 months) to trade and industry as well as a monetary role. In its first decade of operations, the State Bank invested most of its resources in state bonds and state-guaranteed securities. In addition, it issued short-term and long-term loans to the State Treasury. By 1879, the Treasury's debt to the State Bank amounted to 478.9 million rubles. The repayment of that debt, which began in 1881, ended in 1901. Lending to commercial and industrial turnover occurred mainly through discounting bills and issuing loans against bills. Until the mid-1870s, bill accounting averaged 30-50 million rubles. From the mid-1870s to the mid-1880s, transactions involving the accounting of trade bills doubled and averaged 100 million rubles. Ten years later, in 1890, they reached 152.5 million rubles. From 1867, the Ministry of Finance began intensive accumulation of gold reserves. By decree of Alexander II of June 2, 1867, the State Bank and its offices were granted the right to accept [[Coin|specie]] for payments. It was allowed to take Russian and foreign coins, as well as gold and silver bullion. Prices were set by the State Bank. The coin was sent to his change fund. As a result, during 1867-1876 the exchange fund increased from 78.3 million rubles to 310.1 million rubles.{{cn|date=March 2024}}\n\nThe State Bank carried out an operation to liquidate the accounts of pre-reform state banks, a mission which was prominently entrusted to it by the charter and was only completed in 1887. These included the [[State Commercial Bank of the Russian Empire|State Commercial Bank]] and [[State Loan Bank of the Russian Empire|State Loan Bank]]. The State bank had to pay interest and reimburse principal on those deposits that remained after the free exchange of deposit notes for 5 percent bank notes, payment of interest on coupons of 5 percent bank notes and capital on notes intended for redemption. To cover these expenses, the State Bank had to transfer interest and amounts received from borrowers of the old banks, as well as the amounts of payments from the State Treasury on the debt to its pre-reform banks. All liquidation operations were to be carried out at the expense of the State Treasury, which, if necessary, was to provide the bank, in addition to its initial capital, with cash or its interest-bearing obligations with the right to sell them on the stock exchange. But due to the constant budget deficit, the State Treasury was not able to provide additional funds to the State Bank, and the bank was forced to annually allocate part of its commercial profits to these operations. The liquidation operations began to produce surplus income only in 1872. In January 1887, the special account for the liquidation of former state banks was abolished. Proceeds from loans and profits from the State Bank from this operation began to be used for the current needs of the treasury.{{cn|date=March 2024}}\n\nThe State Bank in its first decades was not a genuine [[central bank]], because it could not make independent decisions on critical monetary matters such as issuing notes. Instead, it could only issue banknotes at the order of the finance ministry, which was therefore effectively in charge of Russia's monetary policy until the reforms of the 1890s.{{R|AKJT|p=219}}\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2026-01-19T06:48:21Z"
+        }
+       ],
+       "title": "State Bank of the Russian Empire"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-05-04T18:20:18Z",
+    "titles": "State Bank of the Russian Empire"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20240531032641|1226515095"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 13520775,
+       "revisions": [
+        {
+         "parentid": 1226515095,
+         "revid": 1273646336,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Street in Moscow, Russia}}\n{{Use dmy dates|date=October 2022}}\n{{expand Russian|topic=geo|otherarticle=Неглинная улица|date=September 2017}}\n{{unreferenced|date=September 2017}}\n{{Infobox street\n| name        = Neglinnaya Street\n| native_name ={{native name|ru|Неглинная улица}}\n| image       = Neglinnaya, 14.JPG\n| caption     =   \n|image_size      = 250 px\n| postal_code = \n| length_km   = \n| length_ref  = \n| location    = Moscow<br/>{{nowrap|[[Central Administrative Okrug]]}}<br/>[[Meshchansky District]]<br/>[[Tverskoy District]]\n| metro       =  {{MOSMETRO-bull|2}} [[Teatralnaya (Moscow Metro)|Teatralnaya]] <br /> {{MOSMETRO-bull|9}} [[Tsvetnoy Bulvar]] <br /> {{MOSMETRO-bull|10}}  [[Trubnaya (Moscow Metro)|Trubnaya]] \n| coordinates = \n}}\n[[Image:Neglinnaya02.jpg|thumb|right|Neglinnaya River empties into the [[Moskva River|Moskva]] from a pipe]]\n'''Neglinnaya Street''' (Russian: Неглинная улица) is a street inside the [[Garden Ring]] of Moscow, Russia. It runs from the [[Bolshoi Theatre]] to the [[Trubnaya Square]]. The street was paved over the underground [[Neglinnaya River]] in 1819. Throughout the 20th century the river regularly flooded the street and the adjacent quarter. The highlights of the Neglinnaya include the [[Muir & Mirrielees]] building, the [[Petrovka Passazh]], the [[Sandunov Baths]], and the [[Central Bank of the Russian Federation]].\n\n==Gallery==\n<gallery>\nImage:Moscow, Neglinnaya 12, Central Bank.jpg\nImage:Neglinnaya, 13.Petrovsky passazh.JPG\nImage:Neglinnaya, 10.JPG\n</gallery>\n\n{{coord|55|45|50|N|37|37|12|E|region:RU_type:landmark_source:kolossus-ruwiki|display=title}}\n\n[[Category:Streets in Moscow]]\n\n\n{{Moscow-geo-stub}}\n{{Russia-road-stub}}",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-02-03T09:36:46Z"
+        }
+       ],
+       "title": "Neglinnaya Street"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-05-04T18:20:18Z",
+    "titles": "Neglinnaya Street"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20260128165018|1335326273"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 528146,
+       "revisions": [
+        {
+         "parentid": 1335326273,
+         "revid": 1351545395,
+         "slots": {
+          "main": {
+           "content": "{{Short description|none}}\n{{hatnote group| {{other uses}} {{distinguish|Constitution of the Soviet Union}} }}\n{{Update|date=April 2024}}\n{{Use dmy dates|date=March 2022}}\n{{Infobox constitution\n| document_name        = Constitution of the Russian Federation\n| image                = Инаугурационная Конституция Российской Федерации.jpg\n| image_alt            = \n| caption              = A special copy of the text of the Constitution of the Russian Federation, on which the President of the Russian Federation takes the oath\n| orig_lang_code       = ru\n| title_orig           = Конституция Российской Федерации\n| jurisdiction         = [[Russia|Russian Federation]]\n| date_created         = \n| date_presented       = \n| date_ratified        = 12 December 1993\n| date_effective       = 25 December 1993\n| system               = [[Federalism|Federal]] [[Semi-presidential system|semi-presidential]] [[republic]]\n| branches             = Three\n| head_of_state        = [[President of Russia|President]]\n| chambers             = Bicameral<br>([[Federal Assembly (Russia)|Federal Assembly]]: [[Federation Council (Russia)|Federation Council]], [[State Duma]])\n| executive            = [[Prime Minister of Russia|Prime Minister]]-led [[Government of Russia|Government]]\n| courts               = [[Judiciary of Russia|Judiciary]] ([[Constitutional Court of Russia|Constitutional Court]], [[Supreme Court of Russia|Supreme Court]])\n| federalism           = Federation\n| electoral_college    = No\n| number_entrenchments = 9\n| date_legislature     = [[1st State Duma|12 December 1993]]\n| date_first_executive = [[Second inauguration of Boris Yeltsin|9 August 1996]]\n| date_first_court     = \n| date_repealed        =\n| number_amendments    = 4 (plus 11 alternations on [[Federal subjects of Russia|Federal subjects]])\n| date_last_amended    = 4 July 2020\n| location_of_document = [[Moscow Kremlin|Kremlin]], [[Moscow]]\n| commissioned         = [[Constitutional Conference of Russia|Constitutional Conference]]\n| writer               = \n| signers              = [[1993 Russian constitutional referendum|Constitutional referendum]] by the [[Citizenship of Russia|citizens of Russia]]\n| media_type           =\n| supersedes           = [[Russian Constitution of 1978|Constitution of the RSFSR]]\n|wikisource = Constitution of Russia\n}}\n{{Politics of Russia}}\n\nThe '''Constitution of the Russian Federation''' ({{Langx|ru|Конституция Российской Федерации|translit=Konstitutsiya Rossiyskoy Federatsii}}) was adopted by national referendum on 12 December 1993 and enacted on 25 December 1993.<ref>https://legislationline.org/sites/default/files/2025-02/CONSTITUTION%20OF%20THE%20RUSSIAN%20FEDERATION.pdf</ref> The latest significant reform occurred in 2020, marked by extensive amendments that altered various sections, including presidential terms, social policies, and the role of Russian law over international ones. (See [[2020 amendments to the Constitution of Russia]]).\n\n[[Russia]]'s constitution came into force on 25 December 1993, at the moment of its official publication, and abolished the [[Soviet republic (system of government)|Soviet system of government]]. The 1993 Constitution is one of the longest-standing constitutions in Russian history, second only to the Soviet-era [[Russian Constitution of 1937|1937 Constitution]], which was in effect until 1978.\n[[File:Constitition of Russia (m book) 1.JPG|thumb|In [[miniature book]] version.]]\nThe text was drafted by the [[Constitutional Conference of the Russian Federation|1993 Constitutional Conference]], which was attended by over 800 participants. [[Sergei Alexeyev]], [[Sergey Shakhray]], and sometimes [[Anatoly Sobchak]] are considered as the primary co-authors of the constitution. The text was inspired by [[Mikhail Speransky]]'s constitutional project and the current [[French constitution]].<ref>{{YouTube|93fQtQcb_wg|Sergey Shakhray - The Voice of Russia}}</ref> The [[United States Agency for International Development|USAID]]-funded lawyers also contributed to the development of the draft.<ref>{{cite web |title=USAID In Russia |url=https://www.usaid.gov/news-information/fact-sheets/usaid-russia |website=[[USAID]] |date=18 September 2012 |publisher=[[United States Agency for International Development]] |access-date=16 December 2020 |archive-url=https://web.archive.org/web/20201111222942/https://www.usaid.gov/news-information/fact-sheets/usaid-russia |archive-date=11 November 2020}}</ref>  \n\nIt replaced the previous [[Soviet Union|Soviet]]-era [[Russian Constitution of 1978|Constitution of 12 April 1978]], of the [[Russian SFSR|Russian Soviet Federative Socialist Republic]] (which had already been amended in April 1992 to reflect the dissolution of the Soviet Union and the [[Declaration of State Sovereignty of the Russian Soviet Federative Socialist Republic|sovereignty of the Russian Federation]]), following the [[1993 Russian constitutional crisis]].\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2026-04-28T17:17:58Z"
+        }
+       ],
+       "title": "Constitution of Russia"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2026-05-04T18:20:18Z",
+    "titles": "Constitution of Russia"
+   },
+   "status": 200
+  }
+ ],
+ "note": "'Will the Bank of Russia make no change to the key rate after the June Meeting?' (cutoff 2026-05-04T18:20:18.366628Z; registry party_names: Russia) at depth 1. 'Bank of Russia' redirects, as of the cutoff, to 'Central Bank of Russia'. 'Meeting' is a capitalised word the registry does not list, and its as-of lead names nothing else the question does.",
+ "recorded": "2026-09-19",
+ "source": "https://en.wikipedia.org/w/api.php"
+}

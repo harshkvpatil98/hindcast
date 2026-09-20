@@ -122,6 +122,98 @@ retrieval:
   # signature scan reports a reviewed count, it does not silently drop rows.
   signature_similarity_threshold: 0.80
 
+  # -- Hybrid retrieval (M14, migration 018) ---------------------------------
+  # `vector` ranks by embedding distance alone. `hybrid` adds a time-locked
+  # keyword pool, fuses the two with a recency ranking, and suppresses
+  # near-duplicates. Retrieved evidence is part of every agent prompt, so
+  # changing this invalidates recorded decisions and compiled graphs -- which
+  # is why it was changed *before* anything was compiled.
+  #
+  # Set to `hybrid` on 2026-09-19 by the project owner, on `cascade retrieval
+  # bench --relevance` over the rebuilt corpus: chunks naming a registry party
+  # 0.5508 -> 0.6452 for the compiler and 0.7676 -> 0.8257 for the baselines,
+  # median evidence age 183 -> 139 and 141 -> 70 days, distinct documents
+  # 42.9 -> 49.4 and 4.55 -> 4.86, every paired interval excluding zero; the
+  # cost is a looser semantic match (mean embedding distance +0.023). Those
+  # are label-free properties of what retrieval returns, not evidence about
+  # forecast accuracy (ADR-0040).
+  mode: hybrid
+  # Literals in migration 018, mirrored here and asserted equal statically.
+  # Each entity term contributes at most this many of its most recent matches
+  # to the keyword pool; the cap bounds how many bodies are re-parsed for
+  # ranking, since the FTS index is an expression index with no stored column.
+  hybrid_term_candidates: 500
+  hybrid_max_terms: 8
+  # Reciprocal-rank fusion: score = sum_i w_i / (rrf_k + rank_i). 60 is the
+  # constant from Cormack, Clarke & Buettcher (SIGIR 2009), who found the
+  # result insensitive to it across an order of magnitude. It is adopted, not
+  # tuned -- there is no labelled relevance set here to tune it against, and
+  # tuning it against forecast outcomes is what §1 forbids.
+  rrf_k: 60
+  # The two relevance signals are weighted equally because nothing measured
+  # says one deserves more, and an unmeasured preference is a guess.
+  rrf_vector_weight: 1.0
+  rrf_keyword_weight: 1.0
+  # Recency is a prior about usefulness, not evidence of relevance, so it gets
+  # half a relevance list's weight. The binding constraint is structural:
+  # the newest candidate at the BOTTOM of a relevance list must never outrank
+  # the oldest at the TOP of one, or recency has stopped breaking ties and
+  # started overruling relevance. That holds iff
+  #   recency_weight < relevance_weight * (1 - (rrf_k + 1) / (rrf_k + max_k))
+  # = 0.765 at rrf_k 60, max_k 200. `FusionParams` refuses a value at or above
+  # the bound, so this cannot be raised past it by editing a number.
+  rrf_recency_weight: 0.5
+  # A "story" is one document plus any document within `diversity_simhash_bits`
+  # of it. At most this many chunks of a story fill the first pass; a copy of
+  # a passage already taken (same ordinal, sibling document) is never taken
+  # while anything else remains.
+  diversity_max_per_story: 2
+  # Ingest already collapsed documents within 3 bits (spec §3.2), so 3 here
+  # would find nothing. What survives ingest is the *edited* syndication copy
+  # -- a changed headline, a local dateline, a trimmed tail. Unrelated 64-bit
+  # SimHashes differ by 32 +/- 4 bits, so 8 is six standard deviations clear of
+  # a chance collision among the <= 400 candidates of one query. Not measured
+  # against this corpus: `bench --relevance` reports distinct documents per k,
+  # which is the number this setting exists to move.
+  diversity_simhash_bits: 8
+  # `bench --relevance` scores the share of retrieved chunks naming one of the
+  # scenario's parties. The registry's `party_names` are proper-noun runs, not
+  # vetted actors: of 466 distinct names only 82 are in the actor lexicon, and
+  # the rest mix real entities ("Baltimore Ravens", "Elon Musk") with
+  # resolution boilerplate -- "PM ET" is listed by 71 scenarios, "Other" by 28,
+  # then "Any", "Only", "However", "Associated Press". A boilerplate name is
+  # in nearly every news chunk, so it pins both arms near 1.0 and hides the
+  # difference being measured. A name mentioned by more than this share of the
+  # chunks retrieved for scenarios that do NOT list it identifies nothing, and
+  # is dropped from the informative-names reading. Both readings are printed.
+  relevance_generic_name_rate: 0.05
+
+  # -- Reranking (M15, ADR-0047) ---------------------------------------------
+  # A second ranking stage over the fused pool. Admissible where a managed
+  # knowledge base was not (ADR-0030) because it *permutes* a set the database
+  # already filtered by `published_at < as_of` -- it is handed text and returns
+  # numbers, and has no argument through which a date could reach it.
+  #
+  # Off by default, and deliberately so: the evidence a prompt carries is part
+  # of the LLM cache key, so enabling this invalidates every recorded decision
+  # and every compiled graph, exactly as `mode` does. Whether it helps is an
+  # ablation measured on the dev split, not an assumption made here.
+  rerank:
+    enabled: false
+    # `local` is deterministic BM25 over the pool and needs no credential, so
+    # `make demo` is unaffected. `bedrock` routes through the one call site.
+    provider: local
+    # Shown to the reranker, then truncated to the caller's k. 60 matches
+    # `k_compiler`, so the compiler's pool is reranked whole; it must lie
+    # between the smallest caller k and `max_k`.
+    pool: 60
+    model_id: bm25-local-v1
+    # Managed rerankers bill per query rather than per token, so this cannot
+    # ride on the token price table. Zero while the local reranker is the one
+    # in use; set from the provider's published price before any paid run, and
+    # written as a string so it reaches the meter as an exact Decimal.
+    price_per_1k_queries: "0.00"
+
 ensemble:
   replicates: 200
   ablation_replicates: 30
@@ -134,9 +226,60 @@ ensemble:
   bootstrap_b: 10000
   sigma_multimodal_threshold: 0.30
 
+dossier: # the per-scenario situation report (ADR-0037)
+  # Off until measured on the development partition; see the ADR for the
+  # decision rule, which was written down before any forecast existed.
+  enabled: false
+  since_prompt_rev: 3 # enabling it needs llm.prompt_rev >= r3 (migration 019)
+  per_query_k: 40 # chunks drawn per query; the SQL pool is bounded at max_k
+  max_party_queries: 8
+  pool_chunks: 100 # ~30k input tokens at excerpt_chars below
+  max_per_document: 3
+  excerpt_chars: 1200
+  min_support_ratio: 0.6
+  max_claims_per_section: 12
+  prompt_chars: 3600 # ~900 tokens in the compiler prompt and each agent prefix
+  max_tokens: 4000
+
+eval: # the declared dev/test split (cascade/eval/split.py)
+  # How many of the sealed scenarios tuning may look at. Everything else is the
+  # test partition, and the report's headline is computed on test alone.
+  #
+  # Why 40. The only interval this project has measured is M7's: a paired
+  # bootstrap over 40 scenarios gave C10 - C09 a 95% CI of [-0.019230,
+  # +0.011589], a half-width of 0.0154. Paired half-widths scale with
+  # 1/sqrt(n), so from that one measurement:
+  #
+  #   dev size   dev resolves   test n   test half-width   vs all 180 (0.0073)
+  #      30        +-0.0178       150        0.0080             +9.5%
+  #      40        +-0.0154       140        0.0082            +13.4%
+  #      60        +-0.0126       120        0.0089            +22.5%
+  #
+  # 40 is where the dev set is as precise as the one measurement this project
+  # already treats as informative, for a headline interval 13% wider. At 30
+  # the dev set cannot separate variants the M7 harness could; at 60 the
+  # headline pays 22% to make tuning comfortable. The capped ablation cells run
+  # 90 scenarios of which 74 are test, so their half-widths go from about
+  # 0.0103 to about 0.0113. Caveat, stated rather than assumed away: the M7
+  # figure is from stand-in deciders, and real agents may spread differently.
+  dev_scenarios: 40
+  # sha256 of the exact dev/test membership the line above produces under
+  # study.salt, over the sealed 180 minus the 15 exchange placeholder legs
+  # excluded from scoring (cascade/eval/exclusions.py, ADR-0043) -- the
+  # exclusions are part of the fingerprint. Re-declared 2026-09-19 when the
+  # stand-ins were found, still before any forecast existed; the first pin
+  # (4b8dad2f..., over all 180) never had a forecast scored against it.
+  # Every `cascade eval` path and `cascade report` recomputes the split and
+  # exits 3 on a mismatch. Never edit this to make a mismatch go away: a split
+  # re-drawn after forecasts exist is a split chosen after looking.
+  split_sha256: "4914fba3e25346408e1efddd9e0b35f9cb7286b8d3585b16024c7b148fbbccb3"
+
 budget:
   phase_ceiling_usd:
     compile: 40.0
+    # One compiler-model call per scenario over ~30k input tokens. Its own
+    # phase so the compile ceiling keeps meaning what M4 sized it for.
+    dossier: 30.0
     simulate: 240.0
     baseline: 30.0
     corpus: 15.0
@@ -155,14 +298,71 @@ flags: # ablation switches
 
 llm:
   mode: replay # record | replay | live -- replay is the safe default
+  # Who serves the model: anthropic | aws | bedrock | claude_code (ADR-0028,
+  # ADR-0031). The three API providers share one cache namespace (ADR-0029), so
+  # a recording made through one replays through the others. claude_code has
+  # its own. Neither bedrock nor claude_code has a batch API, so neither can
+  # carry a batched phase: `complete_batch` refuses before any spend (exit 3).
+  provider: anthropic
   cache_dir: .cache/llm
-  # Bumped to r2 with migration 010: the compiler prompt gained a scale anchor
-  # for `volatility`. prompt_rev is part of the LLM cache key (spec §8.3), so a
-  # changed prompt under an unchanged rev would serve recordings made against
-  # text the model never saw. Every revision is logged in `prompt_revisions`.
-  prompt_rev: "r2"
+  # r2 (migration 010) gave `volatility` a scale anchor. r3 (migration 019) is
+  # the scenario dossier, which ships off. r4 (migration 021) quotes retrieved
+  # documents between markers the renderer strips from document text, after
+  # `cascade eval injection` measured a document impersonating a system notice
+  # being obeyed on 20 of 30 scenarios (ADR-0045). prompt_rev is part of the
+  # LLM cache key (spec §8.3), so a changed prompt under an unchanged rev would
+  # serve recordings made against text the model never saw; every revision is
+  # logged in `prompt_revisions`.
+  prompt_rev: "r4"
   max_retries: 2
   timeout_s: 600.0
+
+# Routing for the two AWS surfaces (ADR-0028). Identity is never configured
+# here: it is the ambient IAM principal from the standard AWS credential chain.
+# Every routing value is passed to the SDK explicitly, so an ambient AWS_REGION
+# in someone's shell cannot decide where the study's spend lands.
+#
+# Both ship empty. Enabling a provider means filling in its region and its
+# price table from the provider's live pricing page -- `cascade doctor` and the
+# client refuse to spend on a provider that cannot be priced.
+providers:
+  aws: # Claude Platform on AWS: Anthropic-operated, SigV4 + IAM, batches supported
+    region: null
+    workspace_id: null # required by the service; not a credential
+    base_url: null # null = derived from region by the SDK
+    profile: null # null = default credential chain
+    pricing: {}
+  bedrock: # Amazon Bedrock: partner-operated, no Message Batches
+    region: null
+    base_url: null
+    profile: null
+    model_ids: {} # logical -> Bedrock id; absent = "anthropic.<logical>"
+    pricing: {}
+    # A Bedrock Guardrail applied to the compile path (M15). ADR-0030 deferred
+    # guardrails on two grounds: the SDK's Bedrock client had no guardrail
+    # parameter, and an unmeasured filter that alters one decomposition is a
+    # confound. Measuring it addresses the second -- a guardrail that provably
+    # changes no compiled graph is a safety control worth shipping, and one
+    # that changes a graph is reported as a confound, not as a win.
+    guardrail_id: null
+    guardrail_version: null
+  # The Claude Code CLI run headless under a Claude subscription (ADR-0031).
+  # Local-only, not the pinned configuration: the CLI cannot set temperature or
+  # max_tokens, so it records under its own cache namespace and is never mixed
+  # with API recordings. Switching to a pay-as-you-go key later is
+  # `llm.provider: anthropic` plus CASCADE_ANTHROPIC_API_KEY -- nothing else.
+  claude_code:
+    executable: claude
+    workdir: null # null = fresh temp dir; must not sit below any CLAUDE.md
+
+# A second, independent record of spend (M15). M8 criterion 3 exits 3 today
+# because there is exactly one record -- the meter's own -- and a gate that
+# compares a number to itself cannot fail. Bedrock model-invocation logging is
+# written by AWS rather than by this process, which is what makes it
+# independent. Absent means *unreachable*, never *reconciled*.
+observability:
+  aws_invocation_log_group: null
+  aws_region: null # routing explicit, as everywhere else (ADR-0028)
 
 ledger: # scenario registry (spec §3.1)
   target_scenarios: 180
@@ -192,8 +392,57 @@ ledger: # scenario registry (spec §3.1)
   # CASCADE_METACULUS_TOKEN carries the Metaculus credential (single
   # underscore: it is a top-level Settings field, see `database` below).
 
+market_baseline: # the market's own probability at each cutoff (M14)
+  # The benchmark price is the last observation strictly before `cutoff_ts`.
+  # One older than this is stored and reported but never scored. 24 hours,
+  # because: (1) Polymarket's series is sampled every minute (measured: ~1,440
+  # points per day, the last one 11-80 s before the cutoff), so an older price
+  # means the series has a hole spanning the cutoff -- the market was not
+  # quoting when the forecast is dated; (2) agents see evidence right up to the
+  # cutoff, so a price from days earlier hands the system an information head
+  # start over its benchmark, and that bias runs in the system's favour --
+  # the direction that must never be silent; (3) the shortest horizon is 21
+  # days, so a day is under 5% of any scenario's remaining life. Chosen from
+  # how the sources sample, never from an outcome; not to be tuned against a
+  # Brier (§1).
+  max_staleness_hours: 24
+  # When nothing falls inside the staleness window, look this far back so a
+  # stale price is reported with its age rather than as "no history". The CLOB
+  # refuses windows much past two weeks ("interval is too long", measured at
+  # 21 days), so this is also the widest single request it will answer.
+  lookback_days: 14
+  # Sampling interval, in minutes, asked of the CLOB for each window. The
+  # staleness window is small enough to take at the source's native minute;
+  # the lookback is 14x wider and only has to date a stale price.
+  fidelity_minutes: 1
+  lookback_fidelity_minutes: 60
+  # Newest-first bets requested per Manifold contract; the API's own maximum.
+  manifold_bets_limit: 1000
+  # Politeness. Neither service publishes a budget for these endpoints, so
+  # this is deliberately slow: the whole registry is ~340 requests.
+  requests_per_second: 2.0
+
 corpus: # evidence corpus (spec §3.2)
   target_chunks: 1300000
+  # The build stops starting new units here. 2.0M sits just above the largest
+  # corpus this study has measured (1,950,912 chunks, ~6.6 GB with indexes). A
+  # ceiling on work, not a result -- `corpus coverage` still judges the corpus.
+  max_chunks: 2000000
+  # CC-NEWS file choice (ADR-0036): files nearest each scenario's cutoff first.
+  # A floor phase takes the file that gives the most scenarios their first
+  # evidence from the final `anchor_floor_days`, while one file still rescues
+  # `anchor_floor_min_rescued` of them; the rest of the budget maximises
+  # closeness, a file's worth halving every `anchor_half_life_days`. Chosen from
+  # how evidence is distributed over scenarios -- never from an outcome -- and
+  # not to be tuned against a forecast (§1). `sweep` is ADR-0023's old queue.
+  ccnews_planning: anchored
+  anchor_half_life_days: 14
+  anchor_floor_days: 30
+  anchor_floor_min_rescued: 2
+  anchor_equity: 2.0
+  anchor_plan_files: 60
+  # ...and below this much free disk. See CorpusConfig for the incident.
+  min_free_disk_gb: 8
   # SEC EDGAR returns 403 unless the User-Agent carries a contact address in
   # "Name email@domain" form. Replace with a real address before a long run.
   contact: "Cascade Research cascade-research@example.com"
@@ -215,6 +464,21 @@ corpus: # evidence corpus (spec §3.2)
   # CC-NEWS ingest is I/O bound -- a single WARC stream leaves the CPU idle
   # ~75% of the time. Files are independent, so they are streamed in parallel.
   fetch_workers: 6
+  # Threads that chunk a write batch while the previous batch is being
+  # embedded and written; the lookahead is fixed at one batch, so this does
+  # not set how much is held in memory. 1 is the serial loop exactly. Any
+  # value stores byte-identical chunks (asserted in
+  # tests/unit/test_corpus_pipeline_parallel.py), so this is a speed setting
+  # and nothing else.
+  #
+  # Threads that chunk one write batch ahead of the embedder. 1 is the serial
+  # loop. Measured on two real CC-NEWS units (M12, 16 GB Apple Silicon, MPS):
+  # serial 55.9 chunks/s, 4 workers 52.5 -- no gain, inside the unit-to-unit
+  # spread (48.8 +/- 4.0 over 13 units). The Rust tokenizer already spreads a
+  # batched call over ~3 cores, so extra threads mostly contend with it. The
+  # knob stays for hardware where the GPU stage dominates; the default is what
+  # was measured to be no worse.
+  chunk_workers: 1
   # A CC-NEWS unit is one WARC file (ADR-0023); this is how many files per
   # month the queue generates, i.e. the maximum depth a month can reach. The
   # queue sweeps depth-major, so raising it adds a later pass rather than
@@ -232,7 +496,14 @@ corpus: # evidence corpus (spec §3.2)
   # it, so a corpus that is over its chunk target but covers the wrong years
   # cannot pass silently.
   coverage_min_chunks: 200
-  wikipedia_max_articles_per_scenario: 6
+  # Wikipedia, as each article read strictly before the scenario's cutoff. Depth
+  # 1 asks for what the question and its parties name; depth 2 adds one window
+  # (12) of the links in those articles' as-of leads, and each further depth
+  # the next window. Raising it adds units -- depth is in the unit key -- so a
+  # deeper pass never waits on, or re-runs, a shallower one.
+  wikipedia_depth: 2
+  # Serial and slow, as Wikimedia asks of bots; `maxlag` is always sent.
+  wikipedia_requests_per_second: 2.0
 
 database:
   host: localhost
@@ -245,6 +516,17 @@ database:
   admin_user: cascade_admin
   sim_user: cascade_sim
   eval_user: cascade_eval
+  # TLS and authentication (ADR-0034). The local container speaks no TLS, so
+  # the default is libpq's own `prefer`. Aurora refuses plaintext
+  # (rds.force_ssl), and a deployment sets:
+  #   sslmode: verify-full
+  #   sslrootcert: /etc/ssl/rds/global-bundle.pem   # baked into the bench image
+  #   auth: iam                                     # short-lived tokens, no stored password
+  #   iam_region: <the cluster's region>            # explicit, never an ambient AWS_REGION
+  sslmode: prefer
+  sslrootcert: null
+  auth: stored # the role secret from the environment; `iam` = short-lived RDS tokens
+  iam_region: null
 
 langfuse:
   enabled: true

@@ -1,0 +1,3968 @@
+{
+  "generated_at": "2026-09-20T03:10:57.995930+00:00",
+  "salt": "cascade-2026-study-01",
+  "threshold": 1.5,
+  "axes": [
+    "actor_completeness",
+    "edge_sign_correctness",
+    "missing_leverage"
+  ],
+  "instructions": "See rubric.md. Fill in every score with an integer 0-2.",
+  "graphs": [
+    {
+      "scenario_id": "curated:wga-amptp-2023",
+      "question": "Will the Writers Guild of America and the AMPTP reach a tentative agreement before 31 October 2023?",
+      "graph": {
+        "actors": [
+          {
+            "id": "ai_tech_companies",
+            "name": "AI and Technology Companies (OpenAI, Google, Microsoft)",
+            "objective": "Expand entertainment industry licensing relationships and establish AI-assisted writing tools as standard development aids without restrictive guild prohibitions.",
+            "influences": [
+              "ai_threat_salience",
+              "amptp_concession_level"
+            ]
+          },
+          {
+            "id": "amptp",
+            "name": "Alliance of Motion Picture and Television Producers",
+            "objective": "Contain labor costs and preserve operational flexibility for studios and streamers while avoiding precedents that constrain future AI and production model decisions.",
+            "influences": [
+              "amptp_concession_level",
+              "negotiation_engagement"
+            ]
+          },
+          {
+            "id": "federal_mediators",
+            "name": "Federal Mediators / NLRB",
+            "objective": "Maintain the NLRB's institutional credibility and enforce statutory good-faith bargaining obligations, regardless of whether those obligations ultimately produce a settlement.",
+            "influences": [
+              "amptp_concession_level",
+              "negotiation_engagement"
+            ]
+          },
+          {
+            "id": "iatse_teamsters",
+            "name": "IATSE and Teamsters (Below-the-Line Craft Unions)",
+            "objective": "Minimize income loss for their members employed on productions shut down by the WGA strike while supporting union solidarity principles.",
+            "influences": [
+              "negotiation_engagement",
+              "studio_economic_pressure"
+            ]
+          },
+          {
+            "id": "independent_producers",
+            "name": "Independent Producers and Showrunners",
+            "objective": "Resume production operations and protect relationships with writing staffs while managing cash-flow constraints imposed by lenders and distributors.",
+            "influences": [
+              "negotiation_engagement",
+              "studio_economic_pressure"
+            ]
+          },
+          {
+            "id": "major_studios",
+            "name": "Major Studios (Universal, Paramount, Warner Bros., Sony)",
+            "objective": "Limit per-episode writer costs and preserve flexibility to use AI tools in development, while protecting release schedules for tent-pole productions.",
+            "influences": [
+              "negotiation_engagement",
+              "studio_economic_pressure",
+              "studio_quarterly_earnings"
+            ]
+          },
+          {
+            "id": "netflix",
+            "name": "Netflix",
+            "objective": "Sustain content pipeline volume and subscriber growth while minimizing per-title production cost increases and avoiding binding revenue-sharing disclosures.",
+            "influences": [
+              "production_shutdown_severity",
+              "studio_quarterly_earnings"
+            ]
+          },
+          {
+            "id": "sagaftra",
+            "name": "SAG-AFTRA",
+            "objective": "Protect member compensation from streaming erosion and AI displacement while building bargaining leverage through coordinated action with other guilds.",
+            "influences": [
+              "amptp_concession_level",
+              "sagaftra_solidarity",
+              "studio_economic_pressure"
+            ]
+          },
+          {
+            "id": "streaming_platforms",
+            "name": "Apple TV+ and Amazon Prime Video",
+            "objective": "Protect proprietary content investment returns and avoid mandatory disclosure of viewing metrics while maintaining access to premium scripted content.",
+            "influences": [
+              "production_shutdown_severity",
+              "studio_quarterly_earnings"
+            ]
+          },
+          {
+            "id": "talent_agencies",
+            "name": "Major Talent Agencies (WME, CAA, UTA)",
+            "objective": "Restore commission income and protect long-term client relationships by quietly brokering conditions that allow a deal to close, without being seen as pressuring clients on substantive terms.",
+            "influences": [
+              "amptp_concession_level",
+              "negotiation_engagement"
+            ]
+          },
+          {
+            "id": "walt_disney",
+            "name": "Walt Disney Company",
+            "objective": "Protect its franchise-driven content schedule and theme park business from reputational spillover while managing costs in a post-Chapek restructuring environment.",
+            "influences": [
+              "amptp_concession_level",
+              "negotiation_engagement",
+              "studio_quarterly_earnings"
+            ]
+          },
+          {
+            "id": "wga_leadership",
+            "name": "WGA Negotiating Committee",
+            "objective": "Secure durable compensation structures for residuals, minimum staffing protections, and binding AI-use restrictions in the next MBA contract.",
+            "influences": [
+              "ai_threat_salience",
+              "negotiation_engagement",
+              "wga_member_solidarity"
+            ]
+          },
+          {
+            "id": "wga_rank_and_file",
+            "name": "WGA Membership (Rank and File)",
+            "objective": "Preserve career viability and minimum compensation floors in an era of streaming minirooms and AI-assisted writing tools.",
+            "influences": [
+              "wga_member_solidarity"
+            ]
+          }
+        ],
+        "factors": [
+          {
+            "id": "ai_threat_salience",
+            "name": "Perceived AI Threat to Writer Employment",
+            "state": 0.82
+          },
+          {
+            "id": "amptp_concession_level",
+            "name": "AMPTP Willingness to Make Contract Concessions",
+            "state": 0.15
+          },
+          {
+            "id": "negotiation_engagement",
+            "name": "Active Formal Negotiation Sessions Between Parties",
+            "state": 0.08
+          },
+          {
+            "id": "production_shutdown_severity",
+            "name": "Severity of Hollywood Production Shutdown",
+            "state": 0.62
+          },
+          {
+            "id": "sagaftra_solidarity",
+            "name": "SAG-AFTRA Strike Authorization and Dual-Strike Risk",
+            "state": 0.72
+          },
+          {
+            "id": "studio_economic_pressure",
+            "name": "Economic Pressure on Studios from Strike",
+            "state": 0.25
+          },
+          {
+            "id": "studio_quarterly_earnings",
+            "name": "Studio and Streamer Quarterly Earnings Trajectory",
+            "state": 0.35
+          },
+          {
+            "id": "wga_member_solidarity",
+            "name": "WGA Strike Solidarity and Discipline",
+            "state": 0.92
+          }
+        ],
+        "edges": [
+          "ai_tech_companies --(+0.40, lag 1)--> ai_threat_salience",
+          "ai_tech_companies --(-0.20, lag 3)--> amptp_concession_level",
+          "ai_threat_salience --(+0.25, lag 2)--> amptp_concession_level",
+          "ai_threat_salience --(+0.35, lag 1)--> wga_member_solidarity",
+          "amptp --(+0.40, lag 2)--> amptp_concession_level",
+          "amptp --(+0.40, lag 1)--> negotiation_engagement",
+          "federal_mediators --(+0.20, lag 2)--> amptp_concession_level",
+          "federal_mediators --(+0.45, lag 1)--> negotiation_engagement",
+          "iatse_teamsters --(+0.15, lag 3)--> negotiation_engagement",
+          "iatse_teamsters --(+0.15, lag 2)--> studio_economic_pressure",
+          "independent_producers --(+0.20, lag 2)--> negotiation_engagement",
+          "independent_producers --(+0.25, lag 2)--> studio_economic_pressure",
+          "major_studios --(+0.20, lag 3)--> negotiation_engagement",
+          "major_studios --(+0.20, lag 4)--> studio_economic_pressure",
+          "major_studios --(+0.35, lag 4)--> studio_quarterly_earnings",
+          "negotiation_engagement --(+0.25, lag 2)--> amptp_concession_level",
+          "netflix --(+0.25, lag 2)--> production_shutdown_severity",
+          "netflix --(+0.30, lag 3)--> studio_quarterly_earnings",
+          "production_shutdown_severity --(+0.50, lag 1)--> studio_economic_pressure",
+          "sagaftra --(+0.20, lag 3)--> amptp_concession_level",
+          "sagaftra --(+0.65, lag 1)--> sagaftra_solidarity",
+          "sagaftra --(+0.25, lag 2)--> studio_economic_pressure",
+          "sagaftra_solidarity --(+0.25, lag 2)--> amptp_concession_level",
+          "sagaftra_solidarity --(+0.20, lag 2)--> negotiation_engagement",
+          "sagaftra_solidarity --(+0.45, lag 2)--> production_shutdown_severity",
+          "sagaftra_solidarity --(+0.25, lag 1)--> studio_economic_pressure",
+          "streaming_platforms --(+0.20, lag 2)--> production_shutdown_severity",
+          "streaming_platforms --(+0.30, lag 3)--> studio_quarterly_earnings",
+          "studio_economic_pressure --(+0.40, lag 2)--> amptp_concession_level",
+          "studio_economic_pressure --(+0.30, lag 1)--> negotiation_engagement",
+          "studio_quarterly_earnings --(-0.25, lag 2)--> amptp_concession_level",
+          "studio_quarterly_earnings --(-0.35, lag 1)--> studio_economic_pressure",
+          "talent_agencies --(+0.20, lag 2)--> amptp_concession_level",
+          "talent_agencies --(+0.25, lag 1)--> negotiation_engagement",
+          "walt_disney --(-0.30, lag 2)--> amptp_concession_level",
+          "walt_disney --(+0.25, lag 2)--> negotiation_engagement",
+          "walt_disney --(+0.35, lag 3)--> studio_quarterly_earnings",
+          "wga_leadership --(+0.30, lag 2)--> ai_threat_salience",
+          "wga_leadership --(+0.35, lag 1)--> negotiation_engagement",
+          "wga_leadership --(+0.45, lag 1)--> wga_member_solidarity",
+          "wga_member_solidarity --(+0.15, lag 3)--> negotiation_engagement",
+          "wga_member_solidarity --(+0.50, lag 1)--> production_shutdown_severity",
+          "wga_member_solidarity --(+0.25, lag 2)--> studio_economic_pressure",
+          "wga_rank_and_file --(+0.55, lag 0)--> wga_member_solidarity"
+        ],
+        "outcome_rule": {
+          "terms": [
+            "amptp_concession_level +0.60",
+            "negotiation_engagement +0.50",
+            "studio_economic_pressure +0.30",
+            "wga_member_solidarity -0.20"
+          ],
+          "threshold": 0.55,
+          "steepness": 6.0
+        }
+      }
+    },
+    {
+      "scenario_id": "manifold:R6nCl0zqEz",
+      "question": "The US and/or Israel will strike Iran\u2019s Natanz nuclear facility in 2025",
+      "graph": {
+        "actors": [
+          {
+            "id": "arab_regional_states",
+            "name": "Arab Regional States (UAE, Saudi Arabia, Jordan, Qatar)",
+            "objective": "Prevent regional destabilization and protect their own infrastructure from Iranian retaliation by managing both US military requests and Iranian warnings.",
+            "influences": [
+              "leadership_deescalation_will",
+              "regional_coalition_support"
+            ]
+          },
+          {
+            "id": "e3_powers",
+            "name": "European Powers E3 (UK, France, Germany)",
+            "objective": "Sustain the multilateral non-proliferation framework and prevent an Iranian nuclear breakout by keeping structured diplomatic channels open, using JCPOA co-authorship and economic leverage to incentivize Iranian compliance.",
+            "influences": [
+              "iaea_access_and_monitoring",
+              "leadership_deescalation_will",
+              "us_iran_negotiations"
+            ]
+          },
+          {
+            "id": "iaea",
+            "name": "International Atomic Energy Agency (IAEA / Grossi)",
+            "objective": "Maintain verification access to Iranian nuclear sites and provide authoritative technical reporting that informs international decision-making on nuclear compliance.",
+            "influences": [
+              "iaea_access_and_monitoring",
+              "leadership_deescalation_will",
+              "us_iran_negotiations"
+            ]
+          },
+          {
+            "id": "iran_proxies",
+            "name": "Iran-Backed Proxy Networks (Houthis, Iraqi Militias, Hezbollah remnants)",
+            "objective": "Sustain armed pressure on Israel and US assets to raise the cost of any military action against Iran and maintain strategic depth for the Axis of Resistance.",
+            "influences": [
+              "iran_deterrence_credibility",
+              "regional_coalition_support",
+              "us_regional_military_posture"
+            ]
+          },
+          {
+            "id": "irgc_command",
+            "name": "Islamic Revolutionary Guard Corps (IRGC) Command",
+            "objective": "Protect Iran's nuclear and missile infrastructure from sabotage and external attack while developing and dispersing strategic assets to maximize survivability.",
+            "influences": [
+              "iaea_access_and_monitoring",
+              "iran_deterrence_credibility",
+              "iran_enrichment_level"
+            ]
+          },
+          {
+            "id": "khamenei_office",
+            "name": "Supreme Leader Khamenei and IRGC Command",
+            "objective": "Preserve the Islamic Republic's sovereignty and strategic deterrence capacity, including the nuclear program as a hedge, while avoiding a direct military confrontation that could threaten regime survival.",
+            "influences": [
+              "iaea_access_and_monitoring",
+              "iran_deterrence_credibility",
+              "iran_enrichment_level",
+              "leadership_deescalation_will"
+            ]
+          },
+          {
+            "id": "netanyahu_govt",
+            "name": "Netanyahu Government (Israeli Cabinet / IDF)",
+            "objective": "Prevent Iranian nuclear breakout and preserve Israel's qualitative military edge in the region, using all available instruments \u2014 diplomatic, covert, or kinetic \u2014 while maintaining US political cover and domestic coalition survival.",
+            "influences": [
+              "regional_coalition_support",
+              "us_iran_negotiations",
+              "us_israel_coordination"
+            ]
+          },
+          {
+            "id": "pezeshkian_govt",
+            "name": "Pezeshkian Government (Iranian Foreign Ministry / Presidency)",
+            "objective": "Secure sanctions relief and economic stabilization through negotiated agreements while preserving Iran's core nuclear rights and national dignity.",
+            "influences": [
+              "iaea_access_and_monitoring",
+              "leadership_deescalation_will",
+              "us_iran_negotiations"
+            ]
+          },
+          {
+            "id": "russia_china",
+            "name": "Russia and China (Strategic Iran Backers)",
+            "objective": "Prevent US military dominance in the Middle East and sustain Iran as a strategic counterweight to US influence, using economic and military transfers to bolster Iranian capabilities.",
+            "influences": [
+              "iran_deterrence_credibility",
+              "iran_enrichment_level",
+              "regional_coalition_support"
+            ]
+          },
+          {
+            "id": "trump_admin",
+            "name": "Trump Administration (White House / NSC)",
+            "objective": "Restore US leverage over Middle East security architecture by denying Iran nuclear weapons capability while avoiding a war that derails domestic economic priorities.",
+            "influences": [
+              "leadership_deescalation_will",
+              "us_iran_negotiations",
+              "us_israel_coordination",
+              "us_regional_military_posture"
+            ]
+          },
+          {
+            "id": "un_security_council",
+            "name": "UN Security Council and Secretary-General",
+            "objective": "Preserve the multilateral non-proliferation framework and de-escalate military tensions through diplomatic channels and adherence to the UN Charter.",
+            "influences": [
+              "iaea_access_and_monitoring",
+              "us_iran_negotiations"
+            ]
+          },
+          {
+            "id": "us_centcom",
+            "name": "US Central Command (CENTCOM / Pentagon)",
+            "objective": "Maintain credible forward military presence in the Middle East to deter Iranian aggression and protect US personnel and allies, while preparing contingency strike options.",
+            "influences": [
+              "regional_coalition_support",
+              "us_israel_coordination",
+              "us_regional_military_posture"
+            ]
+          },
+          {
+            "id": "us_congress_intel",
+            "name": "US Congress and Intelligence Community (DNI, Senate Intelligence)",
+            "objective": "Ensure executive military actions have legal authorization and that intelligence assessments accurately characterize Iran's nuclear weapons intent to avoid preventive war on false premises.",
+            "influences": [
+              "us_iran_negotiations",
+              "us_regional_military_posture"
+            ]
+          }
+        ],
+        "factors": [
+          {
+            "id": "iaea_access_and_monitoring",
+            "name": "IAEA Inspection Access and Nuclear Monitoring Coverage",
+            "state": 0.48
+          },
+          {
+            "id": "iran_deterrence_credibility",
+            "name": "Iranian Deterrence and Retaliation Credibility",
+            "state": 0.65
+          },
+          {
+            "id": "iran_enrichment_level",
+            "name": "Iran Uranium Enrichment Level and Stockpile",
+            "state": 0.82
+          },
+          {
+            "id": "leadership_deescalation_will",
+            "name": "Political Will of Key Leaders to Accept De-escalation",
+            "state": 0.38
+          },
+          {
+            "id": "regional_coalition_support",
+            "name": "Regional Coalition Willingness to Support Military Action",
+            "state": 0.32
+          },
+          {
+            "id": "us_iran_negotiations",
+            "name": "US-Iran Nuclear Negotiations Channel Activity",
+            "state": 0.32
+          },
+          {
+            "id": "us_israel_coordination",
+            "name": "US-Israel Operational Military Coordination",
+            "state": 0.72
+          },
+          {
+            "id": "us_regional_military_posture",
+            "name": "US Military Posture and Strike Readiness in Region",
+            "state": 0.68
+          }
+        ],
+        "edges": [
+          "arab_regional_states --(+0.20, lag 1)--> leadership_deescalation_will",
+          "arab_regional_states --(+0.50, lag 0)--> regional_coalition_support",
+          "e3_powers --(+0.40, lag 2)--> iaea_access_and_monitoring",
+          "e3_powers --(+0.35, lag 1)--> leadership_deescalation_will",
+          "e3_powers --(+0.45, lag 1)--> us_iran_negotiations",
+          "iaea --(+0.60, lag 1)--> iaea_access_and_monitoring",
+          "iaea --(+0.25, lag 1)--> leadership_deescalation_will",
+          "iaea --(+0.30, lag 2)--> us_iran_negotiations",
+          "iaea_access_and_monitoring --(+0.25, lag 1)--> leadership_deescalation_will",
+          "iaea_access_and_monitoring --(+0.35, lag 2)--> us_iran_negotiations",
+          "iran_deterrence_credibility --(-0.25, lag 1)--> leadership_deescalation_will",
+          "iran_deterrence_credibility --(-0.40, lag 1)--> regional_coalition_support",
+          "iran_enrichment_level --(+0.45, lag 1)--> us_israel_coordination",
+          "iran_enrichment_level --(+0.40, lag 1)--> us_regional_military_posture",
+          "iran_proxies --(+0.35, lag 1)--> iran_deterrence_credibility",
+          "iran_proxies --(-0.30, lag 1)--> regional_coalition_support",
+          "iran_proxies --(+0.30, lag 1)--> us_regional_military_posture",
+          "irgc_command --(-0.45, lag 1)--> iaea_access_and_monitoring",
+          "irgc_command --(+0.65, lag 1)--> iran_deterrence_credibility",
+          "irgc_command --(+0.50, lag 2)--> iran_enrichment_level",
+          "khamenei_office --(-0.40, lag 2)--> iaea_access_and_monitoring",
+          "khamenei_office --(+0.70, lag 1)--> iran_deterrence_credibility",
+          "khamenei_office --(+0.60, lag 2)--> iran_enrichment_level",
+          "khamenei_office --(-0.40, lag 1)--> leadership_deescalation_will",
+          "leadership_deescalation_will --(-0.35, lag 2)--> us_israel_coordination",
+          "leadership_deescalation_will --(-0.40, lag 2)--> us_regional_military_posture",
+          "netanyahu_govt --(-0.30, lag 2)--> regional_coalition_support",
+          "netanyahu_govt --(-0.35, lag 1)--> us_iran_negotiations",
+          "netanyahu_govt --(+0.60, lag 1)--> us_israel_coordination",
+          "pezeshkian_govt --(+0.45, lag 2)--> iaea_access_and_monitoring",
+          "pezeshkian_govt --(+0.20, lag 1)--> leadership_deescalation_will",
+          "pezeshkian_govt --(+0.45, lag 1)--> us_iran_negotiations",
+          "regional_coalition_support --(+0.40, lag 1)--> us_israel_coordination",
+          "russia_china --(+0.50, lag 3)--> iran_deterrence_credibility",
+          "russia_china --(+0.30, lag 4)--> iran_enrichment_level",
+          "russia_china --(-0.25, lag 2)--> regional_coalition_support",
+          "trump_admin --(+0.35, lag 2)--> leadership_deescalation_will",
+          "trump_admin --(+0.50, lag 1)--> us_iran_negotiations",
+          "trump_admin --(+0.50, lag 1)--> us_israel_coordination",
+          "trump_admin --(+0.60, lag 1)--> us_regional_military_posture",
+          "un_security_council --(+0.30, lag 2)--> iaea_access_and_monitoring",
+          "un_security_council --(+0.25, lag 2)--> us_iran_negotiations",
+          "us_centcom --(+0.35, lag 2)--> regional_coalition_support",
+          "us_centcom --(+0.50, lag 1)--> us_israel_coordination",
+          "us_centcom --(+0.65, lag 0)--> us_regional_military_posture",
+          "us_congress_intel --(+0.30, lag 1)--> us_iran_negotiations",
+          "us_congress_intel --(-0.30, lag 2)--> us_regional_military_posture",
+          "us_iran_negotiations --(+0.45, lag 1)--> leadership_deescalation_will",
+          "us_iran_negotiations --(-0.35, lag 2)--> us_regional_military_posture"
+        ],
+        "outcome_rule": {
+          "terms": [
+            "iran_deterrence_credibility -0.25",
+            "iran_enrichment_level +0.30",
+            "leadership_deescalation_will -0.45",
+            "regional_coalition_support +0.20",
+            "us_israel_coordination +0.50",
+            "us_regional_military_posture +0.35"
+          ],
+          "threshold": 0.55,
+          "steepness": 5.0
+        }
+      }
+    },
+    {
+      "scenario_id": "polymarket:how-high-will-10-year-treasury-yield-go-in-2025:535639",
+      "question": "Will the 10-year Treasury yield hit 4.6% in 2025?",
+      "graph": {
+        "actors": [
+          {
+            "id": "congress",
+            "name": "US Congress",
+            "objective": "Advance partisan legislative priorities \u2014 tax cuts for Republicans, social spending for Democrats \u2014 while managing the periodic need to raise the debt ceiling and maintain constituent support without triggering a market-forcing fiscal crisis.",
+            "influences": [
+              "financial_market_stress",
+              "fiscal_deficit_pressure"
+            ]
+          },
+          {
+            "id": "credit_rating_agencies",
+            "name": "Credit Rating Agencies (Moody's, S&P, Fitch)",
+            "objective": "Assess and communicate sovereign credit risk objectively, issuing downgrades or outlook changes when fiscal trajectory deteriorates beyond acceptable thresholds.",
+            "influences": [
+              "foreign_treasury_demand",
+              "treasury_yield_level"
+            ]
+          },
+          {
+            "id": "domestic_institutional_investors",
+            "name": "Domestic Institutional Investors (Insurers, Pensions)",
+            "objective": "Match long-duration liabilities with fixed-income assets, buying Treasuries when yields offer sufficient real returns relative to liability benchmarks.",
+            "influences": [
+              "foreign_treasury_demand",
+              "treasury_market_liquidity"
+            ]
+          },
+          {
+            "id": "federal_reserve",
+            "name": "Federal Reserve",
+            "objective": "Maintain price stability near the 2% inflation target while supporting maximum employment, calibrating the pace of rate cuts to incoming data without triggering financial instability.",
+            "influences": [
+              "financial_market_stress",
+              "inflation_expectations",
+              "treasury_market_liquidity"
+            ]
+          },
+          {
+            "id": "foreign_central_banks",
+            "name": "Foreign Central Banks (China, Japan)",
+            "objective": "Manage foreign exchange reserves and currency stability by adjusting holdings of US Treasuries, balancing reserve diversification against geopolitical and trade pressures.",
+            "influences": [
+              "foreign_treasury_demand"
+            ]
+          },
+          {
+            "id": "hedge_funds",
+            "name": "Leveraged Hedge Funds",
+            "objective": "Generate absolute returns through leveraged basis trades and relative-value positions across Treasury and Treasury futures markets, managing risk of forced deleveraging.",
+            "influences": [
+              "treasury_market_liquidity",
+              "treasury_yield_level"
+            ]
+          },
+          {
+            "id": "large_asset_managers",
+            "name": "Large Asset Managers (BlackRock, Vanguard, PIMCO)",
+            "objective": "Maximize risk-adjusted returns for clients by actively managing duration exposure across fixed-income benchmarks, shifting Treasury allocations in response to yield levels, inflation signals, and client fund flows.",
+            "influences": [
+              "foreign_treasury_demand",
+              "treasury_market_liquidity"
+            ]
+          },
+          {
+            "id": "primary_dealers",
+            "name": "Primary Dealer Banks",
+            "objective": "Intermediate Treasury auctions and maintain market-making capacity in government securities while managing inventory risk and balance sheet constraints.",
+            "influences": [
+              "treasury_market_liquidity"
+            ]
+          },
+          {
+            "id": "retail_bond_investors",
+            "name": "Retail and Small Institutional Bond Investors",
+            "objective": "Preserve capital and earn competitive income by allocating between Treasuries, money market funds, and other fixed-income instruments based on relative yield attractiveness.",
+            "influences": [
+              "foreign_treasury_demand",
+              "treasury_market_liquidity"
+            ]
+          },
+          {
+            "id": "trump_administration",
+            "name": "Trump Administration",
+            "objective": "Implement trade protectionism via tariffs and pursue domestic growth through tax cuts and deregulation, accepting higher near-term financial volatility as a policy tool.",
+            "influences": [
+              "financial_market_stress",
+              "fiscal_deficit_pressure",
+              "tariff_escalation"
+            ]
+          },
+          {
+            "id": "us_treasury_dept",
+            "name": "US Treasury Department",
+            "objective": "Finance federal government borrowing at the lowest sustainable cost across maturities while maintaining orderly functioning of the Treasury market.",
+            "influences": [
+              "fiscal_deficit_pressure",
+              "treasury_market_liquidity"
+            ]
+          }
+        ],
+        "factors": [
+          {
+            "id": "financial_market_stress",
+            "name": "Financial Market Stress Level",
+            "state": 0.38
+          },
+          {
+            "id": "fiscal_deficit_pressure",
+            "name": "Federal Fiscal Deficit Pressure",
+            "state": 0.72
+          },
+          {
+            "id": "foreign_treasury_demand",
+            "name": "Foreign Demand for US Treasuries",
+            "state": 0.42
+          },
+          {
+            "id": "inflation_expectations",
+            "name": "Market Inflation Expectations",
+            "state": 0.62
+          },
+          {
+            "id": "tariff_escalation",
+            "name": "US Tariff Escalation Intensity",
+            "state": 0.55
+          },
+          {
+            "id": "treasury_market_liquidity",
+            "name": "Treasury Market Liquidity",
+            "state": 0.55
+          },
+          {
+            "id": "treasury_yield_level",
+            "name": "10-Year Treasury Yield Level",
+            "state": 0.62
+          }
+        ],
+        "edges": [
+          "congress --(+0.30, lag 3)--> financial_market_stress",
+          "congress --(+0.60, lag 4)--> fiscal_deficit_pressure",
+          "credit_rating_agencies --(-0.45, lag 2)--> foreign_treasury_demand",
+          "credit_rating_agencies --(+0.25, lag 2)--> treasury_yield_level",
+          "domestic_institutional_investors --(+0.30, lag 1)--> foreign_treasury_demand",
+          "domestic_institutional_investors --(+0.25, lag 2)--> treasury_market_liquidity",
+          "federal_reserve --(-0.40, lag 1)--> financial_market_stress",
+          "federal_reserve --(-0.50, lag 2)--> inflation_expectations",
+          "federal_reserve --(+0.50, lag 2)--> treasury_market_liquidity",
+          "financial_market_stress --(-0.45, lag 0)--> treasury_market_liquidity",
+          "financial_market_stress --(-0.30, lag 1)--> treasury_yield_level",
+          "fiscal_deficit_pressure --(-0.35, lag 3)--> foreign_treasury_demand",
+          "fiscal_deficit_pressure --(+0.50, lag 2)--> treasury_yield_level",
+          "foreign_central_banks --(+0.80, lag 1)--> foreign_treasury_demand",
+          "foreign_treasury_demand --(+0.30, lag 1)--> treasury_market_liquidity",
+          "foreign_treasury_demand --(-0.50, lag 1)--> treasury_yield_level",
+          "hedge_funds --(-0.30, lag 0)--> treasury_market_liquidity",
+          "hedge_funds --(+0.30, lag 0)--> treasury_yield_level",
+          "inflation_expectations --(+0.50, lag 1)--> treasury_yield_level",
+          "large_asset_managers --(+0.35, lag 2)--> foreign_treasury_demand",
+          "large_asset_managers --(+0.40, lag 1)--> treasury_market_liquidity",
+          "primary_dealers --(+0.35, lag 1)--> treasury_market_liquidity",
+          "retail_bond_investors --(+0.20, lag 2)--> foreign_treasury_demand",
+          "retail_bond_investors --(+0.15, lag 1)--> treasury_market_liquidity",
+          "tariff_escalation --(+0.60, lag 1)--> financial_market_stress",
+          "tariff_escalation --(-0.35, lag 2)--> foreign_treasury_demand",
+          "tariff_escalation --(+0.50, lag 2)--> inflation_expectations",
+          "treasury_market_liquidity --(-0.40, lag 1)--> treasury_yield_level",
+          "trump_administration --(+0.40, lag 1)--> financial_market_stress",
+          "trump_administration --(+0.50, lag 3)--> fiscal_deficit_pressure",
+          "trump_administration --(+0.80, lag 0)--> tariff_escalation",
+          "us_treasury_dept --(-0.30, lag 4)--> fiscal_deficit_pressure",
+          "us_treasury_dept --(+0.30, lag 2)--> treasury_market_liquidity"
+        ],
+        "outcome_rule": {
+          "terms": [
+            "fiscal_deficit_pressure +0.40",
+            "foreign_treasury_demand -0.40",
+            "inflation_expectations +0.35",
+            "treasury_yield_level +0.70"
+          ],
+          "threshold": 0.62,
+          "steepness": 6.0
+        }
+      }
+    },
+    {
+      "scenario_id": "polymarket:how-large-will-trump-eu-tariffs-be:521471",
+      "question": "Will Trump impose a blanket tariff of 20-30% on the EU by June 30?",
+      "graph": {
+        "actors": [
+          {
+            "id": "eu_ambassador_us",
+            "name": "EU Ambassador to the United States",
+            "objective": "Sustain the credibility and continuity of EU diplomatic engagement with the US executive by keeping open communication channels and cultivating personal relationships with administration officials",
+            "influences": [
+              "eu_us_negotiation_progress"
+            ]
+          },
+          {
+            "id": "european_commission",
+            "name": "European Commission",
+            "objective": "Protect the EU single market and trade interests while preserving transatlantic relations and avoiding a damaging trade war through engagement and calibrated retaliation threats",
+            "influences": [
+              "eu_retaliation_credibility",
+              "eu_us_negotiation_progress"
+            ]
+          },
+          {
+            "id": "france",
+            "name": "France (EU member state)",
+            "objective": "Defend French industrial and agricultural exports from US tariffs while pushing the EU toward stronger retaliatory posture to deter future escalation",
+            "influences": [
+              "eu_retaliation_credibility"
+            ]
+          },
+          {
+            "id": "germany",
+            "name": "Germany (EU member state)",
+            "objective": "Shield German export industries especially automotive from US tariffs while pressing the EU to offer concessions that stave off blanket levies",
+            "influences": [
+              "eu_retaliation_credibility",
+              "eu_us_negotiation_progress"
+            ]
+          },
+          {
+            "id": "howard_lutnick",
+            "name": "Commerce Secretary Howard Lutnick",
+            "objective": "Drive completion of country-by-country tariff frameworks that give the administration durable trade leverage while satisfying Trump's demand for visible economic action",
+            "influences": [
+              "reciprocal_tariff_process_completion"
+            ]
+          },
+          {
+            "id": "scott_bessent",
+            "name": "Treasury Secretary Scott Bessent",
+            "objective": "Maintain US financial market stability and dollar credibility while supporting trade rebalancing goals without triggering uncontrolled inflation or recession",
+            "influences": [
+              "domestic_inflation_pressure",
+              "eu_us_negotiation_progress"
+            ]
+          },
+          {
+            "id": "trump_white_house",
+            "name": "Trump White House",
+            "objective": "Reshape global trade terms to reduce US trade deficits and repatriate manufacturing, using tariff threats as leverage to extract economic and geopolitical concessions",
+            "influences": [
+              "eu_tariff_rate",
+              "reciprocal_tariff_process_completion",
+              "trade_deficit_salience"
+            ]
+          },
+          {
+            "id": "us_business_lobby",
+            "name": "US Business and Industry Lobby",
+            "objective": "Minimize input cost increases from tariffs on imported goods and components while preserving access to EU consumer markets for US exports",
+            "influences": [
+              "congressional_trade_constraint",
+              "domestic_inflation_pressure"
+            ]
+          },
+          {
+            "id": "us_congress",
+            "name": "US Congress",
+            "objective": "Protect constituents from inflationary trade impacts while avoiding direct confrontation with a popular executive on trade authority",
+            "influences": [
+              "congressional_trade_constraint"
+            ]
+          },
+          {
+            "id": "us_courts",
+            "name": "US Federal Courts",
+            "objective": "Adjudicate challenges to executive trade authority under constitutional and statutory standards without regard to political outcome",
+            "influences": [
+              "judicial_tariff_injunction"
+            ]
+          },
+          {
+            "id": "us_farm_lobby",
+            "name": "US Agricultural Exporters and Farm Lobby",
+            "objective": "Protect US farm export markets especially soybeans, pork, and bourbon from EU counter-tariff retaliation by pressing the White House to avoid blanket tariffs that invite retaliation against agricultural goods",
+            "influences": [
+              "congressional_trade_constraint",
+              "eu_retaliation_credibility"
+            ]
+          },
+          {
+            "id": "us_wine_restaurant_industry",
+            "name": "US Wine and Restaurant Industry",
+            "objective": "Preserve access to affordable European wine and food imports to protect profit margins and avoid staff reductions",
+            "influences": [
+              "domestic_inflation_pressure"
+            ]
+          },
+          {
+            "id": "ustr",
+            "name": "US Trade Representative Office",
+            "objective": "Implement executive trade directives while navigating legal requirements and building country-by-country tariff justifications that can withstand challenge",
+            "influences": [
+              "reciprocal_tariff_process_completion"
+            ]
+          }
+        ],
+        "factors": [
+          {
+            "id": "congressional_trade_constraint",
+            "name": "Congressional Legislative Pressure Against Executive Tariff Authority",
+            "state": 0.2
+          },
+          {
+            "id": "domestic_inflation_pressure",
+            "name": "US Domestic Inflation and Cost-of-Living Pressure",
+            "state": 0.5
+          },
+          {
+            "id": "eu_retaliation_credibility",
+            "name": "EU Retaliatory Threat Credibility",
+            "state": 0.65
+          },
+          {
+            "id": "eu_tariff_rate",
+            "name": "US Blanket Tariff Rate on EU Imports",
+            "state": 0.1
+          },
+          {
+            "id": "eu_us_negotiation_progress",
+            "name": "EU-US Trade Negotiation Progress",
+            "state": 0.2
+          },
+          {
+            "id": "judicial_tariff_injunction",
+            "name": "Judicial Injunction Risk Against Tariff Orders",
+            "state": 0.25
+          },
+          {
+            "id": "reciprocal_tariff_process_completion",
+            "name": "Reciprocal Tariff Investigation Process Completion",
+            "state": 0.15
+          },
+          {
+            "id": "trade_deficit_salience",
+            "name": "EU Trade Deficit Political Salience for Trump",
+            "state": 0.75
+          }
+        ],
+        "edges": [
+          "congressional_trade_constraint --(-0.25, lag 1)--> eu_tariff_rate",
+          "domestic_inflation_pressure --(-0.25, lag 2)--> eu_tariff_rate",
+          "eu_ambassador_us --(+0.55, lag 1)--> eu_us_negotiation_progress",
+          "eu_retaliation_credibility --(-0.25, lag 2)--> eu_tariff_rate",
+          "eu_tariff_rate --(+0.40, lag 2)--> domestic_inflation_pressure",
+          "eu_us_negotiation_progress --(-0.35, lag 2)--> eu_tariff_rate",
+          "european_commission --(+0.60, lag 1)--> eu_retaliation_credibility",
+          "european_commission --(+0.70, lag 1)--> eu_us_negotiation_progress",
+          "france --(+0.55, lag 1)--> eu_retaliation_credibility",
+          "germany --(+0.40, lag 2)--> eu_retaliation_credibility",
+          "germany --(+0.50, lag 2)--> eu_us_negotiation_progress",
+          "howard_lutnick --(+0.70, lag 3)--> reciprocal_tariff_process_completion",
+          "judicial_tariff_injunction --(-0.25, lag 1)--> eu_tariff_rate",
+          "reciprocal_tariff_process_completion --(+0.40, lag 2)--> eu_tariff_rate",
+          "scott_bessent --(-0.30, lag 2)--> domestic_inflation_pressure",
+          "scott_bessent --(+0.45, lag 2)--> eu_us_negotiation_progress",
+          "trade_deficit_salience --(+0.35, lag 1)--> eu_tariff_rate",
+          "trade_deficit_salience --(+0.40, lag 1)--> reciprocal_tariff_process_completion",
+          "trump_white_house --(+0.65, lag 1)--> eu_tariff_rate",
+          "trump_white_house --(+0.60, lag 2)--> reciprocal_tariff_process_completion",
+          "trump_white_house --(+0.50, lag 0)--> trade_deficit_salience",
+          "us_business_lobby --(+0.40, lag 2)--> congressional_trade_constraint",
+          "us_business_lobby --(-0.40, lag 1)--> domestic_inflation_pressure",
+          "us_congress --(+0.50, lag 3)--> congressional_trade_constraint",
+          "us_courts --(+0.60, lag 4)--> judicial_tariff_injunction",
+          "us_farm_lobby --(+0.50, lag 2)--> congressional_trade_constraint",
+          "us_farm_lobby --(+0.35, lag 1)--> eu_retaliation_credibility",
+          "us_wine_restaurant_industry --(-0.30, lag 1)--> domestic_inflation_pressure",
+          "ustr --(+0.60, lag 3)--> reciprocal_tariff_process_completion"
+        ],
+        "outcome_rule": {
+          "terms": [
+            "congressional_trade_constraint -0.20",
+            "domestic_inflation_pressure -0.25",
+            "eu_tariff_rate +0.70",
+            "eu_us_negotiation_progress -0.35",
+            "judicial_tariff_injunction -0.20",
+            "reciprocal_tariff_process_completion +0.40"
+          ],
+          "threshold": 0.45,
+          "steepness": 6.0
+        }
+      }
+    },
+    {
+      "scenario_id": "polymarket:how-many-fed-rate-cuts-in-2025:516726",
+      "question": "Will 3 Fed rate cuts happen in 2025?",
+      "graph": {
+        "actors": [
+          {
+            "id": "bond_market_investors",
+            "name": "U.S. Treasury Bond Market Investors",
+            "objective": "Maximize risk-adjusted returns on fixed-income portfolios by accurately pricing the inflation risk premium and Federal Reserve policy trajectory into Treasury yields across the maturity spectrum.",
+            "influences": [
+              "inflation_level",
+              "market_rate_expectations"
+            ]
+          },
+          {
+            "id": "congressional_republicans",
+            "name": "Congressional Republicans",
+            "objective": "Advance pro-growth economic policy by supporting the Trump administration's push for lower interest rates and reduced regulatory burden, while overseeing Federal Reserve accountability through congressional hearings.",
+            "influences": [
+              "fomc_independence",
+              "tariff_inflation_pressure"
+            ]
+          },
+          {
+            "id": "dovish_fomc_members",
+            "name": "Dovish FOMC Members (Goolsbee, Collins, Kugler)",
+            "objective": "Support labor market stability and economic growth by advocating for timely rate cuts when inflation shows meaningful progress toward target, avoiding excessive restriction that slows hiring and income growth.",
+            "influences": [
+              "rate_cut_pace"
+            ]
+          },
+          {
+            "id": "financial_markets",
+            "name": "Financial Markets and Futures Traders",
+            "objective": "Price assets efficiently relative to forward-looking interest rate expectations, profiting from accurate anticipation of Fed policy shifts by repositioning portfolios ahead of FOMC decisions.",
+            "influences": [
+              "market_rate_expectations"
+            ]
+          },
+          {
+            "id": "fomc_committee",
+            "name": "Federal Open Market Committee",
+            "objective": "Achieve the dual mandate of maximum employment and price stability at 2% inflation by calibrating the federal funds rate to incoming economic data, avoiding both premature easing that entrenches inflation and excessive restriction that damages the labor market.",
+            "influences": [
+              "fomc_independence",
+              "rate_cut_pace"
+            ]
+          },
+          {
+            "id": "foreign_central_banks",
+            "name": "Foreign Central Banks and Sovereign Bond Investors",
+            "objective": "Preserve the purchasing power and liquidity of foreign exchange reserves and sovereign wealth fund assets, diversifying holdings across currencies and maturities in response to U.S. monetary policy and geopolitical trade risks.",
+            "influences": [
+              "market_rate_expectations",
+              "tariff_inflation_pressure"
+            ]
+          },
+          {
+            "id": "hawkish_fomc_members",
+            "name": "Hawkish FOMC Members (Bowman, Logan, Musalem)",
+            "objective": "Prevent premature monetary easing that could re-ignite inflation, ensuring the Fed achieves sustained convergence to the 2% inflation target before committing to further rate cuts.",
+            "influences": [
+              "fomc_independence",
+              "rate_cut_pace"
+            ]
+          },
+          {
+            "id": "inflation_data_bls_bea",
+            "name": "BLS/BEA Inflation Statistics Agencies",
+            "objective": "Produce accurate CPI and PCE inflation measures that provide the Federal Reserve and markets with timely information on price trends across goods, services, housing, and energy components.",
+            "influences": [
+              "inflation_level",
+              "market_rate_expectations"
+            ]
+          },
+          {
+            "id": "jerome_powell",
+            "name": "Jerome Powell (Fed Chair)",
+            "objective": "Maintain the Federal Reserve's credibility as an inflation-fighting institution while preserving its political independence from executive branch pressure, guiding policy transitions through clear forward guidance.",
+            "influences": [
+              "fomc_independence",
+              "inflation_level"
+            ]
+          },
+          {
+            "id": "labor_bureau_bls",
+            "name": "Bureau of Labor Statistics",
+            "objective": "Produce accurate and timely labor market statistics including payroll employment, unemployment rate, and wage growth data that inform monetary policymakers' assessments of the employment mandate.",
+            "influences": [
+              "labor_market_strength",
+              "market_rate_expectations"
+            ]
+          },
+          {
+            "id": "trump_administration",
+            "name": "Trump Administration",
+            "objective": "Maximise domestic GDP growth and reduce business and consumer financing costs ahead of the 2026 midterms, while using trade and fiscal policy tools to reshape supply chains and strengthen the domestic manufacturing base.",
+            "influences": [
+              "fomc_independence",
+              "tariff_inflation_pressure"
+            ]
+          },
+          {
+            "id": "us_businesses",
+            "name": "U.S. Business Community and Corporate Borrowers",
+            "objective": "Reduce cost of capital for investment and expansion by operating in a lower interest rate environment, while managing uncertainty from tariff and trade policy changes that affect supply chains and margins.",
+            "influences": [
+              "economic_growth_conditions",
+              "labor_market_strength"
+            ]
+          },
+          {
+            "id": "us_treasury",
+            "name": "U.S. Treasury Department",
+            "objective": "Minimize federal debt servicing costs and support fiscal sustainability by managing debt issuance in a rate environment that aligns with the administration's growth agenda, while maintaining market confidence in U.S. government obligations.",
+            "influences": [
+              "economic_growth_conditions"
+            ]
+          }
+        ],
+        "factors": [
+          {
+            "id": "economic_growth_conditions",
+            "name": "U.S. Economic Growth Conditions",
+            "state": 0.55
+          },
+          {
+            "id": "fomc_independence",
+            "name": "Fed Independence from Political Pressure",
+            "state": 0.65
+          },
+          {
+            "id": "inflation_level",
+            "name": "U.S. Core Inflation Level",
+            "state": 0.68
+          },
+          {
+            "id": "labor_market_strength",
+            "name": "U.S. Labor Market Strength",
+            "state": 0.68
+          },
+          {
+            "id": "market_rate_expectations",
+            "name": "Market Implied Rate Cut Expectations",
+            "state": 0.38
+          },
+          {
+            "id": "rate_cut_pace",
+            "name": "Fed Rate Cut Pace and Willingness",
+            "state": 0.28
+          },
+          {
+            "id": "tariff_inflation_pressure",
+            "name": "Tariff-Driven Inflation Upside Pressure",
+            "state": 0.62
+          }
+        ],
+        "edges": [
+          "bond_market_investors --(+0.15, lag 2)--> inflation_level",
+          "bond_market_investors --(+0.30, lag 1)--> market_rate_expectations",
+          "congressional_republicans --(-0.30, lag 2)--> fomc_independence",
+          "congressional_republicans --(+0.25, lag 2)--> tariff_inflation_pressure",
+          "dovish_fomc_members --(+0.35, lag 1)--> rate_cut_pace",
+          "economic_growth_conditions --(+0.45, lag 2)--> labor_market_strength",
+          "economic_growth_conditions --(-0.35, lag 1)--> rate_cut_pace",
+          "financial_markets --(+0.45, lag 0)--> market_rate_expectations",
+          "fomc_committee --(+0.50, lag 1)--> fomc_independence",
+          "fomc_committee --(+0.60, lag 0)--> rate_cut_pace",
+          "fomc_independence --(+0.20, lag 2)--> inflation_level",
+          "fomc_independence --(-0.30, lag 0)--> rate_cut_pace",
+          "foreign_central_banks --(+0.25, lag 1)--> market_rate_expectations",
+          "foreign_central_banks --(+0.30, lag 2)--> tariff_inflation_pressure",
+          "hawkish_fomc_members --(+0.35, lag 1)--> fomc_independence",
+          "hawkish_fomc_members --(-0.35, lag 1)--> rate_cut_pace",
+          "inflation_data_bls_bea --(+0.50, lag 1)--> inflation_level",
+          "inflation_data_bls_bea --(-0.35, lag 1)--> market_rate_expectations",
+          "inflation_level --(-0.55, lag 1)--> market_rate_expectations",
+          "inflation_level --(-0.60, lag 1)--> rate_cut_pace",
+          "jerome_powell --(+0.60, lag 0)--> fomc_independence",
+          "jerome_powell --(-0.20, lag 2)--> inflation_level",
+          "labor_bureau_bls --(+0.50, lag 1)--> labor_market_strength",
+          "labor_bureau_bls --(-0.25, lag 1)--> market_rate_expectations",
+          "labor_market_strength --(+0.35, lag 2)--> economic_growth_conditions",
+          "labor_market_strength --(-0.35, lag 1)--> market_rate_expectations",
+          "labor_market_strength --(-0.35, lag 1)--> rate_cut_pace",
+          "rate_cut_pace --(+0.35, lag 3)--> economic_growth_conditions",
+          "rate_cut_pace --(+0.50, lag 0)--> market_rate_expectations",
+          "tariff_inflation_pressure --(-0.45, lag 3)--> economic_growth_conditions",
+          "tariff_inflation_pressure --(+0.50, lag 2)--> inflation_level",
+          "trump_administration --(-0.45, lag 1)--> fomc_independence",
+          "trump_administration --(+0.70, lag 1)--> tariff_inflation_pressure",
+          "us_businesses --(+0.35, lag 2)--> economic_growth_conditions",
+          "us_businesses --(+0.30, lag 2)--> labor_market_strength",
+          "us_treasury --(+0.30, lag 2)--> economic_growth_conditions"
+        ],
+        "outcome_rule": {
+          "terms": [
+            "economic_growth_conditions -0.30",
+            "fomc_independence -0.20",
+            "inflation_level -0.50",
+            "market_rate_expectations +0.30",
+            "rate_cut_pace +0.70"
+          ],
+          "threshold": 0.5,
+          "steepness": 6.0
+        }
+      }
+    },
+    {
+      "scenario_id": "polymarket:logan-pauls-psa-10-pokmon-illustrator-sale-price:1013525",
+      "question": "Will Logan Paul\u2019s PSA 10 Pok\u00e9mon Illustrator Sale Price be over $7 million?",
+      "graph": {
+        "actors": [
+          {
+            "id": "competing_auction_houses",
+            "name": "Competing Auction Houses",
+            "objective": "Attract top-tier consignments and establish platform superiority in the high-value collectibles market",
+            "influences": [
+              "collectibles_market_conditions"
+            ]
+          },
+          {
+            "id": "financial_market_conditions",
+            "name": "Macro Financial Environment Actors (Wealth Managers and Family Offices)",
+            "objective": "Preserve and grow ultra-high-net-worth client portfolios through alternative asset allocation including trophy collectibles",
+            "influences": [
+              "bidder_pool_depth",
+              "collectibles_market_conditions"
+            ]
+          },
+          {
+            "id": "goldin",
+            "name": "Goldin Auctions",
+            "objective": "Maximise fee revenue and consignment pipeline by demonstrating superior price discovery relative to rival auction houses",
+            "influences": [
+              "auction_bid_level",
+              "bidder_pool_depth"
+            ]
+          },
+          {
+            "id": "logan_paul",
+            "name": "Logan Paul",
+            "objective": "Maximise celebrity brand value and monetise assets at peak valuations to fund entertainment and business ventures",
+            "influences": [
+              "auction_bid_level",
+              "public_attention"
+            ]
+          },
+          {
+            "id": "media_press",
+            "name": "Entertainment and Collectibles Media",
+            "objective": "Generate audience engagement and advertising revenue by covering high-profile collectibles events and celebrity transactions",
+            "influences": [
+              "bidder_pool_depth",
+              "public_attention"
+            ]
+          },
+          {
+            "id": "pokemon_company",
+            "name": "The Pok\u00e9mon Company",
+            "objective": "Sustain and grow the Pok\u00e9mon intellectual property's cultural relevance and commercial ecosystem globally",
+            "influences": [
+              "collectibles_market_conditions"
+            ]
+          },
+          {
+            "id": "psa",
+            "name": "Professional Sports Authenticator (PSA)",
+            "objective": "Maintain grading authority and registry integrity to sustain premium fees and market trust in graded collectibles",
+            "influences": [
+              "card_scarcity_premium"
+            ]
+          },
+          {
+            "id": "rival_uhnw_bidder",
+            "name": "Rival UHNW Pok\u00e9mon Card Collector or Trading-Card Fund",
+            "objective": "Secure ownership of the single highest-graded Pok\u00e9mon Illustrator card to anchor a trophy collection or fund portfolio with provable scarcity",
+            "influences": [
+              "auction_bid_level",
+              "bidder_pool_depth"
+            ]
+          },
+          {
+            "id": "speculative_investors",
+            "name": "Collectibles Speculative Investors",
+            "objective": "Generate outsized returns by identifying collectibles at inflection points in cultural relevance and market cycles",
+            "influences": [
+              "auction_bid_level",
+              "bidder_pool_depth"
+            ]
+          },
+          {
+            "id": "trophy_collectors",
+            "name": "Ultra-High-Net-Worth Trophy Collectors",
+            "objective": "Acquire unique, culturally significant trophy assets that signal status and retain or appreciate in value over time",
+            "influences": [
+              "auction_bid_level"
+            ]
+          },
+          {
+            "id": "wwe_crossover_fans",
+            "name": "WWE and Pop Culture Crossover Fans",
+            "objective": "Engage with celebrity culture at the intersection of entertainment and collectibles by following high-profile transactions",
+            "influences": [
+              "public_attention"
+            ]
+          }
+        ],
+        "factors": [
+          {
+            "id": "auction_bid_level",
+            "name": "Live Auction Bid Level",
+            "state": 0.5
+          },
+          {
+            "id": "bidder_pool_depth",
+            "name": "Depth of Qualified Bidder Pool",
+            "state": 0.55
+          },
+          {
+            "id": "card_scarcity_premium",
+            "name": "Perceived Card Scarcity and Uniqueness Premium",
+            "state": 0.88
+          },
+          {
+            "id": "collectibles_market_conditions",
+            "name": "Pok\u00e9mon and Alternative Collectibles Market Conditions",
+            "state": 0.58
+          },
+          {
+            "id": "public_attention",
+            "name": "Public and Media Attention on the Sale",
+            "state": 0.65
+          }
+        ],
+        "edges": [
+          "bidder_pool_depth --(+0.50, lag 1)--> auction_bid_level",
+          "card_scarcity_premium --(+0.15, lag 0)--> auction_bid_level",
+          "collectibles_market_conditions --(+0.25, lag 1)--> auction_bid_level",
+          "collectibles_market_conditions --(+0.30, lag 1)--> bidder_pool_depth",
+          "competing_auction_houses --(+0.30, lag 2)--> collectibles_market_conditions",
+          "financial_market_conditions --(+0.50, lag 1)--> bidder_pool_depth",
+          "financial_market_conditions --(+0.50, lag 2)--> collectibles_market_conditions",
+          "goldin --(+0.20, lag 2)--> auction_bid_level",
+          "goldin --(+0.55, lag 1)--> bidder_pool_depth",
+          "logan_paul --(+0.35, lag 1)--> auction_bid_level",
+          "logan_paul --(+0.65, lag 0)--> public_attention",
+          "media_press --(+0.30, lag 2)--> bidder_pool_depth",
+          "media_press --(+0.55, lag 0)--> public_attention",
+          "pokemon_company --(+0.45, lag 2)--> collectibles_market_conditions",
+          "psa --(+0.35, lag 1)--> card_scarcity_premium",
+          "public_attention --(+0.20, lag 3)--> auction_bid_level",
+          "public_attention --(+0.40, lag 2)--> bidder_pool_depth",
+          "rival_uhnw_bidder --(+0.65, lag 0)--> auction_bid_level",
+          "rival_uhnw_bidder --(+0.40, lag 1)--> bidder_pool_depth",
+          "speculative_investors --(+0.20, lag 1)--> auction_bid_level",
+          "speculative_investors --(+0.35, lag 2)--> bidder_pool_depth",
+          "trophy_collectors --(+0.40, lag 1)--> auction_bid_level",
+          "wwe_crossover_fans --(+0.40, lag 0)--> public_attention"
+        ],
+        "outcome_rule": {
+          "terms": [
+            "auction_bid_level +0.65",
+            "bidder_pool_depth +0.20",
+            "card_scarcity_premium +0.05",
+            "collectibles_market_conditions +0.10"
+          ],
+          "threshold": 0.62,
+          "steepness": 8.0
+        }
+      }
+    },
+    {
+      "scenario_id": "polymarket:mls-cup-winner:510682",
+      "question": "Will LA Galaxy win the MLS Cup?",
+      "graph": {
+        "actors": [
+          {
+            "id": "apple_tv_broadcast",
+            "name": "Apple TV / MLS Season Pass Broadcast Partner",
+            "objective": "Maximize viewership and subscription revenue by promoting high-profile matchups, especially those featuring star players in marquee markets.",
+            "influences": [
+              "galaxy_playoff_momentum"
+            ]
+          },
+          {
+            "id": "eastern_conference_challengers",
+            "name": "Eastern Conference Challengers (Columbus, Cincinnati, Orlando, NY Red Bulls)",
+            "objective": "Disrupt the Messi-Miami narrative and prove that organizational depth and tactical discipline can overcome star-driven opponents in knockout competition.",
+            "influences": [
+              "eastern_finalist_quality"
+            ]
+          },
+          {
+            "id": "galaxy_medical_staff",
+            "name": "LA Galaxy Medical and Conditioning Staff",
+            "objective": "Maintain peak physical condition for Designated Players and first-choice starters across a compressed playoff schedule with minimal recovery time between knockout matches.",
+            "influences": [
+              "galaxy_squad_fitness"
+            ]
+          },
+          {
+            "id": "galaxy_supporters",
+            "name": "LA Galaxy Supporter Groups",
+            "objective": "Generate sustained home atmosphere at Dignity Health Sports Park to create a genuine home-field advantage that pressures opponents and lifts the squad.",
+            "influences": [
+              "galaxy_home_advantage",
+              "galaxy_playoff_momentum"
+            ]
+          },
+          {
+            "id": "greg_vanney",
+            "name": "Greg Vanney (LA Galaxy Head Coach)",
+            "objective": "Optimize tactical formations and squad rotation to peak at the right moments of a compressed playoff schedule, protecting key players while maintaining intensity.",
+            "influences": [
+              "galaxy_press_resistance",
+              "galaxy_squad_fitness"
+            ]
+          },
+          {
+            "id": "inter_miami",
+            "name": "Inter Miami CF",
+            "objective": "Complete the Supporters' Shield and MLS Cup double by capitalizing on record-setting regular season form and Messi's transformative impact on the club.",
+            "influences": [
+              "eastern_finalist_quality",
+              "galaxy_playoff_momentum"
+            ]
+          },
+          {
+            "id": "la_galaxy",
+            "name": "LA Galaxy",
+            "objective": "Build a championship-caliber squad around Designated Players and leverage home-field advantage to return to MLS Cup glory for the first time since 2014.",
+            "influences": [
+              "galaxy_attack_form",
+              "galaxy_press_resistance"
+            ]
+          },
+          {
+            "id": "lafc",
+            "name": "Los Angeles FC",
+            "objective": "Assert commercial and sporting dominance of the Los Angeles market by winning MLS Cup and outperforming their cross-city rivals in both standings and silverware.",
+            "influences": [
+              "galaxy_playoff_momentum",
+              "western_path_difficulty"
+            ]
+          },
+          {
+            "id": "mls_competition_office",
+            "name": "MLS Competition Office",
+            "objective": "Administer playoff regulations, scheduling, and officiating standards consistently to protect the integrity of the competition and the brand value of the MLS Cup.",
+            "influences": [
+              "western_path_difficulty"
+            ]
+          },
+          {
+            "id": "real_salt_lake",
+            "name": "Real Salt Lake / Minnesota United (Western Conference Semi Opponent)",
+            "objective": "Exploit defensive vulnerabilities in Galaxy's backline and use collective pressing to upset a higher-seeded opponent and reach the conference final.",
+            "influences": [
+              "galaxy_press_resistance",
+              "western_path_difficulty"
+            ]
+          },
+          {
+            "id": "riqui_puig_galaxy_attack",
+            "name": "LA Galaxy Attacking Core (Puig, Pec, Paintsil, Reus)",
+            "objective": "Impose combinatorial attacking pressure on opponents using pace and technical quality to generate high-volume scoring opportunities in every match.",
+            "influences": [
+              "galaxy_attack_form",
+              "galaxy_playoff_momentum"
+            ]
+          },
+          {
+            "id": "western_conf_final_opponent",
+            "name": "Western Conference Final Opponent (Seattle Sounders / Portland Timbers / Colorado Rapids)",
+            "objective": "Reach MLS Cup Final by defeating Galaxy in the Western Conference Final, leveraging playoff experience and tactical discipline to neutralize Los Angeles's attacking strengths.",
+            "influences": [
+              "galaxy_playoff_momentum",
+              "galaxy_press_resistance",
+              "western_path_difficulty"
+            ]
+          },
+          {
+            "id": "will_kuntz_gm",
+            "name": "Will Kuntz (LA Galaxy General Manager)",
+            "objective": "Assemble and retain a roster capable of sustained playoff success while managing salary cap constraints and the Designated Player allocation process.",
+            "influences": [
+              "galaxy_attack_form"
+            ]
+          }
+        ],
+        "factors": [
+          {
+            "id": "eastern_finalist_quality",
+            "name": "Eastern Conference Finalist Overall Quality",
+            "state": 0.72
+          },
+          {
+            "id": "galaxy_attack_form",
+            "name": "LA Galaxy Attacking Output and Chance Creation",
+            "state": 0.78
+          },
+          {
+            "id": "galaxy_home_advantage",
+            "name": "LA Galaxy Home Field Advantage Value",
+            "state": 0.74
+          },
+          {
+            "id": "galaxy_playoff_momentum",
+            "name": "LA Galaxy Playoff Momentum and Confidence",
+            "state": 0.8
+          },
+          {
+            "id": "galaxy_press_resistance",
+            "name": "LA Galaxy Ability to Maintain Shape Under Opponent High Press",
+            "state": 0.62
+          },
+          {
+            "id": "galaxy_squad_fitness",
+            "name": "LA Galaxy First-Choice Starter Injury and Suspension Availability",
+            "state": 0.72
+          },
+          {
+            "id": "western_path_difficulty",
+            "name": "Western Conference Playoff Path Difficulty",
+            "state": 0.58
+          }
+        ],
+        "edges": [
+          "apple_tv_broadcast --(+0.15, lag 1)--> galaxy_playoff_momentum",
+          "eastern_conference_challengers --(+0.40, lag 2)--> eastern_finalist_quality",
+          "galaxy_attack_form --(+0.40, lag 1)--> galaxy_playoff_momentum",
+          "galaxy_home_advantage --(+0.35, lag 0)--> galaxy_playoff_momentum",
+          "galaxy_medical_staff --(+0.65, lag 1)--> galaxy_squad_fitness",
+          "galaxy_press_resistance --(+0.30, lag 1)--> galaxy_playoff_momentum",
+          "galaxy_squad_fitness --(+0.45, lag 1)--> galaxy_attack_form",
+          "galaxy_squad_fitness --(+0.45, lag 1)--> galaxy_press_resistance",
+          "galaxy_supporters --(+0.55, lag 0)--> galaxy_home_advantage",
+          "galaxy_supporters --(+0.35, lag 1)--> galaxy_playoff_momentum",
+          "greg_vanney --(+0.60, lag 1)--> galaxy_press_resistance",
+          "greg_vanney --(+0.50, lag 1)--> galaxy_squad_fitness",
+          "inter_miami --(+0.70, lag 1)--> eastern_finalist_quality",
+          "inter_miami --(-0.30, lag 3)--> galaxy_playoff_momentum",
+          "la_galaxy --(+0.50, lag 1)--> galaxy_attack_form",
+          "la_galaxy --(+0.40, lag 1)--> galaxy_press_resistance",
+          "lafc --(-0.40, lag 2)--> galaxy_playoff_momentum",
+          "lafc --(+0.60, lag 1)--> western_path_difficulty",
+          "mls_competition_office --(+0.20, lag 0)--> western_path_difficulty",
+          "real_salt_lake --(-0.30, lag 1)--> galaxy_press_resistance",
+          "real_salt_lake --(+0.40, lag 1)--> western_path_difficulty",
+          "riqui_puig_galaxy_attack --(+0.70, lag 0)--> galaxy_attack_form",
+          "riqui_puig_galaxy_attack --(+0.35, lag 1)--> galaxy_playoff_momentum",
+          "western_conf_final_opponent --(-0.35, lag 1)--> galaxy_playoff_momentum",
+          "western_conf_final_opponent --(-0.35, lag 1)--> galaxy_press_resistance",
+          "western_conf_final_opponent --(+0.50, lag 1)--> western_path_difficulty",
+          "will_kuntz_gm --(+0.25, lag 2)--> galaxy_attack_form"
+        ],
+        "outcome_rule": {
+          "terms": [
+            "eastern_finalist_quality -0.20",
+            "galaxy_attack_form +0.30",
+            "galaxy_home_advantage +0.15",
+            "galaxy_playoff_momentum +0.40",
+            "galaxy_press_resistance +0.25",
+            "western_path_difficulty -0.35"
+          ],
+          "threshold": 0.55,
+          "steepness": 6.0
+        }
+      }
+    },
+    {
+      "scenario_id": "polymarket:nba-western-conference-one-seed:518743",
+      "question": "Will the Houston Rockets get the #1 seed in 2025 NBA Western Conference?",
+      "graph": {
+        "actors": [
+          {
+            "id": "alperen_sengun",
+            "name": "Alperen \u015eeng\u00fcn",
+            "objective": "Establish himself as an elite NBA center and lead Houston's offense and interior defense to playoff success",
+            "influences": [
+              "rockets_recent_form"
+            ]
+          },
+          {
+            "id": "denver_nuggets",
+            "name": "Denver Nuggets",
+            "objective": "Defend the Western Conference standings position around Nikola Jokic and return to championship contention after early-season struggles",
+            "influences": [
+              "okc_win_rate",
+              "west_competition_level"
+            ]
+          },
+          {
+            "id": "fred_vanvleet",
+            "name": "Fred VanVleet",
+            "objective": "Return from ankle injury and serve as the veteran point guard presence that stabilizes the Rockets' offense and leadership",
+            "influences": [
+              "rockets_health",
+              "rockets_recent_form"
+            ]
+          },
+          {
+            "id": "houston_rockets",
+            "name": "Houston Rockets",
+            "objective": "Maximize wins and secure home-court advantage through the playoffs by executing at both ends of the floor with a young, developing roster",
+            "influences": [
+              "rockets_health",
+              "rockets_recent_form"
+            ]
+          },
+          {
+            "id": "ime_udoka",
+            "name": "Ime Udoka (Rockets Head Coach)",
+            "objective": "Develop the Rockets into a disciplined defensive team while managing minutes and load for a young roster over a full season",
+            "influences": [
+              "rockets_defensive_stops",
+              "rockets_recent_form"
+            ]
+          },
+          {
+            "id": "jabari_smith_jr",
+            "name": "Jabari Smith Jr.",
+            "objective": "Recover from broken hand injury and return as a key defensive and rebounding contributor for the Rockets",
+            "influences": [
+              "rockets_defensive_stops",
+              "rockets_health"
+            ]
+          },
+          {
+            "id": "jalen_green",
+            "name": "Jalen Green",
+            "objective": "Prove himself as a franchise cornerstone by maximizing his individual scoring efficiency and lifting the Rockets into elite playoff contention",
+            "influences": [
+              "rockets_health",
+              "rockets_recent_form"
+            ]
+          },
+          {
+            "id": "los_angeles_lakers",
+            "name": "Los Angeles Lakers",
+            "objective": "Maximize LeBron James's remaining playoff window by integrating Luka Doncic and avoiding the play-in tournament through consistent performance",
+            "influences": [
+              "west_competition_level"
+            ]
+          },
+          {
+            "id": "mark_daigneault",
+            "name": "Mark Daigneault (Thunder Head Coach)",
+            "objective": "Maximize the Thunder's regular season performance and playoff positioning while developing young talent for sustainable success",
+            "influences": [
+              "okc_win_rate"
+            ]
+          },
+          {
+            "id": "memphis_grizzlies",
+            "name": "Memphis Grizzlies",
+            "objective": "Build on a strong start and secure a top-4 seed in the Western Conference around Jaren Jackson Jr. and a young core",
+            "influences": [
+              "rockets_recent_form",
+              "west_competition_level"
+            ]
+          },
+          {
+            "id": "okc_thunder",
+            "name": "Oklahoma City Thunder",
+            "objective": "Win the Western Conference and build long-term championship contention around Shai Gilgeous-Alexander and a young core",
+            "influences": [
+              "okc_win_rate"
+            ]
+          },
+          {
+            "id": "rafael_stone",
+            "name": "Rafael Stone (Rockets GM)",
+            "objective": "Build roster depth through trades and player development that maximizes the Rockets' long-term competitive window",
+            "influences": [
+              "rockets_health"
+            ]
+          },
+          {
+            "id": "shai_gilgeous_alexander",
+            "name": "Shai Gilgeous-Alexander",
+            "objective": "Win an NBA championship and establish himself as the best player on the best team in the Western Conference",
+            "influences": [
+              "okc_win_rate"
+            ]
+          }
+        ],
+        "factors": [
+          {
+            "id": "okc_win_rate",
+            "name": "Oklahoma City Thunder Season Win Share",
+            "state": 0.8
+          },
+          {
+            "id": "rockets_defensive_stops",
+            "name": "Rockets Per-Possession Defensive Stops Rate",
+            "state": 0.55
+          },
+          {
+            "id": "rockets_health",
+            "name": "Rockets Key Player Availability",
+            "state": 0.45
+          },
+          {
+            "id": "rockets_recent_form",
+            "name": "Houston Rockets Recent Game Results",
+            "state": 0.38
+          },
+          {
+            "id": "west_competition_level",
+            "name": "Western Conference Competition Intensity",
+            "state": 0.72
+          }
+        ],
+        "edges": [
+          "alperen_sengun --(+0.35, lag 0)--> rockets_recent_form",
+          "denver_nuggets --(-0.15, lag 2)--> okc_win_rate",
+          "denver_nuggets --(+0.25, lag 1)--> west_competition_level",
+          "fred_vanvleet --(+0.35, lag 3)--> rockets_health",
+          "fred_vanvleet --(+0.25, lag 4)--> rockets_recent_form",
+          "houston_rockets --(+0.40, lag 2)--> rockets_health",
+          "houston_rockets --(+0.30, lag 1)--> rockets_recent_form",
+          "ime_udoka --(+0.45, lag 1)--> rockets_defensive_stops",
+          "ime_udoka --(+0.25, lag 1)--> rockets_recent_form",
+          "jabari_smith_jr --(+0.25, lag 4)--> rockets_defensive_stops",
+          "jabari_smith_jr --(+0.40, lag 3)--> rockets_health",
+          "jalen_green --(+0.20, lag 1)--> rockets_health",
+          "jalen_green --(+0.35, lag 0)--> rockets_recent_form",
+          "los_angeles_lakers --(+0.35, lag 1)--> west_competition_level",
+          "mark_daigneault --(+0.40, lag 1)--> okc_win_rate",
+          "memphis_grizzlies --(-0.15, lag 1)--> rockets_recent_form",
+          "memphis_grizzlies --(+0.30, lag 1)--> west_competition_level",
+          "okc_thunder --(+0.50, lag 0)--> okc_win_rate",
+          "rafael_stone --(+0.30, lag 2)--> rockets_health",
+          "rockets_defensive_stops --(+0.30, lag 0)--> rockets_recent_form",
+          "rockets_health --(+0.35, lag 1)--> rockets_defensive_stops",
+          "rockets_health --(+0.45, lag 1)--> rockets_recent_form",
+          "shai_gilgeous_alexander --(+0.55, lag 0)--> okc_win_rate",
+          "west_competition_level --(-0.25, lag 1)--> okc_win_rate",
+          "west_competition_level --(-0.25, lag 1)--> rockets_recent_form"
+        ],
+        "outcome_rule": {
+          "terms": [
+            "okc_win_rate -0.70",
+            "rockets_defensive_stops +0.25",
+            "rockets_health +0.35",
+            "rockets_recent_form +0.70"
+          ],
+          "threshold": 0.45,
+          "steepness": 6.0
+        }
+      }
+    },
+    {
+      "scenario_id": "polymarket:romania-presidential-election-margin-of-victory:514817",
+      "question": "Will Elena Lasconi win the Romanian Presidential election by 0-5%?",
+      "graph": {
+        "actors": [
+          {
+            "id": "central_electoral_bureau",
+            "name": "Central Electoral Bureau (BEC)",
+            "objective": "Administer lawful elections by certifying candidate eligibility, overseeing vote counting, and enforcing campaign finance and registration rules",
+            "influences": [
+              "electoral_integrity",
+              "georgescu_legal_barrier"
+            ]
+          },
+          {
+            "id": "civil_society_protesters",
+            "name": "Romanian Civil Society / Pro-Democracy Protesters",
+            "objective": "Defend democratic institutions and Romania's pro-European path by mobilising urban and youth voters against far-right populism",
+            "influences": [
+              "coalition_breadth",
+              "electoral_integrity",
+              "pro_eu_mobilization"
+            ]
+          },
+          {
+            "id": "constitutional_court",
+            "name": "Constitutional Court of Romania (CCR)",
+            "objective": "Maintain institutional authority over electoral processes and protect constitutional order against challenges from candidates or campaigns that bypass legal norms",
+            "influences": [
+              "electoral_integrity",
+              "georgescu_legal_barrier"
+            ]
+          },
+          {
+            "id": "eu_western_partners",
+            "name": "EU / Western Diplomatic Partners",
+            "objective": "Preserve Romania's pro-EU, pro-NATO orientation by supporting democratic institutions and signalling strong economic and security costs of a sovereignist presidential election outcome",
+            "influences": [
+              "electoral_integrity",
+              "foreign_interference",
+              "pro_eu_mobilization"
+            ]
+          },
+          {
+            "id": "george_simion_aur",
+            "name": "George Simion / Alliance for the Union of Romanians (AUR)",
+            "objective": "Position AUR as the dominant nationalist force in Romania by maximising the sovereignist vote and preventing a centrist consolidation that could marginalise far-right parties",
+            "influences": [
+              "anti_establishment_sentiment"
+            ]
+          },
+          {
+            "id": "georgescu_camp",
+            "name": "C\u0103lin Georgescu / Sovereignist Camp",
+            "objective": "Consolidate nationalist, anti-NATO, and rural voter blocs while projecting an image of spiritual and economic renewal outside the traditional party system",
+            "influences": [
+              "anti_establishment_sentiment",
+              "foreign_interference",
+              "lasconi_vote_share"
+            ]
+          },
+          {
+            "id": "lasconi_campaign",
+            "name": "Elena Lasconi / USR Campaign",
+            "objective": "Expand USR's electoral coalition beyond its reformist base to attract centrist, PSD, and PNL voters while maintaining a pro-EU, anti-corruption identity",
+            "influences": [
+              "coalition_breadth",
+              "lasconi_vote_share",
+              "pro_eu_mobilization"
+            ]
+          },
+          {
+            "id": "orthodox_church",
+            "name": "Romanian Orthodox Church",
+            "objective": "Maintain the Church's moral authority and social influence by supporting candidates and policies that uphold traditional Romanian Christian values while preserving EU membership",
+            "influences": [
+              "anti_establishment_sentiment",
+              "electoral_integrity"
+            ]
+          },
+          {
+            "id": "pnl",
+            "name": "National Liberal Party (PNL)",
+            "objective": "Maintain relevance within the governing coalition and advance a pro-European, centre-right agenda while preventing far-right dominance of Romanian politics",
+            "influences": [
+              "coalition_breadth",
+              "pro_eu_mobilization"
+            ]
+          },
+          {
+            "id": "psd",
+            "name": "Social Democratic Party (PSD)",
+            "objective": "Preserve governing coalition influence and limit the electoral rise of anti-system forces while protecting PSD-aligned state institutions",
+            "influences": [
+              "anti_establishment_sentiment",
+              "coalition_breadth"
+            ]
+          },
+          {
+            "id": "romanian_diaspora",
+            "name": "Romanian Diaspora Voters",
+            "objective": "Protect diaspora members' legal right to reside, work, and remit money within the EU by supporting governance arrangements that keep Romania in good standing with EU institutions",
+            "influences": [
+              "lasconi_vote_share",
+              "pro_eu_mobilization"
+            ]
+          },
+          {
+            "id": "romanian_intelligence",
+            "name": "Romanian Security Services (SRI/SIE)",
+            "objective": "Counter foreign intelligence operations targeting Romanian elections and preserve NATO-compatible governance by exposing undeclared campaign financing and foreign digital interference",
+            "influences": [
+              "foreign_interference",
+              "georgescu_legal_barrier"
+            ]
+          },
+          {
+            "id": "tiktok_digital_platforms",
+            "name": "TikTok / Social Media Platforms",
+            "objective": "Maximise user engagement and avoid regulatory sanctions by moderating algorithmically amplified political content under pressure from Romanian and EU regulators",
+            "influences": [
+              "anti_establishment_sentiment",
+              "foreign_interference"
+            ]
+          }
+        ],
+        "factors": [
+          {
+            "id": "anti_establishment_sentiment",
+            "name": "Sovereignist and Anti-Establishment Electoral Sentiment",
+            "state": 0.68
+          },
+          {
+            "id": "coalition_breadth",
+            "name": "Mainstream Party Coalition Support for Lasconi",
+            "state": 0.38
+          },
+          {
+            "id": "electoral_integrity",
+            "name": "Public Confidence in Electoral Integrity",
+            "state": 0.45
+          },
+          {
+            "id": "foreign_interference",
+            "name": "Foreign Disinformation and Interference Intensity",
+            "state": 0.65
+          },
+          {
+            "id": "georgescu_legal_barrier",
+            "name": "Legal and Institutional Barriers to Georgescu Candidacy",
+            "state": 0.5
+          },
+          {
+            "id": "lasconi_vote_share",
+            "name": "Lasconi Runoff Vote Share",
+            "state": 0.48
+          },
+          {
+            "id": "pro_eu_mobilization",
+            "name": "Pro-EU Voter Mobilization",
+            "state": 0.55
+          }
+        ],
+        "edges": [
+          "anti_establishment_sentiment --(-0.45, lag 1)--> lasconi_vote_share",
+          "central_electoral_bureau --(+0.45, lag 2)--> electoral_integrity",
+          "central_electoral_bureau --(+0.50, lag 1)--> georgescu_legal_barrier",
+          "civil_society_protesters --(+0.30, lag 2)--> coalition_breadth",
+          "civil_society_protesters --(+0.35, lag 2)--> electoral_integrity",
+          "civil_society_protesters --(+0.55, lag 1)--> pro_eu_mobilization",
+          "coalition_breadth --(+0.50, lag 1)--> lasconi_vote_share",
+          "constitutional_court --(+0.40, lag 2)--> electoral_integrity",
+          "constitutional_court --(+0.70, lag 1)--> georgescu_legal_barrier",
+          "electoral_integrity --(-0.35, lag 2)--> pro_eu_mobilization",
+          "eu_western_partners --(+0.30, lag 2)--> electoral_integrity",
+          "eu_western_partners --(-0.35, lag 3)--> foreign_interference",
+          "eu_western_partners --(+0.35, lag 2)--> pro_eu_mobilization",
+          "foreign_interference --(+0.40, lag 2)--> anti_establishment_sentiment",
+          "foreign_interference --(-0.45, lag 1)--> electoral_integrity",
+          "george_simion_aur --(+0.40, lag 1)--> anti_establishment_sentiment",
+          "georgescu_camp --(+0.50, lag 1)--> anti_establishment_sentiment",
+          "georgescu_camp --(+0.40, lag 1)--> foreign_interference",
+          "georgescu_camp --(-0.40, lag 2)--> lasconi_vote_share",
+          "georgescu_legal_barrier --(+0.30, lag 2)--> anti_establishment_sentiment",
+          "lasconi_campaign --(+0.55, lag 2)--> coalition_breadth",
+          "lasconi_campaign --(+0.40, lag 2)--> lasconi_vote_share",
+          "lasconi_campaign --(+0.50, lag 1)--> pro_eu_mobilization",
+          "orthodox_church --(+0.20, lag 3)--> anti_establishment_sentiment",
+          "orthodox_church --(+0.25, lag 2)--> electoral_integrity",
+          "pnl --(+0.45, lag 2)--> coalition_breadth",
+          "pnl --(+0.30, lag 2)--> pro_eu_mobilization",
+          "pro_eu_mobilization --(+0.55, lag 1)--> lasconi_vote_share",
+          "psd --(-0.30, lag 3)--> anti_establishment_sentiment",
+          "psd --(+0.50, lag 2)--> coalition_breadth",
+          "romanian_diaspora --(+0.30, lag 3)--> lasconi_vote_share",
+          "romanian_diaspora --(+0.40, lag 2)--> pro_eu_mobilization",
+          "romanian_intelligence --(-0.50, lag 2)--> foreign_interference",
+          "romanian_intelligence --(+0.50, lag 1)--> georgescu_legal_barrier",
+          "tiktok_digital_platforms --(+0.30, lag 1)--> anti_establishment_sentiment",
+          "tiktok_digital_platforms --(-0.40, lag 2)--> foreign_interference"
+        ],
+        "outcome_rule": {
+          "terms": [
+            "anti_establishment_sentiment -0.50",
+            "coalition_breadth +0.35",
+            "lasconi_vote_share +0.85"
+          ],
+          "threshold": 0.52,
+          "steepness": 8.0
+        }
+      }
+    },
+    {
+      "scenario_id": "polymarket:survivor-50-winner:1193259",
+      "question": "Will Aubry Bracco win Survivor Season 50?",
+      "graph": {
+        "actors": [
+          {
+            "id": "aubry_bracco",
+            "name": "Aubry Bracco",
+            "objective": "Leverage her read of social dynamics and strategic relationships to build a winning coalition while managing her reputation as a cerebral threat from prior seasons.",
+            "influences": [
+              "alliance_stability",
+              "jury_approval",
+              "narrative_visibility",
+              "strategic_threat_perception"
+            ]
+          },
+          {
+            "id": "cbs_production",
+            "name": "CBS / Survivor Production",
+            "objective": "Deliver a milestone 50th-season event that maximizes ratings, streaming subscriptions, and advertisers by casting compelling narratives and managing gameplay mechanics.",
+            "influences": [
+              "fan_engagement_level",
+              "narrative_visibility",
+              "strategic_advantage"
+            ]
+          },
+          {
+            "id": "challenge_threat",
+            "name": "Physical Challenge Threat",
+            "objective": "Use immunity challenge wins to survive deep into the game regardless of alliance position, creating an independent path to the finale.",
+            "influences": [
+              "alliance_stability",
+              "physical_challenge_dominance"
+            ]
+          },
+          {
+            "id": "dominant_alliance_leader",
+            "name": "Dominant Alliance Leader (field of returning players)",
+            "objective": "Control vote flow post-merge by managing a coalition of loyal players while neutralizing strategic threats before they can flip the jury narrative.",
+            "influences": [
+              "alliance_stability",
+              "jury_approval",
+              "strategic_threat_perception"
+            ]
+          },
+          {
+            "id": "early_boot_faction",
+            "name": "Pre-Merge Elimination Faction",
+            "objective": "Maximize personal longevity by identifying and eliminating the biggest strategic or physical threats before the merge scrambles tribal lines.",
+            "influences": [
+              "alliance_stability",
+              "strategic_threat_perception"
+            ]
+          },
+          {
+            "id": "fan_voting_bloc",
+            "name": "Fan Voting Bloc",
+            "objective": "Maximize entertainment value and influence season narrative by using viewer-participation mechanisms to shape which castaways gain advantages or survive key eliminations.",
+            "influences": [
+              "fan_engagement_level",
+              "narrative_visibility",
+              "strategic_advantage"
+            ]
+          },
+          {
+            "id": "final4_gatekeeper",
+            "name": "Final 4 Fire-Making Twist / Challenge Duel Gatekeeper",
+            "objective": "Win the Final 4 fire-making duel or choose who competes in it, securing a guaranteed path to Final Tribal Council while eliminating the most dangerous jury threat before votes are cast.",
+            "influences": [
+              "jury_approval",
+              "physical_challenge_dominance",
+              "strategic_threat_perception"
+            ]
+          },
+          {
+            "id": "idol_hunter",
+            "name": "Idol and Advantage Hunter",
+            "objective": "Accumulate as many hidden immunity idols and advantages as possible to build an insurmountable safety buffer and control who goes home.",
+            "influences": [
+              "hidden_immunity_idol",
+              "strategic_advantage",
+              "strategic_threat_perception"
+            ]
+          },
+          {
+            "id": "jury_members",
+            "name": "Jury Members",
+            "objective": "Vindicate their own elimination by rewarding the finalist whose game they personally respect, seeking validation that the competition was decided by genuine skill rather than luck or coattail-riding.",
+            "influences": [
+              "jury_approval"
+            ]
+          },
+          {
+            "id": "returning_legend",
+            "name": "Returning Legend / Iconic Past Player",
+            "objective": "Rehabilitate or cement legacy by making a deep run that validates their original season narrative and converts historical goodwill into jury votes.",
+            "influences": [
+              "jury_approval",
+              "narrative_visibility",
+              "strategic_threat_perception"
+            ]
+          },
+          {
+            "id": "rizo_velovic",
+            "name": "Rizo Velovic",
+            "objective": "Use boldness and idol-play experience to dictate the post-merge agenda, building a resume that earns jury respect rather than resentment.",
+            "influences": [
+              "alliance_stability",
+              "hidden_immunity_idol",
+              "strategic_threat_perception"
+            ]
+          },
+          {
+            "id": "savannah_louie",
+            "name": "Savannah Louie",
+            "objective": "Parlay her Season 49 winner credibility into another deep run by converting competitive respect into jury goodwill rather than early-boot target status.",
+            "influences": [
+              "alliance_stability",
+              "jury_approval",
+              "strategic_threat_perception"
+            ]
+          },
+          {
+            "id": "social_game_floater",
+            "name": "Social Game Floater",
+            "objective": "Minimize personal threat perception while cultivating goodwill with every faction, positioning to be taken to the finale as an 'easy beat' who then makes a jury case.",
+            "influences": [
+              "alliance_stability",
+              "jury_approval"
+            ]
+          }
+        ],
+        "factors": [
+          {
+            "id": "alliance_stability",
+            "name": "Stability of Aubry's Core Alliance",
+            "state": 0.5
+          },
+          {
+            "id": "fan_engagement_level",
+            "name": "Fan Engagement and Viewer Voting Activity",
+            "state": 0.65
+          },
+          {
+            "id": "hidden_immunity_idol",
+            "name": "Hidden Immunity Idol Possession in the Game",
+            "state": 0.25
+          },
+          {
+            "id": "jury_approval",
+            "name": "Jury Approval for Aubry Bracco",
+            "state": 0.45
+          },
+          {
+            "id": "narrative_visibility",
+            "name": "Aubry's Screen Time and Narrative Visibility",
+            "state": 0.5
+          },
+          {
+            "id": "physical_challenge_dominance",
+            "name": "Challenge Win Rate by Immunity Threats",
+            "state": 0.5
+          },
+          {
+            "id": "strategic_advantage",
+            "name": "Strategic Advantage Distribution (vote steals, extra votes)",
+            "state": 0.2
+          },
+          {
+            "id": "strategic_threat_perception",
+            "name": "Field's Threat Perception of Aubry",
+            "state": 0.55
+          }
+        ],
+        "edges": [
+          "alliance_stability --(+0.30, lag 3)--> jury_approval",
+          "aubry_bracco --(+0.40, lag 1)--> alliance_stability",
+          "aubry_bracco --(+0.40, lag 2)--> jury_approval",
+          "aubry_bracco --(+0.40, lag 1)--> narrative_visibility",
+          "aubry_bracco --(+0.30, lag 1)--> strategic_threat_perception",
+          "cbs_production --(+0.50, lag 1)--> fan_engagement_level",
+          "cbs_production --(+0.35, lag 1)--> narrative_visibility",
+          "cbs_production --(+0.35, lag 2)--> strategic_advantage",
+          "challenge_threat --(-0.20, lag 2)--> alliance_stability",
+          "challenge_threat --(+0.60, lag 1)--> physical_challenge_dominance",
+          "dominant_alliance_leader --(-0.35, lag 2)--> alliance_stability",
+          "dominant_alliance_leader --(-0.30, lag 4)--> jury_approval",
+          "dominant_alliance_leader --(+0.30, lag 1)--> strategic_threat_perception",
+          "early_boot_faction --(-0.25, lag 1)--> alliance_stability",
+          "early_boot_faction --(+0.25, lag 0)--> strategic_threat_perception",
+          "fan_engagement_level --(+0.30, lag 2)--> strategic_advantage",
+          "fan_voting_bloc --(+0.60, lag 0)--> fan_engagement_level",
+          "fan_voting_bloc --(+0.30, lag 2)--> narrative_visibility",
+          "fan_voting_bloc --(+0.50, lag 1)--> strategic_advantage",
+          "final4_gatekeeper --(-0.35, lag 2)--> jury_approval",
+          "final4_gatekeeper --(+0.50, lag 1)--> physical_challenge_dominance",
+          "final4_gatekeeper --(+0.30, lag 1)--> strategic_threat_perception",
+          "hidden_immunity_idol --(+0.20, lag 1)--> alliance_stability",
+          "hidden_immunity_idol --(+0.25, lag 1)--> strategic_threat_perception",
+          "idol_hunter --(+0.50, lag 1)--> hidden_immunity_idol",
+          "idol_hunter --(+0.40, lag 1)--> strategic_advantage",
+          "idol_hunter --(+0.25, lag 1)--> strategic_threat_perception",
+          "jury_members --(+0.60, lag 3)--> jury_approval",
+          "narrative_visibility --(+0.25, lag 2)--> jury_approval",
+          "physical_challenge_dominance --(-0.20, lag 1)--> alliance_stability",
+          "physical_challenge_dominance --(+0.25, lag 1)--> strategic_threat_perception",
+          "returning_legend --(-0.20, lag 3)--> jury_approval",
+          "returning_legend --(+0.35, lag 1)--> narrative_visibility",
+          "returning_legend --(+0.25, lag 1)--> strategic_threat_perception",
+          "rizo_velovic --(-0.25, lag 2)--> alliance_stability",
+          "rizo_velovic --(+0.45, lag 1)--> hidden_immunity_idol",
+          "rizo_velovic --(+0.30, lag 1)--> strategic_threat_perception",
+          "savannah_louie --(-0.30, lag 2)--> alliance_stability",
+          "savannah_louie --(-0.25, lag 3)--> jury_approval",
+          "savannah_louie --(+0.30, lag 1)--> strategic_threat_perception",
+          "social_game_floater --(+0.25, lag 1)--> alliance_stability",
+          "social_game_floater --(+0.25, lag 3)--> jury_approval",
+          "strategic_advantage --(-0.20, lag 1)--> alliance_stability",
+          "strategic_advantage --(+0.20, lag 1)--> strategic_threat_perception",
+          "strategic_threat_perception --(-0.30, lag 1)--> alliance_stability"
+        ],
+        "outcome_rule": {
+          "terms": [
+            "alliance_stability +0.25",
+            "jury_approval +0.60",
+            "narrative_visibility +0.15",
+            "physical_challenge_dominance -0.10",
+            "strategic_threat_perception -0.20"
+          ],
+          "threshold": 0.55,
+          "steepness": 8.0
+        }
+      }
+    },
+    {
+      "scenario_id": "polymarket:what-will-powell-say-during-january-press-conference-639:915357",
+      "question": "Will Powell say \"Tariff\" 13+ times during January press conference?",
+      "graph": {
+        "actors": [
+          {
+            "id": "business_lobby",
+            "name": "Business and Industry Groups",
+            "objective": "Minimize input cost increases from tariffs and advocate for stable monetary conditions conducive to investment",
+            "influences": [
+              "tariff_economic_pressure"
+            ]
+          },
+          {
+            "id": "congress",
+            "name": "Congressional Oversight Bodies",
+            "objective": "Maintain oversight of Federal Reserve mandates and ensure monetary policy supports both employment and price stability",
+            "influences": [
+              "powell_rhetorical_caution"
+            ]
+          },
+          {
+            "id": "fed_research_staff",
+            "name": "Federal Reserve Research and Economics Staff",
+            "objective": "Provide rigorous empirical analysis of tariff pass-through effects and inflation dynamics to inform FOMC decisions",
+            "influences": [
+              "inflation_uncertainty",
+              "powell_tariff_mention_rate"
+            ]
+          },
+          {
+            "id": "financial_markets",
+            "name": "Financial Markets and Investors",
+            "objective": "Minimize uncertainty about future rate path and economic conditions to price assets accurately",
+            "influences": [
+              "inflation_uncertainty"
+            ]
+          },
+          {
+            "id": "fomc_committee",
+            "name": "FOMC Voting Members",
+            "objective": "Achieve consensus on monetary policy stance that balances inflation risk against labor market stability",
+            "influences": [
+              "fed_rate_hold_probability",
+              "powell_tariff_mention_rate"
+            ]
+          },
+          {
+            "id": "powell",
+            "name": "Jerome Powell (Fed Chair)",
+            "objective": "Maintain Fed credibility, price stability, and maximum employment while preserving institutional independence from political interference",
+            "influences": [
+              "powell_rhetorical_caution",
+              "powell_tariff_mention_rate"
+            ]
+          },
+          {
+            "id": "press_corps",
+            "name": "FOMC Press Conference Journalists",
+            "objective": "Maximize audience engagement by surfacing contradictions between Fed guidance and observable economic data, which sometimes pushes toward tariff questions and sometimes toward other contested topics",
+            "influences": [
+              "journalist_adversarial_intensity",
+              "powell_tariff_mention_rate"
+            ]
+          },
+          {
+            "id": "supreme_court",
+            "name": "U.S. Supreme Court",
+            "objective": "Adjudicate the constitutional scope of presidential tariff authority under IEEPA with fidelity to legal precedent",
+            "influences": [
+              "tariff_economic_pressure"
+            ]
+          },
+          {
+            "id": "trading_partners",
+            "name": "Major US Trading Partners (China, EU, Canada)",
+            "objective": "Minimize economic harm from US tariffs while pursuing reciprocal leverage and negotiated trade agreements",
+            "influences": [
+              "tariff_economic_pressure"
+            ]
+          },
+          {
+            "id": "treasury_secretary",
+            "name": "Treasury Secretary (Bessent)",
+            "objective": "Coordinate fiscal and trade narratives to sustain market confidence while supporting administration tariff goals without triggering disorderly credit conditions",
+            "influences": [
+              "journalist_adversarial_intensity",
+              "tariff_economic_pressure"
+            ]
+          },
+          {
+            "id": "white_house",
+            "name": "White House / Trump Administration",
+            "objective": "Maximize economic growth optics and pressure Fed toward lower rates while advancing trade policy goals",
+            "influences": [
+              "journalist_adversarial_intensity",
+              "tariff_economic_pressure"
+            ]
+          }
+        ],
+        "factors": [
+          {
+            "id": "fed_rate_hold_probability",
+            "name": "Fed Rate Hold Probability at January Meeting",
+            "state": 0.88
+          },
+          {
+            "id": "inflation_uncertainty",
+            "name": "Inflation Outlook Uncertainty",
+            "state": 0.72
+          },
+          {
+            "id": "journalist_adversarial_intensity",
+            "name": "Press Corps Adversarial Probing Intensity at Fed Conferences",
+            "state": 0.72
+          },
+          {
+            "id": "powell_rhetorical_caution",
+            "name": "Powell's Rhetorical Caution on Political Topics",
+            "state": 0.72
+          },
+          {
+            "id": "powell_tariff_mention_rate",
+            "name": "Powell's Rate of Tariff Mentions Per Conference",
+            "state": 0.68
+          },
+          {
+            "id": "tariff_economic_pressure",
+            "name": "Enacted Tariff Level and Pass-Through Pressure on Prices",
+            "state": 0.83
+          }
+        ],
+        "edges": [
+          "business_lobby --(+0.25, lag 2)--> tariff_economic_pressure",
+          "congress --(+0.25, lag 2)--> powell_rhetorical_caution",
+          "fed_rate_hold_probability --(-0.25, lag 0)--> powell_tariff_mention_rate",
+          "fed_research_staff --(-0.30, lag 2)--> inflation_uncertainty",
+          "fed_research_staff --(+0.25, lag 1)--> powell_tariff_mention_rate",
+          "financial_markets --(+0.30, lag 1)--> inflation_uncertainty",
+          "fomc_committee --(+0.65, lag 0)--> fed_rate_hold_probability",
+          "fomc_committee --(+0.20, lag 1)--> powell_tariff_mention_rate",
+          "inflation_uncertainty --(+0.50, lag 1)--> fed_rate_hold_probability",
+          "inflation_uncertainty --(+0.40, lag 0)--> powell_tariff_mention_rate",
+          "journalist_adversarial_intensity --(+0.50, lag 0)--> powell_tariff_mention_rate",
+          "powell --(+0.60, lag 0)--> powell_rhetorical_caution",
+          "powell --(-0.20, lag 0)--> powell_tariff_mention_rate",
+          "powell_rhetorical_caution --(-0.35, lag 0)--> powell_tariff_mention_rate",
+          "press_corps --(+0.65, lag 0)--> journalist_adversarial_intensity",
+          "press_corps --(+0.30, lag 0)--> powell_tariff_mention_rate",
+          "supreme_court --(-0.40, lag 3)--> tariff_economic_pressure",
+          "tariff_economic_pressure --(+0.55, lag 1)--> inflation_uncertainty",
+          "tariff_economic_pressure --(+0.50, lag 0)--> journalist_adversarial_intensity",
+          "tariff_economic_pressure --(+0.50, lag 0)--> powell_tariff_mention_rate",
+          "trading_partners --(+0.35, lag 1)--> tariff_economic_pressure",
+          "treasury_secretary --(+0.40, lag 1)--> journalist_adversarial_intensity",
+          "treasury_secretary --(+0.30, lag 1)--> tariff_economic_pressure",
+          "white_house --(+0.35, lag 1)--> journalist_adversarial_intensity",
+          "white_house --(+0.60, lag 1)--> tariff_economic_pressure"
+        ],
+        "outcome_rule": {
+          "terms": [
+            "fed_rate_hold_probability -0.10",
+            "journalist_adversarial_intensity +0.25",
+            "powell_rhetorical_caution -0.20",
+            "powell_tariff_mention_rate +0.60",
+            "tariff_economic_pressure +0.15"
+          ],
+          "threshold": 0.55,
+          "steepness": 6.0
+        }
+      }
+    },
+    {
+      "scenario_id": "polymarket:which-company-has-best-ai-model-end-of-june:631140",
+      "question": "Will Anthropic have the best AI model at the end of June 2026?",
+      "graph": {
+        "actors": [
+          {
+            "id": "ai_research_community",
+            "name": "Academic AI Research Community",
+            "objective": "Advance scientific understanding of AI capabilities and limitations through rigorous empirical evaluation and open publication of findings.",
+            "influences": [
+              "safety_reputation",
+              "voter_engagement"
+            ]
+          },
+          {
+            "id": "amazon_aws",
+            "name": "Amazon Web Services",
+            "objective": "Maximize cloud revenue by positioning AWS as the premier platform for enterprise AI workloads, with Anthropic's Claude as the flagship model offering on Bedrock.",
+            "influences": [
+              "anthropic_absolute_compute",
+              "anthropic_arena_score"
+            ]
+          },
+          {
+            "id": "anthropic",
+            "name": "Anthropic",
+            "objective": "Advance frontier AI safety research while deploying commercially competitive models that demonstrate safe AI development is viable and profitable.",
+            "influences": [
+              "anthropic_arena_score",
+              "anthropic_release_velocity",
+              "safety_reputation"
+            ]
+          },
+          {
+            "id": "enterprise_users",
+            "name": "Enterprise AI Adopters",
+            "objective": "Maximize productivity and return on investment from AI deployments by selecting models with the best reliability, safety, and task performance for regulated workflows.",
+            "influences": [
+              "anthropic_arena_score",
+              "voter_engagement"
+            ]
+          },
+          {
+            "id": "google_deepmind",
+            "name": "Google DeepMind",
+            "objective": "Leverage Google's compute infrastructure and research depth to establish Gemini as the leading general-purpose AI model family across consumer and enterprise use cases.",
+            "influences": [
+              "competitor_arena_score",
+              "training_efficiency_advantage"
+            ]
+          },
+          {
+            "id": "investors_vcs",
+            "name": "AI Lab Investors and VCs",
+            "objective": "Generate outsized financial returns by identifying and funding the AI companies most likely to achieve durable market leadership and eventual profitable scale.",
+            "influences": [
+              "anthropic_absolute_compute",
+              "anthropic_release_velocity"
+            ]
+          },
+          {
+            "id": "lmsys_arena",
+            "name": "LMSYS Chatbot Arena Operators",
+            "objective": "Maintain the Chatbot Arena as a credible, methodology-sound benchmark for AI model comparison through independent human preference evaluation.",
+            "influences": [
+              "voter_engagement"
+            ]
+          },
+          {
+            "id": "meta_ai",
+            "name": "Meta AI",
+            "objective": "Deploy open-weight frontier models that increase user engagement across Meta's social platforms and establish Meta as the standard for open-source AI development.",
+            "influences": [
+              "competitor_arena_score",
+              "voter_engagement"
+            ]
+          },
+          {
+            "id": "microsoft",
+            "name": "Microsoft",
+            "objective": "Integrate frontier AI capabilities into enterprise software products to generate recurring subscription revenue and protect Azure cloud market share against AWS and Google, primarily through the OpenAI partnership.",
+            "influences": [
+              "competitor_arena_score",
+              "training_efficiency_advantage"
+            ]
+          },
+          {
+            "id": "nvidia",
+            "name": "NVIDIA",
+            "objective": "Maximize GPU revenue and data center market share by allocating scarce H100/H200/B200 supply to customers with the largest long-term procurement commitments and strategic value.",
+            "influences": [
+              "anthropic_absolute_compute",
+              "training_efficiency_advantage"
+            ]
+          },
+          {
+            "id": "openai",
+            "name": "OpenAI",
+            "objective": "Maintain market leadership in AI models and products while scaling revenue to justify its valuation and move toward profitability.",
+            "influences": [
+              "competitor_arena_score",
+              "voter_engagement"
+            ]
+          },
+          {
+            "id": "regulatory_bodies",
+            "name": "AI Regulators (EU, US FTC, UK CMA)",
+            "objective": "Protect market competition and public safety by scrutinizing AI lab concentration of power, data practices, and potential harms from advanced AI systems.",
+            "influences": [
+              "regulatory_pressure"
+            ]
+          },
+          {
+            "id": "xai",
+            "name": "xAI (Elon Musk)",
+            "objective": "Build Grok into a dominant AI model by leveraging X platform data and Colossus compute cluster, prioritizing speed and minimal content restrictions over safety.",
+            "influences": [
+              "competitor_arena_score"
+            ]
+          }
+        ],
+        "factors": [
+          {
+            "id": "anthropic_absolute_compute",
+            "name": "Anthropic Absolute GPU and Training Compute Access",
+            "state": 0.62
+          },
+          {
+            "id": "anthropic_arena_score",
+            "name": "Anthropic Best Model Arena Score",
+            "state": 0.72
+          },
+          {
+            "id": "anthropic_release_velocity",
+            "name": "Anthropic Model Release Cadence",
+            "state": 0.7
+          },
+          {
+            "id": "competitor_arena_score",
+            "name": "Top Competitor Arena Score",
+            "state": 0.68
+          },
+          {
+            "id": "regulatory_pressure",
+            "name": "Regulatory Constraint Intensity on Labs",
+            "state": 0.45
+          },
+          {
+            "id": "safety_reputation",
+            "name": "Anthropic Safety and Trust Reputation",
+            "state": 0.75
+          },
+          {
+            "id": "training_efficiency_advantage",
+            "name": "Anthropic Algorithmic Efficiency Edge Over Rivals",
+            "state": 0.5
+          },
+          {
+            "id": "voter_engagement",
+            "name": "Arena Voter Participation Rate",
+            "state": 0.6
+          }
+        ],
+        "edges": [
+          "ai_research_community --(+0.30, lag 2)--> safety_reputation",
+          "ai_research_community --(+0.35, lag 1)--> voter_engagement",
+          "amazon_aws --(+0.65, lag 2)--> anthropic_absolute_compute",
+          "amazon_aws --(+0.25, lag 4)--> anthropic_arena_score",
+          "anthropic --(+0.50, lag 3)--> anthropic_arena_score",
+          "anthropic --(+0.70, lag 1)--> anthropic_release_velocity",
+          "anthropic --(+0.40, lag 2)--> safety_reputation",
+          "anthropic_absolute_compute --(+0.30, lag 4)--> anthropic_arena_score",
+          "anthropic_absolute_compute --(+0.50, lag 2)--> anthropic_release_velocity",
+          "anthropic_release_velocity --(+0.55, lag 3)--> anthropic_arena_score",
+          "enterprise_users --(+0.20, lag 2)--> anthropic_arena_score",
+          "enterprise_users --(+0.30, lag 1)--> voter_engagement",
+          "google_deepmind --(+0.55, lag 2)--> competitor_arena_score",
+          "google_deepmind --(-0.35, lag 3)--> training_efficiency_advantage",
+          "investors_vcs --(+0.35, lag 2)--> anthropic_absolute_compute",
+          "investors_vcs --(+0.30, lag 2)--> anthropic_release_velocity",
+          "lmsys_arena --(+0.50, lag 1)--> voter_engagement",
+          "meta_ai --(+0.30, lag 3)--> competitor_arena_score",
+          "meta_ai --(+0.25, lag 1)--> voter_engagement",
+          "microsoft --(+0.30, lag 3)--> competitor_arena_score",
+          "microsoft --(-0.35, lag 3)--> training_efficiency_advantage",
+          "nvidia --(+0.60, lag 2)--> anthropic_absolute_compute",
+          "nvidia --(+0.45, lag 3)--> training_efficiency_advantage",
+          "openai --(+0.65, lag 2)--> competitor_arena_score",
+          "openai --(+0.35, lag 1)--> voter_engagement",
+          "regulatory_bodies --(+0.70, lag 2)--> regulatory_pressure",
+          "regulatory_pressure --(-0.20, lag 2)--> anthropic_release_velocity",
+          "regulatory_pressure --(-0.20, lag 2)--> competitor_arena_score",
+          "safety_reputation --(+0.30, lag 2)--> anthropic_arena_score",
+          "training_efficiency_advantage --(+0.30, lag 4)--> anthropic_arena_score",
+          "training_efficiency_advantage --(+0.25, lag 2)--> anthropic_release_velocity",
+          "voter_engagement --(+0.25, lag 1)--> anthropic_arena_score",
+          "voter_engagement --(+0.25, lag 1)--> competitor_arena_score",
+          "xai --(+0.35, lag 2)--> competitor_arena_score"
+        ],
+        "outcome_rule": {
+          "terms": [
+            "anthropic_arena_score +0.70",
+            "anthropic_release_velocity +0.20",
+            "competitor_arena_score -0.60",
+            "safety_reputation +0.10"
+          ],
+          "threshold": 0.5,
+          "steepness": 8.0
+        }
+      }
+    },
+    {
+      "scenario_id": "polymarket:which-company-has-second-best-ai-model-end-of-october:593024",
+      "question": "Will Meta have the second best AI model on October 31?",
+      "graph": {
+        "actors": [
+          {
+            "id": "anthropic",
+            "name": "Anthropic",
+            "objective": "Advance Claude's safety and capability to attract enterprise customers and maintain a top-tier position in independent benchmarks that validate its commercial and research credibility",
+            "influences": [
+              "rival_release_pace"
+            ]
+          },
+          {
+            "id": "enterprise_users",
+            "name": "Enterprise AI Customers",
+            "objective": "Adopt AI models that deliver the best cost-performance ratio and reliability for production workloads, minimizing switching costs and vendor lock-in",
+            "influences": [
+              "arena_voter_activity"
+            ]
+          },
+          {
+            "id": "eu_regulators",
+            "name": "European Union Regulators",
+            "objective": "Enforce data protection, competition, and AI Act requirements to protect European citizens and ensure a level playing field among AI providers operating in the EU",
+            "influences": [
+              "compute_investment",
+              "meta_model_readiness"
+            ]
+          },
+          {
+            "id": "google_deepmind",
+            "name": "Google DeepMind",
+            "objective": "Maintain Gemini's capability lead across research and applied benchmarks to support Google's cloud and search advertising revenue while outpacing rivals in model efficiency",
+            "influences": [
+              "rival_release_pace"
+            ]
+          },
+          {
+            "id": "independent_researchers",
+            "name": "Independent AI Researchers and Evaluators",
+            "objective": "Publish rigorous model evaluations and comparisons to advance scientific understanding of model capabilities and influence practitioner adoption",
+            "influences": [
+              "arena_voter_activity",
+              "meta_arena_score"
+            ]
+          },
+          {
+            "id": "lmsys_arena",
+            "name": "LMSYS Chatbot Arena Team",
+            "objective": "Maintain the Arena as the authoritative, unbiased crowdsourced evaluation platform by ensuring broad participation and methodological integrity",
+            "influences": [
+              "arena_voter_activity"
+            ]
+          },
+          {
+            "id": "meta_ai",
+            "name": "Meta AI (Platforms)",
+            "objective": "Establish Llama and Meta AI products as leading frontier models to capture user engagement, advertising leverage, and enterprise AI market share",
+            "influences": [
+              "compute_investment",
+              "meta_arena_score",
+              "meta_model_readiness"
+            ]
+          },
+          {
+            "id": "microsoft",
+            "name": "Microsoft / Azure AI",
+            "objective": "Deepen Azure's position as the preferred cloud platform for AI workloads by securing exclusive or preferential access to top-tier models and integrating them into enterprise software products",
+            "influences": [
+              "compute_investment",
+              "rival_release_pace"
+            ]
+          },
+          {
+            "id": "openai",
+            "name": "OpenAI",
+            "objective": "Maximize API and enterprise revenue by delivering the highest-reliability and highest-capability models, sustaining subscriber growth and investor confidence regardless of how public leaderboards are structured",
+            "influences": [
+              "arena_voter_activity",
+              "rival_release_pace"
+            ]
+          },
+          {
+            "id": "scale_ai",
+            "name": "Scale AI",
+            "objective": "Maximize data labeling and AI evaluation revenue by positioning itself as the indispensable partner for model training and benchmarking across all major AI labs",
+            "influences": [
+              "meta_arena_score",
+              "meta_model_readiness"
+            ]
+          },
+          {
+            "id": "xai",
+            "name": "xAI (Grok)",
+            "objective": "Rapidly scale Grok's benchmark performance and public visibility to attract users, differentiate from rivals, and leverage the X platform user base for data advantages",
+            "influences": [
+              "arena_voter_activity",
+              "meta_arena_score"
+            ]
+          }
+        ],
+        "factors": [
+          {
+            "id": "arena_voter_activity",
+            "name": "Chatbot Arena Voter Participation Volume",
+            "state": 0.62
+          },
+          {
+            "id": "compute_investment",
+            "name": "Meta AI Infrastructure and Compute Investment Level",
+            "state": 0.78
+          },
+          {
+            "id": "meta_arena_score",
+            "name": "Meta Model Arena Score Rank",
+            "state": 0.38
+          },
+          {
+            "id": "meta_model_readiness",
+            "name": "Meta Next-Gen Model Training Completion and Safety Clearance",
+            "state": 0.55
+          },
+          {
+            "id": "rival_release_pace",
+            "name": "Pace of New Frontier Model Releases by Top Competitors",
+            "state": 0.8
+          }
+        ],
+        "edges": [
+          "anthropic --(+0.50, lag 1)--> rival_release_pace",
+          "arena_voter_activity --(-0.20, lag 1)--> meta_arena_score",
+          "compute_investment --(+0.25, lag 4)--> meta_arena_score",
+          "compute_investment --(+0.50, lag 2)--> meta_model_readiness",
+          "enterprise_users --(+0.35, lag 1)--> arena_voter_activity",
+          "eu_regulators --(-0.20, lag 3)--> compute_investment",
+          "eu_regulators --(-0.15, lag 4)--> meta_model_readiness",
+          "google_deepmind --(+0.65, lag 1)--> rival_release_pace",
+          "independent_researchers --(+0.45, lag 0)--> arena_voter_activity",
+          "independent_researchers --(+0.15, lag 2)--> meta_arena_score",
+          "lmsys_arena --(+0.60, lag 0)--> arena_voter_activity",
+          "meta_ai --(+0.60, lag 0)--> compute_investment",
+          "meta_ai --(+0.40, lag 3)--> meta_arena_score",
+          "meta_ai --(+0.70, lag 1)--> meta_model_readiness",
+          "meta_model_readiness --(+0.50, lag 2)--> meta_arena_score",
+          "microsoft --(-0.30, lag 1)--> compute_investment",
+          "microsoft --(+0.50, lag 2)--> rival_release_pace",
+          "openai --(+0.40, lag 1)--> arena_voter_activity",
+          "openai --(+0.55, lag 2)--> rival_release_pace",
+          "rival_release_pace --(-0.55, lag 1)--> meta_arena_score",
+          "scale_ai --(+0.20, lag 3)--> meta_arena_score",
+          "scale_ai --(+0.40, lag 2)--> meta_model_readiness",
+          "xai --(+0.30, lag 1)--> arena_voter_activity",
+          "xai --(-0.20, lag 1)--> meta_arena_score"
+        ],
+        "outcome_rule": {
+          "terms": [
+            "meta_arena_score +0.70",
+            "meta_model_readiness +0.30",
+            "rival_release_pace -0.60"
+          ],
+          "threshold": 0.5,
+          "steepness": 6.0
+        }
+      }
+    },
+    {
+      "scenario_id": "polymarket:which-soccer-players-will-sign-with-new-clubs:542171",
+      "question": "Will Viktor Gyokeres sign with a new club during the transfer window?",
+      "graph": {
+        "actors": [
+          {
+            "id": "arsenal",
+            "name": "Arsenal FC",
+            "objective": "Strengthen the striker position to compete for Premier League titles and deep Champions League runs, prioritising elite forwards who fit Arteta's system.",
+            "influences": [
+              "arsenal_striker_urgency"
+            ]
+          },
+          {
+            "id": "arsenal_recruitment",
+            "name": "Arsenal Recruitment Department",
+            "objective": "Identify and secure the best available striker at the optimal price-to-quality ratio before rival clubs close the market.",
+            "influences": [
+              "preferred_club_bid_match",
+              "rival_bid_competition"
+            ]
+          },
+          {
+            "id": "barcelona",
+            "name": "FC Barcelona",
+            "objective": "Restore La Liga and Champions League dominance by signing world-class attackers within FFP-constrained budgets.",
+            "influences": [
+              "rival_bid_competition"
+            ]
+          },
+          {
+            "id": "chelsea",
+            "name": "Chelsea FC",
+            "objective": "Continuously improve squad quality through high-volume transfer activity, targeting elite forwards to improve goal output.",
+            "influences": [
+              "rival_bid_competition",
+              "transfer_fee_gap"
+            ]
+          },
+          {
+            "id": "gyokeres",
+            "name": "Viktor Gy\u00f6rkeres",
+            "objective": "Maximise career earnings and sporting honours over the next five years, whether through a transfer to a leading club or a renegotiated contract, prioritising long-term financial security and regular Champions League participation.",
+            "influences": [
+              "deal_momentum",
+              "player_destination_preference"
+            ]
+          },
+          {
+            "id": "gyokeres_agent",
+            "name": "Gy\u00f6rkeres Agent / Representatives",
+            "objective": "Negotiate the most lucrative and career-enhancing contract for their client, maximising signing fee, wages, and length of contract.",
+            "influences": [
+              "player_destination_preference",
+              "preferred_club_bid_match",
+              "transfer_fee_gap"
+            ]
+          },
+          {
+            "id": "manchester_united",
+            "name": "Manchester United",
+            "objective": "Rebuild attacking quality under new management with a dominant centre-forward capable of anchoring a multi-year rebuild.",
+            "influences": [
+              "mu_financial_capacity",
+              "rival_bid_competition"
+            ]
+          },
+          {
+            "id": "mu_ownership",
+            "name": "Manchester United INEOS/Ratcliffe Ownership",
+            "objective": "Restore Manchester United to Premier League and European competitiveness through targeted high-profile signings within sustainable financial structures.",
+            "influences": [
+              "mu_financial_capacity"
+            ]
+          },
+          {
+            "id": "premier_league",
+            "name": "Premier League Clubs Collective",
+            "objective": "Sustain inflated striker market valuations through competitive bidding to protect the relative value of existing assets.",
+            "influences": [
+              "rival_bid_competition"
+            ]
+          },
+          {
+            "id": "real_madrid",
+            "name": "Real Madrid",
+            "objective": "Maintain squad strength and European dominance by securing elite forwards who elevate goal output without compromising wage structure or squad harmony.",
+            "influences": [
+              "player_destination_preference",
+              "rival_bid_competition",
+              "transfer_fee_gap"
+            ]
+          },
+          {
+            "id": "sporting_cp",
+            "name": "Sporting CP",
+            "objective": "Maximise transfer revenue from player sales while maintaining competitive squad quality and Primeira Liga dominance.",
+            "influences": [
+              "sporting_sell_willingness"
+            ]
+          },
+          {
+            "id": "sporting_president",
+            "name": "Sporting CP President (Frederico Varandas)",
+            "objective": "Maintain Sporting's financial health and institutional prestige, securing record transfer fees for elite assets while projecting the club as a top seller.",
+            "influences": [
+              "sporting_sell_willingness",
+              "transfer_fee_gap"
+            ]
+          },
+          {
+            "id": "swedish_fa",
+            "name": "Swedish Football Association",
+            "objective": "Ensure national team star Viktor Gy\u00f6rkeres plays at the highest club level possible to maintain his form and availability for Sweden.",
+            "influences": [
+              "player_destination_preference"
+            ]
+          }
+        ],
+        "factors": [
+          {
+            "id": "arsenal_striker_urgency",
+            "name": "Arsenal Urgency to Sign a Centre-Forward",
+            "state": 0.82
+          },
+          {
+            "id": "club_project_appeal",
+            "name": "Sporting Project Quality and Long-Term Ambition at Bidding Club",
+            "state": 0.65
+          },
+          {
+            "id": "deal_momentum",
+            "name": "Concrete Transfer Negotiation Progress",
+            "state": 0.38
+          },
+          {
+            "id": "mu_financial_capacity",
+            "name": "Manchester United Transfer Budget Availability",
+            "state": 0.52
+          },
+          {
+            "id": "player_destination_preference",
+            "name": "Player Stable Underlying Preference for a Specific Destination",
+            "state": 0.65
+          },
+          {
+            "id": "preferred_club_bid_match",
+            "name": "Formal Bid Submitted by Player Preferred Destination Club",
+            "state": 0.42
+          },
+          {
+            "id": "rival_bid_competition",
+            "name": "Breadth of Clubs Actively Competing to Sign Gy\u00f6rkeres",
+            "state": 0.62
+          },
+          {
+            "id": "sporting_sell_willingness",
+            "name": "Sporting CP Financial and Strategic Motivation to Sell",
+            "state": 0.65
+          },
+          {
+            "id": "transfer_fee_gap",
+            "name": "Gap Between Asking Price and Buyer Bids",
+            "state": 0.45
+          }
+        ],
+        "edges": [
+          "arsenal --(+0.60, lag 1)--> arsenal_striker_urgency",
+          "arsenal_recruitment --(+0.55, lag 2)--> preferred_club_bid_match",
+          "arsenal_recruitment --(-0.40, lag 1)--> rival_bid_competition",
+          "arsenal_striker_urgency --(+0.40, lag 1)--> deal_momentum",
+          "barcelona --(+0.25, lag 2)--> rival_bid_competition",
+          "chelsea --(+0.45, lag 1)--> rival_bid_competition",
+          "chelsea --(-0.35, lag 2)--> transfer_fee_gap",
+          "club_project_appeal --(+0.50, lag 1)--> player_destination_preference",
+          "gyokeres --(+0.35, lag 1)--> deal_momentum",
+          "gyokeres --(+0.60, lag 0)--> player_destination_preference",
+          "gyokeres_agent --(+0.50, lag 1)--> player_destination_preference",
+          "gyokeres_agent --(+0.45, lag 2)--> preferred_club_bid_match",
+          "gyokeres_agent --(-0.40, lag 2)--> transfer_fee_gap",
+          "manchester_united --(+0.50, lag 2)--> mu_financial_capacity",
+          "manchester_united --(+0.45, lag 1)--> rival_bid_competition",
+          "mu_financial_capacity --(+0.50, lag 1)--> rival_bid_competition",
+          "mu_ownership --(+0.55, lag 2)--> mu_financial_capacity",
+          "player_destination_preference --(+0.40, lag 1)--> deal_momentum",
+          "preferred_club_bid_match --(+0.40, lag 1)--> deal_momentum",
+          "premier_league --(+0.35, lag 2)--> rival_bid_competition",
+          "real_madrid --(+0.40, lag 2)--> player_destination_preference",
+          "real_madrid --(+0.50, lag 1)--> rival_bid_competition",
+          "real_madrid --(-0.35, lag 2)--> transfer_fee_gap",
+          "rival_bid_competition --(+0.35, lag 1)--> deal_momentum",
+          "rival_bid_competition --(-0.55, lag 1)--> transfer_fee_gap",
+          "sporting_cp --(+0.55, lag 1)--> sporting_sell_willingness",
+          "sporting_president --(+0.60, lag 1)--> sporting_sell_willingness",
+          "sporting_president --(+0.50, lag 1)--> transfer_fee_gap",
+          "sporting_sell_willingness --(+0.40, lag 1)--> deal_momentum",
+          "swedish_fa --(+0.20, lag 2)--> player_destination_preference",
+          "transfer_fee_gap --(-0.40, lag 1)--> deal_momentum"
+        ],
+        "outcome_rule": {
+          "terms": [
+            "deal_momentum +0.60",
+            "preferred_club_bid_match +0.25",
+            "sporting_sell_willingness +0.25",
+            "transfer_fee_gap -0.35"
+          ],
+          "threshold": 0.5,
+          "steepness": 6.0
+        }
+      }
+    },
+    {
+      "scenario_id": "polymarket:which-teams-will-make-the-nba-playoffs-138:643377",
+      "question": "Will the Detroit Pistons make the NBA Playoffs?",
+      "graph": {
+        "actors": [
+          {
+            "id": "bickerstaff",
+            "name": "JB Bickerstaff (Head Coach)",
+            "objective": "Maximize team defensive efficiency and in-game tactical adaptability to protect a long-term coaching tenure in Detroit",
+            "influences": [
+              "cunningham_performance",
+              "detroit_win_rate",
+              "team_health"
+            ]
+          },
+          {
+            "id": "boston_celtics",
+            "name": "Boston Celtics",
+            "objective": "Defend their Eastern Conference presence and leverage roster continuity from their championship core to maintain playoff seeding",
+            "influences": [
+              "eastern_conference_pressure"
+            ]
+          },
+          {
+            "id": "bubble_competitors",
+            "name": "Eastern Conference Bubble Competitors (Bucks, Heat, and Peer Fringe Playoff Teams)",
+            "objective": "Secure one of the final Eastern Conference playoff berths by maximizing win accumulation against all opponents including Detroit",
+            "influences": [
+              "detroit_win_rate",
+              "eastern_conference_pressure"
+            ]
+          },
+          {
+            "id": "cleveland_cavaliers",
+            "name": "Cleveland Cavaliers",
+            "objective": "Maximize home-court advantage in the Eastern Conference playoffs by accumulating wins against all top-tier competition",
+            "influences": [
+              "eastern_conference_pressure"
+            ]
+          },
+          {
+            "id": "indiana_pacers",
+            "name": "Indiana Pacers",
+            "objective": "Rebuild competitive standing after a Finals run by developing young talent and maximizing Haliburton's prime years",
+            "influences": [
+              "eastern_conference_pressure"
+            ]
+          },
+          {
+            "id": "langdon_front_office",
+            "name": "Trajan Langdon (President of Basketball Operations)",
+            "objective": "Build sustainable roster depth through trades, signings, and draft capital allocation to secure the franchise's long-term competitive window",
+            "influences": [
+              "trade_deadline_impact"
+            ]
+          },
+          {
+            "id": "nba_scheduling",
+            "name": "NBA League Office (Scheduling and Rules Enforcement)",
+            "objective": "Maintain competitive balance, enforce collective bargaining agreements, and protect broadcast partner scheduling commitments",
+            "influences": [
+              "schedule_difficulty"
+            ]
+          },
+          {
+            "id": "new_york_knicks",
+            "name": "New York Knicks",
+            "objective": "Secure high seeding in the Eastern Conference bracket to leverage market advantages and maximize playoff revenue",
+            "influences": [
+              "eastern_conference_pressure"
+            ]
+          },
+          {
+            "id": "opposing_coaches",
+            "name": "Eastern Conference Opponent Coaching Staffs",
+            "objective": "Accumulate wins and maximize playoff seeding for their own franchises by preparing optimally for every opponent on the schedule",
+            "influences": [
+              "cunningham_performance",
+              "detroit_win_rate"
+            ]
+          },
+          {
+            "id": "pistons_core",
+            "name": "Detroit Pistons Core Roster (Cunningham, Duren, Ivey)",
+            "objective": "Establish individual statistical credentials and collective winning habits that earn long-term roster security and max-contract leverage",
+            "influences": [
+              "cunningham_performance",
+              "team_health"
+            ]
+          },
+          {
+            "id": "player_agents",
+            "name": "Player Agents and Player Movement Intermediaries",
+            "objective": "Maximize client earning potential through strategic contract timing, trade requests, and market exposure ahead of free agency windows",
+            "influences": [
+              "trade_deadline_impact"
+            ]
+          },
+          {
+            "id": "sports_media",
+            "name": "Sports Media and Broadcast Analysts",
+            "objective": "Generate audience engagement by amplifying narratives around surprising team performances and playoff races",
+            "influences": [
+              "cunningham_performance"
+            ]
+          },
+          {
+            "id": "tom_gores",
+            "name": "Tom Gores (Pistons Owner)",
+            "objective": "Increase franchise valuation and fan engagement in the Detroit market by fielding a consistently competitive team",
+            "influences": [
+              "trade_deadline_impact"
+            ]
+          }
+        ],
+        "factors": [
+          {
+            "id": "cunningham_performance",
+            "name": "Cade Cunningham On-Court Output and Playmaking Level",
+            "state": 0.82
+          },
+          {
+            "id": "detroit_win_rate",
+            "name": "Detroit Pistons Season Win Rate",
+            "state": 0.74
+          },
+          {
+            "id": "eastern_conference_pressure",
+            "name": "Eastern Conference Top-Six Competitive Pressure",
+            "state": 0.45
+          },
+          {
+            "id": "schedule_difficulty",
+            "name": "Remaining Schedule Strength Against Top Opponents",
+            "state": 0.5
+          },
+          {
+            "id": "team_health",
+            "name": "Detroit Pistons Roster Health and Availability",
+            "state": 0.75
+          },
+          {
+            "id": "trade_deadline_impact",
+            "name": "Trade Deadline Roster Reinforcement Effect",
+            "state": 0.5
+          }
+        ],
+        "edges": [
+          "bickerstaff --(+0.35, lag 1)--> cunningham_performance",
+          "bickerstaff --(+0.40, lag 1)--> detroit_win_rate",
+          "bickerstaff --(+0.30, lag 1)--> team_health",
+          "boston_celtics --(+0.40, lag 1)--> eastern_conference_pressure",
+          "bubble_competitors --(-0.20, lag 2)--> detroit_win_rate",
+          "bubble_competitors --(+0.45, lag 1)--> eastern_conference_pressure",
+          "cleveland_cavaliers --(+0.50, lag 1)--> eastern_conference_pressure",
+          "cunningham_performance --(+0.70, lag 0)--> detroit_win_rate",
+          "eastern_conference_pressure --(-0.30, lag 2)--> detroit_win_rate",
+          "indiana_pacers --(-0.15, lag 2)--> eastern_conference_pressure",
+          "langdon_front_office --(+0.70, lag 4)--> trade_deadline_impact",
+          "nba_scheduling --(+0.60, lag 0)--> schedule_difficulty",
+          "new_york_knicks --(+0.30, lag 1)--> eastern_conference_pressure",
+          "opposing_coaches --(-0.30, lag 2)--> cunningham_performance",
+          "opposing_coaches --(-0.25, lag 2)--> detroit_win_rate",
+          "pistons_core --(+0.60, lag 0)--> cunningham_performance",
+          "pistons_core --(-0.20, lag 2)--> team_health",
+          "player_agents --(+0.40, lag 3)--> trade_deadline_impact",
+          "schedule_difficulty --(-0.25, lag 1)--> detroit_win_rate",
+          "sports_media --(+0.15, lag 1)--> cunningham_performance",
+          "team_health --(+0.50, lag 1)--> detroit_win_rate",
+          "tom_gores --(+0.40, lag 4)--> trade_deadline_impact",
+          "trade_deadline_impact --(+0.35, lag 3)--> detroit_win_rate"
+        ],
+        "outcome_rule": {
+          "terms": [
+            "cunningham_performance +0.50",
+            "detroit_win_rate +0.70",
+            "eastern_conference_pressure -0.40",
+            "team_health +0.30"
+          ],
+          "threshold": 0.45,
+          "steepness": 8.0
+        }
+      }
+    },
+    {
+      "scenario_id": "polymarket:who-will-die-in-euphoria-season-3:1220622",
+      "question": "Will Cassie Howard die in Euphoria: Season 3?",
+      "graph": {
+        "actors": [
+          {
+            "id": "cal_jacobs",
+            "name": "Cal Jacobs (Character / Eric Dane)",
+            "objective": "Confront the consequences of a lifetime of deception and control over his family while navigating the psychological and physical deterioration of his later years",
+            "influences": [
+              "narrative_extremity",
+              "underworld_exposure"
+            ]
+          },
+          {
+            "id": "hbo",
+            "name": "HBO / Max Network",
+            "objective": "Maximize subscriber retention and cultural prestige of premium drama properties while managing talent relationships and production costs",
+            "influences": [
+              "narrative_extremity",
+              "viewership_buzz"
+            ]
+          },
+          {
+            "id": "laurie",
+            "name": "Laurie (Character / Martha Kelly)",
+            "objective": "Protect and expand her drug distribution network while minimizing exposure to law enforcement and violent competitors",
+            "influences": [
+              "character_peril",
+              "underworld_exposure"
+            ]
+          },
+          {
+            "id": "lexi_howard",
+            "name": "Lexi Howard (Character / Maude Apatow)",
+            "objective": "Establish a creative and emotional identity independent from her family's dysfunction and the social hierarchies of her adolescence",
+            "influences": [
+              "cassie_arc_completion",
+              "social_ostracism"
+            ]
+          },
+          {
+            "id": "maddy_perez",
+            "name": "Maddy Perez (Character / Alexa Demie)",
+            "objective": "Build an independent life in Hollywood talent management while processing the betrayal of her closest friendship and the psychological damage of past abusive relationships",
+            "influences": [
+              "social_ostracism",
+              "underworld_exposure"
+            ]
+          },
+          {
+            "id": "magick_rosalia",
+            "name": "Magick (Character / Rosal\u00eda)",
+            "objective": "Survive and thrive within the dangerous Silver Slipper club environment by leveraging information about patrons and protecting her own interests against exploitation",
+            "influences": [
+              "character_peril",
+              "underworld_exposure"
+            ]
+          },
+          {
+            "id": "mystery_antagonist",
+            "name": "Season 3 New Antagonist (Toby Wallace / Adewale Akinnuoye-Agbaje)",
+            "objective": "Advance personal criminal or social power interests through manipulation and coercion of vulnerable characters within the Silver Slipper and suburban networks",
+            "influences": [
+              "character_peril",
+              "underworld_exposure"
+            ]
+          },
+          {
+            "id": "nate_jacobs",
+            "name": "Nate Jacobs (Character / Jacob Elordi)",
+            "objective": "Maintain dominance and control in personal relationships while managing the psychological fallout of a troubled upbringing and suppressed identity",
+            "influences": [
+              "character_peril",
+              "underworld_exposure"
+            ]
+          },
+          {
+            "id": "online_audience",
+            "name": "Euphoria Fan Community / Online Discourse",
+            "objective": "Engage with and influence the cultural conversation around prestige television through speculation, fan theories, and social media pressure on creative decisions",
+            "influences": [
+              "narrative_extremity",
+              "viewership_buzz"
+            ]
+          },
+          {
+            "id": "rue_bennett",
+            "name": "Rue Bennett (Character / Zendaya)",
+            "objective": "Sustain sobriety and construct a meaningful adult identity while reckoning with the emotional damage inflicted on those she loves during her addiction",
+            "influences": [
+              "character_peril",
+              "underworld_exposure"
+            ]
+          },
+          {
+            "id": "sam_levinson",
+            "name": "Sam Levinson (Showrunner)",
+            "objective": "Craft narratively bold television that escalates dramatic stakes and reflects personal themes about addiction, identity, and self-destruction among young adults",
+            "influences": [
+              "cassie_arc_completion",
+              "narrative_extremity"
+            ]
+          },
+          {
+            "id": "sydney_sweeney",
+            "name": "Sydney Sweeney (Cassie's Actor)",
+            "objective": "Maximize career earnings and critical reputation across film and television by pursuing high-profile dramatic roles that demonstrate her range as a performer",
+            "influences": [
+              "cassie_arc_completion",
+              "viewership_buzz"
+            ]
+          },
+          {
+            "id": "zendaya_producer",
+            "name": "Zendaya (Executive Producer / Rue's Actor)",
+            "objective": "Shape Euphoria's creative direction to reflect authentic emotional storytelling while protecting the show's prestige and her own long-term brand equity as an actor-producer",
+            "influences": [
+              "cassie_arc_completion",
+              "narrative_extremity"
+            ]
+          }
+        ],
+        "factors": [
+          {
+            "id": "cassie_arc_completion",
+            "name": "Cassie's Character Arc Reaching Narrative Terminus",
+            "state": 0.32
+          },
+          {
+            "id": "character_peril",
+            "name": "Cassie's Direct Physical or Mortal Peril",
+            "state": 0.28
+          },
+          {
+            "id": "narrative_extremity",
+            "name": "Narrative Extremity and Tonal Darkness",
+            "state": 0.65
+          },
+          {
+            "id": "social_ostracism",
+            "name": "Cassie's Social Isolation and Loss of Support Network",
+            "state": 0.6
+          },
+          {
+            "id": "underworld_exposure",
+            "name": "Cassie's Exposure to Danger via Silver Slipper Underworld and Abusive Relationship",
+            "state": 0.55
+          },
+          {
+            "id": "viewership_buzz",
+            "name": "Cultural Buzz and Audience Anticipation for Season 3",
+            "state": 0.72
+          }
+        ],
+        "edges": [
+          "cal_jacobs --(+0.35, lag 1)--> narrative_extremity",
+          "cal_jacobs --(+0.20, lag 2)--> underworld_exposure",
+          "character_peril --(+0.50, lag 1)--> cassie_arc_completion",
+          "hbo --(-0.40, lag 1)--> narrative_extremity",
+          "hbo --(+0.60, lag 0)--> viewership_buzz",
+          "laurie --(+0.45, lag 3)--> character_peril",
+          "laurie --(+0.55, lag 1)--> underworld_exposure",
+          "lexi_howard --(+0.30, lag 3)--> cassie_arc_completion",
+          "lexi_howard --(-0.35, lag 2)--> social_ostracism",
+          "maddy_perez --(+0.40, lag 1)--> social_ostracism",
+          "maddy_perez --(-0.20, lag 2)--> underworld_exposure",
+          "magick_rosalia --(+0.35, lag 2)--> character_peril",
+          "magick_rosalia --(+0.50, lag 0)--> underworld_exposure",
+          "mystery_antagonist --(+0.60, lag 2)--> character_peril",
+          "mystery_antagonist --(+0.40, lag 1)--> underworld_exposure",
+          "narrative_extremity --(+0.45, lag 2)--> cassie_arc_completion",
+          "narrative_extremity --(+0.40, lag 1)--> character_peril",
+          "nate_jacobs --(+0.40, lag 2)--> character_peril",
+          "nate_jacobs --(+0.45, lag 1)--> underworld_exposure",
+          "online_audience --(+0.25, lag 1)--> narrative_extremity",
+          "online_audience --(+0.50, lag 0)--> viewership_buzz",
+          "rue_bennett --(-0.35, lag 2)--> character_peril",
+          "rue_bennett --(+0.40, lag 1)--> underworld_exposure",
+          "sam_levinson --(+0.70, lag 2)--> cassie_arc_completion",
+          "sam_levinson --(+0.80, lag 0)--> narrative_extremity",
+          "social_ostracism --(+0.30, lag 1)--> underworld_exposure",
+          "sydney_sweeney --(-0.50, lag 1)--> cassie_arc_completion",
+          "sydney_sweeney --(+0.50, lag 0)--> viewership_buzz",
+          "underworld_exposure --(+0.40, lag 2)--> character_peril",
+          "viewership_buzz --(+0.30, lag 2)--> narrative_extremity",
+          "zendaya_producer --(-0.45, lag 1)--> cassie_arc_completion",
+          "zendaya_producer --(+0.35, lag 1)--> narrative_extremity"
+        ],
+        "outcome_rule": {
+          "terms": [
+            "cassie_arc_completion +0.35",
+            "character_peril +0.55",
+            "narrative_extremity +0.20",
+            "social_ostracism -0.10",
+            "underworld_exposure +0.15"
+          ],
+          "threshold": 0.62,
+          "steepness": 6.0
+        }
+      }
+    },
+    {
+      "scenario_id": "polymarket:will-israel-strike-lebanon-on-363:1437249",
+      "question": "Will Israel strike Lebanon on March 12, 2026?",
+      "graph": {
+        "actors": [
+          {
+            "id": "european_states",
+            "name": "European States (France, Spain, Germany)",
+            "objective": "Prevent broader regional war, protect deployed peacekeepers, and leverage diplomatic relationships to push for de-escalation",
+            "influences": [
+              "coercive_diplomatic_pressure",
+              "israeli_strike_tempo"
+            ]
+          },
+          {
+            "id": "hezbollah",
+            "name": "Hezbollah",
+            "objective": "Resist Israeli military pressure, preserve organizational capacity, and retaliate for Israeli and US attacks on Iran",
+            "influences": [
+              "hezbollah_military_capability",
+              "iran_escalation_level",
+              "northern_border_security"
+            ]
+          },
+          {
+            "id": "idf_command",
+            "name": "Israel Defense Forces Command",
+            "objective": "Degrade Hezbollah's military infrastructure and secure Israel's northern border to allow displaced Israeli civilians to return home",
+            "influences": [
+              "hezbollah_military_capability",
+              "israeli_strike_tempo",
+              "northern_border_security"
+            ]
+          },
+          {
+            "id": "iranian_command",
+            "name": "Iranian Military-Political Command",
+            "objective": "Survive US-Israeli military campaign while preserving regional influence through proxies and retaliatory deterrence",
+            "influences": [
+              "iran_escalation_level",
+              "iranian_backing_strength",
+              "northern_border_security"
+            ]
+          },
+          {
+            "id": "israeli_far_right",
+            "name": "Israeli Far-Right Coalition (Smotrich, Ben Gvir)",
+            "objective": "Maximize territorial control in Lebanon and Gaza, annex contested areas, and prevent any ceasefire that leaves Hezbollah armed",
+            "influences": [
+              "israeli_strike_tempo",
+              "northern_border_security"
+            ]
+          },
+          {
+            "id": "israeli_war_cabinet",
+            "name": "Israeli War Cabinet (Netanyahu Government)",
+            "objective": "Maintain coalition cohesion and pursue military dominance across multiple fronts while managing domestic political pressures",
+            "influences": [
+              "intl_condemnation",
+              "israeli_strike_tempo"
+            ]
+          },
+          {
+            "id": "lebanese_armed_forces",
+            "name": "Lebanese Armed Forces (LAF)",
+            "objective": "Maintain institutional cohesion, extend state authority into southern Lebanon, and avoid direct confrontation with the IDF while protecting Lebanese civilians",
+            "influences": [
+              "coercive_diplomatic_pressure",
+              "intl_condemnation",
+              "northern_border_security"
+            ]
+          },
+          {
+            "id": "lebanese_government",
+            "name": "Lebanese Government (Nawaf Salam Cabinet)",
+            "objective": "Preserve Lebanese state sovereignty and avoid being drawn into the Iran-Hezbollah conflict while maintaining domestic unity",
+            "influences": [
+              "coercive_diplomatic_pressure",
+              "hezbollah_military_capability",
+              "intl_condemnation"
+            ]
+          },
+          {
+            "id": "saudi_arab_league",
+            "name": "Saudi Arabia and Arab League",
+            "objective": "Contain Iranian regional power-projection and proxy influence while pursuing Gulf security interests, normalization diplomacy, and Lebanese reconstruction financing",
+            "influences": [
+              "coercive_diplomatic_pressure",
+              "intl_condemnation",
+              "iranian_backing_strength"
+            ]
+          },
+          {
+            "id": "un_unifil",
+            "name": "UN and UNIFIL",
+            "objective": "Protect civilian populations, document ceasefire violations, and press for a return to ceasefire conditions through multilateral pressure",
+            "influences": [
+              "coercive_diplomatic_pressure",
+              "intl_condemnation"
+            ]
+          },
+          {
+            "id": "us_trump_admin",
+            "name": "Trump Administration",
+            "objective": "Eliminate Iran's nuclear and regional power-projection capabilities while preserving US military freedom of action in the Middle East and securing domestic political support for ongoing operations",
+            "influences": [
+              "iran_escalation_level",
+              "israeli_strike_tempo",
+              "us_strategic_support"
+            ]
+          }
+        ],
+        "factors": [
+          {
+            "id": "coercive_diplomatic_pressure",
+            "name": "Concrete Coercive Diplomatic Pressure on Israel",
+            "state": 0.3
+          },
+          {
+            "id": "hezbollah_military_capability",
+            "name": "Hezbollah Active Military Capability",
+            "state": 0.55
+          },
+          {
+            "id": "intl_condemnation",
+            "name": "International Verbal Condemnation of Israeli Operations",
+            "state": 0.65
+          },
+          {
+            "id": "iran_escalation_level",
+            "name": "Iran-Israel Active Conflict Intensity",
+            "state": 0.88
+          },
+          {
+            "id": "iranian_backing_strength",
+            "name": "Iranian Material Support to Hezbollah",
+            "state": 0.5
+          },
+          {
+            "id": "israeli_strike_tempo",
+            "name": "Israeli Aerial Strike Tempo on Lebanon",
+            "state": 0.92
+          },
+          {
+            "id": "northern_border_security",
+            "name": "Israeli Northern Border Security Level",
+            "state": 0.22
+          },
+          {
+            "id": "us_strategic_support",
+            "name": "US Military-Strategic Support for Israeli Operations",
+            "state": 0.9
+          }
+        ],
+        "edges": [
+          "coercive_diplomatic_pressure --(-0.20, lag 2)--> israeli_strike_tempo",
+          "european_states --(+0.50, lag 1)--> coercive_diplomatic_pressure",
+          "european_states --(-0.15, lag 3)--> israeli_strike_tempo",
+          "hezbollah --(+0.60, lag 1)--> hezbollah_military_capability",
+          "hezbollah --(+0.40, lag 0)--> iran_escalation_level",
+          "hezbollah --(-0.60, lag 0)--> northern_border_security",
+          "hezbollah_military_capability --(+0.15, lag 0)--> israeli_strike_tempo",
+          "hezbollah_military_capability --(-0.45, lag 1)--> northern_border_security",
+          "idf_command --(-0.70, lag 1)--> hezbollah_military_capability",
+          "idf_command --(+0.80, lag 0)--> israeli_strike_tempo",
+          "idf_command --(+0.45, lag 2)--> northern_border_security",
+          "intl_condemnation --(+0.30, lag 1)--> coercive_diplomatic_pressure",
+          "iran_escalation_level --(-0.30, lag 2)--> hezbollah_military_capability",
+          "iran_escalation_level --(+0.25, lag 0)--> israeli_strike_tempo",
+          "iran_escalation_level --(-0.40, lag 1)--> northern_border_security",
+          "iranian_backing_strength --(+0.55, lag 2)--> hezbollah_military_capability",
+          "iranian_backing_strength --(-0.25, lag 3)--> northern_border_security",
+          "iranian_command --(+0.80, lag 0)--> iran_escalation_level",
+          "iranian_command --(+0.70, lag 2)--> iranian_backing_strength",
+          "iranian_command --(-0.35, lag 1)--> northern_border_security",
+          "israeli_far_right --(+0.30, lag 1)--> israeli_strike_tempo",
+          "israeli_far_right --(+0.25, lag 2)--> northern_border_security",
+          "israeli_war_cabinet --(+0.30, lag 2)--> intl_condemnation",
+          "israeli_war_cabinet --(+0.45, lag 1)--> israeli_strike_tempo",
+          "lebanese_armed_forces --(+0.20, lag 3)--> coercive_diplomatic_pressure",
+          "lebanese_armed_forces --(+0.20, lag 2)--> intl_condemnation",
+          "lebanese_armed_forces --(+0.25, lag 2)--> northern_border_security",
+          "lebanese_government --(+0.25, lag 2)--> coercive_diplomatic_pressure",
+          "lebanese_government --(-0.20, lag 3)--> hezbollah_military_capability",
+          "lebanese_government --(+0.35, lag 1)--> intl_condemnation",
+          "northern_border_security --(-0.20, lag 1)--> israeli_strike_tempo",
+          "saudi_arab_league --(+0.35, lag 2)--> coercive_diplomatic_pressure",
+          "saudi_arab_league --(+0.40, lag 1)--> intl_condemnation",
+          "saudi_arab_league --(-0.30, lag 2)--> iranian_backing_strength",
+          "un_unifil --(+0.35, lag 2)--> coercive_diplomatic_pressure",
+          "un_unifil --(+0.40, lag 1)--> intl_condemnation",
+          "us_strategic_support --(-0.30, lag 1)--> coercive_diplomatic_pressure",
+          "us_strategic_support --(+0.30, lag 0)--> israeli_strike_tempo",
+          "us_trump_admin --(+0.60, lag 0)--> iran_escalation_level",
+          "us_trump_admin --(+0.20, lag 1)--> israeli_strike_tempo",
+          "us_trump_admin --(+0.85, lag 0)--> us_strategic_support"
+        ],
+        "outcome_rule": {
+          "terms": [
+            "iran_escalation_level +0.35",
+            "israeli_strike_tempo +0.75",
+            "northern_border_security -0.45",
+            "us_strategic_support +0.25"
+          ],
+          "threshold": 0.4,
+          "steepness": 8.0
+        }
+      }
+    },
+    {
+      "scenario_id": "polymarket:will-polymarket-mindshare-hit-70:691621",
+      "question": "Will Polymarket mindshare hit 70%?",
+      "graph": {
+        "actors": [
+          {
+            "id": "cftc_regulators",
+            "name": "CFTC Regulators",
+            "objective": "Maintain orderly derivatives markets and enforce event contract rules while balancing innovation-friendly policy under the current administration",
+            "influences": [
+              "regulatory_tailwind"
+            ]
+          },
+          {
+            "id": "coinbase",
+            "name": "Coinbase",
+            "objective": "Expand into prediction markets through Kalshi partnership to capture user engagement and transaction fees from event-based trading",
+            "influences": [
+              "crypto_native_competition",
+              "kaito_mindshare_score"
+            ]
+          },
+          {
+            "id": "crypto_twitter_influencers",
+            "name": "Crypto Twitter / X Influencers and Community",
+            "objective": "Amplify prediction market activity and build personal brand by sharing odds, outcomes, and alpha on social platforms",
+            "influences": [
+              "platform_media_attention",
+              "polymarket_trading_volume"
+            ]
+          },
+          {
+            "id": "ice_nyse",
+            "name": "Intercontinental Exchange (ICE / NYSE)",
+            "objective": "Integrate prediction market data into exchange infrastructure to attract institutional traders and data-driven investors",
+            "influences": [
+              "platform_media_attention",
+              "polymarket_trading_volume"
+            ]
+          },
+          {
+            "id": "institutional_traders",
+            "name": "Institutional Traders and Data Consumers",
+            "objective": "Access accurate real-time probability data from prediction markets to inform portfolio positioning and risk management",
+            "influences": [
+              "kaito_mindshare_score"
+            ]
+          },
+          {
+            "id": "kaito_platform",
+            "name": "Kaito AI (Mindshare Arena Operator)",
+            "objective": "Provide accurate and consistent mindshare metrics across all tracked projects to attract analysts and traders to the Kaito platform, regardless of which project leads",
+            "influences": [
+              "platform_media_attention"
+            ]
+          },
+          {
+            "id": "kalshi",
+            "name": "Kalshi",
+            "objective": "Capture regulated US prediction market share by leveraging court-approved political contracts and Coinbase distribution partnership",
+            "influences": [
+              "kaito_mindshare_score",
+              "regulated_us_competition"
+            ]
+          },
+          {
+            "id": "mainstream_media",
+            "name": "Mainstream Media Outlets (TV, Press)",
+            "objective": "Drive audience engagement by covering prediction market odds as a novel and accessible lens on current events",
+            "influences": [
+              "platform_media_attention"
+            ]
+          },
+          {
+            "id": "market_makers",
+            "name": "Polymarket Market Makers and Liquidity Providers",
+            "objective": "Deploy capital into prediction market order books to earn bid-ask spreads and maintain inventory, prioritizing markets with sufficient volume and information efficiency",
+            "influences": [
+              "kaito_mindshare_score",
+              "polymarket_trading_volume"
+            ]
+          },
+          {
+            "id": "polymarket_leadership",
+            "name": "Polymarket Leadership (Shayne Coplan)",
+            "objective": "Maximize platform liquidity, user growth, and trading volume by expanding market offerings and securing US regulatory access",
+            "influences": [
+              "platform_media_attention",
+              "polymarket_trading_volume"
+            ]
+          },
+          {
+            "id": "retail_bettors",
+            "name": "Retail Prediction Market Participants",
+            "objective": "Engage in speculative wagering on news events for entertainment and potential profit, following media and social cues",
+            "influences": [
+              "polymarket_trading_volume"
+            ]
+          },
+          {
+            "id": "trump_administration",
+            "name": "Trump Administration (DOJ / White House)",
+            "objective": "Foster a crypto-friendly regulatory environment that attracts investment and innovation to the United States",
+            "influences": [
+              "regulatory_tailwind"
+            ]
+          },
+          {
+            "id": "whale_bettors",
+            "name": "High-Stakes Prediction Market Bettors (Whales)",
+            "objective": "Identify and exploit informational edges in large-volume prediction markets to generate outsized financial returns",
+            "influences": [
+              "polymarket_trading_volume"
+            ]
+          }
+        ],
+        "factors": [
+          {
+            "id": "crypto_market_sentiment",
+            "name": "Crypto Market Sentiment and Broader Web3 Engagement",
+            "state": 0.65
+          },
+          {
+            "id": "crypto_native_competition",
+            "name": "Crypto-Native Prediction Platform Expansion (Coinbase, AMMs)",
+            "state": 0.45
+          },
+          {
+            "id": "kaito_mindshare_score",
+            "name": "Polymarket Daily Mindshare Percentage on Kaito Arena",
+            "state": 0.6
+          },
+          {
+            "id": "major_catalytic_events",
+            "name": "High-Stakes News Events Driving Prediction Market Betting",
+            "state": 0.45
+          },
+          {
+            "id": "platform_media_attention",
+            "name": "Mainstream Media and Press Coverage of Polymarket",
+            "state": 0.72
+          },
+          {
+            "id": "polymarket_trading_volume",
+            "name": "Polymarket Platform Trading Volume and User Activity",
+            "state": 0.62
+          },
+          {
+            "id": "regulated_us_competition",
+            "name": "Licensed US Competitor Market Share and User Acquisition",
+            "state": 0.5
+          },
+          {
+            "id": "regulatory_tailwind",
+            "name": "US Executive and Legislative Policy Stance on Prediction Markets",
+            "state": 0.68
+          }
+        ],
+        "edges": [
+          "cftc_regulators --(-0.45, lag 3)--> regulatory_tailwind",
+          "coinbase --(+0.45, lag 3)--> crypto_native_competition",
+          "coinbase --(-0.15, lag 4)--> kaito_mindshare_score",
+          "crypto_market_sentiment --(+0.30, lag 1)--> crypto_native_competition",
+          "crypto_market_sentiment --(+0.25, lag 1)--> polymarket_trading_volume",
+          "crypto_native_competition --(-0.35, lag 1)--> kaito_mindshare_score",
+          "crypto_twitter_influencers --(+0.40, lag 0)--> platform_media_attention",
+          "crypto_twitter_influencers --(+0.20, lag 1)--> polymarket_trading_volume",
+          "ice_nyse --(+0.30, lag 2)--> platform_media_attention",
+          "ice_nyse --(+0.30, lag 3)--> polymarket_trading_volume",
+          "institutional_traders --(+0.10, lag 2)--> kaito_mindshare_score",
+          "kaito_platform --(+0.25, lag 1)--> platform_media_attention",
+          "kalshi --(-0.35, lag 2)--> kaito_mindshare_score",
+          "kalshi --(+0.55, lag 1)--> regulated_us_competition",
+          "mainstream_media --(+0.55, lag 0)--> platform_media_attention",
+          "major_catalytic_events --(+0.30, lag 1)--> kaito_mindshare_score",
+          "major_catalytic_events --(+0.50, lag 0)--> platform_media_attention",
+          "major_catalytic_events --(+0.35, lag 0)--> polymarket_trading_volume",
+          "market_makers --(+0.30, lag 1)--> kaito_mindshare_score",
+          "market_makers --(+0.20, lag 0)--> polymarket_trading_volume",
+          "platform_media_attention --(+0.35, lag 1)--> kaito_mindshare_score",
+          "platform_media_attention --(+0.35, lag 1)--> polymarket_trading_volume",
+          "polymarket_leadership --(+0.40, lag 1)--> platform_media_attention",
+          "polymarket_leadership --(+0.45, lag 2)--> polymarket_trading_volume",
+          "polymarket_trading_volume --(+0.60, lag 1)--> kaito_mindshare_score",
+          "regulated_us_competition --(-0.45, lag 1)--> kaito_mindshare_score",
+          "regulatory_tailwind --(+0.40, lag 2)--> polymarket_trading_volume",
+          "regulatory_tailwind --(+0.35, lag 3)--> regulated_us_competition",
+          "retail_bettors --(+0.20, lag 1)--> polymarket_trading_volume",
+          "trump_administration --(+0.50, lag 2)--> regulatory_tailwind",
+          "whale_bettors --(+0.20, lag 0)--> polymarket_trading_volume"
+        ],
+        "outcome_rule": {
+          "terms": [
+            "crypto_native_competition -0.15",
+            "kaito_mindshare_score +0.65",
+            "major_catalytic_events +0.15",
+            "polymarket_trading_volume +0.25",
+            "regulated_us_competition -0.20"
+          ],
+          "threshold": 0.68,
+          "steepness": 8.0
+        }
+      }
+    },
+    {
+      "scenario_id": "polymarket:world-cup-group-e-winner:839429",
+      "question": "Will Germany win Group E in the 2026 FIFA World Cup?",
+      "graph": {
+        "actors": [
+          {
+            "id": "bundesliga_clubs",
+            "name": "Bundesliga and European Club Employers",
+            "objective": "Protect the long-term physical condition and commercial value of their contracted players while meeting FIFA release obligations",
+            "influences": [
+              "squad_availability"
+            ]
+          },
+          {
+            "id": "dfb",
+            "name": "German Football Association (DFB)",
+            "objective": "Restore the DFB's prestige and commercial viability by securing strong tournament results and maintaining a competitive national team pipeline",
+            "influences": [
+              "germany_squad_quality",
+              "germany_tactical_cohesion"
+            ]
+          },
+          {
+            "id": "fifa_org",
+            "name": "FIFA",
+            "objective": "Ensure the 2026 World Cup runs smoothly, generates maximum global revenue, and maintains competitive integrity across all group stage matches",
+            "influences": [
+              "refereeing_consistency",
+              "venue_conditions"
+            ]
+          },
+          {
+            "id": "fifpro_agents",
+            "name": "FIFPRO and Player Agents",
+            "objective": "Protect player welfare and contractual value by negotiating rest protocols, managing injury risk disclosures, and advising on participation decisions for individual players",
+            "influences": [
+              "squad_availability"
+            ]
+          },
+          {
+            "id": "german_media",
+            "name": "German Sports Media",
+            "objective": "Generate audience engagement and ratings by amplifying storylines around Germany's World Cup performance, pressure on players, and tactical debates",
+            "influences": [
+              "germany_tactical_cohesion",
+              "media_narrative"
+            ]
+          },
+          {
+            "id": "germany_coach",
+            "name": "Germany Head Coach",
+            "objective": "Build a tactically flexible team capable of winning individual matches through superior preparation, in-game adjustment, and player selection",
+            "influences": [
+              "germany_tactical_cohesion",
+              "squad_availability"
+            ]
+          },
+          {
+            "id": "germany_team",
+            "name": "Germany National Football Team",
+            "objective": "Build squad cohesion and a consistent tactical identity that sustains high performance across a multi-match tournament, independent of any single fixture result",
+            "influences": [
+              "germany_group_points",
+              "germany_tactical_cohesion"
+            ]
+          },
+          {
+            "id": "group_e_opponents",
+            "name": "Germany's Group E Opponents",
+            "objective": "Secure top-two finishes in Group E by maximising own competitive performance while exploiting any weaknesses in Germany's setup",
+            "influences": [
+              "group_opponent_strength"
+            ]
+          },
+          {
+            "id": "host_nations",
+            "name": "Host Nations Organizing Committees (USA, Canada, Mexico)",
+            "objective": "Deliver logistically smooth matches across 16 host cities and maximize spectator experience and commercial returns from the tournament",
+            "influences": [
+              "venue_conditions"
+            ]
+          },
+          {
+            "id": "opponent_coaches",
+            "name": "Coaching Staffs of Germany's Group E Opponents",
+            "objective": "Analyse and exploit tactical vulnerabilities in opposing teams to maximise point accumulation in the group stage",
+            "influences": [
+              "germany_tactical_cohesion",
+              "group_opponent_strength"
+            ]
+          },
+          {
+            "id": "sports_scientists",
+            "name": "Germany Sports Science and Medical Staff",
+            "objective": "Optimise player physical condition and minimise injury risk throughout the tournament preparation and group stage",
+            "influences": [
+              "squad_availability"
+            ]
+          },
+          {
+            "id": "uefa",
+            "name": "UEFA",
+            "objective": "Maintain European football's dominance in the global game by ensuring strong performances from UEFA member nations at the World Cup",
+            "influences": [
+              "germany_squad_quality"
+            ]
+          },
+          {
+            "id": "var_officials",
+            "name": "VAR and Match Officials",
+            "objective": "Apply the Laws of the Game consistently and accurately to ensure fair outcomes in each match",
+            "influences": [
+              "refereeing_consistency"
+            ]
+          }
+        ],
+        "factors": [
+          {
+            "id": "germany_group_points",
+            "name": "Germany Cumulative Group Stage Points Tally",
+            "state": 0.5
+          },
+          {
+            "id": "germany_squad_quality",
+            "name": "Germany Squad Talent and Depth",
+            "state": 0.75
+          },
+          {
+            "id": "germany_tactical_cohesion",
+            "name": "Germany Tactical Cohesion and System Execution",
+            "state": 0.68
+          },
+          {
+            "id": "group_opponent_strength",
+            "name": "Collective Competitive Strength of Group E Opponents",
+            "state": 0.55
+          },
+          {
+            "id": "media_narrative",
+            "name": "Media Narrative Around Germany's Tournament Prospects",
+            "state": 0.55
+          },
+          {
+            "id": "refereeing_consistency",
+            "name": "Referee and VAR Technical Accuracy Across Group Matches",
+            "state": 0.72
+          },
+          {
+            "id": "squad_availability",
+            "name": "Germany Key Player Injury and Suspension Headcount",
+            "state": 0.75
+          },
+          {
+            "id": "venue_conditions",
+            "name": "Match Venue Conditions and Logistical Quality",
+            "state": 0.78
+          }
+        ],
+        "edges": [
+          "bundesliga_clubs --(+0.50, lag 2)--> squad_availability",
+          "dfb --(+0.50, lag 2)--> germany_squad_quality",
+          "dfb --(+0.30, lag 2)--> germany_tactical_cohesion",
+          "fifa_org --(+0.70, lag 0)--> refereeing_consistency",
+          "fifa_org --(+0.60, lag 0)--> venue_conditions",
+          "fifpro_agents --(-0.45, lag 1)--> squad_availability",
+          "german_media --(-0.25, lag 3)--> germany_tactical_cohesion",
+          "german_media --(+0.70, lag 1)--> media_narrative",
+          "germany_coach --(+0.80, lag 1)--> germany_tactical_cohesion",
+          "germany_coach --(+0.40, lag 1)--> squad_availability",
+          "germany_squad_quality --(+0.60, lag 1)--> germany_group_points",
+          "germany_tactical_cohesion --(+0.55, lag 1)--> germany_group_points",
+          "germany_team --(+0.45, lag 1)--> germany_group_points",
+          "germany_team --(+0.70, lag 1)--> germany_tactical_cohesion",
+          "group_e_opponents --(+0.80, lag 1)--> group_opponent_strength",
+          "group_opponent_strength --(-0.55, lag 1)--> germany_group_points",
+          "host_nations --(+0.70, lag 0)--> venue_conditions",
+          "media_narrative --(-0.30, lag 2)--> germany_tactical_cohesion",
+          "opponent_coaches --(-0.30, lag 2)--> germany_tactical_cohesion",
+          "opponent_coaches --(+0.60, lag 1)--> group_opponent_strength",
+          "refereeing_consistency --(+0.20, lag 1)--> germany_tactical_cohesion",
+          "sports_scientists --(+0.70, lag 1)--> squad_availability",
+          "squad_availability --(+0.40, lag 1)--> germany_group_points",
+          "squad_availability --(+0.50, lag 1)--> germany_squad_quality",
+          "uefa --(+0.20, lag 3)--> germany_squad_quality",
+          "var_officials --(+0.60, lag 0)--> refereeing_consistency",
+          "venue_conditions --(+0.15, lag 0)--> germany_group_points"
+        ],
+        "outcome_rule": {
+          "terms": [
+            "germany_group_points +0.70",
+            "germany_squad_quality +0.40",
+            "germany_tactical_cohesion +0.35",
+            "group_opponent_strength -0.50",
+            "squad_availability +0.25"
+          ],
+          "threshold": 0.55,
+          "steepness": 5.0
+        }
+      }
+    }
+  ],
+  "scores": [
+    {
+      "scenario_id": "curated:wga-amptp-2023",
+      "actor_completeness": null,
+      "edge_sign_correctness": null,
+      "missing_leverage": null,
+      "note": ""
+    },
+    {
+      "scenario_id": "manifold:R6nCl0zqEz",
+      "actor_completeness": null,
+      "edge_sign_correctness": null,
+      "missing_leverage": null,
+      "note": ""
+    },
+    {
+      "scenario_id": "polymarket:how-high-will-10-year-treasury-yield-go-in-2025:535639",
+      "actor_completeness": null,
+      "edge_sign_correctness": null,
+      "missing_leverage": null,
+      "note": ""
+    },
+    {
+      "scenario_id": "polymarket:how-large-will-trump-eu-tariffs-be:521471",
+      "actor_completeness": null,
+      "edge_sign_correctness": null,
+      "missing_leverage": null,
+      "note": ""
+    },
+    {
+      "scenario_id": "polymarket:how-many-fed-rate-cuts-in-2025:516726",
+      "actor_completeness": null,
+      "edge_sign_correctness": null,
+      "missing_leverage": null,
+      "note": ""
+    },
+    {
+      "scenario_id": "polymarket:logan-pauls-psa-10-pokmon-illustrator-sale-price:1013525",
+      "actor_completeness": null,
+      "edge_sign_correctness": null,
+      "missing_leverage": null,
+      "note": ""
+    },
+    {
+      "scenario_id": "polymarket:mls-cup-winner:510682",
+      "actor_completeness": null,
+      "edge_sign_correctness": null,
+      "missing_leverage": null,
+      "note": ""
+    },
+    {
+      "scenario_id": "polymarket:nba-western-conference-one-seed:518743",
+      "actor_completeness": null,
+      "edge_sign_correctness": null,
+      "missing_leverage": null,
+      "note": ""
+    },
+    {
+      "scenario_id": "polymarket:romania-presidential-election-margin-of-victory:514817",
+      "actor_completeness": null,
+      "edge_sign_correctness": null,
+      "missing_leverage": null,
+      "note": ""
+    },
+    {
+      "scenario_id": "polymarket:survivor-50-winner:1193259",
+      "actor_completeness": null,
+      "edge_sign_correctness": null,
+      "missing_leverage": null,
+      "note": ""
+    },
+    {
+      "scenario_id": "polymarket:what-will-powell-say-during-january-press-conference-639:915357",
+      "actor_completeness": null,
+      "edge_sign_correctness": null,
+      "missing_leverage": null,
+      "note": ""
+    },
+    {
+      "scenario_id": "polymarket:which-company-has-best-ai-model-end-of-june:631140",
+      "actor_completeness": null,
+      "edge_sign_correctness": null,
+      "missing_leverage": null,
+      "note": ""
+    },
+    {
+      "scenario_id": "polymarket:which-company-has-second-best-ai-model-end-of-october:593024",
+      "actor_completeness": null,
+      "edge_sign_correctness": null,
+      "missing_leverage": null,
+      "note": ""
+    },
+    {
+      "scenario_id": "polymarket:which-soccer-players-will-sign-with-new-clubs:542171",
+      "actor_completeness": null,
+      "edge_sign_correctness": null,
+      "missing_leverage": null,
+      "note": ""
+    },
+    {
+      "scenario_id": "polymarket:which-teams-will-make-the-nba-playoffs-138:643377",
+      "actor_completeness": null,
+      "edge_sign_correctness": null,
+      "missing_leverage": null,
+      "note": ""
+    },
+    {
+      "scenario_id": "polymarket:who-will-die-in-euphoria-season-3:1220622",
+      "actor_completeness": null,
+      "edge_sign_correctness": null,
+      "missing_leverage": null,
+      "note": ""
+    },
+    {
+      "scenario_id": "polymarket:will-israel-strike-lebanon-on-363:1437249",
+      "actor_completeness": null,
+      "edge_sign_correctness": null,
+      "missing_leverage": null,
+      "note": ""
+    },
+    {
+      "scenario_id": "polymarket:will-polymarket-mindshare-hit-70:691621",
+      "actor_completeness": null,
+      "edge_sign_correctness": null,
+      "missing_leverage": null,
+      "note": ""
+    },
+    {
+      "scenario_id": "polymarket:world-cup-group-e-winner:839429",
+      "actor_completeness": null,
+      "edge_sign_correctness": null,
+      "missing_leverage": null,
+      "note": ""
+    }
+  ]
+}

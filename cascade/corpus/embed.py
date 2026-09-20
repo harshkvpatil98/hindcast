@@ -15,10 +15,21 @@ only means what the spec intends if it is counted with the same tokenizer the
 model uses. Counting whitespace words instead would let a chunk overflow the
 context window and be silently truncated at embed time -- the tail of the
 chunk would be in the database as text but absent from its own vector.
+
+Counting runs on a **private copy** of that tokenizer, never on the model's own
+object. The ingest counts tokens from worker threads while the main thread is
+embedding, and the transformers wrapper reconfigures the shared Rust tokenizer
+on every call -- truncation and padding *on* for an embedding batch, *off* for
+a count. Measured against the pinned tokenizer: counting through the shared
+object while an embedding-style call ran on another thread raised
+``RuntimeError: Already borrowed`` on every call, and the alternative to that
+error is worse, a count silently capped at the truncation length.
 """
 
 from __future__ import annotations
 
+import copy
+import threading
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any
@@ -32,6 +43,37 @@ class EmbeddingUnavailable(RuntimeError):
     """The embedding stack is pinned but not installed."""
 
 
+def _private_counter(tokenizer: Any) -> Any:
+    """Copy the tokenizer's Rust backend and switch truncation and padding off.
+
+    Preserves the chunker's contract that a count is a function of the text
+    alone. The copy is configured once, here, and nothing reconfigures it
+    afterwards, so its ``encode`` calls only ever read it: safe from any
+    number of threads, and blind to whatever ``SentenceTransformer.encode`` is
+    doing to the original at that moment. The counts are the wrapper's own --
+    with truncation and padding off, the wrapper's ``input_ids`` *are* this
+    backend's ``ids``.
+
+    Raises rather than counting through the shared object: that path is
+    correct single-threaded and a data race otherwise, and nothing at the call
+    site could tell which one it had been given.
+    """
+    backend = getattr(tokenizer, "backend_tokenizer", None)
+    if backend is None:
+        raise EmbeddingUnavailable(
+            f"{type(tokenizer).__name__} has no Rust backend to copy. Token counting "
+            "needs a private tokenizer that embedding cannot reconfigure mid-count, "
+            "and only a fast tokenizer can provide one."
+        )
+    counter = copy.deepcopy(backend)
+    counter.no_truncation()
+    counter.no_padding()
+    # The wrapper re-asserts this on the original before every call; a copy
+    # that went through serialisation must not be left to its default.
+    counter.encode_special_tokens = backend.encode_special_tokens
+    return counter
+
+
 @dataclass
 class Embedder:
     """Loads the pinned model once and encodes batches with it."""
@@ -41,7 +83,10 @@ class Embedder:
     device: str | None = None
     use_fp16: bool = True
     _model: Any = field(default=None, init=False, repr=False)
-    _tokenizer: Any = field(default=None, init=False, repr=False)
+    _counter: Any = field(default=None, init=False, repr=False)
+    _load_lock: threading.Lock = field(
+        default_factory=threading.Lock, init=False, repr=False, compare=False
+    )
 
     def _resolve_device(self) -> str:
         if self.device is not None:
@@ -65,6 +110,15 @@ class Embedder:
         """
         if self._model is not None:
             return
+        # Taken only on the cold path, so the counters' per-call `load()` stays
+        # one attribute test. Two threads racing a first load would otherwise
+        # each construct the model -- twice the memory on a machine where the
+        # model shares it with the GPU.
+        with self._load_lock:
+            if self._model is None:
+                self._load()
+
+    def _load(self) -> None:
         try:
             from sentence_transformers import SentenceTransformer
         except ImportError as exc:
@@ -79,9 +133,11 @@ class Embedder:
             # fp16 halves memory and roughly doubles throughput on MPS/CUDA.
             # Left off on CPU, where half precision is emulated and slower.
             model = model.half()
-        self._model = model
-        self._tokenizer = model.tokenizer
+        self._counter = _private_counter(model.tokenizer)
         self.device = device
+        # Last, because it is what `load` tests: a thread that sees the model
+        # must also see the counter it is about to use.
+        self._model = model
 
         # sentence-transformers 5.x renamed this; support both so the pin can
         # move within the major line without an import-time failure.
@@ -135,9 +191,12 @@ class Embedder:
         left on because the model prepends [CLS] and appends [SEP] at encode
         time, and those occupy the same 512-token window the chunk has to fit
         inside.
+
+        Safe to call from several threads, and while ``encode`` is running:
+        it reads the private counter, which nothing mutates after ``load``.
         """
         self.load()
-        return len(self._tokenizer.encode(text, add_special_tokens=True, truncation=False))
+        return len(self._counter.encode(text, add_special_tokens=True).ids)
 
     def count_tokens_batch(self, texts: Sequence[str]) -> list[int]:
         """Count tokens for many strings in one call.
@@ -146,14 +205,15 @@ class Embedder:
         time, that crosses the Python/Rust boundary once per sentence and
         dominates ingest CPU; the fast tokenizer batches the same work into a
         single call. Same counts, materially less overhead.
+
+        Thread-safe on the same terms as ``count_tokens``, which is what lets
+        the ingest chunk one batch while it embeds another.
         """
         self.load()
         if not texts:
             return []
-        encoded = self._tokenizer(
-            list(texts), add_special_tokens=True, truncation=False, padding=False
-        )
-        return [len(ids) for ids in encoded["input_ids"]]
+        encoded = self._counter.encode_batch(list(texts), add_special_tokens=True)
+        return [len(encoding.ids) for encoding in encoded]
 
     def encode(self, texts: Sequence[str]) -> list[list[float]]:
         """Embed ``texts`` into unit-norm 384-d vectors, in input order."""

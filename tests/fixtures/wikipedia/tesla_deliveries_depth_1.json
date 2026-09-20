@@ -1,0 +1,822 @@
+{
+ "exchanges": [
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2025–26 Tesla season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2025 in Tesla"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2025 Tesla season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2025 Tesla"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2024–25 Tesla season"
+      },
+      {
+       "lastrevid": 1375636133,
+       "length": 2204,
+       "ns": 0,
+       "pageid": 2029013,
+       "title": "Tesla"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "info",
+    "titles": "2024–25 Tesla season|2025 Tesla|2025 Tesla season|2025 in Tesla|2025–26 Tesla season|Tesla"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20251107162014|1320929352"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 2029013,
+       "revisions": [
+        {
+         "parentid": 1320929352,
+         "revid": 1320929657,
+         "slots": {
+          "main": {
+           "content": "{{Wiktionary|Tesla|tesla}}\n'''Tesla''' most commonly refers to:\n\n* [[Nikola Tesla]] (1856–1943), a Serbian-American electrical engineer and inventor\n* [[Tesla, Inc.]], an American electric vehicle and clean energy company, formerly Tesla Motors, Inc.\n* [[Tesla (unit)]] (symbol: T), the SI-derived unit of magnetic flux density\n\n'''Tesla''' may also refer to:\n{{TOC right}}\n\n==Companies==\n* [[Tesla a.s.]], a Czech electronics company\n* [[Tesla Electric Light and Manufacturing]], a former company in Rahway, New Jersey, US\n\n==Media and entertainment==\n* [[Tesla (band)]], an American hard rock band formed in Sacramento, California\n* ''[[Tesla – Lightning in His Hand]]'', a 2003 opera by Constantine Koukias\n* \"Tesla\", a song by They Might Be Giants on ''[[Nanobots (album)|Nanobots]]'', 2013\n* [[Tesla (song)|\"Tesla\" (song)]], by Lil Yachty, 2023\n* \"Tesla\", a song by the Bosnian band [[Letu štuke]], 2008 \n* [[Tesla (2016 film)|''Tesla'' (2016 film)]], by David Grubin\n* [[Tesla (2020 film)|''Tesla'' (2020 film)]], by Michael Almereyda\n\n==Places==\n* [[Tesla, California]], a former coal mining town in Corral Hollow, California, US\n* [[Tesla, West Virginia]], US\n* [[Tesla Fault]], a geological formation in the Diablo Range, California, US\n* [[Tesla River]], Romania\n\n===Space===\n* [[2244 Tesla]], an asteroid discovered in 1952\n* [[Tesla (crater)]], a lunar crater\n\n==Science and technology==\n* [[Tesla (microarchitecture)]], a microarchitecture developed by Nvidia\n* [[Teraelectronvolt Energy Superconducting Linear Accelerator]], a proposed particle collider, now part of the International Linear Collider project\n* [[Nvidia Tesla]], a brand of GPU cards with the Tesla microarchitecture\n* Timed Efficient Stream Loss-Tolerant Authentication (TESLA), an [[Automatic identification system#Cryptographic|authentication protocol]]\n\n==See also==\n* [[List of things named after Nikola Tesla]]\n* [[List of Nikola Tesla patents]]\n* [[Nikola Tesla (disambiguation)]]\n* [[Nikola Tesla in popular culture]]\n* {{intitle|Tesla}}\n* {{lookfrom|Tesla}}\n* [[Tesler]], a surname \n*[[TSLAQ]], a loose collective critical of Tesla, Inc.\n\n{{Disambiguation|surname|geo}}",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-11-07T16:22:34Z"
+        }
+       ],
+       "title": "Tesla"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-11-25T07:33:03Z",
+    "titles": "Tesla"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20251115111734|1322286588"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 5533631,
+       "revisions": [
+        {
+         "parentid": 1322286588,
+         "revid": 1323904032,
+         "slots": {
+          "main": {
+           "content": "{{Short description|American electric vehicle and clean energy company}}\n{{Redirect|Tesla Motors|electric motors invented by Nikola Tesla|Induction motor|and|AC motor}}\n{{Redirect|Tesla (company)|the electrotechnical company|Tesla a.s.|other uses|Tesla (disambiguation)}}\n{{Good article}}\n{{Pp-vandalism|small=yes}}\n{{Use American English|date=January 2023}}\n{{Use mdy dates|date=August 2025}}\n{{Infobox company\n| name = Tesla, Inc.\n| logo = Tesla Motors.svg\n| logo_upright = 0.55\n| image = Gigafactory Texas Building 1 June 2022.jpg\n| image_upright = 1.1\n| image_caption = [[Gigafactory Texas]], Tesla's [[headquarters]], just outside of [[Austin, Texas]]\n| former_name = Tesla Motors, Inc. (2003–2017)\n| type = [[Public company|Public]]\n| traded_as = {{Unbulleted list\n  | {{NASDAQ|TSLA}}\n  | [[Nasdaq-100]] component\n  | [[S&P 100]] component\n  | [[S&P 500]] component\n  }}\n| ISIN = {{ISIN|sl=n|pl=y|US88160R1014}}\n| industry = {{Unbulleted list\n  | [[Automotive]]\n  | [[Renewable energy industry|Renewable energy]]\n  }}\n| founded = {{Start date and age|2003|07|01}} in [[San Carlos, California]], US\n| founders = [[Martin Eberhard]]<br />[[Marc Tarpenning]]<br />(See [[#Founding (2003–2004)|§ Founding]])<!--List of founders decided based on extensive discussion on talk page. DO NOT change until obtaining consensus to do so beforehand.-->\n| hq_location_city = [[Austin, Texas]]\n| hq_location_country = US\n| num_locations = {{Unbulleted list\n  | {{increase}} 1,359 sales, service, and delivery centers\n  | {{increase}} 7,791 [[Tesla Supercharger|Supercharger]] stations<ref name=\"supercharge.info charts\">{{Cite web |title=Supercharger deployment charts |url=https://supercharge.info/charts |access-date=January 27, 2025 |website=Supercharge.info}}</ref>\n  }}\n| area_served = {{Flatlist|\n* East Asia\n* Europe\n* Middle East\n* North America\n* Oceania\n* Southeast Asia\n* Indian Subcontinent\n}}\n| key_people = {{Unbulleted list\n<!-- Do not add \"Technoking\" or \"Master of Coin\" to the titles in this list until reaching consensus on the Talk page.-->\n   | [[Elon Musk]] ([[CEO]])\n   | [[Robyn Denholm]] ([[Chair (officer)|chair]])\n  }}\n| products = {{Flatlist| \n* [[Cybertruck]]\n* [[Megapack]]\n* [[Model 3]]\n* [[Model S]]\n* [[Tesla Model X|Model X]]\n* [[Tesla Model Y|Model Y]]\n* [[Tesla Powerwall|Powerwall]]\n* [[Tesla Semi|Semi]]\n* [[Tesla solar panels|Solar Panels]]\n* [[Tesla Solar Roof|Solar Roof]]\n}}\n| production = {{Unbulleted list\n  | {{decrease}} 1,773,443 vehicles (2024)<!-- Reported in ref 10K_2024 -->\n  | {{increase}} 31.4 GWh battery energy storage systems (2024)<!-- Reported in 10K_2024 -->\n  }}\n| services = {{Flatlist|\n* [[Tesla Supercharger|Charging]]\n* [[#Insurance|insurance]]\n* [[#Vehicle servicing|maintenance]]\n}}\n| revenue = {{increase}} {{US$|97.7 billion|link=yes}} (2024)<!-- Reported in ref 10K_2024 -->\n| operating_income = {{decrease}} {{US$|7.1 billion}} (2024)<!-- Reported in ref 10K_2024 -->\n| net_income = {{decrease}} {{US$|7.1 billion}} (2024)<!-- Reported in ref 10K_2024 -->\n| assets = {{increase}} {{US$|122.1 billion}} (2024)<!-- Reported in ref 10K_2024 -->\n| equity = {{increase}} {{US$|72.9 billion}} (2024)<!-- Reported in ref 10K_2024 -->\n| num_employees = {{decrease}} 125,665 (2024)<!-- Reported in ref 10K_2024 -->\n| subsid = {{Unbulleted list\n  | [[Tesla Automation]]\n  | [[Tesla Energy]]\n  }}\n| owner = Elon Musk (13%)<ref>{{Cite news |last=Ewing |first=Jack |date=January 16, 2024 |title=Musk Demands Bigger Stake in Tesla as Price for A.I. Work |url=https://www.nytimes.com/2024/01/16/business/tesla-elon-musk-stock.html |access-date=March 6, 2024 |work=[[The New York Times]] |language=en |archive-date=February 29, 2024 |archive-url=https://web.archive.org/web/20240229082500/https://www.nytimes.com/2024/01/16/business/tesla-elon-musk-stock.html |url-status=live }}</ref>\n| website = {{URL|https://www.tesla.com/|tesla.com}}\n| footnotes = Financials {{as of|2024|12|31|df=US|lc=y}}.<br />References:<ref name=\"10K_2024\">{{cite web |title=Annual report Form 10-K 2024 Tesla Inc. |url=https://ir.tesla.com/_flysystem/s3/sec/000162828025003063/tsla-20241231-gen.pdf |date=January 29, 2025 |access-date=February 23, 2025 }}</ref>\n| module = {{infobox network service provider|child=yes|asn=394161}}\n}}\n{{Elon Musk series}}\n\n'''Tesla, Inc.''' ({{IPAc-en|ˈ|t|ɛ|z|l|ə}} {{respell|TEZ|lə}} or {{IPAc-en|ˈ|t|ɛ|s|l|ə|audio=LL-Q1860 (eng)-Flame, not lame-Tesla, Inc..wav}} {{respell|TESS|lə}}{{efn|According to company representatives, both pronunciations are correct,<ref>{{cite web|title=What's the correct way to pronounce 'Tesla'? We asked.|date=July 13, 2017|url=https://finance.yahoo.com/news/whats-correct-way-pronounce-tesla-asked-181021888.html|access-date=October 6, 2021|publisher=Yahoo! Finance|language=en-US|archive-date=October 6, 2021|archive-url=https://web.archive.org/web/20211006032013/https://finance.yahoo.com/news/whats-correct-way-pronounce-tesla-asked-181021888.html|url-status=live}}</ref> though [[Nikola Tesla]]'s surname is properly pronounced ''TESS-lə''.}}) is an American multinational [[automotive]] and [[clean energy]] company. Headquartered in [[Austin, Texas]],<!-- Do not link Austin and Texas separately; see MOS:GEOLINK for further guidance. --> it designs, manufactures, and sells [[battery electric vehicle]]s (BEVs), stationary battery [[energy storage]] devices from home to [[grid-scale storage|grid-scale]], [[solar panel]]s and [[solar shingles]], and related products and services.\n\nTesla was incorporated in July 2003 by [[Martin Eberhard]] and [[Marc Tarpenning]] as '''Tesla Motors'''. Its name is a tribute to the inventor and electrical engineer [[Nikola Tesla]]. In February 2004, [[Elon Musk]] led Tesla's first funding round and became the company's chairman, subsequently claiming to be a co-founder; in 2008, he was named [[chief executive officer]]. In 2008, the company began production of its first car model, the [[Tesla Roadster (first generation)|Roadster]] sports car. This was followed by the [[Model S]] sedan in 2012, the [[Tesla Model X|Model X]] SUV in 2015, the [[Model 3]] sedan in 2017, the [[Tesla Model Y|Model Y]] crossover in 2020, the [[Tesla Semi]] truck in 2022, and the [[Cybertruck]] pickup truck in 2023.\n\nTesla is one of the [[list of public corporations by market capitalization|world's most valuable companies in terms of market capitalization]]. Starting in July 2020, it has been the world's most valuable automaker. From October 2021 to March 2022, Tesla was a [[trillion-dollar company]], the seventh US company to reach that valuation. Tesla exceeded $1 trillion in market capitalization again between November 2024<ref>{{Cite web |last=Cunningham |first=Doug |date=November 8, 2024 |title=Tesla regains $1 trillion in market capitalization in post-election surge |url=https://www.upi.com/Top_News/US/2024/11/08/Tesla-trillion-dollar-Musk-Trump/6721731085202/ |access-date=November 8, 2024 |website=UPI |language=en}}</ref> and February 2025.<ref>{{Cite web |last=Dey |first=Esha |date=February 26, 2025 |title=Telsa Market Value Slips Below $1 Trillion as Europe Sales Sink |url=https://www.bloomberg.com/news/articles/2025-02-25/tesla-market-value-slips-below-1-trillion-as-europe-sales-sink |access-date=February 26, 2024 |website=Bloomberg |language=en}}</ref> In 2024, the company led the battery electric vehicle market, with 17.6% share. In 2023, the company was ranked 69th in the [[Forbes Global 2000|''Forbes'' Global 2000]].<ref>{{Cite web |first1=Matt |last1=Schifrin |first2=Andrea |last2=Murphy |date=June 6, 2024 |title=The Global 2000 2023 |url=https://www.forbes.com/lists/global2000/?sh=51d599675ac0 |url-status=live |archive-url=https://web.archive.org/web/20240129031905/https://www.forbes.com/lists/global2000/?sh=4f5ab07e5ac0 |archive-date=January 29, 2024 |access-date=February 7, 2024 |website=Forbes |language=en-US}}</ref>\n\nIn May 2025, Tesla again reached a valuation of $1 trillion, and has been a trillion-dollar company since.<ref>{{cite news|last=Denning|first=Liam|date=May 12, 2025|title=Tesla’s Trillion-Dollar Market Value Is Fueled by Amnesia|url=https://www.bloomberg.com/opinion/articles/2025-05-12/tesla-s-trillion-dollar-market-value-is-fueled-by-amnesia|work=Bloomberg|access-date=September 23, 2025}}</ref> In November 2025, Tesla approved a pay package worth $1 trillion for Musk, which he is to receive over 10 years if he meets specific goals.<ref name=\"$1 trillion package approved\">{{cite news |last=Isidore |first=Chris |date=November 6, 2025 |title=Tesla approves Elon Musk’s $1 trillion pay package |work=CNN |url=https://us.cnn.com/2025/11/06/business/musk-trillion-dollar-pay-package-vote |access-date=November 6, 2025}}</ref>\n\nTesla has been the subject of lawsuits, boycotts, government scrutiny, and journalistic [[Criticism of Tesla, Inc.|criticism]], stemming from allegations of multiple cases of [[whistleblower]] retaliation, worker rights violations such as sexual harassment and [[Tesla and unions|anti-union activities]], safety defects leading to dozens of recalls, the lack of a [[public relations]] department, and controversial statements from Musk, including [[List of Elon Musk's FSD predictions|overpromising]] on the company's [[Advanced driver-assistance system|driving assist]] technology and product release timelines.\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-11-24T12:00:20Z"
+        }
+       ],
+       "title": "Tesla, Inc."
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-11-25T07:33:03Z",
+    "titles": "Tesla, Inc."
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20080731132031|229011080"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 337352,
+       "revisions": [
+        {
+         "parentid": 229011080,
+         "revid": 1085481594,
+         "slots": {
+          "main": {
+           "content": "#redirect [[Automotive industry]] {{R from adjective}}\n[[de:Automotive]]",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-04-30T20:05:23Z"
+        }
+       ],
+       "title": "Automotive"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-11-25T07:33:03Z",
+    "titles": "Automotive"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20251019122104|1317683091"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 163778,
+       "revisions": [
+        {
+         "parentid": 1317683091,
+         "revid": 1323911769,
+         "slots": {
+          "main": {
+           "content": "{{short description|Organizations involved with motor vehicles}}\n{{Use dmy dates|date=November 2023}}\n[[File:002 Production line - car assembly line in General Motors Manufacturing Poland - Gliwice, Poland.jpg|thumb|An automotive [[assembly line]] at [[Opel Manufacturing Poland]] in 2015]]\n[[File:Škoda cars being transported by rail at Kutná Hora město train station, Czech Republic - 20140710.ogv|thumb|[[SEAT]], [[Škoda Auto|Škoda]], and [[Volkswagen]] cars being transported by train in [[Kutná Hora]], [[Czech Republic]], in 2014]]\n\nThe '''automotive industry''' comprises a wide range of [[company|companies]] and [[organization]]s involved in the [[design]], [[Business development|development]], [[manufacturing]], [[marketing]], [[selling]], [[Maintenance|repairing]], and [[Custom car|modification]] of [[motor vehicle]]s.<ref name=\":0\">{{Britannica|45050|Automotive industry}}</ref><ref>{{cite book |last1=Nieuwenhuis |first1=Paul |last2=Wells |first2=Peter |title=The Global Automotive Industry |date=2015 |publisher=[[John Wiley & Sons]] |location=Chicester |isbn=9781118802397 |edition=1st}}</ref> It is one of the world's largest [[industry (economics)|industries]] by [[revenue]] (from 16% such as in France up to 40% in countries such as Slovakia).<ref>{{cite journal|url= https://iri.jrc.ec.europa.eu/sites/default/files/contentype/scoreboard/2021-12/EU%20RD%20Scoreboard%202021%20FINAL%20online.pdf |access-date=27 February 2022|title=The 2021 EU Industrial R&D Investment Scoreboard |journal=European Commission}}</ref>{{Failed verification |date=August 2022 |reason=Cited report shows that ICT sector leads automotive in both gross and per-company R&D spending}}\n\nThe word ''automotive'' comes from the [[Greek language|Greek]] ''autos'' (self), and [[Latin]] {{Lang|la|motivus}} (of [[motion]]), referring to any form of self-powered vehicle.<ref>{{Cite web |date=2021-12-08 |title=AAutomotives – Car Maintenance, Repair Guides & Troubleshooting |url=https://aautomotives.com/ |access-date=2025-11-24 |language=en-US}}</ref> This term, as proposed by [[Elmer Ambrose Sperry|Elmer Sperry]]<ref name=\"STS of US\">{{cite book |title= Scientific and Technical Societies of the United States |year= 1968 |publisher=National Academy of Sciences |location=Washington, DC |page=164 |url= https://books.google.com/books?id=pS8rAAAAYAAJ&q=Society+of+Automobile+Engineers+-inauthor%3A%22Society+of+Automotive+Engineers%22&pg=PA164\n|edition= Eighth |access-date= 25 March 2014}}</ref>{{qn|date=October 2018}} (1860–1930), first came into use to describe automobiles in 1898.<ref>{{cite web |url= https://www.carbidebur.com/automotive-industry/ |title=Automotive Industry |website=carbidebur.com |access-date=26 November 2023}}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-11-24T13:20:46Z"
+        }
+       ],
+       "title": "Automotive industry"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-11-25T07:33:03Z",
+    "titles": "Automotive industry"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20050930182342|24417236"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 2514464,
+       "revisions": [
+        {
+         "parentid": 24417236,
+         "revid": 313303288,
+         "slots": {
+          "main": {
+           "content": "#REDIRECT [[Sustainable energy]]",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2009-09-12T02:51:38Z"
+        }
+       ],
+       "title": "Clean energy"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-11-25T07:33:03Z",
+    "titles": "Clean energy"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20251116133450|1322484600"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 1055890,
+       "revisions": [
+        {
+         "parentid": 1322484600,
+         "revid": 1322485162,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Energy that responsibly meets social, economic, and environmental needs}}\n{{Redirect|Green power}}\n{{Featured article}}\n{{Use dmy dates|date=September 2023}}\n<noinclude>{{multiple image\n| perrow            = 2\n| total_width       = 350\n| image1            = Andasol Guadix 4.jpg\n| alt1              = Concentrated solar power parabolic troughs in the distance arranged in rectangles shining on a flat plain with snowy mountains in the background\n| image2            = Darling_Wind_Farm.jpg\n| alt2              = Wind turbines beside a red dirt road\n| image3            = R151 Arriving Buona Vista MRT Station.jpg\n| alt3              = Mass rapid transit train\n| image4            = Bread Maker, Adigrat (11815897476).jpg\n| alt4              = Woman cooking bread on an electric stove\n| footer            = Sustainable energy examples: [[concentrated solar power]] with [[Thermal energy storage#Molten salt technology|molten salt heat storage]] in Spain; [[wind energy]] in South Africa; electrified [[public transport]] in Singapore; and [[clean cooking]] in Ethiopia.\n}}</noinclude>\n<noinclude>{{Sustainable energy}}</noinclude>\n\n[[Energy system|Energy]] is [[sustainability|sustainable]] if it \"meets the needs of the present without compromising the ability of [[future generations]] to meet their own needs.\"{{Sfn|Kutscher|Milford|Kreith|2019|pp=5–6}}<ref>{{cite journal |last1=Zhang |first1=Wei |last2=Li |first2=Binshuai |last3=Xue |first3=Rui |last4=Wang |first4=Chengcheng |last5=Cao |first5=Wei |title=A systematic bibliometric review of clean energy transition: Implications for low-carbon development |journal=[[PLOS One|PLOS ONE]] |date=2021 |volume=16 |issue=12 |article-number=e0261091 |doi=10.1371/journal.pone.0261091 |pmid=34860855 |pmc=8641874 |doi-access=free|bibcode=2021PLoSO..1661091Z }}</ref> Definitions of '''sustainable energy''' usually look at its effects on the environment, the economy, and society. These impacts range from [[greenhouse gas emissions]] and [[air pollution]] to [[energy poverty]] and [[toxic waste]]. [[Renewable energy]] sources such as [[wind power|wind]], [[Hydroelectricity|hydro]], [[solar energy|solar]], and [[geothermal energy]] can cause environmental damage but are generally far more sustainable than fossil fuel sources.\n\nThe role of [[Non-renewable resource|non-renewable energy]] sources in sustainable energy is controversial. [[Nuclear power]] does [[Low-carbon power|not produce carbon pollution]] or air pollution, but has drawbacks that include [[radioactive waste]], the risk of [[nuclear proliferation]], and the [[Nuclear and radiation accidents and incidents|risk of accidents]]. Switching from [[coal]] to [[natural gas]] has environmental benefits, including a lower [[climate change|climate impact]], but may lead to a delay in switching to more sustainable options. [[Carbon capture and storage]] can be built into power plants to remove their [[carbon dioxide]] ({{CO2}}) emissions, but this technology is expensive and has rarely been implemented.\n\n[[Fossil fuel]]s provide 85% of the world's energy consumption, and the energy system is responsible for 76% of global greenhouse gas emissions. Around 790&nbsp;million people in [[Developing country|developing countries]] lack [[rural electrification|access to electricity]], and 2.6&nbsp;billion rely on polluting fuels such as wood or [[charcoal]] to cook. [[Energy poverty and cooking|Cooking with biomass]] plus fossil fuel pollution causes an estimated 7 million deaths each year. [[Paris Agreement|Limiting global warming to {{convert|2|C-change}}]] will require [[Energy transition|transforming energy production]], distribution, storage, and consumption. [[Sustainable Development Goal 7|Universal access to clean electricity]] can have major benefits to the [[climate]], human health, and the economies of [[Developing country|developing countries]]. \n\n[[Climate change mitigation]] pathways have been proposed to limit global warming to {{convert|2|C-change}}. These include phasing out coal-fired power plants, [[Energy conservation|conserving energy]], producing more electricity from clean sources such as [[wind energy|wind]] and [[Solar power|solar]], and switching [[Electrification|from fossil fuels to electricity]] for transport and heating buildings. Power output from [[Variable renewable energy|some renewable energy sources varies]] depending on when the wind blows and the sun shines. Switching to renewable energy can therefore require [[electrical grid]] upgrades, such as the addition of [[energy storage]]. Some processes that are difficult to electrify can use [[Green hydrogen|hydrogen fuel]] produced from low-emission energy sources. In the [[International Energy Agency]]'s proposal for achieving net zero emissions by 2050, about 35% of the reduction in emissions depends on technologies that are still in development as of 2023. \n\nWind and solar market share grew to 8.5% of worldwide electricity in 2019, and costs continue to fall. The [[Intergovernmental Panel on Climate Change]] (IPCC) estimates that 2.5% of world [[gross domestic product]] (GDP) would need to be invested in the energy system each year between 2016 and 2035 to limit global warming to {{convert|1.5|C-change}}. Governments can fund the research, development, and demonstration of new clean energy technologies. They can also build [[infrastructure]] for electrification and sustainable transport. Finally, governments can encourage clean energy deployment with policies such as [[Carbon price|carbon pricing]], [[renewable portfolio standard]]s, and phase-outs of [[fossil fuel subsidies]]. These policies may also increase [[energy security]].\n\n{{TOC limit|3}}\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-11-16T13:39:24Z"
+        }
+       ],
+       "title": "Sustainable energy"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-11-25T07:33:03Z",
+    "titles": "Sustainable energy"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20251121122631|1323386782"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 1998,
+       "revisions": [
+        {
+         "parentid": 1323386782,
+         "revid": 1323781549,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Capital city of Texas, United States}}\n{{redirect2|Austin, United States|City of Austin|other places and cities|Austin (disambiguation)#Places}}\n{{distinguish|Austin County, Texas}}\n{{Use American English|date=April 2020}}\n{{Use mdy dates|date=June 2021}}\n{{Infobox settlement\n| name               = Austin\n| settlement_type    = [[List of capitals in the United States|State capital]]\n| named_for          = [[Stephen F. Austin]]\n| image_skyline      = {{multiple image\n  | border        = infobox\n  | total_width   = 280\n  | image_style   = border:1;\n  | perrow        = 1/2/2/2\n  | caption_align = center\n  | image1        = Austin Downtown 2024 (cropped) (cropped).jpg\n  | caption1      = [[Downtown Austin]] skyline\n  | image2        = 2025 Texas State Capitol 03.jpg\n  | caption2      = [[Texas State Capitol]]\n  | image3        = Driskill Hotel Exterior.jpg\n  | caption3      = [[Driskill Hotel]]\n  | image4        = Zilker Park 2017-01-20.jpg\n  | caption4      = [[Zilker Park]]\n  | image5        = The Clock Tower (69174981).jpeg\n  | caption5      = The Clock Tower at [[University of Texas at Austin|UT Austin]]\n  | image6        = Paramount Theater - Austin, Texas - DSC08308.jpg\n  | caption6      = [[Paramount Theatre (Austin, Texas)|Paramount Theatre]]\n  | image7        = Laguna Gloria.jpg\n  | caption7      = [[Laguna Gloria]]\n  }}\n| image_flag         = Flag of Austin, Texas.svg\n| flag_size          = 135px\n| image_seal         = Seal of Austin, TX.svg\n| seal_size          = 100px\n| image_blank_emblem = Coat of arms of Austin, Texas.svg\n| blank_emblem_type  = Coat of arms\n| blank_emblem_size  = 65\n| blank_emblem_alt   = \n| blank_emblem_link  = List of U.S. county and city insignia\n| nicknames          = Live Music Capital of the World, [[Silicon Hills]], ATX, City of the Violet Crown\n| motto              = [[Keep Austin Weird]] (unofficial)\n| image_map          = {{maplink\n  | id = Q16559\n  | frame              = yes\n  | plain              = yes\n  | frame-align        = center\n  | frame-width        = 270\n  | frame-height       = 270\n  | frame-coord        = SWITCH:{{coord|qid=Q16559}}###{{coord|qid=Q110426}}###{{coord|qid=Q1439}}###{{coord|39.5|-98.35}}\n  | zoom               = SWITCH:9;8;4;3\n  | marker             = city\n  | type               = SWITCH:shape-inverse;shape-inverse;point;point\n  | stroke-width       = SWITCH:2,1.5,0,0\n  | stroke-color       = #5f5f5f\n  | fill               = #808080\n  | fill-opacity    = SWITCH:.5,.3,.3,.3\n  | id2                = SWITCH:Q16559;Q110426;Q1439;Q30\n  | type2              = shape-inverse\n  | stroke-width2      = 2\n  | stroke-color2      = #5F5F5F\n  | stroke-opacity2    = SWITCH:1;1;1;1\n  | fill2              = #808080\n  | fill-opacity2      = SWITCH:0;.5;0.5;0.5\n  | switch             = Austin;Travis County;Texas;the United States\n}}\n| pushpin_map        = Texas#USA\n| pushpin_map_caption = Location in Texas##Location in the United States\n| pushpin_relief     = 1\n| coordinates        = {{coord|30|16|02|N|97|44|35|W|region:US-TX_type:city|display=inline,title}}\n| subdivision_type   = Country\n| subdivision_name   = {{flagu|United States}}\n| subdivision_type1  = [[U.S. state|State]]\n| subdivision_type2  = [[List of counties in Texas|Counties]]\n| subdivision_name1  = {{flag|Texas}}\n| subdivision_name2  = [[Travis County, Texas|Travis]], [[Hays County, Texas|Hays]], [[Williamson County, Texas|Williamson]]\n| established_title  = Settled\n| established_date   = {{Start date and age|1835}}\n| established_title2 = Incorporated\n| established_date2  = {{Start date and age|1839|12|27}}\n| government_type    = [[Council-manager government|Council–manager]]\n| leader_title       = [[List of mayors of Austin, Texas|Mayor]]\n| leader_name        = [[Kirk Watson]] ([[Democratic Party (United States)|D]]){{efn|name=pledged}}\n| leader_title1      = [[Austin City Council|City Council]]\n| leader_name1       = {{collapsible list\n                               | bullets=yes\n                               |title = Members\n                               |1 = Natasha Harper-Madison (D)\n                               |2 = Vanessa Fuentes (D)\n                               |3 = Jose Velasquez (D)\n                               |4 = Jose \"Chito\" Vela (D)\n                               |5 = Ryan Alter (D)\n                               |6 = Krista Laine (D)\n                               |7 = Mike Siegel (D)\n                               |8 = Paige Ellis (D)\n                               |9 = Zohaib \"Zo\" Qadri (D)\n                               |10 = Marc Duchen (D)\n                              }}\n| leader_title2      = [[City manager]]\n| leader_name2       = T.C. Broadnax<ref name=\"CityGovernment\" />\n| unit_pref          = Imperial\n| area_footnotes     = <ref name=\"2019 Gazetteer\" />\n| area_total_sq_mi   = 326.51\n| area_land_sq_mi    = 319.94\n| area_water_sq_mi   = 6.57\n| area_total_km2     = 845.66\n| area_land_km2      = 828.64\n| area_water_km2     = 17.02\n| area_metro_km2     = 11099.91\n| elevation_footnotes = <ref name=gnis/>\n| elevation_ft       = 607\n| population_total   = 961855\n| population_as_of   = 2020\n| population_rank    = [[List of North American cities by population|33rd]] in North America<br />[[List of United States cities by population|13th]] in the United States<br />[[List of municipalities in Texas|5th]] in Texas\n| population_footnotes = <ref name=\"a760\">{{cite web | title=U.S. Census Bureau QuickFacts: Austin city, Texas | website=Census Bureau QuickFacts | date=2024-07-01 | url=https://www.census.gov/quickfacts/fact/table/austincitytexas/LFE041223 | access-date=2025-05-15}}</ref>\n| population_metro_footnotes = <ref name=\"2020Pop\" />\n| population_metro   = 2550637  ([[List of metropolitan statistical areas|US: 25th]])\n| pop_est_as_of      = 2024\n| pop_est_footnotes  = <ref name=\"a760\">{{cite web | title=U.S. Census Bureau QuickFacts: Austin city, Texas | website=Census Bureau QuickFacts | date=2024-07-01 | url=https://www.census.gov/quickfacts/fact/table/austincitytexas/LFE041223 | access-date=2025-05-15}}</ref>\n| population_urban   = 1809888 ([[List of United States urban areas|US: 29th]])\n| population_density_urban_km2 = 1,127.8\n| population_density_urban_sq_mi = 2,921.0\n| population_density_sq_mi = 3006.36\n| population_est     = 993588 {{gain}}\n| population_density_km2 = 1160.76\n| population_demonym = Austinite\n| demographics_type2 = GDP\n| demographics2_footnotes = <ref>{{Cite web|title=Total Gross Domestic Product for Austin-Round Rock, TX (MSA)|url=https://fred.stlouisfed.org/series/NGMP12420|website=fred.stlouisfed.org|access-date=January 3, 2024|archive-date=January 10, 2024|archive-url=https://web.archive.org/web/20240110062547/https://fred.stlouisfed.org/series/NGMP12420|url-status=live}}</ref>\n| demographics2_title1 = [[Metropolitan area|Metro]]\n| demographics2_info1 = $248.110 billion (2023)\n| postal_code_type   = [[ZIP Code]]s\n| postal_code        = 73301, 73344, 78681, 78701–78705, 78708–78739, 78741–78742, 78744–78768, 78772–78774, 78778–78779, 78783, 78799\n| area_code          = [[Area codes 512 and 737|512 & 737]]\n| area_code_type     = [[North American Numbering Plan|Area codes]]\n| website            = {{official URL}}\n| blank_name         = [[Federal Information Processing Standard|FIPS code]]\n| blank_info         = 48-05000<ref name=\"Census 2010\" />\n| blank1_name        = [[Geographic Names Information System|GNIS]] feature ID\n| blank1_info        = 2409761<ref name=gnis>{{GNIS|2409761}}</ref>\n| pushpin_label      = Austin\n| timezone           = [[Central Time Zone|CST]]\n| utc_offset         = −6\n| timezone_DST       = [[Central Time Zone|CDT]]\n| utc_offset_DST     = −5\n}}\n\n'''Austin''' ({{IPAc-en|ˈ|ɔː|s|t|ɪ|n|audio=En-us-Austin.oga}} {{respell|AW|stin}})<ref>{{cite LPD|3}}</ref> is the [[List of capitals in the United States|capital city]] of the U.S. state of [[Texas]]. With a population of 961,855 at the [[2020 United States census|2020 census]],<ref>{{Cite web |title=Austin's Population Continues Another Decade of Growth According to U.S. Census Bureau {{!}} AustinTexas.gov |url=https://www.austintexas.gov/news/austins-population-continues-another-decade-growth-according-us-census-bureau-0 |access-date=2022-10-10 |website=www.austintexas.gov |archive-date=March 17, 2022 |archive-url=https://web.archive.org/web/20220317153104/https://www.austintexas.gov/news/austins-population-continues-another-decade-growth-according-us-census-bureau-0 }}</ref> it is the [[List of United States cities by population|13th-most populous city]] in the U.S., [[List of cities in Texas by population|fifth-most populous city]] in Texas, and second-most populous U.S. state capital (after [[Phoenix, Arizona]]), while the [[Greater Austin|Austin metro area]] with an estimated 2.55 million residents is the [[Metropolitan statistical area|25th-largest metropolitan area]] in the nation. Austin is the [[county seat]] and most populous city of [[Travis County, Texas|Travis County]], with portions extending into [[Hays County, Texas|Hays]] and [[Williamson County, Texas|Williamson]] counties. Incorporated on December 27, 1839,<ref>{{Cite web |title=City of Austin - Austin History Center: When was Austin founded? |url=http://www.austinlibrary.com/ahc/faq1.htm |website=Austin Public Library}}</ref> it has been one of the fastest-growing large cities in the United States since 2010.<ref>{{Cite web |last=Weissmann |first=Jordan |date=May 21, 2015 |title=Population growth in U.S. cities: Austin is blowing away the competition. |url=http://www.slate.com/blogs/moneybox/2015/05/21/population_growth_in_u_s_cities_austin_is_blowing_away_the_competition.html |website=[[Slate (magazine)|Slate]] |access-date=November 1, 2015 |archive-date=October 13, 2018 |archive-url=https://web.archive.org/web/20181013092356/http://www.slate.com/blogs/moneybox/2015/05/21/population_growth_in_u_s_cities_austin_is_blowing_away_the_competition.html |url-status=live }}</ref><ref>{{Cite web |date=January 14, 2017 |title=America's Fastest Growing Cities 2016 |url=https://www.forbes.com/pictures/emeg45ehgji/1-austin-texas/ |website=Forbes |access-date=August 24, 2017 |archive-date=August 28, 2018 |archive-url=https://web.archive.org/web/20180828031748/https://www.forbes.com/pictures/emeg45ehgji/1-austin-texas/ |url-status=live }}</ref><ref>{{Cite web |date=May 21, 2020 |title=Southern and Western Regions Experienced Rapid Growth This Decade |url=https://www.census.gov/newsroom/press-releases/2020/south-west-fastest-growing.html |access-date=April 28, 2021 |website=United States Census Bureau |archive-date=October 15, 2022 |archive-url=https://web.archive.org/web/20221015202403/https://www.census.gov/newsroom/press-releases/2020/south-west-fastest-growing.html |url-status=live }}</ref>\n\nLocated in {{nowrap|[[Central Texas]]}} within the greater [[Texas Hill Country]], it is home to numerous lakes, rivers, and waterways, including [[Lady Bird Lake]] and [[Lake Travis]] on the [[Colorado River (Texas)|Colorado River]], [[Barton Springs Pool|Barton Springs]], [[McKinney Falls State Park|McKinney Falls]], and [[Lake Walter E. Long]].  Evidence of human activity in the region is estimated to date back at least 11,200 years ago, with early habitation by [[Clovis culture|Clovis peoples]] and later by [[Indigenous peoples of the Americas|American Indian]] groups such as the [[Tonkawa]].<!--Per WP:CITELEAD, references are not needed in the lead if it is sourced in the body of the article.--> Austin and [[San Antonio]] are approximately {{convert|80.|mi}} apart, and both fall along the [[Interstate 35 in Texas|I-35]] corridor. This combined metropolitan region of [[San Antonio–Austin metroplex|San Antonio–Austin]] has approximately 5 million people.<ref name=\"sa-atxmetro\">{{Cite news |last=Egan |first=John |date=6 September 2022 |title=Booming Texas region could rival Dallas-Fort Worth as 'next great U.S. metroplex,' mayor says |work=CultureMap |url=https://fortworth.culturemap.com/news/city-life/09-06-22-austin-san-antonio-next-great-us-metroplex/ |access-date=December 26, 2023 |archive-date=December 14, 2023 |archive-url=https://web.archive.org/web/20231214003817/https://fortworth.culturemap.com/news/city-life/09-06-22-austin-san-antonio-next-great-us-metroplex/ |url-status=live }}</ref> Austin is the southernmost state capital in the [[contiguous United States]] and is considered a [[Globalization and World Cities Research Network#Gamma +|Gamma&nbsp;+&nbsp;level]] [[global city]] as categorized by the [[Globalization and World Cities Research Network]].<ref>{{Cite web |title=The World According to GaWC 2020 |url=https://www.lboro.ac.uk/gawc/world2020t.html |access-date=2021-11-14 |website=lboro.ac.uk |publisher=[[Globalization and World Cities Research Network]] |archive-date=August 24, 2020 |archive-url=https://web.archive.org/web/20200824031341/https://www.lboro.ac.uk/gawc/world2020t.html |url-status=live }}</ref>\n\n[[List of people from Austin, Texas|Residents of Austin]] are known as Austinites.<ref name=\"Long 2010\" /> They include a diverse mix of government employees, college students, musicians, high-tech workers, and [[blue-collar worker]]s. The city's official slogan promotes Austin as \"The Live Music Capital of the World\", a reference to the city's many musicians and live music venues, as well as the long-running [[PBS]] TV concert series ''[[Austin City Limits]]''.<ref name=\"motto\" /><ref name=\"atx_motto\" /> Austin is the site of [[South by Southwest]] (SXSW), an annual conglomeration of parallel [[Film festival|film]], [[interactive media]], and [[music festival]]s. The city also adopted \"[[Silicon Hills]]\" as a nickname in the 1990s due to a rapid influx of technology and development companies. In recent years, some Austinites have adopted the unofficial slogan \"[[Keep Austin Weird]]\",<ref>{{Cite web |title=MetroSeeker.com |url=http://www.metroseeker.com/austin |archive-url=https://web.archive.org/web/20111120065906/http://www.metroseeker.com/austin |archive-date=November 20, 2011 |access-date=November 16, 2011 |publisher=MetroSeeker.com}}</ref> which refers to the desire to protect small, unique, and local businesses from being overrun by large corporations.<ref name=\"weird\" /> Ongoing rapid development and [[gentrification]] challenge its [[Bohemianism|bohemian]] roots and fuel nostalgia for “Old Austin.” <!--Per WP:CITELEAD, references are not needed in the lead if it is sourced in the body of the article.--> Since the late 19th century, Austin has also been known as the \"[[City of the Violet Crown]]\", because of the colorful glow of light across the hills just after sunset.<ref>{{Cite web |title=Just what is a violet crown? |date=June 21, 2011 |url=http://www.violetcrownvoices.com/just-what-is-a-violet-crown |access-date=August 19, 2016 |archive-date=April 2, 2019 |archive-url=https://web.archive.org/web/20190402211615/http://www.violetcrownvoices.com/just-what-is-a-violet-crown |url-status=live|we\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-11-23T18:56:46Z"
+        }
+       ],
+       "title": "Austin, Texas"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-11-25T07:33:03Z",
+    "titles": "Austin, Texas"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20251111025404|1321535061"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 16105212,
+       "revisions": [
+        {
+         "parentid": 1321535061,
+         "revid": 1321759112,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Type of electric vehicle}}\n{{Use dmy dates|date=December 2019}}\n\n[[File:Nissan Leaf and Tesla Model S in Norway cropped.jpg|thumb|upright=1.25|The [[Nissan Leaf]] (left) and the [[Tesla Model S]] (right) were the world's all-time top-selling [[all-electric car]]s in 2018.]]\n[[File:HSC China Zorrilla at Incat June 2025 2.jpg|thumb|Measuring {{cvt|130|m|ft}} in length and powered by a 40 MWh [[Lithium-ion battery|battery]] system the ''[[China Zorrilla (ship)|China Zorrilla]]'' [[ferry]] is the largest battery electric vehicle ever built.]]\n[[File:Elektroauto CCS HPC.jpg|thumb|Charging [[Peugeot 208|Peugeot e208]] at a high power charging station]]\n[[File:Electric vehicle recharging point.jpg|thumb|Charging point]]\n\nA '''battery electric vehicle''' ('''BEV'''), '''pure electric vehicle''', '''only-electric vehicle''', '''fully electric vehicle''' or '''all-electric vehicle''' is a type of [[electric vehicle]] (EV) that uses [[electrical energy]] exclusively from an [[electric vehicle battery|on-board battery pack]] to power one or more [[electric motor|electric]] [[traction motor]]s, on which the vehicle solely relies for [[propulsion]]. \n\nThis definition excludes [[hybrid electric vehicle]]s (HEVs; including [[mild hybrid|mild]], [[full hybrid|full]] and [[plug-in hybrid]]s), which use [[internal combustion engine]]s (ICEs) in adjunct to electric motors for propulsion; and [[fuel cell electric vehicle]]s (FCEVs) and [[range extender|range-extended electric vehicle]]s (REEVs), which consume [[fuel]] through a [[fuel cell]] or an ICE-driven [[electric generator|generator]] to produce electricity needed for the electric motors. BEVs have no [[fuel tank]]s and replenish their [[energy storage]] by [[plug-in electric vehicle|plugging into]] a [[charging station]], [[electrical grid]] or getting a new battery at a [[Battery swapping|battery swap station]], and use [[motor controller]]s to modulate the output [[engine power]] and [[torque]], thus eliminating the need for [[clutch]]es, [[transmission (mechanical device)|transmission]]s and sophisticated [[internal combustion engine cooling|engine cooling]] as seen in conventional ICE vehicles. BEVs include – but are not limited to<ref>{{Cite web|url=https://www.boringcompany.com/faq/|title=FAQ|website=The Boring Company|language=en-US|access-date=8 April 2018|archive-date=12 November 2020|archive-url=https://web.archive.org/web/20201112053938/https://www.boringcompany.com/faq/}}</ref><ref>{{Cite web|last1=Goebel|first1=Dan M|last2=Katz|first2=Ira|date=March 2008|title=Fundamentals of Electric Propulsion: Ion and Hall Thrusters|url=https://descanso.jpl.nasa.gov/SciTechBook/series1/Goebel__cmprsd_opt.pdf|url-status=live|archive-url=https://web.archive.org/web/20090320095657/http://descanso.jpl.nasa.gov/SciTechBook/series1/Goebel__cmprsd_opt.pdf |archive-date=20 March 2009 |access-date=2021-02-07|website=[[Jet Propulsion Laboratory]], California Institute of Technology|quote=\"literally hundreds of electric thrusters now operating in orbit on communications satellites, and ion and Hall thrusters both having been successfully used...\"}}</ref>  – all battery-driven [[electric car]]s, [[electric bus|bus]]es, [[electric truck|truck]]s, [[forklift]]s, [[electric motorcycles and scooters|motorcycles and scooters]], [[electric bicycle|bicycle]]s, [[electric skateboard|skateboard]]s, [[battery electric multiple unit|railcar]]s, [[electric boat|boat]] and [[personal watercraft]], although in common usage the term usually refers specifically to [[passenger car]]s.\n\nIn 2016, there were 210 million electric bikes worldwide used daily.<ref>{{Cite web | url=https://electricbikereport.com/the-state-of-the-electric-bicycle-market/ | title=The State of the Electric Bicycle Market &#124; Electric Bike Report &#124; Electric Bike, Ebikes, Electric Bicycles, e Bike, Reviews| date=19 September 2016}}</ref> Cumulative global sales of highway-capable light-duty pure [[electric car]] vehicles passed the one million unit milestone in September 2016.<ref name=1miBEVs>{{cite web | url=https://cleantechnica.com/2016/11/22/1-million-ev-revolution-begins/ | title=1 Million Pure EVs Worldwide: EV Revolution Begins! |first=Zachary |last=Shahan |website= [[cleantechnica.com]] | date=22 November 2016| access-date=23 November 2016}}</ref> {{As of|2024|September}}, the world's top-selling all-electric car in history is the [[Tesla Model Y]], with an estimated 3.4 million sales, followed by the [[Tesla Model 3]] with over 2.6 million sales, and the [[Wuling Hongguang Mini EV]] with 1.4 million sales {{As of|2024|December|lc=y}}.<ref name=\":142\">{{Cite web |last=Shahan |first=Zachary |date=2024-10-04 |title=Cumulative Tesla Model 3 & Model Y Sales Pass 6 Million — Charts |url=https://cleantechnica.com/2024/10/04/cumulative-tesla-model-3-model-y-sales-pass-6-million/ |access-date=2025-01-17 |website=CleanTechnica |language=en-US}}</ref><ref>{{Cite web |title=【易车销量榜】全国2024年纯电动零售量销量榜-易车榜-易车 |url=https://car.yiche.com/newcar/salesrank/?flag=2024&energy=2 |access-date=2025-01-12 |website=car.yiche.com}}</ref>\n{{TOC limit|3}}\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-11-12T14:05:01Z"
+        }
+       ],
+       "title": "Battery electric vehicle"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-11-25T07:33:03Z",
+    "titles": "Battery electric vehicle"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20251119035456|1323014135"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 24130,
+       "revisions": [
+        {
+         "parentid": 1323014135,
+         "revid": 1323014852,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Captured energy for later usage}}\n{{Use mdy dates|date=September 2018}}\n[[File:Stwlan.dam.jpg|thumb|The Llyn Stwlan dam of the [[Ffestiniog Power Station|Ffestiniog]] [[pumped-storage hydroelectricity|Pumped-Storage Scheme]] in Wales. The lower power station has four water turbines which can generate a total of 360 MW of electricity for several hours, an example of artificial energy storage and conversion.]]\n{{Power engineering}}\n{{Sustainable energy}}\n'''Energy storage''' is the capture of [[energy]] produced at one time for use at a later time<ref>{{cite web |last1=Clarke |first1=Energy |title=Energy Storage |url=https://www.clarke-energy.com/energy-storage/ |website=Clarke Energy |access-date=5 June 2020 |archive-date=July 28, 2020 |archive-url=https://web.archive.org/web/20200728083046/https://www.clarke-energy.com/energy-storage/ |url-status=live }}</ref> to reduce imbalances between energy demand and energy production. A device that stores energy is generally called an [[Accumulator (energy)|accumulator]] or [[Battery (electricity)|battery]]. Energy comes in multiple forms including radiation, [[chemical energy|chemical]], [[gravitational potential energy|gravitational potential]], [[Electric potential energy|electrical potential]], electricity, elevated temperature, [[latent heat]] and [[kinetic energy|kinetic]]. Energy storage involves converting energy from forms that are difficult to store to more conveniently or economically storable forms.\n\nSome technologies provide short-term energy storage, while others can endure for much longer. Bulk energy storage is currently dominated by hydroelectric dams, both conventional as well as pumped. [[Grid energy storage]] is a collection of methods used for energy storage on a large scale within an electrical power grid.\n\nCommon examples of energy storage are the [[rechargeable battery]], which stores chemical energy readily convertible to electricity to operate a mobile phone; the [[Hydroelectricity|hydroelectric]] dam, which stores energy in a [[reservoir]] as gravitational [[potential energy]]; and [[Ice storage air conditioning|ice storage]] tanks, which store ice frozen by cheaper energy at night to meet peak daytime demand for cooling. [[Fossil fuel]]s such as coal and gasoline store ancient energy derived from sunlight by organisms that later died, became buried and over time were then converted into these fuels. [[Food]] (which is made by the same process as fossil fuels) is a form of energy stored in [[chemical]] form.\n{{toclimit|3}}\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-11-19T03:59:52Z"
+        }
+       ],
+       "title": "Energy storage"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-11-25T07:33:03Z",
+    "titles": "Energy storage"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20151025162253|687439605"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 48359880,
+       "revisions": [
+        {
+         "parentid": 687439605,
+         "revid": 687784122,
+         "slots": {
+          "main": {
+           "content": "#REDIRECT [[Grid energy storage]]",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2015-10-27T18:40:47Z"
+        }
+       ],
+       "title": "Grid-scale storage"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-11-25T07:33:03Z",
+    "titles": "Grid-scale storage"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20250905044625|1309628725"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 1646838,
+       "revisions": [
+        {
+         "parentid": 1309628725,
+         "revid": 1309634903,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Large scale electricity supply management}}\n{{good article}}\n{{Redirect|Grid storage|data storage with grid computing|Grid-oriented storage}}\n{{Use dmy dates|date=October 2020}}\n[[File:20241206 Grid energy storage.svg|thumb|Energy from fossil or nuclear power plants and renewable sources is stored for use by customers.]]\n[[File:20241201 Power grid storage energy flow - daily.svg|thumb|Diagram showing flow of energy between energy storage facilities and power grids, as a function of time over a 24 hour period]]\n\n'''Grid energy storage''', also known as '''large-scale energy storage''', is a set of technologies connected to the [[electrical power grid]] that [[Energy storage|store energy]] for later use. These systems help balance supply and demand by storing excess electricity from [[Variable renewable energy|variable renewables]] such as [[Solar power|solar]] and inflexible sources like [[nuclear power]], releasing it when needed. They further provide [[Ancillary services (electric power)|essential grid services]], such as helping to [[Black start|restart the grid]] after a [[power outage]]. \n\n{{As of|2023}}, the largest form of grid storage is [[pumped-storage hydroelectricity]], with [[Battery energy storage system|utility-scale batteries]] and behind-the-meter batteries coming second and third.{{sfn|Cozzi|Petropoulos|Wanner|2024|p=68}} [[Lithium-ion battery|Lithium-ion batteries]] are well suited for short-duration storage (under 8 hours), due to their lower cost and sensitivity to degradation at high states of charge. [[Flow battery|Flow batteries]] and [[Compressed-air energy storage|compressed air energy storage]] may provide storage for medium-duration. Two forms of storage are suited for long-duration storage: [[green hydrogen]], produced via [[electrolysis]] and [[thermal energy storage]].{{Sfn|IPCC AR6 WG3 Ch6|2022|pp=653, 656}}\n\nEnergy storage is one option to making grids more flexible. Another solution is the use of more [[Dispatchable generation|dispatchable power plants]] that can change their output rapidly, for instance [[peaking power plant]]s to fill in supply gaps. [[Demand response]] can shift load to other times and [[Interconnector|interconnections]] between regions can balance out fluctuations in renewables production.{{Sfn|IPCC AR6 WG3 Ch6|2022|p=651}} \n\nThe price of storage technologies typically [[Experience curve|goes down with experience]]. For instance, lithium-ion batteries have been getting some 20% cheaper for each doubling of worldwide capacity.{{Sfn|Schmidt|Staffell|2023|p=92}} Systems with under 40% variable renewables need only short-term storage. At 80%, medium-duration storage becomes essential and beyond 90%, long-duration storage does too. The economics of long-duration storage is challenging, and alternative flexibility options like demand response may be more economic.\n\n{{toclimit|3}}\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-09-05T05:45:59Z"
+        }
+       ],
+       "title": "Grid energy storage"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-11-25T07:33:03Z",
+    "titles": "Grid energy storage"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20251117160946|1322686227"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 3507365,
+       "revisions": [
+        {
+         "parentid": 1322686227,
+         "revid": 1323889367,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Assembly of photovoltaic cells used to generate electricity}}\n{{For|solar thermal panels|solar thermal collector|solar thermal energy}}\n{{Use dmy dates|date=July 2022}}\n[[File:Dji fly 20230602 13826 PM 27 1719032149374 photo optimized.jpg|thumb|300px|Greencap Energy solar array mounted on brewery in [[Worthing]], [[England]]]]\n[[File:Photovoltaik Dachanlage Hannover - Schwarze Heide - 1 MW.jpg|thumb|300px|Solar array mounted on a rooftop]]\n\nA '''solar panel''' is a device that converts [[sunlight]] into [[electricity]] by using multiple solar modules that consist of [[photovoltaic]] (PV) cells. PV cells are made of materials that produce excited [[electrons]] when exposed to light. These electrons flow through a circuit and produce [[direct current]] electricity, which can be used to power various devices or be stored in [[battery (electricity)|batteries]]. Solar panels can be known as '''solar cell panels''', or '''solar electric panels'''.<ref>{{Cite book |last=Green |first=Martin A. |title=Solar cells: operating principles, technology and system applications |date=1998 |publisher=Univ. of New South Wales |isbn=978-0-85823-580-9 |edition=Repr. [der Ausg.] Englewood Cliffs, NJ 1982 |location=Kensington, NSW}}</ref><ref>{{Cite magazine |last1=Yang |first1=Zeyi |title=Africa Is Buying a Record Number of Chinese Solar Panels |magazine=Wired |url=https://www.wired.com/story/african-imports-of-chinese-solar-panels-increase/}}</ref> Solar panels are usually arranged in groups called arrays or systems. A [[photovoltaic system]] consists of one or more solar panels, an [[solar inverter|inverter]] that converts [[direct current]] electricity to [[alternating current]] electricity, and sometimes other components such as [[charge controller|controllers]], meters, and [[solar tracker|trackers]]. Most panels are in [[solar farms]] or [[rooftop solar panel]]s which supply the electricity grid.\n\nSome advantages of solar panels are that they use a renewable and clean source of energy, reduce [[greenhouse gas emissions]], and lower electricity bills. Some disadvantages are that they depend on the availability and intensity of sunlight, require cleaning, and have high initial costs. Solar panels are widely used for residential, commercial, and industrial purposes, as well as in [[solar power satellite|space]], often together with batteries.\n\n== History ==\n{{See also|Solar cell#History|Timeline of solar cells|Growth of photovoltaics}}\n\n===Early developments===\n\nIn 1839, the ability of some materials to create an electrical charge from light exposure was first observed by the French physicist [[Edmond Becquerel]].<ref name=\":0\">{{cite journal|date=April 2009|title=April 25, 1954: Bell Labs Demonstrates the First Practical Silicon Solar Cell|url=http://www.aps.org/publications/apsnews/200904/physicshistory.cfm|journal=APS News|publisher=American Physical Society|volume=18|issue=4}}</ref> Though these initial solar cells were too inefficient for even simple electric devices, they were used as an instrument to measure light.<ref>{{cite web|last1=Christian|first1=M|title=The history of the invention of the solar panel summary.|url=https://www.energymatters.com.au/panels-modules/|access-date=25 January 2019|website=Engergymatters.com|publisher=Energymatters.com}}</ref>\n\nThe observation by Becquerel was not replicated again until 1873, when the English electrical engineer [[Willoughby Smith]] discovered that the charge could be caused by light hitting [[selenium]]. After this discovery, [[William Grylls Adams]] and Richard Evans Day published \"The action of light on selenium\" in 1876, describing the experiment they used to replicate Smith's results.<ref name=\":0\" /><ref>{{cite journal|last1=Adams|first1=William Grylls|last2=Day|first2=R. E.|date=1 January 1877|title=IX. The action of light on selenium|journal=Philosophical Transactions of the Royal Society of London|language=en|volume=167|pages=313–316|doi=10.1098/rstl.1877.0009|issn=0261-0523|doi-access=}}</ref>\n\nIn 1881, the American inventor [[Charles Fritts]] created the first commercial solar cell, which was reported by Fritts as \"continuous, constant and of considerable force not only by exposure to sunlight but also to dim, diffused daylight\".<ref>{{cite news |last1=Meyers |first1=Glenn |date=31 December 2014 |title=Photovoltaic Dreaming 1875--1905: First Attempts At Commercializing PV |url=https://cleantechnica.com/2014/12/31/photovoltaic-dreaming-first-attempts-commercializing-pv/ |access-date=7 September 2018 |work=cleantechnica.com |publisher=Sustainable Enterprises Media Inc. |agency=CleanTechnica}}</ref><ref>{{cite magazine |title=A Brief History of Solar Panels |first1=Elizabeth |last1=Chu |first2=D. Lawrence |last2=Tarazano |magazine=Smithsonian Magazine |url=https://www.smithsonianmag.com/sponsored/brief-history-solar-panels-180972006/ |date=2019-04-22}} </ref> However, these solar cells were still very inefficient for practical power production, especially compared to [[coal-fired power plant]]s.\n\nIn 1939, [[Russell Ohl]] created the solar cell design that is used in many modern solar panels. He patented his design in 1941.<ref>{{cite web|last1=Ohl|first1=Russell|date=27 May 1941|title=Light-sensitive electric device|url=https://patents.google.com/patent/US2402662|access-date=7 September 2018}}</ref> In 1954, this design was first used by [[Bell Labs]] to create the first commercially viable [[silicon]] solar cell.<ref name=\":0\" />\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-11-24T08:59:06Z"
+        }
+       ],
+       "title": "Solar panel"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-11-25T07:33:03Z",
+    "titles": "Solar panel"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20130304142247|542048952"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 38707137,
+       "revisions": [
+        {
+         "parentid": 542048952,
+         "revid": 1212471836,
+         "slots": {
+          "main": {
+           "content": "#REDIRECT [[Solar shingle]] {{R from plural}}",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2024-03-08T01:43:56Z"
+        }
+       ],
+       "title": "Solar shingles"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-11-25T07:33:03Z",
+    "titles": "Solar shingles"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20240914175148|1245719805"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 7101410,
+       "revisions": [
+        {
+         "parentid": 1245719805,
+         "revid": 1273669462,
+         "slots": {
+          "main": {
+           "content": "{{short description|Type of solar panel}}\n[[File:Tesla Solar Roof-2.jpg|thumb|[[Tesla Energy#Tesla Solar Roof|Tesla Solar Roof]]]]\n'''Solar shingles''', also called '''photovoltaic shingles''', are [[solar panel]]s designed to look like and function as conventional roofing materials, such as [[asphalt shingle]] or slate, while also producing electricity. Solar shingles are a type of solar energy solution known as [[building-integrated photovoltaics]] (BIPV).\n\nThere are several varieties of solar shingles, including shingle-sized solid panels that take the place of a number of conventional shingles in a strip, semi-rigid designs containing several silicon solar cells that are sized more like conventional shingles, and newer systems using various [[Solar cell#Thin-film processing|thin-film solar cell]] technologies that match conventional shingles both in size and flexibility. There are also products using a more traditional number of silicon solar cells per panel reaching as much as 100 [[watt]]s [[Direct current|DC]] rating per shingle.<ref>{{cite web |title=SunTegra Solar Shingle 100W |url=http://www.suntegrasolar.com/suntegra-shingles |website=SunTegra Solar |access-date=28 January 2016}}</ref>\n\nSolar shingles are manufactured by several companies.<ref>{{Cite web|url=https://www.latimes.com/business/la-fi-tesla-solar-roof-20190319-story.html|title=Tesla has a new rival in its quest to make solar rooftops happen|last=Eckhouse|first=Brian|date=March 19, 2019|website=[[Los Angeles Times]]|access-date=2019-03-19}}</ref><ref name=Reuters>{{cite news |url=https://www.reuters.com/article/marketsNews/idAFN0536825520091005?rpc=44 |title=Dow to sell solar shingle, sees huge market |date=2009-10-05 |access-date=2009-10-08 |last=Goldstein |first=Matthew |work=[[Reuters]]}}</ref>\n\n==History==\nSolar shingles became commercially available in 2005.<ref name=\"auto\">{{cite web |title=Sun Roof: Solar Panel Shingles Come Down in Price, Gain in Popularity |url = https://www.scientificamerican.com/article/im-getting-my-roof-redone-and-heard-about-solar-shingles/ |website=Scientific American|access-date=2015-12-15 |date=April 12, 2013 }}</ref> In a 2009 interview with Reuters, a spokesperson for the [[Dow Chemical Company]] estimated that their entry into the solar shingle market would generate $5 billion in revenue by 2015 and $10 billion by 2020. Dow solar shingles, known as the POWERHOUSE Solar System, first became available in [[Solar power in Colorado|Colorado]], in October 2011. A 3rd generation of POWERHOUSE Solar System was exclusively  licensed to [[RGS Energy]] for commercialization from 2017 until 2020, when RGS Energy filed for bankruptcy.<ref>{{cite web|url=https://finance.yahoo.com/news/real-goods-solar-inc-rgse-155428529.html|title=Real Goods Solar, Inc. (RGSE) Stock Skyrockets on Dow Deal|date=4 October 2017|access-date=29 May 2018|via=www.finance.yahoo.com}}</ref><ref name=\"RGSBankruptcy\">{{cite web |author1=Pickerell, Kelly |title=Powerhouse solar shingle company RGS Energy files for bankruptcy |url=https://www.solarpowerworldonline.com/2020/02/powerhouse-solar-shingle-company-rgs-energy-files-for-bankruptcy/ |website=Solar Power World |access-date=22 February 2021 |archive-url=https://web.archive.org/web/20210222001228/https://www.solarpowerworldonline.com/2020/02/powerhouse-solar-shingle-company-rgs-energy-files-for-bankruptcy/ |archive-date=22 February 2021 |date=6 February 2020}}</ref> \n\nIn October 2016, Tesla entered the solar shingle space in a joint venture with [[SolarCity]].<ref>{{cite news |first=Tom |last=Randall |url=https://www.bloomberg.com/news/articles/2016-10-31/no-one-saw-tesla-s-solar-roof-coming|title=No One Saw Tesla's Solar Roof Coming|newspaper=Bloomberg.com|date=31 October 2016|access-date=19 April 2018|via=www.bloomberg.com}}</ref> Tesla later acquired SolarCity and the solar shingle product was described as \"a flop\" in 2019.<ref>{{Cite web |title=Tesla's trumpeted solar shingles are a flop |url=https://www.technologyreview.com/2019/05/15/135368/teslas-trumpeted-solar-shingles-are-a-flop/ |access-date=2023-07-12 |website=MIT Technology Review |language=en}}</ref> Solar marketplace provider [[EnergySage]] reviewed the now named Tesla Solar Roof, noting that it had \"experienced significant setbacks that have delayed its design, production, and deployment.\"<ref>{{Cite web |last=Walker |first=Emily |date=2023-01-06 |title=Tesla Solar Roof 2022 Review: Cost, Efficiency, News {{!}} EnergySage |url=https://news.energysage.com/tesla-solar-panel-roof-the-next-solar-shingles/ |access-date=2023-07-12 |website=EnergySage Blog |language=en-US}}</ref> In January 2022, [[GAF Materials Corporation]] announced they would start selling a solar shingle product.<ref>{{cite news |title=As U.S. moves toward solar energy, this roofing company hopes 'solar shingles' will get homeowners to buy in |first=Tik |last=Root |date=January 3, 2022 |newspaper=[[Washington Post]] |url=https://www.washingtonpost.com/climate-solutions/2022/01/03/solar-energy-roof-shingles-climate/ |access-date=January 4, 2022}}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-02-03T12:40:46Z"
+        }
+       ],
+       "title": "Solar shingle"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-11-25T07:33:03Z",
+    "titles": "Solar shingle"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20251025092939|1318675417"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 6053357,
+       "revisions": [
+        {
+         "parentid": 1318675417,
+         "revid": 1319124127,
+         "slots": {
+          "main": {
+           "content": "{{short description|American engineer and business executive (born 1960)|bot=PearBOT 5}}\n{{use mdy dates|date=August 2022}}\n{{use American English|date=August 2022}}\n{{Infobox person\n| name               = Martin Eberhard\n| image              = Martin Eberhard (cropped).jpg\n| alt                = \n| caption            = Eberhard in 2006\n| birth_name         = Martin Forest Eberhard\n| birth_date         = {{birth year and age|1960}}\n| birth_place        = [[California]], United States\n| nationality        = \n| known_for          = {{ubl|Co-founder of [[Tesla, Inc.|Tesla]]|Lead scientist at [[SF Motors]]}}\n| occupation         = \n| education          = [[University of Illinois Urbana-Champaign]] ([[Bachelor of Science|BS]], [[Master of Science|MS]])\n}}\n'''Martin Forest Eberhard''' ({{IPAc-en|ˈ|ɛ|b|ər|h|ɑr|d}}; born 1960)<ref name=brittanica /> is an American engineer and entrepreneur who co-founded [[Tesla, Inc.]] (then Tesla Motors) with [[Marc Tarpenning]] in July 2003,<ref>{{Cite web |last=Copeland |first=Michael V. |date=July 21, 2008 |title=Tesla's wild ride |url=https://fortune.com/article/tesla-elon-musk-electric-car-motors/ |access-date= |website=Fortune |language=en}}</ref> where Eberhard was its original CEO serving until late 2007.<ref>{{Cite web|title=CNBC Interview with Tesla Founders Martin Eberhard and Marc Tarpanning|website=[[CNBC]]|url=https://www.cnbc.com/video/2021/02/06/how-tesla-was-founded-martin-eberhard-and-marc-tarpenning-tell-all.htm}}</ref><ref>{{Cite news|url=https://techcrunch.com/gallery/a-brief-history-of-tesla/|title=A brief history of Tesla|last=Kumparak|first=Greg|work=TechCrunch|access-date=2017-11-13|language=en}}</ref><ref>{{Cite news|url=https://www.businessinsider.com/tesla-the-origin-story-2014-10|title=The Making Of Tesla: Invention, Betrayal, And The Birth Of The Roadster|work=Business Insider|access-date=3 August 2021|language=en}}</ref><ref>{{Cite web|url=https://cleantechnica.com/2017/06/23/tesla-co-founder-marc-tarpenning-tells-definitive-story-companys-beginnings/|title=Tesla Co-Founder Marc Tarpenning Tells Definitive Story Of Company's Beginnings {{!}} CleanTechnica|website=[[cleantechnica.com]]|date=23 June 2017|language=en-US|access-date=2017-11-13}}</ref> In 2015, he was inducted into the University of Illinois Engineering Hall of Fame.\n\n==Early life and education==\nBorn in [[California]], Eberhard grew up in [[Kensington, California|Kensington]], a community in the [[Berkeley Hills]]. He received a B.S. in computer engineering from the [[University of Illinois Urbana-Champaign]] in 1982 and an M.S. in electrical engineering from the same school in 1984.<ref name=brittanica>{{cite web |title=Martin Eberhard and Marc Tarpenning {{!}} American entrepreneurs {{!}} Britannica |url=https://www.britannica.com/biography/Martin-Eberhard-and-Marc-Tarpenning |website=www.britannica.com |language=en}}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-10-27T23:03:50Z"
+        }
+       ],
+       "title": "Martin Eberhard"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-11-25T07:33:03Z",
+    "titles": "Martin Eberhard"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20251020000309|1317776868"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 46736346,
+       "revisions": [
+        {
+         "parentid": 1317776868,
+         "revid": 1319124380,
+         "slots": {
+          "main": {
+           "content": "{{short description|American technology entrepreneur (born 1964)}}\n{{Infobox person\n| name               = Marc Tarpenning\n| image              = \n| birth_date         = {{birth date and age|1964|6|1}}\n| birth_place        = [[Sacramento]], [[California]], U.S.\n| education          = [[University of California, Berkeley]] ([[Bachelor of Arts|BA]])\n| occupation         = Co-founder of [[Tesla, Inc.|Tesla]]\n| website            = https://marctarpenning.com/\n}}\n\n'''Marc Tarpenning''' (born June 1, 1964) is an American engineer and technology entrepreneur who co-founded [[Tesla, Inc.|Tesla Inc.]] with [[Martin Eberhard]] in 2003.<ref>{{Cite web|title=CNBC Interview with Tesla Founders Martin Eberhard and Marc Trapanning|website=[[CNBC]]|date=6 February 2021 |url=https://www.cnbc.com/video/2021/02/06/how-tesla-was-founded-martin-eberhard-and-marc-tarpenning-tell-all.html}}</ref><ref>{{Cite web|title=Marc Tarpenning – Engineer, Entrepreneur and Investor|url=https://marctarpenning.com/|access-date=2020-10-19|website=Marc Tarpenning|language=en-US}}</ref><ref>{{Cite news|url=http://scet.berkeley.edu/founders-night-hap-klopp-marc-tarpenning/|title=A Founder's Night: Hap Klopp & Marc Tarpenning – UC Berkeley Sutardja Center|date=2017-03-06|work=UC Berkeley Sutardja Center|access-date=2017-11-13|language=en-US}}</ref><ref>{{Cite web|url=https://cleantechnica.com/2017/06/23/tesla-co-founder-marc-tarpenning-tells-definitive-story-companys-beginnings/|title=Tesla Co-Founder Marc Tarpenning Tells Definitive Story Of Company's Beginnings {{!}} CleanTechnica|website=[[cleantechnica.com]]|date=23 June 2017|language=en-US|access-date=2017-11-13}}</ref> Tarpenning served as the [[chief financial officer]] (CFO) and vice president of engineering of Tesla.<ref name=\":1\">{{Cite news |title=The Making Of Tesla: Invention, Betrayal, And The Birth Of The Roadster |language=en |work=Business Insider |url=http://www.businessinsider.com/tesla-the-origin-story-2014-10 |access-date=2017-11-13}}</ref>\n\n== Early life ==\nMarc Tarpenning was born in [[Sacramento, California|Sacramento]], [[California]], on June 1, 1964.<ref name=\":4\">{{Cite news |title=Martin Eberhard and Marc Tarpenning {{!}} American entrepreneurs |language=en |work=Encyclopedia Britannica |url=https://www.britannica.com/biography/Martin-Eberhard-and-Marc-Tarpenning |access-date=2017-11-13}}</ref> He attended the [[University of California, Berkeley]], and obtained a [[Bachelor of Arts|B.A.]] degree in [[computer science]] in 1985.<ref name=\":0\">{{Cite web |title=Co-Founder Marc Tarpenning '85 Shows Off Tesla's \"Baby Pictures\" {{!}} Innovators |url=https://innovators.berkeley.edu/article/co-founder-marc-tarpenning-85-shows-teslas-baby-pictures |access-date=2017-11-13 |website=innovators.berkeley.edu |language=en}}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-10-27T23:05:37Z"
+        }
+       ],
+       "title": "Marc Tarpenning"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-11-25T07:33:03Z",
+    "titles": "Marc Tarpenning"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20251116105502|1322467907"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 21473,
+       "revisions": [
+        {
+         "parentid": 1322467907,
+         "revid": 1322515230,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Serbian-American engineer and inventor (1856–1943)}}\n{{Other uses}}\n{{Good article}}\n{{Pp-semi-indef}}\n{{Pp-move}}\n{{Use American English|date=September 2024}}\n{{Use dmy dates|date=July 2025}}\n{{Infobox engineer\n| native_name = {{nobold|{{lang|sr|Никола Тесла}}}}\n| native_name_lang = sr\n| image = Tesla circa 1890.jpeg\n| alt = Head-and-shoulder photograph of a slender man with dark hair and moustache, dark suit and white-collar shirt\n| caption = Tesla, {{circa|1890}}\n| birth_date = {{birth date|1856|7|10|df=y}}\n| birth_place = [[Smiljan, Croatia|Smiljan]], [[Austrian Empire]]<!-- There is consensus against adding [[Croatian Military Frontier]] here -->\n| death_date = {{death date and age|1943|1|7|1856|7|10|df=y}}\n| death_place = [[New York City]], U.S.\n| resting_place = [[Nikola Tesla Museum]], Belgrade, Serbia\n| citizenship = {{ubl\n  | Austria (until 1891)\n  | U.S. (from 1891)\n  }}\n| education = [[Graz University of Technology]] (dropped out)\n| occupation = {{hlist|Engineer|[[futurist]]|inventor}}\n| known_for = \n| awards = {{ubil\n  | [[Order of St. Sava]] (1892)\n  | [[Elliott Cresson Medal]] (1894)\n  | [[Order of Prince Danilo I]] (1895)\n  | [[AIEE Edison Medal]] (1916)\n   | [[Order of the Yugoslav Crown]] (1931)\n  | [[John Scott Medal]] (1934)\n  | [[Order of the White Eagle (Serbia)|Order of the White Eagle]] (1937)\n  | [[Order of the White Lion]] (1937)\n  }}\n| discipline =  {{ubl\n  | [[Electrical engineering]]\n  | [[Mechanical engineering]]}}\n| employer =\n| significant_design   = [[Induction motor]]\n| significant_projects = [[Wireless power transfer]]\n| significant_advance  = [[Polyphase system|Polyphase electric power]]\n| signature = Nikola Tesla signature 1900.svg\n}}\n'''Nikola Tesla'''{{efn|{{IPAc-en|lang|ˈ|n|ɪ|k|ə|l|ə|_|ˈ|t|ɛ|s|l|ə}};<ref name=\"Webster's\">[https://www.dictionary.com/browse/tesla \"Tesla\"] {{Webarchive|url=https://web.archive.org/web/20211024010805/https://www.dictionary.com/browse/tesla |date=24 October 2021 }}. ''[[Random House Webster's Unabridged Dictionary]]''.</ref> {{Lang-sr-Cyrl|Никола Тесла}}; {{IPA|sh|nǐkola têsla|pron}}}} (10 July 1856&nbsp;– 7 January 1943) was a<!-- PLEASE DO NOT CHANGE NATIONALITY OR ETHNICITY--> Serbian-American<!--  SEE Talk:Nikola Tesla/Nationality and ethnicity --> engineer, [[futurist]], and inventor. He is known for his contributions to the design of the modern [[alternating current]] (AC) [[electricity supply]] system.<ref>{{cite book |last=Laplante |first=Phillip A. |url=https://books.google.com/books?id=soSsLATmZnkC |title=Comprehensive Dictionary of Electrical Engineering 1999 |page=635 |publisher=Springer |year=1999 |isbn=978-3-540-64835-2 }}</ref>\n\nBorn and raised in the [[Austrian Empire]], Tesla first studied engineering and physics in the 1870s without receiving a degree. He then gained practical experience in the early 1880s working in [[telephony]] and at [[Continental Edison]] in the new [[electric power industry]]. In 1884, he immigrated to the United States, where he became a [[naturalized citizen]]. He worked for a short time at the [[Edison Machine Works]] in New York City before he struck out on his own. With the help of partners to finance and market his ideas, Tesla set up laboratories and companies in New York to develop a range of electrical and mechanical devices. His AC [[induction motor]] and related [[polyphase system|polyphase]] AC patents, licensed by [[Westinghouse Electric Corporation|Westinghouse Electric]] in 1888, earned him a considerable amount of money and became the cornerstone of the polyphase system, which that company eventually marketed.\n\nAttempting to develop inventions he could patent and market, Tesla conducted a range of experiments with mechanical [[Oscillation|oscillators]]/generators, [[Electric discharge|electrical discharge]] tubes, and early [[X-Ray imaging|X-ray imaging]]. He also built a [[wireless]]ly controlled boat, one of the first ever exhibited. Tesla became well known as an inventor and demonstrated his achievements to celebrities and wealthy patrons at his lab, and was noted for his showmanship at public lectures. Throughout the 1890s, Tesla pursued his ideas for wireless lighting and worldwide wireless electric power distribution in his high-voltage, high-frequency power experiments in New York and [[Colorado Springs, Colorado|Colorado Springs]]. In 1893, he made pronouncements on the possibility of [[wireless communication]] with his devices. Tesla tried to put these ideas to practical use in his unfinished [[Wardenclyffe Tower]] project, an intercontinental wireless communication and power transmitter, but ran out of funding before he could complete it.\n\nAfter Wardenclyffe, Tesla experimented with a series of inventions in the 1910s and 1920s with varying degrees of success. Having spent most of his money, Tesla lived in a series of New York hotels, leaving behind unpaid bills. He died in New York City in January 1943.<ref>{{cite book|last=O'Shei|first=Tim|title=Marconi and Tesla: Pioneers of Radio Communication|year=2008|publisher=MyReportLinks.com Books|isbn=978-1-59845-076-7|page=106}}</ref> Tesla's work fell into relative obscurity following his death, until 1960, when the [[General Conference on Weights and Measures]] named the [[International System of Units]] (SI) measurement of [[magnetic flux density]] the [[tesla (unit)|tesla]] in his honor. There has been a resurgence in popular interest in Tesla since the 1990s.<ref>{{harvnb|Van Riper|2011|p=150}}</ref> In 2013, [[Time magazine|''Time'']] named Tesla one of the 100 most significant figures of all time.<ref>{{Cite magazine |last1=Skiena |first1=Steven |last2=Ward |first2=Charles B. |date=10 December 2013 |title=Who's Biggest? The 100 Most Significant Figures in History |url=https://ideas.time.com/2013/12/10/whos-biggest-the-100-most-significant-figures-in-history/ |access-date=17 June 2025 |magazine=Time |language=en-US |issn=0040-781X}}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-11-16T17:35:34Z"
+        }
+       ],
+       "title": "Nikola Tesla"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-11-25T07:33:03Z",
+    "titles": "Nikola Tesla"
+   },
+   "status": 200
+  }
+ ],
+ "note": "'Will Tesla deliver between 450000 and 475000 vehicles in Q4 2025' (cutoff 2025-11-25T07:33:03.625277Z; registry party_names ['PM ET', 'Tesla']) at depth 1. At its cutoff 'Tesla' was a disambiguation page declaring three primary topics: Nikola Tesla, Tesla, Inc. and the unit. The question's 'vehicles' matches Tesla, Inc.'s entry line ('electric vehicle').",
+ "recorded": "2026-09-19",
+ "source": "https://en.wikipedia.org/w/api.php"
+}

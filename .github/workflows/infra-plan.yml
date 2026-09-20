@@ -1,0 +1,138 @@
+# terraform plan for the platform root, on pull requests that touch the
+# infrastructure -- through the GitHub OIDC plan role modules/cicd creates
+# (ADR-0042). No AWS key is stored anywhere: the job exchanges its OIDC token
+# for one-hour credentials on a role whose trust policy names this repository
+# and the pull_request subject, and which carries ReadOnlyAccess plus read on
+# the state bucket. It cannot change anything, by construction.
+#
+# INERT UNTIL AN ACCOUNT EXISTS. The job runs only when the repository
+# variable AWS_PLAN_ROLE_ARN is set; today it is not, so the job is skipped --
+# not red -- and the check reads "skipped" on every pull request.
+#
+# THERE IS NO APPLY WORKFLOW, AND THIS FILE MUST NOT GROW ONE. `terraform
+# apply` is a person at a terminal, with the plan in front of them (ADR-0035).
+# The apply role modules/cicd creates is trusted only from a reviewed
+# deployment environment, and no workflow here uses it; adding one is a
+# decision for an ADR, not a pull request to this file.
+#
+# Every third-party action is pinned to a full commit SHA, never a moving tag:
+# a tag can be re-pointed by whoever holds the action's repository, and this
+# job holds cloud credentials. tests/unit/test_infra_invariants.py refuses a
+# floating tag here. The SHAs below were resolved from each repository's
+# git refs on 2026-09-19:
+#   actions/checkout                     v7.0.1 -> 3d3c42e5aac5ba805825da76410c181273ba90b1
+#   aws-actions/configure-aws-credentials v6.3.0 -> e1253824e5c10ff9df46874f81ed3ec929e19cfd
+#   hashicorp/setup-terraform            v4.0.1 -> dfe3c3f87815947d99a8997f908cb6525fc44e9e
+#
+# Repository variables the job reads (Settings > Variables; none is a secret):
+#   AWS_PLAN_ROLE_ARN          the plan role's ARN (`terraform output plan_role_arn`)
+#   AWS_REGION                 the platform root's region
+#   TF_STATE_BUCKET, TF_STATE_KMS_KEY_ARN   from envs/bootstrap's outputs
+#   TF_VAR_REPLICA_REGION, TF_VAR_INFRASTRUCTURE_ALLOWANCE_USD, TF_VAR_GUARDDUTY_MIN_SEVERITY
+#                              the root's required inputs -- decisions, so they
+#                              are set where a person can read them, not
+#                              defaulted here (CLAUDE.md invariant 1, applied
+#                              to spend, region and thresholds)
+
+name: infra-plan
+
+on:
+  pull_request:
+    paths:
+      - "infra/terraform/**"
+      - "configs/base.yaml" # the budget is derived from it (modules/governance)
+      - ".github/workflows/infra-plan.yml"
+
+# Nothing at the workflow level: each job states exactly what it needs.
+permissions: {}
+
+concurrency:
+  group: infra-plan-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    name: terraform plan (platform, read-only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Skipped, not failed, while there is no account: the variable is empty.
+    if: ${{ vars.AWS_PLAN_ROLE_ARN != '' }}
+
+    # id-token: to mint the OIDC token the role trusts. contents: to check
+    # out. Nothing else -- not pull-requests, so a compromised step could not
+    # even post a comment.
+    permissions:
+      id-token: write
+      contents: read
+
+    defaults:
+      run:
+        working-directory: infra/terraform/envs/platform
+
+    env:
+      TF_IN_AUTOMATION: "1"
+      TF_INPUT: "0"
+      TF_VAR_region: ${{ vars.AWS_REGION }}
+      TF_VAR_replica_region: ${{ vars.TF_VAR_REPLICA_REGION }}
+      TF_VAR_infrastructure_allowance_usd: ${{ vars.TF_VAR_INFRASTRUCTURE_ALLOWANCE_USD }}
+      TF_VAR_guardduty_min_severity: ${{ vars.TF_VAR_GUARDDUTY_MIN_SEVERITY }}
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Assume the plan role through OIDC
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: infra-plan-pr-${{ github.event.pull_request.number }}
+          # One hour, the role's maximum; a plan takes minutes.
+          role-duration-seconds: 3600
+
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.16.3
+          terraform_wrapper: false
+
+      - name: Init against the state bucket, read-only
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="key=platform/terraform.tfstate" \
+            -backend-config="region=${{ vars.AWS_REGION }}" \
+            -backend-config="encrypt=true" \
+            -backend-config="kms_key_id=${{ vars.TF_STATE_KMS_KEY_ARN }}" \
+            -backend-config="use_lockfile=true"
+
+      # -lock=false: the plan role may read state and not write it, and the
+      # native S3 lock is an object write. A plan takes no lock it would need.
+      # The plan file is NOT uploaded as an artifact: a plan can carry
+      # values state holds, and an artifact outlives the job.
+      - name: Plan
+        run: |
+          terraform plan -input=false -lock=false -no-color -out=tfplan -detailed-exitcode || code=$?
+          echo "exit=${code:-0}" >> "$GITHUB_OUTPUT"
+        id: plan
+
+      - name: Post the plan as the job summary
+        run: |
+          {
+            echo "## terraform plan -- envs/platform"
+            echo
+            case "${{ steps.plan.outputs.exit }}" in
+              0) echo "No changes." ;;
+              2) echo "Changes are proposed. **Nothing has been applied**: apply is a person at a terminal (ADR-0035)." ;;
+              *) echo "The plan failed; see the step log." ;;
+            esac
+            echo
+            echo '```'
+            # The summary is capped at 1 MiB; a plan larger than that is read from the log.
+            terraform show -no-color tfplan | head -c 900000
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail the check if the plan failed
+        if: ${{ steps.plan.outputs.exit != '0' && steps.plan.outputs.exit != '2' }}
+        run: exit 1

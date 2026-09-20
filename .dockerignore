@@ -1,0 +1,9 @@
+# The bench image needs the package, configs, migrations and the lockfile.
+# Everything else stays out -- above all .env, the LLM cache and the corpus logs.
+*
+!pyproject.toml
+!uv.lock
+!cascade/
+!configs/
+!migrations/
+**/__pycache__

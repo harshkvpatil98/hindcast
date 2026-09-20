@@ -26,11 +26,11 @@ install: ## Create the venv and install what the demo and the test suite need
 	# imports it, so `make demo`, `cascade simulate` and `cascade trace replay`
 	# all need it. `embed` is left out -- it is a multi-gigabyte download that
 	# only the corpus and retrieval paths use.
-	$(UV) sync --extra dev --extra kernel
+	$(UV) sync --extra dev --extra kernel --extra aws
 
 .PHONY: install-full
 install-full: ## Everything, including the embedding stack (torch, ~2GB)
-	$(UV) sync --extra dev --extra kernel --extra embed --extra analytics
+	$(UV) sync --extra dev --extra kernel --extra aws --extra embed --extra analytics
 
 .PHONY: env
 env: ## Write a .env with local development defaults if none exists
@@ -99,6 +99,42 @@ test-leakage: ## The M3 time-lock probes alone (requires `make up` and a built c
 
 .PHONY: ci
 ci: lint typecheck test ## Everything CI runs
+
+# ---------------------------------------------------------------------------
+# Infrastructure (M11) -- every gate runs offline, with no AWS account.
+# Toolchain versions are pinned and run in Docker, the same versions CI pins,
+# so a developer's system Terraform never decides what "valid" means.
+# ---------------------------------------------------------------------------
+
+TF_IMAGE ?= hashicorp/terraform:1.16.3
+TFLINT_IMAGE ?= ghcr.io/terraform-linters/tflint:v0.64.0
+CHECKOV_VERSION ?= 3.3.19
+TF_ROOTS := envs/bootstrap envs/sandbox envs/platform
+TF_TEST_ROOTS := envs/sandbox envs/platform
+TF_LINT_DIRS := envs/sandbox envs/bootstrap envs/platform modules/network modules/database modules/bench modules/governance modules/guardrails modules/eventlake modules/recovery modules/audit modules/cicd modules/observability modules/pipeline modules/egress modules/cache modules/study modules/reports
+DOCKER_TF = docker run --rm -v $(CURDIR):/work -e TF_PLUGIN_CACHE_DIR=/work/.tf-plugin-cache -e TF_IN_AUTOMATION=1
+
+.PHONY: infra-fmt
+infra-fmt: ## Format the Terraform
+	$(DOCKER_TF) -w /work/infra/terraform $(TF_IMAGE) fmt -recursive
+
+.PHONY: infra-check
+infra-check: ## Terraform fmt/validate, offline tests (mock providers), tflint, checkov, Dockerfile lint
+	@mkdir -p .tf-plugin-cache/tflint
+	$(DOCKER_TF) -w /work/infra/terraform $(TF_IMAGE) fmt -recursive -check
+	@for root in $(TF_ROOTS); do \
+		$(DOCKER_TF) -w /work/infra/terraform/$$root $(TF_IMAGE) init -backend=false -input=false >/dev/null && \
+		$(DOCKER_TF) -w /work/infra/terraform/$$root $(TF_IMAGE) validate || exit 1; \
+	done
+	@for root in $(TF_TEST_ROOTS); do \
+		$(DOCKER_TF) -w /work/infra/terraform/$$root $(TF_IMAGE) test || exit 1; \
+	done
+	$(DOCKER_TF) -w /work/infra/terraform -e TFLINT_PLUGIN_DIR=/work/.tf-plugin-cache/tflint --entrypoint tflint $(TFLINT_IMAGE) --init --config=/work/infra/terraform/.tflint.hcl
+	@for dir in $(TF_LINT_DIRS); do \
+		$(DOCKER_TF) -w /work/infra/terraform/$$dir -e TFLINT_PLUGIN_DIR=/work/.tf-plugin-cache/tflint --entrypoint tflint $(TFLINT_IMAGE) --config=/work/infra/terraform/.tflint.hcl || exit 1; \
+	done
+	uvx --quiet checkov==$(CHECKOV_VERSION) -d infra/terraform --framework terraform --compact --quiet --skip-path .terraform
+	docker buildx build --check -f infra/docker/bench.Dockerfile .
 
 # ---------------------------------------------------------------------------
 # Study

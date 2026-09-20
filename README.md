@@ -8,8 +8,8 @@
 
 <p align="center">
   <a href="#status-what-is-measured-and-what-is-not"><img alt="status" src="https://img.shields.io/badge/status-M8%20of%20M9-blue"></a>
-  <a href=".github/workflows/ci.yml"><img alt="ci" src="https://github.com/harshkvpatil98/cascade/actions/workflows/ci.yml/badge.svg"></a>
-  <a href="#engineering-contract"><img alt="tests" src="https://img.shields.io/badge/tests-1%2C331%20passing-success"></a>
+  <a href=".github/workflows/ci.yml"><img alt="ci" src="https://github.com/utkarsh430/cascade/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="#engineering-contract"><img alt="tests" src="https://img.shields.io/badge/tests-1%2C235%20offline%20passing-success"></a>
   <a href="#engineering-contract"><img alt="mypy" src="https://img.shields.io/badge/mypy-strict-success"></a>
   <img alt="python" src="https://img.shields.io/badge/python-3.12-blue">
   <img alt="postgres" src="https://img.shields.io/badge/postgres-16%20%2B%20pgvector%200.8-blue">
@@ -52,32 +52,57 @@ than by discipline:
 > The same rule applies here. Everything below is a number this repository
 > produced; the headline study results **do not exist yet** and are not quoted.
 
-**Nine milestones, M0–M8 complete, M9 (presentation) in progress.**
+**M0–M9 complete. M10 (model providers on AWS) is built and tested; its live
+criteria are blocked** — no AWS account or pay-as-you-go key was available, and
+compiling needs the corpus, which is not rebuilt on this machine. See
+[Model providers](#model-providers) and [Limitations](#limitations).
 
 ### Measured
 
 | Quantity | Measured | Where |
 |---|---|---|
 | Backtest scenarios | **180**, YES rate **0.5000**, no domain above **25.0%** | M1 |
-| Frozen split | sealed at `30d9c61d…`, re-hashed and asserted before any label is read | M1 |
+| Frozen split | sealed at `91ccd314…` (re-fetched 2026-09-18, see below), re-hashed and asserted before any label is read | M1 / M10 |
 | Climatology floor | Brier **0.250000** over the sealed set | M1 |
-| Evidence corpus | **1,950,912** chunks across **492,270** documents, 0 NULL/future dates, 100% embedding coverage | M2 |
-| Evidence coverage | every scenario covered at its own cutoff; median **67,590** admissible chunks in an 18-month window, median staleness **1 day** | M2 |
-| Retrieval recall@20 | **0.9675** vs exhaustive search (criterion > 0.92) | M3 / M8 |
+| Evidence corpus | **1,998,127** chunks across **317,780** documents (ccnews 1,985,516 / wikipedia 12,611), 0 NULL/future dates, 100% embedding coverage | M2 / M14 |
+| Evidence coverage | **180/180** covered at their own cutoffs; median **1,236,969** admissible chunks in an 18-month window, minimum 327; newest evidence within a day of the cutoff for **155 of the 165 scored** scenarios, none over 30 days stale | M2 / M14 |
+| Retrieval recall@20 | **0.9675** vs exhaustive search (criterion > 0.92), measured on the previous 1.95M-chunk corpus under vector-only retrieval | M3 / M8 |
+| Retrieval relevance | hybrid over vector, 180 scenarios, paired bootstrap, every interval excluding zero: chunks naming a registry party **0.5508 → 0.6452** (compiler) and **0.7676 → 0.8257** (baselines); median evidence age **183 → 139** and **141 → 70** days | M14 |
+| Market at the cutoff | **143** usable prices of 180 (6 stale, 21 without history, 9 not markets, 1 market created after its own cutoff) — excluded and counted, never imputed | M14 |
+| Dated-text leaks found | Wikipedia renders and CC-NEWS re-crawls both carried post-cutoff text under pre-cutoff dates; **200,122** documents re-dated to their fetch time, **11,237** of them fetched over 180 days after the date they state; the update-stamp scan went **381 → 4** flagged chunks (all four publisher typos) | M14 |
 | Retrieval p95 | **90.92 ms** over 10,000 queries (criterion < 15 ms — **not met**, see [Limitations](#limitations)) | M3 / M8 |
 | Poison-pill leakage | **0 of 500** planted post-cutoff documents retrieved, across all 180 cutoffs | M3 |
+| Prompt injection (threat T3) | a document impersonating a system notice was obeyed on **20 of 30** scenarios (95% CI [0.49, 0.81], mean shift +0.491); a plain "ignore your instructions" on **0 of 30**. After quoting documents in a frame they cannot forge ([ADR-0045](docs/adr/0045-quoted-evidence.md), prompt revision r4): **0 of 30**, intervals disjoint | M14 |
 | Arbiter properties | bounded, conserving, permutation-invariant, monotone — all pass under Hypothesis | M5 |
-| Replay determinism | **25/25** runs byte-identical across processes, 24.3 s | M8 |
+| Replay determinism | **25/25** runs byte-identical across processes, 24.3 s; re-measured **25/25 in 8.4 s** on the rebuilt environment | M8 / M10 |
+| Parametric memorization | **180/180** answers parsed; median confidence **0.70**; direction correct on **97/180** — not distinguishable from chance (two-sided p ≈ 0.33); probe Brier **0.2616** against climatology's 0.2500. Measured through `claude_code`, **not the pinned configuration** | M3 / M10 |
 | Provenance chain | complete to a root cause in **0.27 s** | M8 |
-| Test suite | **1,331 passing**, 1 skipped; ruff, black and mypy strict clean over 98 modules | all |
+| Test suite | **1,998 passing** offline, 1 skipped; ruff, black and mypy strict clean over 117 modules. Against the rebuilt corpus: **150 integration** and **74 leakage/property** tests pass, including the poison pill planted for every scenario and never returned through the new keyword pool | all |
+
+> **The local environment was rebuilt on 2026-09-18**, and the corpus was
+> rebuilt on 2026-09-19. The Postgres volume had been lost, taking the corpus,
+> the sealed registry and every stored run with it. The registry was re-fetched
+> and re-sealed: 180 scenarios, YES rate 0.5000, max domain share 0.2500, at
+> `91ccd314…` — a **new frozen split**, because the markets resolved since M1
+> change the pool. The M1 split `30d9c61d…` is gone. The corpus figures above
+> are from the rebuild; **retrieval p95 and recall have not been re-measured
+> on it**, and the replay figures are from the previous environment.
+>
+> **15 of the 180 sealed scenarios are exchange placeholder legs** ("Will
+> Candidate B win …"), which passed every registry rule because the volume
+> screen read a leg's zero as missing. The sealed set is kept as sealed and
+> they are excluded from every scored figure and counted, so the dev/test split
+> is drawn over the remaining 165 — 40 dev, 125 test
+> ([ADR-0043](docs/adr/0043-registry-placeholder-legs.md)).
 
 ### Not measured, and why
 
 Five milestones' acceptance numbers need **540 Sonnet calls to compile 180
-causal graphs**, and `CASCADE_ANTHROPIC_API_KEY` is unset in the environment
-this was built in. Everything downstream of those graphs is built, wired and
-tested against a stand-in decider; nothing downstream of the *credential* can
-be measured.
+causal graphs**. No pay-as-you-go model provider has been available in the
+environment this was built in, and compiling also needs the evidence corpus,
+which is not rebuilt on this machine. Everything downstream of those graphs is
+built, wired and tested against a stand-in decider; nothing downstream of a
+*provider* can be measured.
 
 - **No compiled graphs** → no agent-driven runs, so no Brier, no skill scores,
   no ablation deltas, no calibration curve.
@@ -130,7 +155,7 @@ Eight subsystems, each with one job:
 No Anthropic key is needed for anything on this page.
 
 ```bash
-git clone https://github.com/harshkvpatil98/cascade.git
+git clone https://github.com/utkarsh430/cascade.git
 cd cascade
 
 make install          # uv sync --extra dev --extra kernel
@@ -197,7 +222,8 @@ filled in with the value the specification expects.
 ## Running the full study
 
 Each phase is a subcommand, each is resumable, and each has a budget ceiling
-that aborts rather than warns. Phases 3 onward need `CASCADE_ANTHROPIC_API_KEY`.
+that aborts rather than warns. Phases 4 onward need a model provider — see
+[Model providers](#model-providers).
 
 <details>
 <summary><b>Phase-by-phase commands</b></summary>
@@ -261,14 +287,62 @@ cascade trace cost                      # reconcile the ledger against Langfuse
 
 ### Cost
 
-The study is priced at **$290 fully loaded** — $0.0035 marginal per run, and
-$0.008 per run amortised over everything including the corpus, the compiler and
-the whole ablation grid. Four levers make that possible: prompt caching, a
-trajectory-prefix action cache, the Batch API, and a **deterministic arbiter**
-that removes 864,000 model calls on its own.
+**No study cost has been measured** — no phase has spent money. The
+specification's cost model sets the targets, and they are targets: the meter
+reproduces its per-run derivation from token counts (**$0.003544** per run at
+M0), but that is arithmetic over the cost model, not spend. The design rests on
+four levers: prompt caching, a trajectory-prefix action cache, the Batch API,
+and a **deterministic arbiter** that removes 864,000 model calls on its own.
 
 Every phase has a hard ceiling in `configs/base.yaml`. A breach writes a
 resumable checkpoint and exits `2`. Nothing warns.
+
+### Model providers
+
+Every model call goes through one module, `cascade/llm/client.py`, which is
+cached, metered and traced the same way whoever serves it. `llm.provider`
+chooses who does ([ADR-0028](docs/adr/0028-model-providers-behind-one-door.md)):
+
+| Provider | Operated by | Auth | Batches | Cache namespace | Billing |
+|---|---|---|---|---|---|
+| `anthropic` | Anthropic | API key | yes | shared | per token |
+| `aws` | Anthropic, via AWS (Claude Platform on AWS) | IAM / SigV4 | yes | shared | per token |
+| `bedrock` | AWS (Amazon Bedrock) | IAM / SigV4 | **no** | shared | per token |
+| `claude_code` | the Claude Code CLI, headless, under a subscription | your Claude login | **no** | **its own** | subscription (books $0) |
+
+- **Bedrock cannot carry the simulate phase.** It has no Message Batches API,
+  and the phase fits its ceiling only at the batch rate. A batch with anything
+  to submit is refused before any spend (exit 3); a wave already recorded
+  replays through Bedrock at no cost.
+- **The three API providers share one cache namespace**, so a study recorded
+  through one replays through the others — *conditional* on
+  `cascade eval equivalence`, which measures whether two providers serve the
+  same model against a within-provider control
+  ([ADR-0029](docs/adr/0029-api-providers-share-one-cache-namespace.md)).
+- **Routing is explicit, identity is ambient.** Region, workspace and endpoint
+  come from `configs/base.yaml` on every call, so a stray `AWS_REGION` cannot
+  redirect spend; credentials come from the standard AWS chain, so none are in
+  configuration.
+- **`claude_code` is not the pinned configuration** and is labelled wherever
+  its results appear. The CLI cannot set `temperature` or `max_tokens`, so its
+  recordings are keyed apart and can never be served as API recordings. It is
+  local-only, and sized for compile, probes and small samples, not the
+  36,000-run study ([ADR-0031](docs/adr/0031-claude-code-cli-provider.md)).
+- **Bedrock Knowledge Bases were evaluated and rejected**: a managed knowledge
+  base cannot enforce the time lock that the leakage suite verifies
+  ([ADR-0030](docs/adr/0030-knowledge-bases-rejected-guardrails-deferred.md)).
+
+```bash
+# Local, on a Claude subscription (Claude Code installed and logged in):
+CASCADE_LLM__PROVIDER=claude_code CASCADE_LLM__MODE=record cascade retrieval memorization
+
+# Later, pay-as-you-go: records afresh, inherits nothing from claude_code
+CASCADE_LLM__PROVIDER=anthropic CASCADE_ANTHROPIC_API_KEY=sk-ant-... CASCADE_LLM__MODE=record cascade compile build
+
+# AWS: set providers.aws.{region,workspace_id,pricing} or providers.bedrock.{region,pricing}
+cascade doctor              # shows the provider, its endpoint, and whether it can record
+cascade eval equivalence --reference anthropic --candidate bedrock --limit 50
+```
 
 ---
 
@@ -286,10 +360,10 @@ cascade/
 │  ├─ ensemble/          # M6  Chorus: fan-out, aggregation, dip test
 │  ├─ eval/              # M7  Assay: metrics, ablation grid, statistics, report
 │  ├─ trace/             # M8  Strata: event log, replay, provenance, cost ledger
-│  └─ llm/               # the single model call site: record / replay / live
+│  └─ llm/               # the single model call site: record / replay / live, four providers
 ├─ configs/              # base.yaml + the 12 ablation cell overlays
 ├─ migrations/           # 16 numbered, forward-only SQL migrations
-├─ docs/adr/             # 27 architecture decision records
+├─ docs/adr/             # 31 architecture decision records
 ├─ tests/                # unit · property · integration · leakage · determinism
 └─ reports/              # generated study artifacts
 ```
@@ -359,18 +433,26 @@ Stated plainly, because a result that hides these is not a result.
 4. **The 16 curated scenarios are not independently verified.** They are
    authored from the public record and must be checked before publication: a
    curated label nobody can check is indistinguishable from an invented one.
-5. **Parametric memorization is unmeasured.** The probe is implemented and
-   CLI-wired but needs a key. A model that already knows how a 2018 merger
-   resolved is a floor no amount of time-locking removes, and the number
-   belongs beside the headline Brier rather than in a footnote.
+5. **Parametric memorization is measured only through `claude_code`**, which
+   cannot set the probe's zero temperature and adds its own harness context.
+   It is reported as such, not as the pinned configuration's number. A model
+   that already knows how a question resolved is a floor no amount of
+   time-locking removes, and the number belongs beside the headline Brier.
 6. **GDELT contributed nothing.** Its API serves a rolling recent window rather
    than the archive, and this network is rate-limited beyond practical use.
+7. **The AWS providers are built and tested, not run live.** Routing, SigV4
+   signing, pricing and the batch refusal are verified through the real SDK
+   against a mock transport; no AWS account was available, so no call has
+   reached AWS, and `cascade eval equivalence` has not been run.
+8. **Bedrock Guardrails are deferred.** The SDK's Bedrock client has no
+   guardrail parameter, and a separate `ApplyGuardrail` call would be a second
+   door outside the one the cost ledger and replay depend on.
 
 ---
 
 ## Design decisions
 
-27 architecture decision records live in [`docs/adr/`](docs/adr/) — see the
+31 architecture decision records live in [`docs/adr/`](docs/adr/) — see the
 [index](docs/adr/README.md). Fifteen correct defects in the specification;
 three correct defects found in this build. A few that shaped the system:
 

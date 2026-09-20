@@ -28,9 +28,21 @@ __all__ = [
     "Box",
     "convergence_svg",
     "forest_svg",
+    "has_spread",
     "reliability_svg",
     "scatter_svg",
 ]
+
+
+def has_spread(values: Sequence[float]) -> bool:
+    """True when a series has two distinct values, so an axis over it means something.
+
+    Preserves the rule that a figure never implies a relationship the data
+    cannot carry: a column of identical x values plots as a vertical stripe
+    that reads as a scatter with a strong vertical spread.
+    """
+    return len(values) > 1 and min(values) < max(values)
+
 
 # A palette that survives greyscale printing and the two most common forms of
 # colour blindness. A reliability diagram whose ideal line and measured curve
@@ -98,16 +110,34 @@ def _text(
     )
 
 
+def _tick_label(value: float, span: float) -> str:
+    """Format a tick so that adjacent ticks on this axis differ.
+
+    Preserves the axis's own information. A fixed two decimals over a span of
+    0.05 prints "0.00" six times, which reads as an axis with no range rather
+    than as an axis whose range is small -- and those are different findings.
+    """
+    step = abs(span) / 5.0
+    if step <= 0.0:
+        return f"{value:.4f}"
+    decimals = 2
+    while decimals < 8 and step < 10.0 ** (-decimals):
+        decimals += 1
+    return f"{value:.{decimals}f}"
+
+
 def _frame(box: Box, *, x_label: str, y_label: str, ticks: int = 5) -> str:
     """Axes, gridlines and tick labels for a linear box."""
     parts = [
         f'<rect x="{box.x:g}" y="{box.y:g}" width="{box.width:g}" height="{box.height:g}" '
         f'fill="none" stroke="{_GRID}"/>'
     ]
+    x_span = box.x_hi - box.x_lo
+    y_span = box.y_hi - box.y_lo
     for step in range(ticks + 1):
         t = step / ticks
-        xv = box.x_lo + t * (box.x_hi - box.x_lo)
-        yv = box.y_lo + t * (box.y_hi - box.y_lo)
+        xv = box.x_lo + t * x_span
+        yv = box.y_lo + t * y_span
         px, py = box.sx(xv), box.sy(yv)
         parts.append(
             f'<line x1="{px:g}" y1="{box.y:g}" x2="{px:g}" y2="{box.y + box.height:g}" '
@@ -117,8 +147,10 @@ def _frame(box: Box, *, x_label: str, y_label: str, ticks: int = 5) -> str:
             f'<line x1="{box.x:g}" y1="{py:g}" x2="{box.x + box.width:g}" y2="{py:g}" '
             f'stroke="{_GRID}" stroke-dasharray="2 3"/>'
         )
-        parts.append(_text(px, box.y + box.height + 14, f"{xv:.2f}", size=9, anchor="middle"))
-        parts.append(_text(box.x - 6, py + 3, f"{yv:.2f}", size=9, anchor="end"))
+        parts.append(
+            _text(px, box.y + box.height + 14, _tick_label(xv, x_span), size=9, anchor="middle")
+        )
+        parts.append(_text(box.x - 6, py + 3, _tick_label(yv, y_span), size=9, anchor="end"))
     parts.append(
         _text(box.x + box.width / 2, box.y + box.height + 30, x_label, size=11, anchor="middle")
     )
@@ -224,15 +256,20 @@ def forest_svg(comparisons: Sequence[Comparison], *, title: str) -> str:
     Holm is drawn in full ink and one that does not is drawn muted, so the
     multiple-comparison correction is visible in the figure rather than only
     in a table two pages away.
+
+    Every row's numeric label is drawn **on that row**. Drawing them all at one
+    y stacks them into an unreadable smear over the tick labels, which is the
+    one thing a figure of four numbers must not do.
     """
     rows = list(comparisons)
-    width = 620.0
+    gutter = 300.0
+    width = gutter + 380.0
     height = 90.0 + 34.0 * max(len(rows), 1)
     widest = (
         max(max(abs(item.interval.lo), abs(item.interval.hi)) for item in rows) if rows else 0.05
     )
     span = max(widest * 1.15, 1e-3)
-    plot = Box(240, 50, 330, 34.0 * max(len(rows), 1), -span, span, 0.0, 1.0)
+    plot = Box(gutter, 50, 330, 34.0 * max(len(rows), 1), -span, span, 0.0, 1.0)
 
     parts = [_text(width / 2, 26, title, size=13, anchor="middle")]
     zero = plot.sx(0.0)
@@ -254,11 +291,11 @@ def forest_svg(comparisons: Sequence[Comparison], *, title: str) -> str:
             f'<line x1="{hi:g}" y1="{y - 4:g}" x2="{hi:g}" y2="{y + 4:g}" stroke="{colour}"/>'
             f'<circle cx="{point:g}" cy="{y:g}" r="3.6" fill="{colour}"/>'
         )
-        parts.append(_text(236, y + 4, item.name, size=10, anchor="end"))
+        parts.append(_text(gutter - 10, y, item.name, size=10, anchor="end"))
         label = f"{item.interval.point:+.4f} [{item.interval.lo:+.4f}, {item.interval.hi:+.4f}]"
-        if adjusted is not None:
-            label += f"  p*={adjusted:.3g}"
-        parts.append(_text(plot.x, plot.y + plot.height + 26, label, size=9, fill=_MUTED))
+        label += f"  n={item.n_paired}"
+        label += f"  p*={adjusted:.3g}" if adjusted is not None else "  p* not measured"
+        parts.append(_text(gutter - 10, y + 11, label, size=8, anchor="end", fill=_MUTED))
     for step in (-1.0, -0.5, 0.0, 0.5, 1.0):
         value = step * span
         parts.append(
@@ -280,15 +317,27 @@ def forest_svg(comparisons: Sequence[Comparison], *, title: str) -> str:
 
 
 def convergence_svg(
-    points: Sequence[tuple[int, float]], *, title: str, y_label: str = "mean |change in p|"
+    points: Sequence[tuple[int, float]],
+    *,
+    title: str,
+    y_label: str = "mean |change in p| from the previous rung",
+    x_label: str = "replicates in the ensemble (ladder position)",
 ) -> str:
     """§9.3's convergence curve: how much p_hat still moves as n grows.
 
     The x axis is the replicate-count ladder by position rather than by value,
     because the ladder doubles and a linear axis would compress every rung
     that matters into the left margin.
+
+    Both axes are named, and the y axis is named **on the y axis**: a quantity
+    printed under the plot is read as the x quantity, and a convergence curve
+    whose two axes are confusable is worse than none.
+
+    The y axis top is the measured maximum. When every measured value is zero
+    there is no maximum to draw and the figure says so, rather than borrowing a
+    unit scale and printing ``1.0000`` on an axis no datum reaches.
     """
-    width, height = 540.0, 320.0
+    width, height = 560.0, 340.0
     plot = Box(70, 46, 430, 210, 0.0, 1.0, 0.0, 1.0)
     parts = [_text(width / 2, 26, title, size=13, anchor="middle")]
 
@@ -319,10 +368,37 @@ def convergence_svg(
     parts.append(
         f'<path d="{" ".join(path_parts)}" fill="none" stroke="{_ACCENT}" stroke-width="1.8"/>'
     )
-    parts.append(_text(plot.x - 6, plot.y + 4, f"{scale:.4f}", size=9, anchor="end"))
+    top = f"{peak:.4f}" if peak > 0 else "no measured maximum"
+    parts.append(_text(plot.x - 6, plot.y + 4, top, size=9, anchor="end"))
     parts.append(_text(plot.x - 6, plot.y + plot.height + 4, "0", size=9, anchor="end"))
+    if peak <= 0:
+        parts.append(
+            _text(
+                plot.x + 8,
+                plot.y + 16,
+                "every measured value is 0; the axis has no measured maximum",
+                size=9,
+                fill=_WARN,
+            )
+        )
+    if len(points) < 2:
+        parts.append(
+            _text(
+                plot.x + 8,
+                plot.y + 30,
+                f"one rung ({points[0][0]} replicates): nothing to converge across",
+                size=9,
+                fill=_WARN,
+            )
+        )
     parts.append(
-        _text(plot.x + plot.width / 2, height - 12, y_label, size=10, anchor="middle", fill=_MUTED)
+        _text(plot.x + plot.width / 2, height - 12, x_label, size=10, anchor="middle", fill=_MUTED)
+    )
+    parts.append(
+        f'<text x="{plot.x - 40:g}" y="{plot.y + plot.height / 2:g}" {_FONT} font-size="10" '
+        f'text-anchor="middle" fill="{_MUTED}" '
+        f'transform="rotate(-90 {plot.x - 40:g} {plot.y + plot.height / 2:g})">'
+        f"{escape(y_label)}</text>"
     )
     return _document(width, height, "".join(parts), title=title)
 
@@ -341,6 +417,11 @@ def scatter_svg(
     The annotation carries the correlation and its p-value. It is passed in
     rather than computed here, so the figure and the significance table can
     never disagree about the same number.
+
+    An x column with no spread -- every replicate ensemble collapsed to one
+    value, which is what a D=1 cell produces -- is drawn as a stripe on the
+    left edge that reads as a scatter. The figure names that case on its face;
+    the report declines to write it at all.
     """
     if len(xs) != len(ys):
         raise ValueError(f"length mismatch: {len(xs)} vs {len(ys)}")
@@ -355,6 +436,17 @@ def scatter_svg(
         parts.append(
             f'<circle cx="{plot.sx(x):g}" cy="{plot.sy(y):g}" r="2.8" '
             f'fill="{_ACCENT}" fill-opacity="0.55"/>'
+        )
+    if not has_spread(xs):
+        only = f"every {x_label} is {xs[0]:.4f}" if xs else "there are no points"
+        parts.append(
+            _text(
+                plot.x + 8,
+                plot.y + 32,
+                f"no spread on the x axis: {only}. Nothing here relates the two.",
+                size=10,
+                fill=_WARN,
+            )
         )
     if annotation:
         parts.append(_text(plot.x + 8, plot.y + 16, annotation, size=10, fill=_WARN))

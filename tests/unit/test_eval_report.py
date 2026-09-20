@@ -19,6 +19,7 @@ from cascade.eval.report import StudyArtifact, report_id, write_report
 from cascade.eval.schema import (
     CalibrationBin,
     CalibrationReport,
+    DispersionFinding,
     MetricSet,
     MurphyTerms,
     ScoredForecast,
@@ -48,6 +49,12 @@ REPORT_PATH_MODULES = (
     "cascade/eval/score.py",
     "cascade/eval/ablation.py",
     "cascade/eval/figures.py",
+    # Decides which market prices are scored, so it is on the path to a
+    # reported Brier like everything above.
+    "cascade/eval/market.py",
+    "cascade/eval/split.py",
+    "cascade/eval/evidence.py",
+    "cascade/eval/supplementary.py",
 )
 
 
@@ -84,6 +91,20 @@ def _scored(count: int = 6) -> tuple[ScoredForecast, ...]:
             sigma=0.05 * index,
         )
         for index in range(count)
+    )
+
+
+def _dispersion() -> DispersionFinding:
+    return DispersionFinding(
+        n=6,
+        pearson_r=0.2,
+        pearson_p=0.4,
+        spearman_rho=0.21,
+        spearman_p=0.39,
+        flagged=0,
+        brier_flagged=None,
+        brier_unflagged=0.22,
+        sigma_threshold=0.3,
     )
 
 
@@ -281,3 +302,133 @@ class TestCsvRows:
         directory = write_report(_artifact(tmp_path), root=tmp_path)
         text = (directory / "calibration.csv").read_text()
         assert text.strip() == "bin,lo,hi,count,mean_pred,obs_freq,wilson_lo,wilson_hi"
+
+
+class TestTheIndexDescribesTheDirectoryThatExists:
+    """The Artifact table is the report's one promise about itself. It named ten
+    files and four figures unconditionally, so a run that wrote a header-only
+    CSV and no figure still published a table claiming otherwise."""
+
+    def test_every_figure_the_index_calls_written_is_on_disk(self, tmp_path: Path) -> None:
+        directory = write_report(
+            _artifact(tmp_path, scored=_scored(), dispersion=_dispersion()), root=tmp_path
+        )
+        headline = (directory / "headline.md").read_text()
+        present = {path.name for path in (directory / "figures").iterdir()}
+        for line in headline.splitlines():
+            if line.startswith("| `") and ".svg`" in line:
+                name = line.split("`")[1]
+                written = "**no**" not in line
+                assert (name in present) is written, line
+
+    def test_a_figure_that_was_not_drawn_carries_its_reason(self, tmp_path: Path) -> None:
+        headline = (write_report(_artifact(tmp_path), root=tmp_path) / "headline.md").read_text()
+        row = next(line for line in headline.splitlines() if "`convergence.svg`" in line)
+        assert "**no**" in row
+        assert "first rung" in row
+
+    def test_an_empty_csv_reads_as_a_reason_not_as_a_zero(self, tmp_path: Path) -> None:
+        headline = (write_report(_artifact(tmp_path), root=tmp_path) / "headline.md").read_text()
+        row = next(line for line in headline.splitlines() if "`per_domain.csv`" in line)
+        assert "0 — the headline configuration has no forecasts" in row
+
+    def test_a_populated_csv_states_its_own_row_count(self, tmp_path: Path) -> None:
+        rows = tuple(
+            (item.config_id, item.scenario_id, item.p_hat, item.sigma, item.outcome)
+            for item in _scored()
+        )
+        headline = (
+            write_report(_artifact(tmp_path, grid_rows=rows), root=tmp_path) / "headline.md"
+        ).read_text()
+        row = next(line for line in headline.splitlines() if "`ablation_grid.csv`" in line)
+        assert row.split("|")[2].strip() == str(len(rows))
+
+    def test_the_figure_inventory_is_machine_readable(self, tmp_path: Path) -> None:
+        directory = write_report(_artifact(tmp_path), root=tmp_path)
+        payload = json.loads((directory / "manifest.json").read_text())
+        inventory = {row["filename"]: row for row in payload["figures"]}
+        assert set(inventory) == {
+            "reliability.svg",
+            "ablation_forest.svg",
+            "convergence.svg",
+            "sigma_vs_error.svg",
+        }
+        assert all(row["written"] is False for row in inventory.values())
+        assert all(row["note"] for row in inventory.values())
+
+
+class TestDegenerateFiguresAreDeclined:
+    def test_one_convergence_rung_is_not_a_curve(self, tmp_path: Path) -> None:
+        """A single rung has nothing to converge across, and the y axis would
+        carry a maximum no datum reaches."""
+        directory = write_report(
+            _artifact(tmp_path, convergence=((25, 0.0, 0.0, 30),)), root=tmp_path
+        )
+        assert not (directory / "figures" / "convergence.svg").exists()
+        row = next(
+            line
+            for line in (directory / "headline.md").read_text().splitlines()
+            if "`convergence.svg`" in line
+        )
+        assert "one rung (25 replicates)" in row
+
+    def test_two_rungs_are(self, tmp_path: Path) -> None:
+        directory = write_report(
+            _artifact(tmp_path, convergence=((25, 0.04, 0.1, 30), (50, 0.02, 0.1, 30))),
+            root=tmp_path,
+        )
+        assert (directory / "figures" / "convergence.svg").exists()
+
+    def test_a_sigma_column_with_no_spread_is_not_plotted(self, tmp_path: Path) -> None:
+        """Every sigma identical -- what a D=1 cell produces -- draws 30 points
+        on the left edge and reads as a scatter."""
+        flat = tuple(item.model_copy(update={"sigma": 0.0}) for item in _scored())
+        directory = write_report(
+            _artifact(tmp_path, scored=flat, dispersion=_dispersion()), root=tmp_path
+        )
+        assert not (directory / "figures" / "sigma_vs_error.svg").exists()
+        row = next(
+            line
+            for line in (directory / "headline.md").read_text().splitlines()
+            if "`sigma_vs_error.svg`" in line
+        )
+        assert "no spread" in row
+
+    def test_a_sigma_column_with_spread_is_plotted(self, tmp_path: Path) -> None:
+        directory = write_report(
+            _artifact(tmp_path, scored=_scored(), dispersion=_dispersion()), root=tmp_path
+        )
+        assert (directory / "figures" / "sigma_vs_error.svg").exists()
+
+
+class TestWithheldAndProvenanceAreRecorded:
+    def test_metrics_json_says_what_was_withheld_and_under_which_rule(self, tmp_path: Path) -> None:
+        artifact = _artifact(tmp_path, withheld_configs=("V01",), partition="test")
+        payload = json.loads((write_report(artifact, root=tmp_path) / "metrics.json").read_text())
+        assert payload["withheld"]["configs"] == ["V01"]
+        assert payload["withheld"]["partition"] == "test"
+        assert "tuning variant" in payload["withheld"]["rule"]
+
+    def test_the_manifest_records_what_the_forecasts_were_made_against(
+        self, tmp_path: Path
+    ) -> None:
+        """The same configuration over a corpus half the size is a different
+        experiment, and the size is not recoverable afterwards."""
+        provenance = {
+            "corpus": {"measured": True, "n_chunks": 1_998_127},
+            "retrieval": {"mode": "hybrid"},
+            "llm": {"prompt_rev": "r4"},
+            "tools": {"python": "3.12.9"},
+        }
+        artifact = _artifact(tmp_path, provenance=provenance)
+        payload = json.loads((write_report(artifact, root=tmp_path) / "manifest.json").read_text())
+        assert payload["provenance"]["corpus"]["n_chunks"] == 1_998_127
+        assert payload["provenance"]["retrieval"]["mode"] == "hybrid"
+        assert payload["provenance"]["llm"]["prompt_rev"] == "r4"
+        assert payload["provenance"]["tools"]["python"] == "3.12.9"
+
+    def test_no_provenance_is_an_empty_object_not_an_invented_one(self, tmp_path: Path) -> None:
+        payload = json.loads(
+            (write_report(_artifact(tmp_path), root=tmp_path) / "manifest.json").read_text()
+        )
+        assert payload["provenance"] == {}

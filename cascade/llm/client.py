@@ -16,19 +16,33 @@ Three modes, and the difference between them is the whole point:
 ``live``
     Bypasses the cache entirely. Used only by the M3 latency benchmark, where
     the thing being measured is the provider's own round trip.
+
+Four providers can sit behind this door (ADR-0028, ADR-0031): Anthropic
+directly, Claude Platform on AWS, Amazon Bedrock, and the Claude Code CLI run
+headless under a subscription. The three SDK client classes live in the one
+``anthropic`` package, so this module is still the only importer of it, and it
+is also the only place the CLI is run -- so every call, whichever provider
+serves it, is cached, metered and traced the same way. What differs between
+them is described in :mod:`cascade.llm.providers`, which is pure.
 """
 
 from __future__ import annotations
 
+import subprocess
+import tempfile
 import time
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from cascade.canonical import canonical_json
-from cascade.config import Settings
-from cascade.llm.cache import CallCache, cache_key
+from cascade.config import Settings, claude_cli_environment, repo_root
+from cascade.llm.cache import CallCache, cache_domain, cache_key
+from cascade.llm.claude_cli import build_invocation, parse_cli_output, to_messages_payload
 from cascade.llm.meter import CostMeter
+from cascade.llm.providers import client_kwargs, readiness_problems, render_model, spec_for
 from cascade.llm.tracing import Tracer, null_tracer
 from cascade.llm.types import (
     BatchFailed,
@@ -39,15 +53,20 @@ from cascade.llm.types import (
     LLMRequest,
     LLMResult,
     PromptTooShortToCache,
+    ProviderNotReady,
     Usage,
 )
+from cascade.retrieval.rerank import RerankError, rerank_cache_key
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
     import httpx
 
 __all__ = [
     "BATCH_MAX_REQUESTS",
+    "CliCompleted",
+    "CliRunner",
     "LLMClient",
+    "RecordedReranker",
     "assert_cacheable_prefix",
     "estimate_tokens",
 ]
@@ -64,6 +83,42 @@ BATCH_MAX_BYTES = 256 * 1024 * 1024
 # deliberately *not* used for billing, which always uses the provider's own
 # reported counts.
 _CHARS_PER_TOKEN = 3.6
+
+
+# API statuses worth retrying through the CLI: the provider's own transient
+# failures. 429 is deliberately absent -- under a subscription it usually means
+# the plan's usage limit, which retrying in a loop only extends.
+_CLI_TRANSIENT_STATUSES = frozenset({500, 502, 503, 504, 529})
+
+
+@dataclass(frozen=True)
+class CliCompleted:
+    """What one ``claude -p`` process returned."""
+
+    returncode: int
+    stdout: str
+    stderr: str
+
+
+# (argv, stdin, working directory, timeout seconds) -> result. Injectable, as
+# `http_client` is for the SDK providers, so no test ever runs the real CLI or
+# spends a subscription's allowance.
+CliRunner = Callable[[Sequence[str], str, Path, float], CliCompleted]
+
+
+def _run_cli(argv: Sequence[str], stdin: str, workdir: Path, timeout_s: float) -> CliCompleted:
+    """Run the Claude Code CLI once, with the isolated environment (ADR-0031)."""
+    completed = subprocess.run(  # noqa: S603 -- argv from build_invocation, no shell
+        list(argv),
+        input=stdin,
+        capture_output=True,
+        text=True,
+        timeout=timeout_s,
+        cwd=workdir,
+        env=claude_cli_environment(),
+        check=False,
+    )
+    return CliCompleted(completed.returncode, completed.stdout, completed.stderr)
 
 
 def estimate_tokens(text: str) -> int:
@@ -112,6 +167,7 @@ class LLMClient:
         cache: CallCache | None = None,
         tracer: Tracer | None = None,
         http_client: httpx.Client | None = None,
+        cli_runner: CliRunner | None = None,
     ) -> None:
         self._settings = settings
         self._phase = phase
@@ -121,12 +177,35 @@ class LLMClient:
         self._tracer = tracer if tracer is not None else null_tracer()
         self._http_client = http_client
         self._sdk: Any | None = None
+        self._provider = settings.llm.provider
+        # None for the three API providers, which share one namespace
+        # (ADR-0029); the CLI gets its own (ADR-0031).
+        self._namespace = spec_for(self._provider).cache_namespace
+        self._cli_runner: CliRunner = cli_runner if cli_runner is not None else _run_cli
+        self._cli_workdir: Path | None = None
+
+        # Fail before the first dollar, not at the first miss. A provider that
+        # cannot be routed explicitly or priced exactly would either send the
+        # call somewhere nobody chose or book it at a rate nobody checked, and
+        # both surface only at reconciliation. Replay never reaches a provider,
+        # so it needs none of this -- which is what lets `make demo` run with
+        # no credential of any kind.
+        if self._mode != "replay":
+            problems = readiness_problems(
+                settings, models=(settings.models.agent, settings.models.compiler)
+            )
+            if problems:
+                raise ProviderNotReady(self._provider, problems)
 
     # -- properties ---------------------------------------------------------
 
     @property
     def mode(self) -> str:
         return self._mode
+
+    @property
+    def provider(self) -> str:
+        return self._provider
 
     @property
     def constructed_sdk_client(self) -> bool:
@@ -164,7 +243,7 @@ class LLMClient:
                 "Use complete_batch() with a whole wave of requests instead."
             )
 
-        key = cache_key(request)
+        key = cache_key(request, namespace=self._namespace)
 
         if self._mode == "live":
             return self._call_api(request, key=key, batch=batch, trace_name=trace_name, store=False)
@@ -225,7 +304,7 @@ class LLMClient:
         by_key: dict[str, LLMRequest] = {}
 
         for item in sorted(items, key=lambda entry: entry.custom_id):
-            key = cache_key(item.request)
+            key = cache_key(item.request, namespace=self._namespace)
             recorded = self.cache.get(key)
             if recorded is not None:
                 results[item.custom_id] = self._from_recording(recorded, trace_name=trace_name)
@@ -242,6 +321,23 @@ class LLMClient:
 
         if not pending:
             return results
+
+        # Checked only once there is something to submit: a wave served
+        # entirely from recordings costs nothing on any provider, so replaying
+        # a batched study through Bedrock is fine. Submitting one is not --
+        # there is no batch endpoint, and the per-call fallback would run the
+        # phase at roughly twice the rate its ceiling was set against.
+        if not spec_for(self._provider).supports_batches:
+            raise ProviderNotReady(
+                self._provider,
+                [
+                    f"{len(pending)} uncached request(s) need the Message Batches API, which "
+                    f"{spec_for(self._provider).operated_by} does not provide; the batched "
+                    "phase's ceiling assumes the batch rate (ADR-0020). Record this phase "
+                    "through `anthropic` or `aws` -- the recordings then replay through any "
+                    "provider (ADR-0029)"
+                ],
+            )
 
         for chunk in _chunked(sorted(pending), BATCH_MAX_REQUESTS):
             served = self._run_batch(
@@ -270,7 +366,12 @@ class LLMClient:
         """Submit one batch keyed by cache key, wait for it, and price the results."""
         client = self._client()
         payload = [
-            {"custom_id": _batch_id(key), "params": _batch_params(requests[key])}
+            {
+                "custom_id": _batch_id(key),
+                "params": _batch_params(
+                    requests[key], model=render_model(self._settings, requests[key].model)
+                ),
+            }
             for key in sorted(requests)
         ]
         size = len(canonical_json(payload).encode("utf-8"))
@@ -320,14 +421,17 @@ class LLMClient:
                 self.cache.put(
                     CachedCall(
                         key=key,
-                        request_digest=requests[key].cache_domain(),
+                        request_digest=cache_domain(requests[key], namespace=self._namespace),
                         raw_response=raw,
                         usage=usage,
                         latency_ms=elapsed_ms,
                         recorded_at=datetime.now(UTC).isoformat(),
                     )
                 )
-            cost = self.meter.record(model=result.model, usage=usage, batch=True)
+            # Priced by the logical model the request named, not the string the
+            # response echoes: providers disagree on that string, and the price
+            # of a call is a property of what was asked for.
+            cost = self.meter.record(model=requests[key].model, usage=usage, batch=True)
             self._tracer.generation(
                 name=trace_name,
                 model=result.model,
@@ -345,6 +449,97 @@ class LLMClient:
     def _sleep(self, seconds: float) -> None:
         """Wait between polls. Isolated so a test can drive the loop instantly."""
         time.sleep(seconds)
+
+    # -- the CLI provider (ADR-0031) ------------------------------------------
+
+    def _call_cli(self, request: LLMRequest) -> dict[str, Any]:
+        """Serve one request through ``claude -p`` and return a Messages body.
+
+        Retries only the provider's own transient failures. A 429 is raised at
+        once: under a subscription it usually means the plan's usage limit,
+        and every phase is resumable (invariant 8), so the honest response is
+        to stop and say so rather than spin against the limit.
+        """
+        config = self._settings.providers.claude_code
+        invocation = build_invocation(
+            request,
+            executable=config.executable,
+            model=render_model(self._settings, request.model),
+        )
+        workdir = self._cli_directory()
+        attempts = self._settings.llm.max_retries + 1
+        failure = "no attempt made"
+        for attempt in range(attempts):
+            try:
+                done = self._cli_runner(
+                    invocation.argv, invocation.stdin, workdir, self._settings.llm.timeout_s
+                )
+            except FileNotFoundError:
+                raise ProviderNotReady(
+                    "claude_code",
+                    [
+                        f"{config.executable!r} is not on PATH -- install Claude Code and "
+                        "log in with the subscription (`claude` then `/login`)"
+                    ],
+                ) from None
+            except subprocess.TimeoutExpired:
+                failure = f"timed out after {self._settings.llm.timeout_s:.0f}s"
+                self._sleep(5.0 * 2**attempt)
+                continue
+            if not done.stdout.strip():
+                raise LLMError(
+                    f"claude -p exited {done.returncode} with no result; stderr: "
+                    f"{done.stderr.strip()[-400:]!r}. If it is not logged in, run `claude` "
+                    "and `/login` with the subscription."
+                )
+            cli = parse_cli_output(done.stdout)
+            status = _status_code(cli.get("api_error_status"))
+            if cli.get("is_error") and status == 429:
+                raise LLMError(
+                    "claude -p hit a rate or usage limit (429). Under a subscription this is "
+                    "usually the plan's usage window; the phase is resumable, so re-run the "
+                    "same command once the limit resets. Recorded calls are not repeated."
+                )
+            if cli.get("is_error") and status in _CLI_TRANSIENT_STATUSES:
+                failure = f"transient API status {status}"
+                self._sleep(5.0 * 2**attempt)
+                continue
+            return to_messages_payload(cli, invocation=invocation, logical_model=request.model)
+        raise LLMError(f"claude -p failed after {attempts} attempt(s): {failure}")
+
+    def _cli_directory(self) -> Path:
+        """The working directory the CLI runs in, checked once per client.
+
+        Preserves the invariant that nothing reaches the model except the
+        request. The CLI loads every CLAUDE.md from its working directory
+        upward, plus the user's own; this repository's build contract alone is
+        ~27k tokens, so a working directory under it would put the contract
+        into every forecasting call. Refused rather than warned about.
+        """
+        if self._cli_workdir is not None:
+            return self._cli_workdir
+        configured = self._settings.providers.claude_code.workdir
+        path = (
+            Path(configured) if configured else Path(tempfile.mkdtemp(prefix="cascade-claude-cli-"))
+        ).resolve()
+        problems: list[str] = []
+        root = repo_root().resolve()
+        if path == root or root in path.parents:
+            problems.append(f"providers.claude_code.workdir {path} is inside the repository")
+        memories = [
+            directory / name
+            for directory in (path, *path.parents)
+            for name in ("CLAUDE.md", ".claude/CLAUDE.md")
+        ]
+        memories.append(Path.home() / ".claude" / "CLAUDE.md")
+        for memory in sorted(set(memories)):
+            if memory.is_file():
+                problems.append(f"{memory} would be loaded into every call")
+        if problems:
+            raise ProviderNotReady("claude_code", sorted(problems))
+        path.mkdir(parents=True, exist_ok=True)
+        self._cli_workdir = path
+        return path
 
     # -- internals ----------------------------------------------------------
 
@@ -382,26 +577,26 @@ class LLMClient:
             return self._sdk
         import anthropic  # the single SDK import in the codebase (invariant 5)
 
-        api_key = self._settings.anthropic_api_key
-        # An *empty* variable is not an absent one. `CASCADE_ANTHROPIC_API_KEY=`
-        # in a .env file parses to SecretStr("") rather than None, so a bare
-        # `is None` check passes it through to the SDK, which rejects it with
-        # `TypeError: Could not resolve authentication method` -- an error that
-        # names neither the variable nor this project. Measured on a checkout
-        # whose .env carried the key with no value.
-        if api_key is None or not api_key.get_secret_value().strip():
-            raise LLMError(
-                f"CASCADE_ANTHROPIC_API_KEY is not set but llm.mode={self._mode!r} needs it. "
-                "Only replay runs without a key."
-            )
-        kwargs: dict[str, Any] = {
-            "api_key": api_key.get_secret_value(),
-            "max_retries": self._settings.llm.max_retries,
-            "timeout": self._settings.llm.timeout_s,
-        }
+        # Re-checked here as well as at construction: a client built in replay
+        # mode can still reach this door through `live`-only paths in tests,
+        # and the SDK's own error for an empty key -- `TypeError: Could not
+        # resolve authentication method` -- names neither the variable nor
+        # this project. Measured on a checkout whose .env carried the key with
+        # no value.
+        problems = readiness_problems(
+            self._settings,
+            models=(self._settings.models.agent, self._settings.models.compiler),
+        )
+        if problems:
+            raise ProviderNotReady(self._provider, problems)
+
+        class_name = spec_for(self._provider).client_class
+        if class_name is None:
+            raise LLMError(f"provider {self._provider!r} is not served by an SDK client")
+        kwargs = client_kwargs(self._settings)
         if self._http_client is not None:
             kwargs["http_client"] = self._http_client
-        self._sdk = anthropic.Anthropic(**kwargs)
+        self._sdk = getattr(anthropic, class_name)(**kwargs)
         return self._sdk
 
     def _call_api(
@@ -414,31 +609,33 @@ class LLMClient:
         store: bool,
     ) -> LLMResult:
         """Send one request, price it, and persist it when recording."""
-        client = self._client()
-        payload: dict[str, Any] = {
-            "model": request.model,
-            "messages": request.messages,
-            "max_tokens": request.max_tokens,
-            "temperature": request.temperature,
-        }
-        if request.system is not None:
-            payload["system"] = request.system
-        if request.tools:
-            payload["tools"] = request.tools
-        if request.tool_choice is not None:
-            payload["tool_choice"] = request.tool_choice
-
         started = time.perf_counter()
-        message = client.messages.create(**payload)
+        if self._provider == "claude_code":
+            raw = self._call_cli(request)
+        else:
+            client = self._client()
+            payload: dict[str, Any] = {
+                "model": render_model(self._settings, request.model),
+                "messages": request.messages,
+                "max_tokens": request.max_tokens,
+                "temperature": request.temperature,
+            }
+            if request.system is not None:
+                payload["system"] = request.system
+            if request.tools:
+                payload["tools"] = request.tools
+            if request.tool_choice is not None:
+                payload["tool_choice"] = request.tool_choice
+            message = client.messages.create(**payload)
+            raw = message.model_dump(mode="json")
         latency_ms = (time.perf_counter() - started) * 1000.0
 
-        raw: dict[str, Any] = message.model_dump(mode="json")
         usage = _usage_from_payload(raw)
         result = _result_from_payload(
             raw, usage=usage, latency_ms=latency_ms, served_from_cache=False
         )
 
-        cost = self.meter.record(model=result.model, usage=usage, batch=batch)
+        cost = self.meter.record(model=request.model, usage=usage, batch=batch)
         self._tracer.generation(
             name=trace_name,
             model=result.model,
@@ -452,7 +649,7 @@ class LLMClient:
             self.cache.put(
                 CachedCall(
                     key=key,
-                    request_digest=request.cache_domain(),
+                    request_digest=cache_domain(request, namespace=self._namespace),
                     raw_response=raw,
                     usage=usage,
                     latency_ms=latency_ms,
@@ -460,6 +657,17 @@ class LLMClient:
                 )
             )
         return result
+
+
+def _status_code(value: Any) -> int | None:
+    """The CLI reports an API status as an int, a numeric string, or null."""
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and value.strip().isdigit():
+        return int(value.strip())
+    return None
 
 
 def _batch_id(key: str) -> str:
@@ -472,10 +680,14 @@ def _batch_id(key: str) -> str:
     return f"k{key[:56]}"
 
 
-def _batch_params(request: LLMRequest) -> dict[str, Any]:
-    """Project a request onto the Batches API's per-item ``params`` object."""
+def _batch_params(request: LLMRequest, *, model: str) -> dict[str, Any]:
+    """Project a request onto the Batches API's per-item ``params`` object.
+
+    ``model`` is the provider's wire id, rendered by the caller; the request
+    itself only ever carries the logical model (ADR-0029).
+    """
     params: dict[str, Any] = {
-        "model": request.model,
+        "model": model,
         "messages": request.messages,
         "max_tokens": request.max_tokens,
         "temperature": request.temperature,
@@ -557,3 +769,106 @@ def _result_from_payload(
         served_from_cache=served_from_cache,
         tool_calls=tool_calls,
     )
+
+
+@dataclass
+class RecordedReranker:
+    """Record/replay around any reranker (ADR-0047).
+
+    Lives here, beside the one model door, for the reason ADR-0030 gave for
+    refusing ``ApplyGuardrail``: a second path that reaches a model-adjacent
+    service from somewhere else in the package is exactly what invariant 5
+    exists to prevent. ``cascade/retrieval/rerank.py`` stays pure and knows
+    nothing about a cache or a network; this wrapper is what makes a remote
+    reranker replayable.
+
+    The contract matches :meth:`LLMClient.complete` exactly, because a study
+    that can replay its decisions and not its evidence ordering cannot replay
+    at all:
+
+    * ``live`` scores every time and records nothing,
+    * ``record`` serves a hit from disk and stores a miss,
+    * ``replay`` is total with respect to the recorded corpus -- it returns a
+      recording or raises :class:`CacheMiss`, and never reaches the inner
+      reranker.
+
+    Wrapping a *local* reranker is not pointless: it is how the recorded
+    corpus stays complete when the provider is switched, and how a BM25 arm
+    and a managed arm are compared under the same machinery rather than one
+    of them getting a free pass.
+    """
+
+    inner: Any
+    cache: CallCache
+    mode: str
+    calls: int = 0
+    hits: int = 0
+
+    @property
+    def model_id(self) -> str:
+        """The inner reranker names itself; this wrapper is not a model."""
+        return str(self.inner.model_id)
+
+    def score(self, *, query: str, documents: Sequence[str]) -> Sequence[float]:
+        """One score per document, from the recording where there is one."""
+        key = rerank_cache_key(model_id=self.model_id, query=query, documents=documents)
+        self.calls += 1
+
+        if self.mode != "live":
+            recorded = self.cache.get(key)
+            if recorded is not None:
+                self.hits += 1
+                return _recorded_scores(recorded, expected=len(documents), key=key)
+            if self.mode == "replay":
+                raise CacheMiss(
+                    f"no recorded rerank for key {key} (model={self.model_id!r}, "
+                    f"{len(documents)} document(s)) in {self.cache.root}. Replay never "
+                    "falls back to a reranker -- re-record with CASCADE_LLM__MODE=record "
+                    "if this pool is new."
+                )
+
+        started = time.perf_counter()
+        scores = [float(value) for value in self.inner.score(query=query, documents=documents)]
+        latency_ms = (time.perf_counter() - started) * 1000.0
+
+        if self.mode == "record":
+            self.cache.put(
+                CachedCall(
+                    key=key,
+                    # Enough to identify the call without storing the pool
+                    # twice: the bodies are already in the key, and a
+                    # recording that repeated them would be megabytes per
+                    # query for no lookup that needs them.
+                    request_digest={
+                        "kind": "rerank",
+                        "model_id": self.model_id,
+                        "query": query,
+                        "documents": len(documents),
+                    },
+                    raw_response={"scores": scores},
+                    # Reranking is not token-billed -- the managed services
+                    # price per query -- so a token usage here would be a
+                    # fiction the meter would then sum. It is recorded as zero
+                    # and the query count is what a spend reconciliation reads.
+                    usage=Usage(input_tokens=0, output_tokens=0),
+                    latency_ms=latency_ms,
+                    recorded_at=datetime.now(UTC).isoformat(),
+                )
+            )
+        return scores
+
+
+def _recorded_scores(recorded: CachedCall, *, expected: int, key: str) -> list[float]:
+    """Read scores out of a recording, refusing one that cannot be applied.
+
+    A recording whose length disagrees with the pool is a corrupted or
+    mis-keyed entry, and returning it would let `apply_scores` raise far from
+    the cause. Checked here, where the key is still in hand.
+    """
+    raw = recorded.raw_response.get("scores")
+    if not isinstance(raw, list) or len(raw) != expected:
+        raise RerankError(
+            f"recorded rerank {key} holds {len(raw) if isinstance(raw, list) else 'no'} "
+            f"score(s) for a pool of {expected}; the recording does not describe this call"
+        )
+    return [float(value) for value in raw]

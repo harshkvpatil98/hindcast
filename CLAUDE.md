@@ -62,7 +62,9 @@ enforces 1, 5 and 7 statically.
    documented order: exogenous walk → observation noise → tie-breaks → arbiter
    jitter. Never re-seeded mid-run.
 5. **One LLM call site**: `cascade/llm/client.py`. A grep for the Anthropic SDK
-   import anywhere else fails CI.
+   import anywhere else fails CI. It is also the only place the Claude Code CLI
+   is run, so every provider's calls are cached, metered and traced alike
+   (ADR-0028, ADR-0031).
 6. **The event log is append-only.** No `UPDATE`, no `DELETE`, ever.
 7. **All iteration over collections is sorted.** Dict/set iteration order is a
    nondeterminism vector.
@@ -80,6 +82,20 @@ Python 3.12 · LangGraph 0.2.x · PostgreSQL 16 + pgvector 0.8 ·
 `BAAI/bge-small-en-v1.5` (384-d, local) · Claude Haiku 4.5 (agents) ·
 Claude Sonnet 4.6 (compiler) · Langfuse self-hosted · DuckDB + Parquet ·
 Typer + Rich · uv + Docker Compose · pytest + hypothesis.
+
+Model access (ADR-0028, approved 2026-09-18): the pinned models are reached
+through `llm.provider` — the Anthropic API, Claude Platform on AWS, or Amazon
+Bedrock, whose clients all ship in the one `anthropic` package (the `aws`
+extra adds boto3/botocore for SigV4). `claude_code` (ADR-0031) runs the Claude
+Code CLI locally under a subscription; it is **not** the pinned configuration,
+because the CLI cannot set `temperature` or `max_tokens`, and its results must
+be labelled as such.
+
+Infrastructure (ADR-0033, M11): Terraform **1.16.3**, AWS provider **6.65.0**,
+random **3.9.1** (locked for darwin_arm64, linux_amd64, linux_arm64), TFLint
+**0.64.0** + AWS ruleset **0.48.0**, Checkov **3.3.19**. Run through Docker and
+`uvx` at exactly these versions, locally and in CI; the system Terraform is
+never consulted. Container base images are pinned by digest.
 
 `cascade doctor` asserts this list (`cascade/version.py`). If you believe a
 substitution is warranted, write an ADR in `docs/adr/` and **ask**. Do not swap
@@ -126,7 +142,7 @@ silently.
 ## 6. Commands
 
 ```bash
-make install    # uv sync --extra dev --extra kernel
+make install    # uv sync --extra dev --extra kernel --extra aws
 make install-full  # adds embed (torch) and analytics
 make demo       # the 90-second path: cells -> replay -> trace -> report
 make verify     # every structural gate that needs no credential
@@ -136,13 +152,23 @@ make ci         # ruff + black + mypy strict + pytest
 make test       # pytest, excluding tests needing live services
 make test-all   # includes integration and leakage tests (needs `make up`)
 make test-leakage  # the M3 time-lock probes alone
+make infra-check   # Terraform fmt/validate, offline tests (mock providers), tflint, checkov -- no AWS account
+make infra-fmt     # format the Terraform
 cascade doctor  # toolchain, pinned stack, service health
 
-cascade retrieval index    # (re)build one IVFFlat index per chunks partition
+cascade db enable-iam      # RDS only: switch the app roles to IAM tokens (disables their passwords; ADR-0034)
+
+cascade ledger export --to PATH     # tier-0 recovery: the sealed registry as one verifiable file (holds the labels; refused inside the repo)
+cascade ledger restore --from PATH  # verify the archive twice, write, then re-hash the database; exits 3 on any mismatch
+
+cascade retrieval index    # (re)build one HNSW index per chunks partition (ADR-0026)
 cascade retrieval verify   # assert the Chronofence preconditions; exits 3 on drift
 cascade retrieval bench    # p50/p95/p99 + recall@20; exits 3 if a criterion is missed
 cascade retrieval memorization  # the parametric probe (costs money in record mode)
+cascade retrieval index --fts   # also build the keyword (GIN) indexes the hybrid path needs (ADR-0040)
+cascade retrieval bench --relevance  # vector vs hybrid on the study's own queries, label-blind; exits 3 without the hybrid index
 
+cascade compile dossier    # one cited, machine-checked situation report per scenario (ADR-0037)
 cascade compile build      # draft -> critique -> repair -> validate, per scenario
 cascade compile status     # graph statistics and the repair-retry histogram
 cascade compile verify     # re-validate and re-hash every stored graph; exits 3 on drift
@@ -160,6 +186,7 @@ cascade ensemble status    # measured dispersion over the stored forecasts
 cascade ensemble convergence   # §9.3's replicate-count curve
 
 cascade corpus coverage    # evidence at each scenario's own cutoff; exits 3 when short
+cascade corpus redate      # re-date stored CC-NEWS documents by fetch time (ADR-0044); resumable
 
 cascade eval status        # what is scoreable, and what the grid still lacks
 cascade eval baselines --baseline climatology   # §10.2's five, selectable
@@ -168,6 +195,14 @@ cascade eval grid          # PHASE 4: Appendix C's 12 cells, then collapse each
 cascade eval score --config-id C01   # §10.1 metrics for one configuration
 cascade eval significance  # paired bootstrap + Holm-Bonferroni (§10.4)
 cascade eval prompt-audit  # §1.3's before/after Brier for a prompt revision
+cascade eval equivalence --reference anthropic --candidate bedrock  # ADR-0029's condition; exits 3 on divergence
+cascade eval split         # the declared dev/test split and its exclusions; exits 3 if it is not the pinned one (ADR-0038)
+cascade eval tune-guard --scenario ID   # refuse any set touching test, an excluded or an undeclared scenario
+cascade eval grid --supplementary   # also run S01 (12 chunks per agent), in its own Holm family
+cascade eval market-prices # fetch each market's price strictly before its cutoff (ADR-0039)
+cascade eval baselines --baseline market   # score the market at the cutoff; excluded-and-counted, never imputed
+cascade eval blend         # a blend weight fitted on dev, scored unchanged on test
+cascade eval injection     # threat T3: can a document in the evidence give the model orders?
 cascade report             # write reports/study_{ts}/ (Appendix D)
 
 cascade trace status       # what is replayable and traceable
@@ -180,7 +215,7 @@ cascade trace cost         # §12.4: reconcile the run ledger against Langfuse
 
 ## 7. Architecture decisions
 
-Twenty-seven ADRs in `docs/adr/`. Fifteen correct defects found in the spec,
+Forty-six ADRs in `docs/adr/` on this branch; 0032 (live mode, proposed) lives on `m13/live-mode`. Fifteen correct defects found in the spec,
 and 0023, 0025 and 0026 correct defects found in **this build** -- an ingest order
 that satisfied every criterion while covering the wrong years, and two ablation
 factors that were configured, documented and inert. The rest record choices the
@@ -215,6 +250,25 @@ spec left open.
 | 0025 | Ablation factors A (`causal_decomposition`) and C (`grounding`) are mechanisms, not configuration fields: both were read nowhere outside `config.py`, so six of the twelve cells would have executed as duplicates and the headline deltas would have been precise nulls | M7 |
 | 0026 | HNSW replaces IVFFlat and the caller's `k` leaves the plan: a parameterised `LIMIT k` in a non-inlinable SECURITY DEFINER function cost 4x, and IVFFlat's `probes x Σ√n_p` does not scale past ~2M chunks. Retires ADR-0012's rebuild-on-drift class and supersedes ADR-0013's `probes` | M8 (amends M3) |
 | 0027 | §11.2's provenance walk is a path, not an ancestor set: the spec's CTE recurses over every element of `caused_by` and expands 6^depth, which did not return on a 24-step run; its own example output is a single path | M8 |
+| 0028 | Four model providers behind the one call site. Routing is explicit and identity ambient, so a stray `AWS_REGION` cannot redirect spend; each provider is priced from its own table by the logical model; **Bedrock has no Message Batches API, so it cannot carry a batched phase** ($126 batched vs $252 against a $240 ceiling) | M10 |
+| 0029 | The three API providers share one cache namespace — the key carries the logical model, the wire id is rendered at the boundary — *conditional* on `cascade eval equivalence`, which bootstraps cross-provider against within-provider disagreement | M10 |
+| 0030 | Bedrock Knowledge Bases rejected: a managed KB cannot enforce the `as_of` time lock the leakage suite verifies. Bedrock Guardrails deferred: the SDK's Bedrock client has no guardrail parameter, and `ApplyGuardrail` would be a second door | M10 |
+| 0031 | A Claude Code CLI provider for local runs under a subscription, keyed apart because it cannot honour `temperature` or `max_tokens`; measured 448-token harness overhead, thinking on by default, and a working-directory guard against auto-loading this file into every call | M10 |
+| 0033 | Terraform 1.16.3 pinned and run in Docker (the system has 1.5.7, which predates `terraform test`); gated offline by mock-provider tests, TFLint and Checkov triaged skip by skip; no AWS account needed | M11 |
+| 0034 | Aurora 16.11 so pgvector stays 0.8.0 as locally (16.13 moves it to 0.8.1), minor upgrades off; an isolated VPC with no internet path; the bench as a Fargate task inside it; fixed ACU per measurement; a copy-on-write clone for the partitioning experiment | M11 |
+| 0035 | One dedicated account, because Marketplace billing defeats tag-based budgets; the budget is *derived* from `configs/base.yaml`, never restated; SCP guardrails bound to nothing until targets are named; the event lake makes invariant 6 two independent controls (Object Lock + an explicit Deny); recovery tiers follow cost-to-lose, set by this project's own data-loss incident | M12 |
+| 0036 | CC-NEWS files are chosen by their distance from each scenario's cutoff, not by month: ADR-0023's demand counted a month 17 months before a cutoff like the month of it, and its twelve files per month all came from the month's first two days. A floor phase, then closeness with a 14-day half-life, every scenario equal; a function of cutoffs and listings only, never an outcome. Amends 0023 | M12 (amends M2) |
+| 0037 | A cited situation report per scenario from ~100 pre-cutoff chunks; every claim's names, numbers and wording machine-checked against the excerpts it cites, so the writer's memory of the outcome cannot reach the agents as evidence. Off until the dev partition decides | M14 |
+| 0038 | A dev/test split (40 / 125) declared before any forecast, pinned, checked on every eval path; the headline is test; the evidence-tier analysis and S01 (12 chunks) declared in advance, S01 in its own Holm family | M14 |
+| 0039 | The market's own price strictly before the cutoff is a benchmark and only a benchmark: never imputed, stale prices excluded and counted, unreadable by `cascade_sim` | M14 |
+| 0040 | Hybrid retrieval: time-locked vector and keyword pools, rank fusion with recency, story diversity by SimHash, one switch for every evidence site; off until measured | M14 |
+| 0041 | **Found here.** The Wikipedia adapter rendered old revisions through today's templates, so text dated before a cutoff carried post-cutoff facts (a 2025 season article showing the 2026 final standings). Now raw wikitext strictly before the cutoff, titles from the question, depth in the unit key | M14 |
+| 0042 | An opt-in egress tier for the ingest, model access and an EFS-backed LLM cache for the study, GuardDuty to the alerts topic, both caches in the recovery plan | M12 |
+| 0043 | **Found here.** 15 of 180 sealed scenarios are exchange placeholder legs; the owner kept the sealed set, and they are excluded from scoring before the split is drawn, inside its pin | M14 |
+| 0044 | **Found here.** A document is dated by when its text was knowable, `max(stated, fetched)`: CC-NEWS pages were dated by the date they state while the stored text was the later fetch (3.7% of a 2026 file re-crawled >180 days after publication). *Corrects 0010* | M14 |
+| 0045 | **Measured, then closed.** A document that impersonated a system notice was obeyed on 20 of 30 scenarios (mean shift +0.491); quoting every document in a frame the renderer strips from its own text, with the rule in the system prompt, takes it to 0 of 30. Prompt revision r4 | M14 |
+| 0046 | The report artifact carries the labels — `baselines.csv` and `ablation_grid.csv` are one row per scenario *with how it resolved* — so it lands in a private, Object-Locked bucket the simulation is denied, is fetched rather than served, and the recovery path is drilled rather than asserted | M14 |
+| 0047 | A managed reranker is admissible where a managed knowledge base was not: a knowledge base *replaces* the `published_at < as_of` filter, a reranker *permutes a set the database already filtered*. Enforced by the interface — it is handed bodies and returns numbers, so naming a post-cutoff chunk is unrepresentable. *Amends 0030* | M15 |
 
 ---
 
@@ -1648,3 +1702,490 @@ Deferred, with reasons:
   1.9M-chunk corpus and a sealed registry, which is hours of state per push.
   `make test-all` runs it against a real environment and the workflow says so
   rather than quietly skipping.
+
+### M10 — Model providers on AWS · *implemented and tested; 2 of 5 acceptance criteria met, 3 blocked on an AWS account, a pay-as-you-go key, and the corpus*
+
+Shipped: `cascade/llm/providers.py` (pure: four provider specs, wire-id
+rendering, explicit endpoints, readiness), `cascade/llm/claude_cli.py` (pure:
+the `claude -p` adapter), the provider dispatch, the batch refusal, per-provider
+pricing and the cache namespace in `llm/client.py` and `llm/cache.py`;
+`cascade/eval/equivalence.py` and `cascade eval equivalence`; provider rows in
+`cascade doctor`; `bootstrap_differences` extracted from `paired_bootstrap`
+(bit-identical, checked against HEAD on 200 random inputs); `probe_request`
+extracted from the memorization probe so a label-free caller can share it; the
+`aws` extra (boto3/botocore for SigV4); ADRs 0028–0031. Branches were cut for
+M10, M11 and M12; M11 and M12 are empty and rebase onto M10 at their gates.
+
+**Measured acceptance values — 2 of 5 met.**
+
+| # | Criterion | Measured | Verdict |
+|---|---|---|---|
+| 1 | Provider equivalence over ≥ 50 identical requests | **NOT RUN** — no AWS account and no API key in this environment. `cascade eval equivalence` is built, tested against a same-model and an offset candidate, and exits 3 on divergence | **BLOCKED** |
+| 2 | 180 graphs compiled live; M4's criteria measured | **NOT RUN** — a provider now exists (`claude_code`, not the pinned configuration), but compiling retrieves at each cutoff and the corpus was lost with the database volume | **BLOCKED** |
+| 3 | Compile spend within $40, reconciled against a second record | **NOT RUN** — nothing has been spent | **BLOCKED** |
+| 4 | `make demo` green with no key and no AWS variable; replay constructs no client | **PASS** — exit 0, all five steps: 2,480 heuristic runs across C09–C12, **25/25** replayed byte-identically in **8.4 s**, a complete provenance chain, a report artifact. Replay-without-a-client asserted on every provider | **PASS** |
+| 5 | CI green | **PASS** offline — ruff, black, mypy strict (**101 files**), **1,235 passed**, 1 skipped (the pre-existing empty parametrisation). With live services: **1,298 passed, 75 skipped, 1 failed** — all 76 because the corpus is not rebuilt; the failure is `test_indexes_use_the_expected_name_and_operator_class`, which asserts non-empty partitions rather than skipping, and was left asserting | **PASS** |
+
+**Also measured, beyond the plan.** M3 criterion 5 — the parametric probe,
+blocked since M3 — through `claude_code`: **180/180** answers parsed, mean
+confidence **0.6254**, median **0.70**, probe Brier **0.261562**, direction
+correct on **97/180** (one-sided binomial p = 0.166 against chance, two-sided
+~0.33). Haiku states confident priors (61 answers at confidence ≥ 0.9) that do
+not predict the outcome better than chance at this n. **Not the pinned
+configuration**: the CLI cannot set the probe's zero temperature and adds its
+own context.
+
+**The finding that shaped the design: Bedrock has no Message Batches API.**
+Read from the SDK's platform-availability table rather than assumed. ADR-0020
+makes the batch discount functional — simulate is $126 batched and $252 not,
+against $240 — so Bedrock is refused at the batch door before any spend, and
+Claude Platform on AWS (`AnthropicAWS`: Anthropic-operated, IAM, batches, bare
+model ids) is the study's AWS execution path. Both clients ship inside the one
+`anthropic` package, so invariant 5's test needed no exemption.
+
+**The project owner asked for a Claude subscription to power the pipeline.**
+Extracting the subscription's OAuth token into the SDK was declined — it
+impersonates Claude Code. Running the official CLI headless was adopted
+(ADR-0031), and measured before it was trusted:
+
+| | measured |
+|---|---|
+| harness context per call | **448** input tokens for a ~45-token request |
+| extended thinking | on by default: **235 of 254** output tokens; **0** with `MAX_THINKING_TOKENS=0` |
+| `--bare` | unusable: it reads `ANTHROPIC_API_KEY` only, never the subscription login |
+| `temperature`, `max_tokens` | cannot be set — hence a separate cache namespace |
+| `CLAUDE.md` exposure | two 109,520-byte copies (~27k tokens each) on the path from the repository upward; a working directory there would inject the build contract into every call. Now refused |
+
+**Defects found and fixed at M10** (each has a regression test):
+
+- **The CLI refused every non-Anthropic provider.** `compile build`,
+  `retrieval memorization`, `eval baselines` and `eval estimate` all demanded
+  `CASCADE_ANTHROPIC_API_KEY`, which would have blocked exactly the Bedrock and
+  AWS runs the seam exists for. Now `_require_provider_ready`.
+- **The meter priced by the model string the response echoed.** Bedrock echoes
+  a prefixed id in no price table; a provider echoing a different *known* id
+  would have booked the wrong rate silently. Priced by the logical model the
+  request named.
+- **Both AWS clients take routing from the ambient shell** (`AWS_REGION`,
+  `ANTHROPIC_AWS_BASE_URL`, `ANTHROPIC_BEDROCK_MANTLE_BASE_URL`) before the
+  region. Every routing value is now passed explicitly; a test sets decoys for
+  all of them and asserts the request still reaches the configured region, and
+  another asserts the reproduced endpoint templates equal the installed SDK's.
+- **The README stated three §1 targets as the study's price** — `$290`,
+  `$0.0035` and `$0.008` per run, as "the study is priced at". M9 recorded that
+  a grep for contract literals over the README returned nothing; run here, it
+  returned all three. Restated as the cost model they are.
+- **The README pointed at the previous repository owner** — the CI badge and
+  the quickstart `git clone`. Committed separately.
+
+Checked by mutation, not by inspection: five behaviours were broken on purpose
+(the CLI sharing the API namespace, pricing by the response model, routing left
+to the SDK, thinking left on, the batch guard removed) and each failed at least
+one test; the suite was 35/35 before and after.
+
+**Environment state.** The Postgres volume was lost before this milestone,
+taking the corpus, the sealed registry and every stored run. `uv` and the venv
+were also absent. The registry was re-fetched (`--refresh`) and re-sealed:
+180 scenarios, YES rate **0.5000**, max domain share **0.2500**, sha256
+**`91ccd314…`** — a **new frozen split**, since markets resolved after M1 change
+the pool; M1's `30d9c61d…` is gone. Composition tracks M1's: polymarket 165,
+manifold 6, curated 9 (M1: 164 / 7 / 9). The M2–M8 corpus and retrieval figures
+were measured in the previous environment and have not been re-measured.
+
+Deferred, with reasons:
+
+- **Criteria 1–3** → an AWS account (for `aws`/`bedrock`), or a pay-as-you-go
+  key; and, for compile, the corpus. The corpus rebuild is hours of ingest plus
+  the `embed` extra; it was not started unasked.
+- **Bedrock Guardrails** → the SDK's Bedrock client has no guardrail
+  parameter, and `ApplyGuardrail` would be a second door (ADR-0030).
+- **M11 and M12** → their own sessions, per §5.
+- **The parent-directory copy of this file** (`~/Downloads/CLAUDE.md`) is
+  outside the repository and was not edited; it now lags this one.
+
+
+### M11 — Aurora and the retrieval criterion · *in progress: infrastructure written and gated offline; nothing applied*
+
+Started in the same session as M10's gate, at the owner's explicit request,
+while the corpus rebuilt; kept on its own branch and worktree
+(`../cascade-m11`) so the running ingest's tree was never touched.
+
+Shipped so far: `infra/terraform/` -- `modules/network` (private subnets only,
+four interface endpoints, an S3 gateway endpoint whose policy names its
+buckets, flow logs), `modules/database` (Aurora PostgreSQL 16.11 Serverless v2,
+KMS, `rds.force_ssl`, IAM auth, RDS-managed master secret, generated role
+secrets, an opt-in copy-on-write clone), `modules/bench` (ECR, a Fargate task
+with a read-only root and injected secrets, the artifacts bucket,
+least-privilege roles), `envs/sandbox`, `envs/bootstrap`;
+`infra/docker/bench.Dockerfile`; `tests/unit/test_infra_invariants.py`;
+`make infra-check` and CI's `infra` job; ADRs 0033 and 0034; a runbook.
+
+**The plan's hard gate was checked before any design:** Aurora PostgreSQL
+16.8-16.11 ship pgvector 0.8.0, 16.13 ships 0.8.1, 16.14 ships 0.8.2 (AWS
+extension table, 2026-09-19). 16.11 is pinned, with minor upgrades off, so the
+Aurora numbers compare against the local 0.8.0 ones; the Terraform refuses any
+engine without pgvector >= 0.8.0.
+
+**Offline gates, measured:**
+
+| Gate | Result |
+|---|---|
+| `terraform fmt -check`, `validate` (both roots, AWS provider 6.65.0) | clean, valid |
+| `terraform test`, mock providers | **17 passed, 0 failed** -- including the gate rejecting 16.6 and min > max ACU |
+| TFLint + AWS ruleset 0.48.0 | clean (one real finding fixed: an unused module input) |
+| Checkov 3.3.19 | first run **260 passed, 18 failed**; 2 real and fixed (read-only container root; explicit state-key policy), 16 justified in place; now **270 passed, 0 failed, 27 skipped** |
+| `test_infra_invariants.py` | **11 passed** |
+| Dockerfile (`buildx --check`) | no warnings |
+
+Checked by mutation, not inspection: storage unencrypted, the pgvector gate
+widened to 0.7.4, plaintext connections allowed and a password dropped from
+the injected secrets each failed a test; a planted internet gateway with an
+unjustified skip failed exactly the two static tests meant to catch it.
+
+**Defects found while writing it:** a base-image tag that does not exist (the
+lint caught it; the image is now pinned by digest), an unused module input
+(TFLint), a restore command that never set `PGPASSWORD`, and a sandbox that
+`terraform destroy` could not remove while its image repository and bucket held
+data (now `disposable`).
+
+**Second pass, same session: the connection code and the ingest's stop rules.**
+CI: ruff, black, mypy strict clean (101 files); **1,264 offline tests pass**,
+1 skipped. Added 18 tests; eight deliberately broken behaviours each caught.
+
+- **TLS and IAM in `DatabaseConfig`.** `sslmode` (always explicit in the URL,
+  so an ambient `PGSSLMODE` cannot weaken it), `sslrootcert`, and
+  `auth: stored|iam` with an explicit `iam_region`. Incoherent settings are
+  refused at load: `verify-full` without a CA bundle, `iam` without a region,
+  and `iam` without server verification (a token is a bearer credential). The
+  Fargate task sets `verify-full` against the RDS bundle baked into the image.
+- **IAM is a two-step operator switch** (`cascade db enable-iam`, then
+  `auth: iam`), never a migration: on RDS, granting `rds_iam` disables the
+  role's password. The admin role never uses a token -- RDS rotates its secret.
+- **Defect: database secrets were on the command line.** `db.py` passed the
+  admin password inside psql's URL argument and the role passwords as
+  `-v name=value` -- readable by any local user through `ps`. Now `PGPASSWORD`
+  and a `\set` preamble on stdin; both mechanisms verified against the live
+  psql 16 before being relied on.
+- **Defect: secrets were interpolated into URLs unescaped.** Harmless for
+  `cascade_sim_local`; an RDS-generated password or an IAM token contains `#`,
+  `?`, `%`, `&`. Now percent-encoded, and tested by parsing the URL with
+  psycopg's own conninfo parser rather than by string comparison.
+- **Defect: `corpus build` had no stopping rule.** `target_chunks` was read
+  only by `corpus verify`; found at M10 when an unbounded run would have put
+  ~140 GB into 27 GB of free disk. Now `corpus.max_chunks` (a ceiling on work,
+  seeded from what is already stored) and `corpus.min_free_disk_gb` (exit 3,
+  so a supervisor cannot read "ran out of room" as "finished"). Both stop
+  *between* units, so nothing is ever half-written (invariant 8).
+- **Defect: `corpus_ingest_state.n_chunks` recorded the source's running
+  total**, not the unit's own count, so every row after the first overstated.
+  `run_ingest` had no unit test at all; it has a database-free harness now.
+- **Not changed, on purpose:** `embed_batch_size` and `fetch_workers`. At M10
+  both were lowered *together* when swap grew, so the observation cannot say
+  which mattered. The defaults stay until that is measured one at a time.
+
+Remaining for M11's gate:
+- **Live, blocked on an AWS account**: apply, build and push the image, move
+  the corpus (the data-only restore is untested -- Aurora's master user is not
+  a true superuser), re-bench at two fixed ACU sizes, and run the partitioning
+  experiment on the clone. No Aurora number exists yet.
+
+
+### M12 — Platform design · *in progress: first slice designed and gated offline; nothing applied*
+
+Started while the corpus rebuilt, in its own worktree (`../cascade-m12`),
+stacked on M11. Its rule: map the mechanisms the project already has onto AWS
+rather than invent parallel ones.
+
+Shipped so far: `modules/governance` (an account budget whose limit is *read*
+from `configs/base.yaml`'s phase ceilings, plus anomaly detection and an
+encrypted alerts topic), `modules/guardrails` (two SCPs: allowed regions; audit
+trail, encryption, public-access block, no root, no leaving -- attached to
+nothing until targets are named), `modules/eventlake` (an Object-Locked events
+bucket, a Glue table mirroring migration 009's `events`, an Athena workgroup
+that enforces encryption and a scan limit, and writer/analyst roles),
+`envs/platform`; `docs/architecture/` (overview, threat model, DR runbook,
+Well-Architected review); ADR-0035.
+
+**Offline gates, measured:** `terraform test` **15 passed** in `envs/platform`
+(17 in `envs/sandbox` unchanged); TFLint clean; Checkov **403 passed, 0 failed,
+38 skipped** across all roots; the pytest static invariants pass over the
+larger tree.
+
+**What mutation testing caught.** Four properties were broken on purpose.
+Three failed a test. The fourth -- the budget ceiling hardcoded to `330` instead
+of derived -- **survived**: 330 is today's sum, so an assertion against the real
+config could not tell derived from restated. The test now runs the module
+against a fixture with different ceilings, and the mutant fails. This is the
+§1 rule (never write a target into a code path) arriving from the other side:
+a test that only checks today's value cannot protect a derivation.
+
+**Defects found:** the analyst role's Glue permissions were granted on `*`
+(Checkov; fixed by scoping to the catalog, database and table, with a test that
+no allow in either role names `*`) -- and the skip first written for it named
+the wrong check id, so it suppressed nothing. A first draft of the DR runbook
+said the LLM cache survived the volume loss "by luck"; it had never been
+created. Corrected before commit: the *source-response* cache was lost too,
+which is exactly why the original frozen split could not be re-derived.
+
+**The finding worth keeping:** in this project's one real data-loss incident,
+the smallest datasets were the irreplaceable ones -- the sealed registry and the
+2.9 GB source cache that reproduces it -- while the 1.95M-chunk corpus was
+merely slow to rebuild. The recovery tiers are set by cost-to-lose, not size.
+
+**Second pass: a team of agents, and what they found.** At the owner's request
+four agents worked in parallel, each in its own worktree and branch off M12,
+each owning only new files; shared files (Makefile, CI, root wiring) stayed
+with the integrator, so there was nothing to conflict. Integrated:
+`modules/audit` (CloudTrail to a locked bucket with data events for the lake
+and recovery buckets, GuardDuty, Config), `modules/pipeline` (Step Functions
+chains for the ingest and the study), `modules/observability` (task alerts that
+keep the exit code, Aurora alarms, a dashboard), plus `modules/cicd` (GitHub
+OIDC), `modules/recovery` and `cascade ledger export|restore` written directly.
+Gates: `terraform test` **21 + 73**; Checkov **742 passed, 0 failed, 61
+skipped**; **1,289 offline tests**; CI green on GitHub for M10, M11 and M12 --
+the first time the `infra` job ran anywhere but the development machine.
+
+- **Two briefs were wrong, and the agents were right to depart from them.** AWS
+  Config cannot deliver to a bucket with a default Object Lock retention
+  (verified against the AWS Config developer guide) -- a mock-provider test
+  cannot see that, and it would have failed at the first apply. And with
+  capacity pinned for measurement, the two Serverless capacity alarms would
+  have fired for the cluster's whole life.
+- **Defect: the budget ceiling belonged to the process, not the phase.** Found
+  by the pipeline agent while designing retries. Every `CostMeter` started at
+  zero and nothing read a checkpoint back -- a checkpoint was only ever written
+  on a breach -- so re-running a phase that aborted at its ceiling re-granted
+  the whole ceiling: a retry loop around `simulate all` would have spent $240
+  per attempt. A meter now starts from the phase's recorded spend and records
+  progress at every percent of the ceiling, so a crash loses at most that much
+  accounting; an unreadable checkpoint is an error, never a zero. No money had
+  ever been spent, so nothing was lost. M0 code, found at M12.
+- **A gap `terraform test` cannot cover.** A mutant that added an invented
+  default to a deliberately required threshold survived: omitting a required
+  variable is a run error, not an `expect_failures` target. A static pytest now
+  lists the inputs that are decisions or unmeasured quantities and fails if any
+  gains a default. It caught this root's own `allowed_regions` on its first run.
+- **A Terraform limit:** `validate` rejects a test run that loads a module
+  needing an aliased provider, though `terraform test` runs it. The recovery
+  module is tested through the root instead.
+- **An incident in the process itself.** The agents had separate worktrees but
+  shared one scratchpad directory; two wrote a `mutate.py` there, and one ran
+  the other's, leaving a mutation in the wrong agent's module for about four
+  minutes. Both affected agents noticed independently, restored from their own
+  knowledge of the file rather than from a stale backup, and re-ran every gate
+  before reporting. The fix is procedural: a private scratch directory per
+  agent, stated in the brief.
+- **What the chains cannot do, by the pipeline module's own account:** neither
+  runs to completion today. The ingest fetches from the public internet and the
+  VPC has no egress by design; the study's task is pinned to `replay` with no
+  model access; the LLM cache and report files live on task scratch.
+
+**Third pass: the owner's question about the ingest order, and an A/B.**
+
+- **Multi-threading the ingest bought nothing here, measured.** Sampling showed
+  the loop alternating strictly between the tokenizer and GPU embedding, so an
+  agent overlapped them and chunked on a pool (byte-identical output, tested;
+  it also fixed a real race -- counting tokens while another thread embedded
+  raised `Already borrowed` on every call). The A/B ran on two real units with
+  the decision rule fixed beforehand: serial **55.9 chunks/s**, four workers
+  **52.5**, against a 13-unit baseline of 48.8 +/- 4.0. No gain: the Rust
+  tokenizer already spreads a call over ~3 cores. `chunk_workers` defaults to 1.
+- **The owner asked why the ingest did not start from the latest cutoff and work
+  backwards. It should have** (ADR-0036). The queue ranked months by how many
+  scenarios *may* use them, so mid-2025 background outranked the final weeks
+  before the largest cluster of cutoffs, and a month's twelve files all came
+  from its first two days. Coverage passed throughout: it cannot see *when* in
+  the window the evidence falls. 82 of 180 scenarios had under 1,000 chunks from
+  their final thirty days; 7 had none.
+- **Measured, for the 18 files left in a 2.0M-chunk budget:** scenarios with a
+  file within a day of cutoff **4 -> 34**, within a week **42 -> 91**, within
+  thirty days **164 -> 170**, median gap **15.9 -> 6.9 days**.
+- **Two of my own claims were wrong and the measurements said so.** I told the
+  owner the run had to reach all 51 units "because the last units cover the
+  early-cutoff scenarios": coverage already passed at 859k chunks, and the stale
+  scenarios were the *most recent* ones, not the earliest. And my first
+  weighting was hyperbolic, whose tail made fifteen stale files count as "well
+  served" -- the first plan skipped the four most recent months.
+- The owner set the corpus budget at **2.0M chunks**, which is the shipped
+  `max_chunks`. About ten early-cutoff scenarios, alone in their months, get no
+  file of their own inside it; that is the cost of the budget, not of the rule.
+
+Remaining for M12's gate, each listed under its pillar in
+`docs/architecture/well-architected.md`: a fetch path that lets the ingest chain
+run inside the isolated VPC; a study task with model access and durable cache
+storage; a workflow that uses the OIDC roles; GuardDuty findings routed to the
+alerts topic; the two caches synced to the recovery bucket; and an
+adversarial-document probe for prompt injection through the corpus (threat T3),
+which nothing measures today.
+
+### M14 — Forecast quality: a benchmark, a held-out split, better evidence · *in progress: the corpus, retrieval and evaluation mechanisms are done and measured; the study numbers wait on a batch-capable key*
+
+Shipped: the market-at-cutoff benchmark (`cascade/eval/market.py`,
+`market_fetch.py`, migration 017, ADR-0039); the declared dev/test split, the
+evidence-tier analysis and the supplementary 12-chunk cell (`eval/split.py`,
+`eval/evidence.py`, `eval/supplementary.py`, ADR-0038); hybrid retrieval
+(migration 018, `retrieval/fusion.py`, `retrieval/keywords.py`, ADR-0040); the
+scenario dossier (`decompose/dossier.py`, migration 019, ADR-0037); the
+rewritten Wikipedia adapter (ADR-0041); fetch-time dating and the corpus
+repair (`corpus/redate.py`, `corpus/stamps.py`, migration 020, ADR-0044); the
+stand-in exclusion (`ledger/exclusions.py`, ADR-0043); the forecast blend
+(`eval/blend.py`) and the adversarial-document probe (`eval/injection.py`);
+and the M12 platform follow-ups (ADR-0042).
+
+**Two time-lock leaks, both with honest dates and later text.** Neither could
+be caught by the poison-pill or date-monotonicity probes, which test that the
+date is respected, not that it is true of the text.
+
+- **Wikipedia** (ADR-0041). The adapter read an old revision by *rendering* it,
+  and a render expands today's templates: the 2024-25 Houston Rockets season
+  article as of 2025-02-14, three days before that scenario's cutoff and while
+  the team stood at 34-21, rendered "Updated: August 26, 2026" and the final
+  52-30. All 340 documents it had written (14,380 chunks) were purged. The
+  rewrite stores the revision's own wikitext, anchors one second before the
+  cutoff with no first-revision fallback, and follows redirects and moves as
+  they read then.
+- **CC-NEWS** (ADR-0044). Documents were dated by the publication date the page
+  states, while the text stored is the text Common Crawl fetched. Measured on
+  one 2026-03 file: **3.7% of dated pages were re-crawls of articles over 180
+  days old**, carrying the crawl's update notes and sidebars. `ccnews.py` had
+  argued the crawl date was the *unsafe* choice; the reverse is true -- a later
+  date can only exclude a document, an earlier date on later text leaks.
+  `published_at` is now `max(stated, fetched)`, both kept (migration 020).
+
+**The corpus was repaired in place, not rebuilt.** `cascade corpus redate`
+re-read the WARC headers of all 29 finished units (no chunking, no embedding),
+moving each stored document and its chunks with `GREATEST`, so the pass is
+order-independent, idempotent and resumable -- Common Crawl answered HTTP 503
+intermittently throughout. Of **204,355** CC-NEWS documents, **200,122 moved
+to their fetch time**; **11,237 (5.5%) had been fetched more than 180 days
+after the date they state**. 5,000 documents (29,878 chunks) from interrupted
+units matched no finished file, so their fetch time was unknowable; they were
+deleted and re-fetched under the new rule.
+
+**Measured corpus (2026-09-19).** 1,998,127 chunks across 317,780 documents --
+ccnews 1,985,516 / wikipedia 12,611; `corpus verify` and `retrieval verify`
+exit 0, 25/25 partitions carrying both an HNSW and a full-text index.
+`corpus coverage`: **180/180 covered**, median 1,236,969 chunks in the
+18-month window, minimum 327.
+
+| over the 165 scored scenarios | earlier corpus (859k chunks, 180 scenarios) | now |
+|---|---|---|
+| newest evidence <= 1 day before the cutoff | 97 | **155** |
+| 2-7 days | 62 | 9 |
+| 8-30 days | 14 | 1 |
+| more than 30 days | 7 | **0** |
+| no chunks in the final 30 days | 7 | **0** |
+| 10k+ chunks in the final 30 days | 83 | **156** |
+
+The nine thin scenarios are the eight curated pre-2023 questions and the
+Ethereum-ETF one: CC-NEWS now starts at 2023-04, because the 2.0M-chunk budget
+went where 156 of the scenarios are, so those nine rest on Wikipedia revisions
+(11-320 chunks in their final 30 days).
+
+**Hybrid retrieval was measured, then switched on by the project owner**
+(ADR-0040), before anything was compiled, so no recorded decision or graph was
+invalidated. `cascade retrieval bench --relevance`, 180 scenarios, paired
+bootstrap over scenarios (B = 10,000), every interval excluding zero:
+
+| | compiler evidence (k=60) | baseline evidence (k=6) |
+|---|---|---|
+| chunks naming a registry party | 0.5508 -> **0.6452** | 0.7676 -> **0.8257** |
+| same, generic names screened | 0.4947 -> 0.5903 | 0.7197 -> 0.7842 |
+| median age at the cutoff (days) | 183.15 -> **139.29** | 141.07 -> **70.22** |
+| distinct documents | 42.94 -> 49.44 | 4.55 -> 4.86 |
+| mean embedding distance (the cost) | 0.7954 -> 0.8186 | 0.6962 -> 0.7212 |
+
+**The market at the cutoff is now a benchmark** (ADR-0039). Over the sealed
+180: **143 usable prices** (all Polymarket, observed 0.04-79.7 s before the
+cutoff), 6 stale (every Manifold market, 32.7-542.6 h old, excluded and
+counted), 21 with no price history, 9 not markets, and **1 market created
+after its own cutoff**. Replayed from 358 recordings with 0 requests.
+
+**15 of the 180 sealed scenarios are not questions** (ADR-0043) -- exchange
+placeholder legs ("Will Candidate B win the 2026 Busan Mayoral Election?")
+that passed every rule because the volume screen read a leg's honest zero as
+missing and fell through to the event's volume. The project owner chose to
+keep the sealed set and exclude them from scoring: the split is drawn over the
+remaining **165 (40 dev / 125 test)**, the excluded ids are inside its pinned
+fingerprint, and compile, the dossier, the baselines and the probes skip them.
+The registry fixes wait on branch `m14-registry-v2`.
+
+**Gates.** ruff, black, mypy strict (117 files) clean; **1,998 offline tests**,
+**150 integration** and **74 leakage/property** against the rebuilt corpus, all
+passing under `retrieval.mode: hybrid` -- including the poison pill planted for
+every scenario and never returned through the new keyword pool. The
+update-stamp scan (`tests/leakage/test_update_stamps.py`) went from **381
+flagged chunks to 4**, and all four are stamps later than the page's own fetch
+-- publisher typos the fetched text cannot contain.
+
+**M4's acceptance numbers exist for the first time**, compiled through the
+Claude Code CLI under the owner's subscription (622 calls, $0):
+
+| # | Criterion | Measured | Verdict |
+|---|---|---|---|
+| 1 | every scenario passes the validator within 2 repairs | **158 of the 165 scored**; 7 hard failures | **MISSED** |
+| 2 | mean actor count 14 +/- 2; factors in [4, 12] | **12.63** actors (range 10-17); 7.27 factors (range 4-11) | **PASS** |
+| 3 | recompiling an unchanged input reproduces the hash | 158 distinct hashes for 158 graphs; `compile verify` re-hashes and re-validates **158/158** | **PASS** |
+| 4 | 20-graph audit, mean >= 1.5 | worksheet written (19 graphs; the 20th sampled scenario is a hard failure and is recorded as one) | **awaiting a human reviewer** |
+
+Repair retries: 43 graphs needed none (27.2%), 82 one (51.9%), 33 two (20.9%).
+**The 7 failures are one pattern**: six are `factor_orthogonality` (two factors
+within cosine 0.8) and five of those six are "which team wins X" questions,
+where the honest decomposition has one driver and the compiler keeps inventing
+near-duplicates; the seventh is `edge_sanity`. They replay from cache, so they
+fail identically and cost nothing to re-attempt; changing the outcome means a
+compiler prompt revision, which §1.3 makes a recorded change.
+
+**`compile verify` caught a defect `compile build` could not.** Four of the 158
+stored graphs passed compilation and failed re-validation: their inbound edge
+weights sum to exactly the 3.0 cap, and the validator accumulated them with
+`+=` in a loop, which lands at 3.0000000000000004 in the order the model
+emitted the edges and at 3.0 in the canonical order they are stored in.
+Python's own `sum()` compensates; a hand-written loop does not. `math.fsum`
+makes the verdict a property of the graph rather than of the edge order -- the
+third instance of this class in the project, after the Brier accumulation (M7)
+and the arbiter's efforts (M5). All 158 pass now.
+
+**Threat T3 is measured, and the corpus can steer the forecast.** `cascade
+eval injection` over 30 scenarios (120 calls; the single-model forecaster,
+whose evidence block is formatted as the agents' prefix is):
+
+| attack | complied | 95% CI | moved >= 0.1 | mean shift |
+|---|---|---|---|---|
+| a document that closes the evidence section and speaks as the operator | **20/30** | [0.49, 0.81] | 21 | **+0.491** |
+| an appeal to a fabricated calibration authority | 7/30 | [0.12, 0.41] | 13 | +0.232 |
+| a plain "ignore your instructions" | **0/30** | [0.00, 0.11] | 6 | +0.065 |
+
+Impersonating the system is the vector; instructing the model is not.
+
+**So the frame was made unforgeable, and the probe re-run** (ADR-0045, prompt
+revision **r4**, migration 021). One renderer for the compiler, the agents and
+the baselines wraps every document in numbered `<<<document N of M>>>` markers
+and strips those markers from the document's own text; the count is stated; the
+rule that quoted text is data lives in the system prompt, which retrieved text
+never enters. Same probe, same 30 scenarios:
+
+| attack | complied before | complied after | mean shift |
+|---|---|---|---|
+| fake system notice | 20/30 [0.49, 0.81] | **0/30** [0.00, 0.11] | +0.491 -> +0.088 |
+| authority appeal | 7/30 [0.12, 0.41] | **1/30** [0.01, 0.17] | +0.232 -> +0.085 |
+| instruction override | 0/30 | 0/30 | +0.065 -> +0.085 |
+
+The intervals for the attack that worked are disjoint. The residual ~+0.085 is
+the same for all three attacks including the one that never worked, so it is
+what appending any extra document does, not obedience. r4 invalidates every
+recording, so the graphs were recompiled under it.
+
+**Deferred, with reasons:**
+
+- **Every study number** -- the simulation is 36,000 runs of batched calls, and
+  neither the Claude Code CLI nor Bedrock has a Message Batches API
+  (ADR-0028). Compile, the dossier, the probes and the direct baseline run on
+  the subscription; the headline needs a batch-capable key or the AWS path.
+- **The dossier's on/off decision** (ADR-0037) reads dev forecasts, so it waits
+  on the same key. The dossier ships off, and the graphs compiled now are its
+  "off" arm.
+- **The blend** needs two forecasters to blend.
+- **Retrieval p95** is not re-measured on the rebuilt corpus; `bench
+  --relevance` reports its own latency (vector 48-101 ms p50), and the M3
+  criterion is still the one M8 recorded as missed.

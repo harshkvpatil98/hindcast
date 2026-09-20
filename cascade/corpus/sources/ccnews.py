@@ -7,14 +7,17 @@ often refuse.
 
 Two decisions here are load-bearing.
 
-**The date is extracted from the page, never from the crawl.** A WARC record
-carries ``WARC-Date``, which is when Common Crawl fetched the page -- typically
-hours to days after publication, and occasionally much longer. Using it would
-be exactly the "inferred date" §3.2 forbids, and it errs in the unsafe
-direction: an article would be dated *later* than it was knowable, so a
-cutoff that should have excluded it might not. Instead the publication date is
-read from the document's own metadata, and a page that does not state one is
-dropped.
+**A document is dated by when its text was knowable** (ADR-0044): the later
+of the publication date the page states and ``WARC-Date``, when Common Crawl
+fetched it. The stated date is read from the page's own metadata, and a page
+that states none is dropped -- the crawl is not a publication date. But the
+text stored is the text *fetched*, and a page can change after the date it
+states: measured on a 2026 file, 3.7% of dated pages were re-crawls of
+articles over 180 days old, carrying update notes and sidebars from the crawl.
+The first version of this module argued the reverse -- that the crawl date
+"errs in the unsafe direction" -- which was wrong: a later date excludes a
+document from more cutoffs and can never leak; an earlier date on later text
+is what leaks.
 
 **WARC parsing is stdlib-only.** The pinned stack (spec §2.3) has no WARC
 library, and adding one would be a substitution requiring an ADR. The format
@@ -42,6 +45,7 @@ __all__ = [
     "month_paths",
     "split_unit",
     "unit_keys",
+    "warc_date",
 ]
 
 DATA_URL = "https://data.commoncrawl.org"
@@ -66,6 +70,26 @@ _DATE_PATTERNS: tuple[re.Pattern[bytes], ...] = (
 )
 
 _WARC_TARGET = re.compile(rb"^WARC-Target-URI:\s*(.+?)\s*$", re.I | re.M)
+_WARC_DATE = re.compile(rb"^WARC-Date:\s*(\S+)\s*$", re.I | re.M)
+
+
+def warc_date(header: bytes) -> datetime | None:
+    """The record's ``WARC-Date``, aware, or ``None`` when absent or unreadable.
+
+    Preserves the direction of the time lock: a record whose fetch time cannot
+    be read is dated by what it states alone, as before this rule existed --
+    never by a guessed fetch time.
+    """
+    match = _WARC_DATE.search(header)
+    if match is None:
+        return None
+    try:
+        parsed = datetime.fromisoformat(match.group(1).decode("ascii").replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo is not None else None
+
+
 _WARC_TYPE = re.compile(rb"^WARC-Type:\s*(.+?)\s*$", re.I | re.M)
 _CONTENT_LENGTH = re.compile(rb"^Content-Length:\s*(\d+)\s*$", re.I | re.M)
 
@@ -259,5 +283,6 @@ def load_warc(fetcher: Fetcher, *, path: str, max_records: int) -> Iterator[RawD
                 title="",
                 body=body,
                 published_at=published,
+                crawled_at=warc_date(header),
             )
             seen += 1

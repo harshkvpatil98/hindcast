@@ -236,9 +236,17 @@ def _check_edge_sanity(graph: CausalGraph) -> list[Violation]:
             )
         )
 
-    inbound: dict[str, float] = {factor.id: 0.0 for factor in graph.factors}
-    for edge in graph.edges:
-        inbound[edge.dst] += edge.weight
+    # Exactly rounded, because the verdict must not depend on the order the
+    # edges arrive in. A graph whose inbound weights sum to exactly the cap --
+    # 0.9 + 0.8 + 0.7 + 0.6, which models emit often -- adds to
+    # 3.0000000000000004 in one order and 3.0 in another, so the compiler
+    # accepted it in the model's emission order and `compile verify` rejected
+    # the same graph read back in canonical order. Measured: 4 of 158 stored
+    # graphs. Same fix as the Brier accumulation (M7) and the arbiter's (M5).
+    inbound: dict[str, float] = {
+        factor.id: math.fsum(edge.weight for edge in graph.edges if edge.dst == factor.id)
+        for factor in graph.factors
+    }
     overloaded = sorted(
         f"{factor}={total:.2f}"
         for factor, total in sorted(inbound.items())
