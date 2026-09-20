@@ -4719,6 +4719,56 @@ def eval_prompt_audit(
     )
 
 
+@eval_app.command("guardrails")
+def eval_guardrails(
+    config: OverlayOpt = None,
+    limit: Annotated[
+        int | None,
+        typer.Option("--limit", help="Audit only the first N graphs by scenario id."),
+    ] = None,
+) -> None:
+    """Audit what a Bedrock Guardrail *would* do to the compiled graphs (ADR-0050).
+
+    A post-hoc audit, never a filter. ADR-0030 deferred guardrails partly
+    because an unmeasured control that alters one decomposition changes the
+    experiment; a filter in the compile path could not settle that, because
+    the graph it changed would be the only graph that ever existed. Reading
+    stored graphs settles it either way.
+
+    Exit codes follow what the verdict means rather than what it counts.
+    **0** for `clear`, and also for `not_assessed` when no guardrail is
+    configured -- the study runs without one, and exiting non-zero would make
+    an optional control mandatory by accident. **3** for `confound`, which
+    says the control cannot be applied, and equally for `incomplete`, which
+    says we do not know: an outage that exited 0 would pass as a check.
+    """
+    from cascade.eval.guardrails import run_audit
+
+    settings = _settings(config)
+    audit = run_audit(settings)
+    assessments = audit.assessments[:limit] if limit is not None else audit.assessments
+
+    table = Table(title="Bedrock Guardrail audit (ADR-0050)")
+    table.add_column("Scenario", style="cyan")
+    table.add_column("assessed", justify="right")
+    table.add_column("action")
+    table.add_column("policies / error", overflow="fold")
+    for item in assessments:
+        result = item.result
+        table.add_row(
+            item.scenario_id,
+            "yes" if item.assessed else "no",
+            result.action if result is not None else "-",
+            ", ".join(result.policies) if result is not None else item.error,
+        )
+    if assessments:
+        console.print(table)
+    console.print(audit.headline)
+
+    if audit.verdict in ("confound", "incomplete"):
+        _fail(audit.headline, EXIT_PRECONDITION)
+
+
 @eval_app.command("equivalence")
 def eval_equivalence(
     config: OverlayOpt = None,
