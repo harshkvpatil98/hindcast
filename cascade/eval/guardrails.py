@@ -52,14 +52,14 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Literal, Protocol
+from typing import Literal
 
 from cascade.config import Settings
 from cascade.decompose.schema import CausalGraph, graph_hash
+from cascade.llm.types import SOURCE, GuardrailScreen, ScreenResult
 
 __all__ = [
     "SOURCE",
-    "BedrockGuardrail",
     "GraphAssessment",
     "GuardrailAudit",
     "GuardrailScreen",
@@ -77,9 +77,6 @@ __all__ = [
 # botocore service model for `bedrock-runtime`). A compiled graph is what the
 # compiler emitted, so it is screened as OUTPUT; screening it as INPUT would
 # apply the prompt-attack filters to text no user ever sent.
-SOURCE = "OUTPUT"
-
-GuardrailAction = Literal["NONE", "GUARDRAIL_INTERVENED"]
 
 Verdict = Literal["not_assessed", "incomplete", "clear", "confound"]
 
@@ -97,38 +94,6 @@ class TextSegment:
 
     path: str
     text: str
-
-
-@dataclass(frozen=True, slots=True)
-class ScreenResult:
-    """What a guardrail said about one graph's text.
-
-    ``action`` is the service's own vocabulary rather than a boolean, so a
-    third action added by the provider later cannot be silently folded into
-    "not flagged" -- which is the direction that would quietly turn an
-    unmeasured confound back into a clean result.
-    """
-
-    action: GuardrailAction
-    reason: str = ""
-    policies: tuple[str, ...] = ()
-
-
-class GuardrailScreen(Protocol):
-    """The one seam that reaches a guardrail service.
-
-    Narrow on purpose. ADR-0030 refused guardrails partly because
-    ``ApplyGuardrail`` would be a second model-adjacent egress outside
-    ``cascade/llm/client.py``, and a single-method protocol is what lets that
-    egress move there without touching the audit or its tests. Everything
-    above this line is pure and screens nothing itself.
-    """
-
-    def screen(self, *, text: str) -> ScreenResult:
-        """Screen one payload. Raises on a service failure; never returns a
-        default -- an unreachable guardrail must reach the audit as *not
-        assessed*, never as *nothing flagged*."""
-        ...  # pragma: no cover -- protocol
 
 
 @dataclass(frozen=True, slots=True)
@@ -401,120 +366,6 @@ def audit_graphs(
     )
 
 
-@dataclass(frozen=True, slots=True)
-class BedrockGuardrail:
-    """``ApplyGuardrail`` through boto3 -- the only thing here that egresses.
-
-    Provisional placement. ADR-0030's objection to guardrails was that this
-    call is a second model-adjacent path outside ``cascade/llm/client.py``,
-    and that objection is not answered by putting it in a different package.
-    It is kept behind :class:`GuardrailScreen`, in one dataclass with one
-    method, so that moving it beside ``RecordedReranker`` -- which lives in
-    the client for exactly this reason (ADR-0047) -- changes an import and
-    nothing else. ADR-0050 records that as the intended destination.
-
-    Routing is explicit and identity is ambient (ADR-0028): the region,
-    profile and endpoint come from ``providers.bedrock``, and credentials come
-    from the standard AWS chain. A stray ``AWS_REGION`` in someone's shell
-    cannot decide where this call lands.
-
-    The request shape is read from the installed botocore service model for
-    ``bedrock-runtime`` rather than from memory: ``guardrailIdentifier``,
-    ``guardrailVersion``, ``source`` and ``content`` are its four required
-    members, and ``content`` is a list of tagged unions whose text arm is
-    ``{"text": {"text": ...}}``.
-    """
-
-    client: Any
-    guardrail_id: str
-    guardrail_version: str
-
-    @classmethod
-    def from_settings(cls, settings: Settings) -> BedrockGuardrail:
-        """Build from ``providers.bedrock``, or refuse by naming what is missing.
-
-        Refuses rather than defaulting. A guardrail id guessed from a partial
-        configuration would produce an audit of something nobody chose, and
-        ``ResourceNotFoundException`` on 180 graphs reads as an outage rather
-        than as a configuration error.
-        """
-        bedrock = settings.providers.bedrock
-        missing = sorted(
-            name
-            for name, value in (
-                ("providers.bedrock.guardrail_id", bedrock.guardrail_id),
-                ("providers.bedrock.guardrail_version", bedrock.guardrail_version),
-                ("providers.bedrock.region", bedrock.region),
-            )
-            if not value
-        )
-        if missing:
-            raise ValueError("cannot reach a Bedrock Guardrail: " + ", ".join(missing) + " not set")
-        import boto3
-
-        session = boto3.session.Session(
-            profile_name=bedrock.profile or None,
-            region_name=bedrock.region,
-        )
-        # `providers.bedrock.base_url` is deliberately NOT passed as
-        # `endpoint_url`. It is the Anthropic-compatible Mantle endpoint
-        # (`bedrock-mantle.{region}.api.aws/anthropic`, `llm/providers.py`),
-        # which serves the Messages API and not `ApplyGuardrail`; handing it to
-        # a `bedrock-runtime` client would send every screening request to a
-        # service that does not implement the operation, and the resulting
-        # 404s would arrive in the audit as 180 errors -- an outage, which is
-        # the one verdict hardest to tell from a configuration mistake.
-        # Routing stays explicit because the region is passed explicitly and
-        # the endpoint is a documented function of it (ADR-0028).
-        return cls(
-            client=session.client("bedrock-runtime", region_name=bedrock.region),
-            guardrail_id=str(bedrock.guardrail_id),
-            guardrail_version=str(bedrock.guardrail_version),
-        )
-
-    def screen(self, *, text: str) -> ScreenResult:
-        """One ``ApplyGuardrail`` call. Raises on anything but an answer.
-
-        Preserves the rule that an unanswered graph is unassessed: every
-        failure propagates to :func:`audit_graphs`, which records it as an
-        error rather than as a clean result. An unrecognised ``action`` also
-        raises, because the two documented values are the audit's whole
-        vocabulary and a third one silently read as NONE would understate a
-        confound.
-        """
-        response = self.client.apply_guardrail(
-            guardrailIdentifier=self.guardrail_id,
-            guardrailVersion=self.guardrail_version,
-            source=SOURCE,
-            content=[{"text": {"text": text}}],
-        )
-        action = str(response.get("action", ""))
-        if action not in ("NONE", "GUARDRAIL_INTERVENED"):
-            raise ValueError(
-                f"ApplyGuardrail returned action {action!r}, which this audit does not "
-                "recognise; treating it as 'not flagged' would understate a confound"
-            )
-        # The assessment object's policy members are the six the service model
-        # names, all suffixed "Policy"; its other members (`invocationMetrics`,
-        # `appliedGuardrailDetails`) are bookkeeping and would read as policies
-        # that fired.
-        assessments = response.get("assessments") or []
-        policies = sorted(
-            {
-                str(key)
-                for assessment in assessments
-                if isinstance(assessment, dict)
-                for key in sorted(assessment)
-                if str(key).endswith("Policy") and assessment.get(key)
-            }
-        )
-        return ScreenResult(
-            action="GUARDRAIL_INTERVENED" if action == "GUARDRAIL_INTERVENED" else "NONE",
-            reason=str(response.get("actionReason") or ""),
-            policies=tuple(policies),
-        )
-
-
 def run_audit(
     settings: Settings,
     *,
@@ -539,6 +390,8 @@ def run_audit(
     loaded = tuple(graphs) if graphs is not None else load_graphs(settings, role="eval")
     bedrock = settings.providers.bedrock
     if screen is None and bedrock.guardrail_id:
+        from cascade.llm.client import BedrockGuardrail
+
         screen = BedrockGuardrail.from_settings(settings)
     return audit_graphs(
         loaded,

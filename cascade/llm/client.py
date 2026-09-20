@@ -46,6 +46,7 @@ from cascade.llm.meter import CostMeter
 from cascade.llm.providers import client_kwargs, readiness_problems, render_model, spec_for
 from cascade.llm.tracing import Tracer, null_tracer
 from cascade.llm.types import (
+    SOURCE,
     BatchFailed,
     BatchItem,
     CachedCall,
@@ -55,6 +56,7 @@ from cascade.llm.types import (
     LLMResult,
     PromptTooShortToCache,
     ProviderNotReady,
+    ScreenResult,
     Usage,
 )
 from cascade.retrieval.rerank import LexicalReranker, RerankError, rerank_cache_key
@@ -65,6 +67,7 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
 __all__ = [
     "BATCH_MAX_REQUESTS",
     "RERANK_BILLING_KIND",
+    "BedrockGuardrail",
     "BedrockReranker",
     "CliCompleted",
     "CliRunner",
@@ -1251,3 +1254,121 @@ def _recorded_scores(recorded: CachedCall, *, expected: int, key: str) -> list[f
             f"score(s) for a pool of {expected}; the recording does not describe this call"
         )
     return [float(value) for value in raw]
+
+
+@dataclass(frozen=True, slots=True)
+class BedrockGuardrail:
+    """``ApplyGuardrail`` through boto3 -- the only thing here that egresses.
+
+    Here, and not in ``cascade/eval/``, because ADR-0030's objection to
+    guardrails was precisely that ``ApplyGuardrail`` is a second
+    model-adjacent path outside this module -- and that objection is not
+    answered by putting it in a different package. It sits beside
+    ``RecordedReranker``, which is here for the same reason (ADR-0047), and
+    behind :class:`~cascade.llm.types.GuardrailScreen`, so the audit that uses
+    it imports a protocol and never this class.
+
+    Invariant 5 is enforced for this by ``tests/unit/test_invariants.py``,
+    which now refuses a boto3 client for a model-serving service anywhere but
+    here; observability and database clients are unaffected.
+
+    Routing is explicit and identity is ambient (ADR-0028): the region,
+    profile and endpoint come from ``providers.bedrock``, and credentials come
+    from the standard AWS chain. A stray ``AWS_REGION`` in someone's shell
+    cannot decide where this call lands.
+
+    The request shape is read from the installed botocore service model for
+    ``bedrock-runtime`` rather than from memory: ``guardrailIdentifier``,
+    ``guardrailVersion``, ``source`` and ``content`` are its four required
+    members, and ``content`` is a list of tagged unions whose text arm is
+    ``{"text": {"text": ...}}``.
+    """
+
+    client: Any
+    guardrail_id: str
+    guardrail_version: str
+
+    @classmethod
+    def from_settings(cls, settings: Settings) -> BedrockGuardrail:
+        """Build from ``providers.bedrock``, or refuse by naming what is missing.
+
+        Refuses rather than defaulting. A guardrail id guessed from a partial
+        configuration would produce an audit of something nobody chose, and
+        ``ResourceNotFoundException`` on 180 graphs reads as an outage rather
+        than as a configuration error.
+        """
+        bedrock = settings.providers.bedrock
+        missing = sorted(
+            name
+            for name, value in (
+                ("providers.bedrock.guardrail_id", bedrock.guardrail_id),
+                ("providers.bedrock.guardrail_version", bedrock.guardrail_version),
+                ("providers.bedrock.region", bedrock.region),
+            )
+            if not value
+        )
+        if missing:
+            raise ValueError("cannot reach a Bedrock Guardrail: " + ", ".join(missing) + " not set")
+        import boto3
+
+        session = boto3.session.Session(
+            profile_name=bedrock.profile or None,
+            region_name=bedrock.region,
+        )
+        # `providers.bedrock.base_url` is deliberately NOT passed as
+        # `endpoint_url`. It is the Anthropic-compatible Mantle endpoint
+        # (`bedrock-mantle.{region}.api.aws/anthropic`, `llm/providers.py`),
+        # which serves the Messages API and not `ApplyGuardrail`; handing it to
+        # a `bedrock-runtime` client would send every screening request to a
+        # service that does not implement the operation, and the resulting
+        # 404s would arrive in the audit as 180 errors -- an outage, which is
+        # the one verdict hardest to tell from a configuration mistake.
+        # Routing stays explicit because the region is passed explicitly and
+        # the endpoint is a documented function of it (ADR-0028).
+        return cls(
+            client=session.client("bedrock-runtime", region_name=bedrock.region),
+            guardrail_id=str(bedrock.guardrail_id),
+            guardrail_version=str(bedrock.guardrail_version),
+        )
+
+    def screen(self, *, text: str) -> ScreenResult:
+        """One ``ApplyGuardrail`` call. Raises on anything but an answer.
+
+        Preserves the rule that an unanswered graph is unassessed: every
+        failure propagates to :func:`audit_graphs`, which records it as an
+        error rather than as a clean result. An unrecognised ``action`` also
+        raises, because the two documented values are the audit's whole
+        vocabulary and a third one silently read as NONE would understate a
+        confound.
+        """
+        response = self.client.apply_guardrail(
+            guardrailIdentifier=self.guardrail_id,
+            guardrailVersion=self.guardrail_version,
+            source=SOURCE,
+            content=[{"text": {"text": text}}],
+        )
+        action = str(response.get("action", ""))
+        if action not in ("NONE", "GUARDRAIL_INTERVENED"):
+            raise ValueError(
+                f"ApplyGuardrail returned action {action!r}, which this audit does not "
+                "recognise; treating it as 'not flagged' would understate a confound"
+            )
+        # The assessment object's policy members are the six the service model
+        # names, all suffixed "Policy"; its other members (`invocationMetrics`,
+        # `appliedGuardrailDetails`) are bookkeeping and would read as policies
+        # that fired.
+        assessments = response.get("assessments") or []
+        policies = sorted(
+            {
+                str(key)
+                for assessment in assessments
+                if isinstance(assessment, dict)
+                for key in sorted(assessment)
+                if str(key).endswith("Policy") and assessment.get(key)
+            }
+        )
+        return ScreenResult(
+            action="GUARDRAIL_INTERVENED" if action == "GUARDRAIL_INTERVENED" else "NONE",
+            reason=str(response.get("actionReason") or ""),
+            policies=tuple(policies),
+        )

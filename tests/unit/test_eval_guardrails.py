@@ -34,17 +34,16 @@ import pytest
 from cascade.config import Settings
 from cascade.decompose.schema import CausalGraph, graph_hash
 from cascade.eval.guardrails import (
-    SOURCE,
-    BedrockGuardrail,
     GraphAssessment,
     GuardrailAudit,
-    ScreenResult,
     audit_graphs,
     graph_text,
     run_audit,
     screen_payload,
     summarise,
 )
+from cascade.llm.client import BedrockGuardrail
+from cascade.llm.types import SOURCE, ScreenResult
 from tests.conftest import make_actor, make_graph
 
 MODULE = Path(__file__).resolve().parents[2] / "cascade" / "eval" / "guardrails.py"
@@ -410,11 +409,29 @@ def test_the_messages_endpoint_is_not_handed_to_a_bedrock_runtime_client() -> No
     client at it would produce 180 failures that read as an outage rather than
     as a configuration mistake -- the one verdict hardest to diagnose. Asserted
     over the source because there is no account here to route anything at.
+
+    Scoped to the class rather than to its module: `BedrockGuardrail` now
+    lives in `cascade/llm/client.py` (ADR-0050, integrated at M15), where
+    other providers legitimately do set an endpoint.
     """
-    source = MODULE.read_text(encoding="utf-8")
-    assert "endpoint_url=" not in source
-    assert "endpoint_url =" not in source
-    assert 'session.client("bedrock-runtime", region_name=bedrock.region)' in source
+    from pathlib import Path
+
+    import cascade.llm.client as client_module
+
+    source = Path(client_module.__file__).read_text(encoding="utf-8")
+    start = source.index("class BedrockGuardrail")
+    klass = source[start:]
+    end = klass.find("\n\n\nclass ")
+    if end != -1:
+        klass = klass[:end]
+
+    # The assignment form, not the bare word: the class names `endpoint_url`
+    # in the comment that explains why it is deliberately not passed, and an
+    # assertion that removed the explanation along with the defect would be
+    # the wrong kind of strict.
+    assert "endpoint_url=" not in klass
+    assert "endpoint_url =" not in klass
+    assert 'session.client("bedrock-runtime", region_name=bedrock.region)' in klass
 
 
 # ---------------------------------------------------------------------------

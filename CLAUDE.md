@@ -64,7 +64,13 @@ enforces 1, 5 and 7 statically.
 5. **One LLM call site**: `cascade/llm/client.py`. A grep for the Anthropic SDK
    import anywhere else fails CI. It is also the only place the Claude Code CLI
    is run, so every provider's calls are cached, metered and traced alike
-   (ADR-0028, ADR-0031).
+   (ADR-0028, ADR-0031). **And the only place a `boto3` client for a
+   model-serving AWS service may be built** — `bedrock`, `bedrock-runtime`,
+   `bedrock-agent-runtime`, `sagemaker-runtime`. The SDK grep said nothing
+   about `boto3`, so a module could reach `ApplyGuardrail` or `Rerank` with CI
+   green; that is the second door ADR-0030 refused a guardrail over, and it was
+   unguarded until M15. CloudWatch Logs and RDS are deliberately out of scope:
+   they are reached elsewhere and no model is behind them.
 6. **The event log is append-only.** No `UPDATE`, no `DELETE`, ever.
 7. **All iteration over collections is sorted.** Dict/set iteration order is a
    nondeterminism vector.
