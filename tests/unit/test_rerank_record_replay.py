@@ -11,12 +11,15 @@ the inner reranker, which is asserted with one that raises if called.
 from __future__ import annotations
 
 from collections.abc import Sequence
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
 
+from cascade.config import Settings
 from cascade.llm.cache import CallCache
 from cascade.llm.client import RecordedReranker
+from cascade.llm.meter import CostMeter
 from cascade.llm.types import CachedCall, CacheMiss, Usage
 from cascade.retrieval.rerank import RerankError, rerank_cache_key
 
@@ -138,6 +141,71 @@ class TestACorruptedRecordingIsRefused:
         replay = RecordedReranker(inner=ExplodingReranker(), cache=cache, mode="replay")
         with pytest.raises(RerankError, match="holds no score"):
             replay.score(query="q", documents=DOCS)
+
+
+class TestTheMeterSeesTheRerankCacheButNotAsModelCalls:
+    """Per-query accounting, which the wrapper is the only place that can do.
+
+    A hit is booked here because this is the only place that knows one
+    happened; a miss is booked by the inner reranker, because that is where a
+    provider is reached and a local one costs nothing to reach. The two paths
+    are disjoint, so one meter serves both without double-counting.
+    """
+
+    def _meter(self, settings: Settings) -> CostMeter:
+        return CostMeter(settings, "bench", ceiling_usd=Decimal("1000"))
+
+    def test_a_miss_on_a_local_reranker_books_nothing_at_all(
+        self, cache: CallCache, settings: Settings
+    ) -> None:
+        meter = self._meter(settings)
+        wrapper = RecordedReranker(
+            inner=CountingReranker(), cache=cache, mode="record", meter=meter
+        )
+        wrapper.score(query="q", documents=DOCS)
+
+        assert meter.total_usd == Decimal(0)
+        assert meter.units == {}
+        assert meter.cached_units == {}
+
+    def test_a_hit_is_counted_at_zero(self, cache: CallCache, settings: Settings) -> None:
+        # A study replayed end to end would otherwise report no rerank activity
+        # at all, and the count is what says whether the recorded corpus covers
+        # the pools this run asked for.
+        RecordedReranker(inner=CountingReranker(), cache=cache, mode="record").score(
+            query="q", documents=DOCS
+        )
+        meter = self._meter(settings)
+        replay = RecordedReranker(
+            inner=ExplodingReranker(), cache=cache, mode="replay", meter=meter
+        )
+        replay.score(query="q", documents=DOCS)
+
+        assert meter.cached_units == {"rerank": 1}
+        assert meter.total_usd == Decimal(0)
+
+    def test_a_rerank_hit_is_not_a_model_cache_hit(
+        self, cache: CallCache, settings: Settings
+    ) -> None:
+        # `hit_rate` is the M6 acceptance criterion's ratio, measured over
+        # decisions. A second kind of call entering its denominator would move
+        # the criterion without changing anything it measures.
+        RecordedReranker(inner=CountingReranker(), cache=cache, mode="record").score(
+            query="q", documents=DOCS
+        )
+        meter = self._meter(settings)
+        RecordedReranker(inner=ExplodingReranker(), cache=cache, mode="replay", meter=meter).score(
+            query="q", documents=DOCS
+        )
+
+        assert meter.cached_calls == 0
+        assert meter.hit_rate == 0.0
+
+    def test_a_wrapper_without_a_meter_still_scores(self, cache: CallCache) -> None:
+        # The leakage probes and the property tests wrap rerankers without
+        # measuring spend; needing a meter to do so would make them carry one.
+        wrapper = RecordedReranker(inner=CountingReranker(), cache=cache, mode="record")
+        assert list(wrapper.score(query="q", documents=DOCS)) == [5.0, 9.0, 17.0]
 
 
 class TestTheWrapperIsNotAModel:
