@@ -215,7 +215,7 @@ cascade trace cost         # §12.4: reconcile the run ledger against Langfuse
 
 ## 7. Architecture decisions
 
-Forty-four ADRs in `docs/adr/` on this branch; 0032 (live mode, proposed) lives on `m13/live-mode`. Fifteen correct defects found in the spec,
+Forty-five ADRs in `docs/adr/` on this branch; 0032 (live mode, proposed) lives on `m13/live-mode`. Fifteen correct defects found in the spec,
 and 0023, 0025 and 0026 correct defects found in **this build** -- an ingest order
 that satisfied every criterion while covering the wrong years, and two ablation
 factors that were configured, documented and inert. The rest record choices the
@@ -267,6 +267,7 @@ spec left open.
 | 0043 | **Found here.** 15 of 180 sealed scenarios are exchange placeholder legs; the owner kept the sealed set, and they are excluded from scoring before the split is drawn, inside its pin | M14 |
 | 0044 | **Found here.** A document is dated by when its text was knowable, `max(stated, fetched)`: CC-NEWS pages were dated by the date they state while the stored text was the later fetch (3.7% of a 2026 file re-crawled >180 days after publication). *Corrects 0010* | M14 |
 | 0045 | **Measured, then closed.** A document that impersonated a system notice was obeyed on 20 of 30 scenarios (mean shift +0.491); quoting every document in a frame the renderer strips from its own text, with the rule in the system prompt, takes it to 0 of 30. Prompt revision r4 | M14 |
+| 0046 | A published report carries the labels (`baselines.csv` is one row per scenario with its outcome), so it lands in a private, versioned, Object-Locked bucket that the study task can write and not read, and a CloudFront site is rejected; a restore role three controls keep off its own source; the tier-0 archive keyed by the seal it belongs to | M12 |
 
 ---
 
