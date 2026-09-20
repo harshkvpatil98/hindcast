@@ -5621,6 +5621,18 @@ def trace_cost(
     config_id: Annotated[
         str | None, typer.Option("--config-id", help="Restrict to one configuration.")
     ] = None,
+    since: Annotated[
+        str | None,
+        typer.Option(
+            "--since",
+            help="ISO-8601 lower bound, inclusive, with an explicit timezone "
+            "(e.g. 2026-09-01T00:00:00Z).",
+        ),
+    ] = None,
+    until: Annotated[
+        str | None,
+        typer.Option("--until", help="ISO-8601 upper bound, exclusive, with an explicit timezone."),
+    ] = None,
 ) -> None:
     """Reconcile the run ledger against every other record of the spend (§12.4).
 
@@ -5636,10 +5648,23 @@ def trace_cost(
     equally for an unreachable source and for a vacuous comparison -- "we could
     not check" and "there was nothing to check" are not "we checked".
     """
-    from cascade.trace.ledger import reconcile
+    from cascade.trace.ledger import parse_bound, reconcile
 
     settings = _settings(config)
-    result = reconcile(settings, config_id=config_id)
+    # Parsed here rather than by typer: click's `DateTime` yields a *naive*
+    # datetime, and a naive bound is compared in whatever zone the machine
+    # happens to be in -- the same failure invariant 1 refuses for `as_of`.
+    # `parse_bound` raises with the option named, which is the one place a
+    # command line crosses into the window.
+    try:
+        result = reconcile(
+            settings,
+            config_id=config_id,
+            since=parse_bound(since, field="--since") if since else None,
+            until=parse_bound(until, field="--until") if until else None,
+        )
+    except ValueError as exc:
+        _fail(str(exc), EXIT_PRECONDITION)
 
     table = Table(title="Cost ledger reconciliation (spec §12.4)")
     table.add_column("Source", style="cyan")
