@@ -50,6 +50,7 @@ __all__ = [
     "build_invocation",
     "parse_cli_output",
     "to_messages_payload",
+    "wire_schema",
 ]
 
 # Request fields the CLI cannot honour. Reported by `cascade doctor` and in the
@@ -102,6 +103,51 @@ def _system_text(system: str | list[dict[str, Any]] | None) -> str:
     return "\n\n".join(parts)
 
 
+# Keywords `claude -p`'s strict-mode validator refuses. Kept as a set rather
+# than stripped inline so the next one found has an obvious home.
+_UNSUPPORTED_SCHEMA_KEYWORDS = frozenset({"discriminator"})
+
+
+def wire_schema(schema: Any) -> Any:
+    """Strip keywords the CLI's schema validator refuses. Pure.
+
+    Measured, not guessed: `claude -p` rejects the agent's action tool with
+    ``--json-schema is not a valid JSON Schema: strict mode: unknown keyword:
+    "discriminator"``. Its validator runs in a strict mode that treats an
+    unrecognised keyword as an error rather than ignoring it, and Pydantic
+    emits ``discriminator`` for a tagged union -- which the action space is,
+    over the seven §7.4 action types.
+
+    This is why the compiler ran on a subscription and the agents could not:
+    ``DRAFT_TOOL`` is a plain object and carries no discriminator, while
+    ``ACTION_TOOL`` does. The failure was one call into the first step of the
+    first run, having spent nothing, which is the one thing to be glad of.
+
+    **Dropping it is lossless, and that is the whole argument.**
+    ``discriminator`` is an OpenAPI dispatch hint layered on top of
+    ``oneOf``: it tells a reader which branch to try first, and removes no
+    constraint if absent, because every branch still carries its own ``type``
+    literal and validation is unchanged. A model reading the stripped schema
+    sees the same set of admissible actions.
+
+    Applied at the wire boundary and nowhere else, on the ADR-0007 precedent
+    that a provider-shaped rendering must not reach the cache key: the key is
+    computed from the request, so two providers serving one request still
+    resolve the same recording. ``claude_code`` additionally records in its
+    own namespace (ADR-0031), so the stripped form cannot be served to an API
+    provider even by accident.
+    """
+    if isinstance(schema, dict):
+        return {
+            key: wire_schema(value)
+            for key, value in sorted(schema.items())
+            if key not in _UNSUPPORTED_SCHEMA_KEYWORDS
+        }
+    if isinstance(schema, list):
+        return [wire_schema(item) for item in schema]
+    return schema
+
+
 def build_invocation(request: LLMRequest, *, executable: str, model: str) -> CliInvocation:
     """The process that serves ``request`` through the CLI. Pure.
 
@@ -142,7 +188,7 @@ def build_invocation(request: LLMRequest, *, executable: str, model: str) -> Cli
             raise UnsupportedRequestShape(
                 f"tool_choice names {choice.get('name')!r} but the only tool is {forced!r}"
             )
-        argv += ["--json-schema", canonical_json(tool["input_schema"])]
+        argv += ["--json-schema", canonical_json(wire_schema(tool["input_schema"]))]
 
     argv += list(ISOLATION_FLAGS)
     return CliInvocation(argv=tuple(argv), stdin=content, forced_tool=forced)

@@ -572,3 +572,105 @@ def test_the_cli_environment_detaches_from_this_session_and_this_key(
     assert "ANTHROPIC_API_KEY" not in env and "ANTHROPIC_AUTH_TOKEN" not in env
     assert env["MAX_THINKING_TOKENS"] == "0"
     assert "PATH" in env
+
+
+class TestTheCliSchemaStrip:
+    """`claude -p` refuses a keyword Pydantic emits for a tagged union.
+
+    Measured, not guessed. The CLI exits 1 with `--json-schema is not a valid
+    JSON Schema: strict mode: unknown keyword: "discriminator"`, because its
+    validator treats an unrecognised keyword as an error rather than ignoring
+    it -- and the §7.4 action space is a tagged union over seven types, so
+    Pydantic emits one.
+
+    This is why the compiler ran under a subscription for a whole milestone
+    while the agents could not: `DRAFT_TOOL` is a plain object and carries no
+    discriminator, `ACTION_TOOL` does, and nothing had tried to simulate
+    through the CLI until M15.
+
+    What is held here is that the strip is *lossless*. `discriminator` is an
+    OpenAPI dispatch hint layered on `oneOf`; it says which branch to try
+    first and removes no constraint, because every branch still carries its
+    own `type` literal.
+    """
+
+    def test_the_refused_keyword_is_gone_at_every_depth(self) -> None:
+        from cascade.llm.claude_cli import wire_schema
+
+        nested = {
+            "discriminator": {"propertyName": "type"},
+            "properties": {
+                "action": {
+                    "discriminator": {"propertyName": "type"},
+                    "oneOf": [{"discriminator": {}, "const": "COMMIT"}],
+                }
+            },
+            "items": [{"discriminator": {}}],
+        }
+        assert "discriminator" not in json.dumps(wire_schema(nested))
+
+    def test_everything_else_survives(self) -> None:
+        from cascade.llm.claude_cli import wire_schema
+
+        schema = {
+            "type": "object",
+            "required": ["action"],
+            "additionalProperties": False,
+            "properties": {"action": {"oneOf": [{"const": "COMMIT"}], "discriminator": {}}},
+        }
+        stripped = wire_schema(schema)
+        assert stripped["type"] == "object"
+        assert stripped["required"] == ["action"]
+        assert stripped["additionalProperties"] is False
+        assert stripped["properties"]["action"]["oneOf"] == [{"const": "COMMIT"}]
+
+    def test_the_input_is_not_mutated(self) -> None:
+        # The tool definitions are module-level singletons shared by every
+        # provider. Mutating one here would strip the discriminator from the
+        # schema an API provider is sent, on whichever call happened to be
+        # rendered for the CLI first.
+        from cascade.llm.claude_cli import wire_schema
+
+        original = {"discriminator": {"propertyName": "type"}, "type": "object"}
+        wire_schema(original)
+        assert "discriminator" in original
+
+    def test_the_real_action_tool_loses_the_keyword_and_keeps_its_actions(self) -> None:
+        from cascade.llm.claude_cli import wire_schema
+        from cascade.sim.prompts import ACTION_TOOL
+
+        rendered = json.dumps(wire_schema(ACTION_TOOL["input_schema"]))
+        assert "discriminator" not in rendered
+        # All seven §7.4 action types still reachable, so the model sees the
+        # same admissible set it would through an API provider.
+        for action in ("COMMIT", "SIGNAL", "ALLY", "DEFECT", "ESCALATE", "CONCEDE", "WAIT"):
+            assert action in rendered
+        assert "oneOf" in rendered or "anyOf" in rendered
+
+    def test_the_compiler_tool_is_unaffected(self) -> None:
+        # The asymmetry that hid the defect: the compiler's schema never had
+        # one, which is why compile worked on the subscription all along.
+        from cascade.decompose.prompts import DRAFT_TOOL
+        from cascade.llm.claude_cli import wire_schema
+
+        assert wire_schema(DRAFT_TOOL["input_schema"]) == DRAFT_TOOL["input_schema"]
+
+    def test_the_strip_reaches_the_argv(self) -> None:
+        # The guard that matters operationally: it is applied where the schema
+        # becomes `--json-schema`, not merely available as a helper.
+        from cascade.llm.claude_cli import build_invocation
+        from cascade.llm.types import LLMRequest
+        from cascade.sim.prompts import ACTION_TOOL, ACTION_TOOL_NAME
+
+        request = LLMRequest(
+            model="claude-haiku-4-5-20251001",
+            system=[{"type": "text", "text": "rules"}],
+            messages=[{"role": "user", "content": "decide"}],
+            tools=[ACTION_TOOL],
+            tool_choice={"type": "tool", "name": ACTION_TOOL_NAME},
+            temperature=0.7,
+            max_tokens=512,
+            prompt_rev="r4",
+        )
+        invocation = build_invocation(request, executable="claude", model="claude-haiku-4-5")
+        assert "discriminator" not in " ".join(invocation.argv)
