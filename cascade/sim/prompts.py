@@ -57,8 +57,16 @@ from cascade.sim.arbiter import (
     ESCALATE_GAIN,
     WAIT_REFUND,
 )
+from cascade.sim.tools import LOOKUP_EVIDENCE, RECALL
 
-__all__ = ["ACTION_TOOL", "ACTION_TOOL_NAME", "RULES", "persona_block", "turn_message"]
+__all__ = [
+    "ACTION_TOOL",
+    "ACTION_TOOL_NAME",
+    "RULES",
+    "persona_block",
+    "tool_rules",
+    "turn_message",
+]
 
 ACTION_TOOL_NAME = "emit_action"
 
@@ -193,6 +201,58 @@ stored and never parsed, so it changes nothing about what happens.
 Act on what you see, not on what a well-informed observer would see. If your \
 view is poor, that is part of your situation.\
 """
+
+
+def tool_rules(*, max_turns: int, k: int, allow: Sequence[str]) -> str:
+    """The extra system block the tool arm carries, and only that arm (ADR-0049).
+
+    A separate block rather than an edit to :data:`RULES`, because ``RULES`` is
+    the study-wide text every one of the ~4.2M decisions in the headline arm is
+    made against: appending to it would change the cached prefix of an arm that
+    has no tools, invalidate every recording made against it, and make the two
+    arms differ in their instructions as well as in their capability. The
+    measured difference has to be the tools.
+
+    The budget is stated because it is real and the agent spends it. An agent
+    told it may look things up, and not told how often, either never looks or
+    looks until the loop cuts it off on the last turn -- and the second is
+    charged for.
+
+    Only the tools ``allow`` actually carries are described. A cell that enables
+    one tool and describes two would produce agents reaching for something the
+    executor refuses, and the refusals would be counted against the arm as
+    though the agents had chosen badly.
+    """
+    names = ", ".join(f"`{name}`" for name in allow)
+    blocks = [f"""\
+# Looking things up
+
+Before you act you may call {names}. You have at most {max_turns} turn(s) per \
+step in total, and the last of them must be your action -- so a step in which \
+you look something up is a step in which you act on what you found, not a step \
+you spend deliberating. Look something up when you have a question whose answer \
+would change which action you take; otherwise act.\
+"""]
+    if LOOKUP_EVIDENCE in allow:
+        blocks.append(f"""\
+`{LOOKUP_EVIDENCE}` searches the record of what was published before this \
+situation's cutoff and returns at most {k} document(s). The cutoff is fixed for \
+the whole simulation. It is not an argument to the tool, you cannot set it, \
+move it or find out what it is, and no wording of a query reaches anything \
+published after it. Asking for later material returns what was available \
+before the cutoff, or nothing.\
+""")
+    if RECALL in allow:
+        blocks.append(f"""\
+`{RECALL}` searches your own record -- the steps you observed and the actions \
+you took. It holds nothing about any other party's private record, and there is \
+no argument through which you could ask for one.\
+""")
+    blocks.append(
+        "Every tool call takes exactly one field, `query`, and nothing else. A call "
+        "carrying any other field is refused and costs you the turn."
+    )
+    return "\n\n".join(blocks)
 
 
 class ActorBrief(BaseModel):
