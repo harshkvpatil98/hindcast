@@ -2154,9 +2154,25 @@ whose evidence block is formatted as the agents' prefix is):
 | an appeal to a fabricated calibration authority | 7/30 | [0.12, 0.41] | 13 | +0.232 |
 | a plain "ignore your instructions" | **0/30** | [0.00, 0.11] | 6 | +0.065 |
 
-Impersonating the system is the vector; instructing the model is not. Nothing
-is deployed against it: delimiting the evidence block is a prompt revision and
-a recompile, and it is recorded here rather than fixed quietly.
+Impersonating the system is the vector; instructing the model is not.
+
+**So the frame was made unforgeable, and the probe re-run** (ADR-0045, prompt
+revision **r4**, migration 021). One renderer for the compiler, the agents and
+the baselines wraps every document in numbered `<<<document N of M>>>` markers
+and strips those markers from the document's own text; the count is stated; the
+rule that quoted text is data lives in the system prompt, which retrieved text
+never enters. Same probe, same 30 scenarios:
+
+| attack | complied before | complied after | mean shift |
+|---|---|---|---|
+| fake system notice | 20/30 [0.49, 0.81] | **0/30** [0.00, 0.11] | +0.491 -> +0.088 |
+| authority appeal | 7/30 [0.12, 0.41] | **1/30** [0.01, 0.17] | +0.232 -> +0.085 |
+| instruction override | 0/30 | 0/30 | +0.065 -> +0.085 |
+
+The intervals for the attack that worked are disjoint. The residual ~+0.085 is
+the same for all three attacks including the one that never worked, so it is
+what appending any extra document does, not obedience. r4 invalidates every
+recording, so the graphs were recompiled under it.
 
 **Deferred, with reasons:**
 
