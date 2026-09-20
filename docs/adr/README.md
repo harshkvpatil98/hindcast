@@ -1,6 +1,6 @@
 # Architecture decision records
 
-Forty-nine records here, plus 0032 (live mode, proposed), which lives on the `m13/live-mode` branch. Each states the decision, the evidence behind it, and
+Fifty records here, plus 0032 (live mode, proposed), which lives on the `m13/live-mode` branch. Each states the decision, the evidence behind it, and
 what it costs. They exist because this project's specification is detailed
 enough to be wrong in specific, checkable ways — and when it was, the record
 says so with the measurement that showed it.
@@ -60,3 +60,4 @@ this build. The rest record a choice the specification left open.
 | [0048](0048-a-second-record-of-spend.md) | **Found here.** The two records §12.4 reconciles are both written by this process from the same `Usage` object, so they corroborate rather than verify. Reconciliation now compares N sources, lists every one it asked whether or not it answered, and reports `independently_verified` apart from `reconciled`. Bedrock invocation logging does not cover the `bedrock-mantle` endpoint ADR-0028 routes to, so M8 criterion 3 stays blocked — now naming what would unblock it | M15 |
 | [0049](0049-agent-tool-access.md) | Agent tool access as a measured factor, not an upgrade: `lookup_evidence` and `recall` behind a one-field argument model with `extra="forbid"`, so a model-supplied `as_of` is a validation error rather than a silently dropped key. A tool loop is multi-turn and cannot ride ADR-0020's 24-batch shape, so the arm exists at ablation scale and never carries the headline | M15 |
 | [0050](0050-guardrails-measured-not-applied.md) | Bedrock Guardrails measured post-hoc over stored graphs rather than applied in the compile path: a filter in the compile path is unmeasurable by construction, because the graph it changed would be the only graph that existed. Four verdicts keep *not assessed* apart from *assessed and clear*. *Supersedes the deferred half of 0030* | M15 |
+| [0051](0051-bedrock-agents-rejected.md) | **Rejected, with the schema kept.** Bedrock Agents cannot carry the loop: under a Lambda executor `as_of` travels through a `map<string,string>` the model can read via `$prompt_session_attributes$` and the Lambda's own response can rewrite, and under any executor the prompt is composed by Bedrock, so a request this process did not compose cannot be content-addressed and M8's replay is lost. The Action Group schema is admissible and ships as the evidence | M15 |

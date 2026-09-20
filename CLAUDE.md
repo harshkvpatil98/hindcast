@@ -222,7 +222,7 @@ cascade trace cost         # §12.4: reconcile the run ledger against Langfuse
 
 ## 7. Architecture decisions
 
-Forty-nine ADRs in `docs/adr/` on this branch; 0032 (live mode, proposed) lives on `m13/live-mode`. Fifteen correct defects found in the spec,
+Fifty ADRs in `docs/adr/` on this branch; 0032 (live mode, proposed) lives on `m13/live-mode`. Fifteen correct defects found in the spec,
 and 0023, 0025 and 0026 correct defects found in **this build** -- an ingest order
 that satisfied every criterion while covering the wrong years, and two ablation
 factors that were configured, documented and inert. The rest record choices the
@@ -279,6 +279,7 @@ spec left open.
 | 0048 | **Found here.** The two records §12.4 reconciles are both written by this process from the same `Usage` object, so they corroborate rather than verify. Reconciliation now compares N sources and lists every one it asked, answered or not; `independently_verified` is reported apart from `reconciled`. Bedrock invocation logging does not cover the `bedrock-mantle` endpoint ADR-0028 routes to, so M8 criterion 3 stays blocked, now naming what would unblock it | M15 |
 | 0049 | Agent tool access as a measured factor, not an upgrade: `lookup_evidence` and `recall` behind a one-field argument model with `extra="forbid"`, so a model-supplied `as_of` is a validation error rather than a silently dropped key. A tool loop is multi-turn and cannot ride ADR-0020's 24-batch shape, so the arm exists at ablation scale and never carries the headline | M15 |
 | 0050 | Bedrock Guardrails measured post-hoc over stored graphs rather than applied in the compile path: a filter in the compile path is unmeasurable by construction, because the graph it changed would be the only graph that existed. Four verdicts keep *not assessed* apart from *assessed and clear*. *Supersedes the deferred half of 0030* | M15 |
+| 0051 | **Rejected, with the schema kept.** Bedrock Agents cannot carry the loop: under a Lambda executor `as_of` travels through a `map<string,string>` the model can read via `$prompt_session_attributes$` and the Lambda's own response can rewrite, and under any executor the prompt is composed by Bedrock, so a request this process did not compose cannot be content-addressed and M8's replay is lost. The Action Group schema is admissible and ships as the evidence | M15 |
 
 ---
 
@@ -2255,17 +2256,32 @@ ADR counts were stale in opposite directions.
 
 **Deferred, with reasons:**
 
-- **The tool arm is not wired into `simulate`.** Not mechanical: ADR-0019 has
-  `_agent_policy` retrieve once per (scenario, actor) and then *close* the
-  Chronofence, while a tool-using agent needs retrieval during the run. A
-  connection per tool call is ~600k connections at ablation scale; the
-  decider owning a long-lived fence is right and changes its lifetime and both
-  call sites. Left for its own session rather than done at the end of this one.
-- **Every AWS number** -- no account. Both AWS adapters are verified against
-  the installed botocore service model and the published API reference, and
-  tested through `botocore.stub.Stubber` and a mocked client, so they are
-  *verified* and not *validated*.
-- **Whether reranking helps.** ADR-0047 makes it an ablation on the dev split,
-  and the relevance bench compares vector against hybrid by name; generalising
-  it to any two arms is the instrument that measurement needs.
-- **`--since/--until` on `trace cost`** -- `readings()` does not thread them.
+- **Every AWS number** -- no account. All three AWS adapters are verified
+  against the installed botocore service model and the published API
+  reference, and tested through `botocore.stub.Stubber` and mocked clients, so
+  they are *verified* and not *validated*.
+- **Whether reranking helps.** The instrument now exists -- `cascade retrieval
+  bench --relevance --pairing rerank` -- and has not been run: it is a full
+  database pass, and what it would measure is the local BM25 arm, which is a
+  default rather than a candidate.
+- **Bedrock Agents** are rejected for the loop (ADR-0051), so the Action Group
+  schema ships as the evidence for the rejection and nothing constructs one.
+
+**Closed after the entry above was first written**, in the same session and
+against the owner's instruction to finish rather than stop at the gate:
+
+- **The tool arm is wired.** The decider owns the Chronofence on an
+  `ExitStack` and releases it at process exit; belts are built beside the
+  prefixes from the same fence and embedder. Measured against the live corpus:
+  13 belts and 13 prefixes for a 13-actor graph, and a real `lookup_evidence`
+  call returning 6,216 characters whose only rendered date was 2023-04-23
+  against a 2023-04-26 cutoff.
+- **The relevance bench compares any two arms**, with `--pairing`.
+- **`trace cost` takes `--since` / `--until`**, and the phase/window mismatch
+  it exposed was a live defect: `--config-id` scoped the local meter alone, so
+  the two sides were different quantities and any disagreement read as "a bug
+  in the meter".
+- **The tool schema stopped teaching the model its own time lock.**
+  `model_json_schema()` was lifting this project's docstrings onto the wire,
+  including the cutoff's argument name -- 455 tokens with the prose, 253
+  without.
