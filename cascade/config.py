@@ -169,6 +169,46 @@ class ToolsConfig(_Model):
     k_tool: int = Field(default=6, gt=0)
     allow: tuple[str, ...] = ("lookup_evidence", "recall")
 
+    @model_validator(mode="after")
+    def _allow_names_a_tool_that_exists(self) -> ToolsConfig:
+        """Refuse an allow-list naming a tool nothing implements.
+
+        A typo here is silent and consequential: the arm under test would run
+        with fewer tools than the experiment says it had, every cell would
+        agree with every other because they were all mis-configured the same
+        way, and the measured contribution of tool access would be an
+        understatement nothing downstream could detect. That is the same class
+        of defect as ADR-0025's inert ablation factors, which were configured,
+        documented, and read nowhere.
+
+        `cascade.sim.tools` is imported inside the validator rather than at
+        module scope: `config.py` is the bottom of the import graph and every
+        other module reaches it, so naming the tool list here at import time
+        would invert that. Duplicated names would be the alternative, and one
+        definition is the only way two lists cannot drift.
+        """
+        from cascade.sim.tools import TOOL_NAMES
+
+        unknown = sorted(set(self.allow) - set(TOOL_NAMES))
+        if unknown:
+            raise ValueError(
+                f"kernel.tools.allow names {unknown}, which no tool implements; "
+                f"known tools are {list(TOOL_NAMES)}"
+            )
+        duplicates = sorted({name for name in self.allow if self.allow.count(name) > 1})
+        if duplicates:
+            raise ValueError(
+                f"kernel.tools.allow repeats {duplicates}; a tool offered twice would "
+                "appear twice in the schema block the model is shown"
+            )
+        if self.enabled and not self.allow:
+            raise ValueError(
+                "kernel.tools.enabled is true with an empty allow-list, which is a "
+                "tool-using arm that can use no tools -- indistinguishable in its "
+                "results from the arm it is meant to be compared against"
+            )
+        return self
+
 
 class KernelConfig(_Model):
     steps: int

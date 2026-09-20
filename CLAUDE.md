@@ -215,7 +215,7 @@ cascade trace cost         # §12.4: reconcile the run ledger against Langfuse
 
 ## 7. Architecture decisions
 
-Forty-seven ADRs in `docs/adr/` on this branch; 0032 (live mode, proposed) lives on `m13/live-mode`. Fifteen correct defects found in the spec,
+Forty-nine ADRs in `docs/adr/` on this branch; 0032 (live mode, proposed) lives on `m13/live-mode`. Fifteen correct defects found in the spec,
 and 0023, 0025 and 0026 correct defects found in **this build** -- an ingest order
 that satisfied every criterion while covering the wrong years, and two ablation
 factors that were configured, documented and inert. The rest record choices the
@@ -270,6 +270,8 @@ spec left open.
 | 0046 | The report artifact carries the labels — `baselines.csv` and `ablation_grid.csv` are one row per scenario *with how it resolved* — so it lands in a private, Object-Locked bucket the simulation is denied, is fetched rather than served, and the recovery path is drilled rather than asserted | M14 |
 | 0047 | A managed reranker is admissible where a managed knowledge base was not: a knowledge base *replaces* the `published_at < as_of` filter, a reranker *permutes a set the database already filtered*. Enforced by the interface — it is handed bodies and returns numbers, so naming a post-cutoff chunk is unrepresentable. *Amends 0030* | M15 |
 | 0048 | **Found here.** The two records §12.4 reconciles are both written by this process from the same `Usage` object, so they corroborate rather than verify. Reconciliation now compares N sources and lists every one it asked, answered or not; `independently_verified` is reported apart from `reconciled`. Bedrock invocation logging does not cover the `bedrock-mantle` endpoint ADR-0028 routes to, so M8 criterion 3 stays blocked, now naming what would unblock it | M15 |
+| 0049 | Agent tool access as a measured factor, not an upgrade: `lookup_evidence` and `recall` behind a one-field argument model with `extra="forbid"`, so a model-supplied `as_of` is a validation error rather than a silently dropped key. A tool loop is multi-turn and cannot ride ADR-0020's 24-batch shape, so the arm exists at ablation scale and never carries the headline | M15 |
+| 0050 | Bedrock Guardrails measured post-hoc over stored graphs rather than applied in the compile path: a filter in the compile path is unmeasurable by construction, because the graph it changed would be the only graph that existed. Four verdicts keep *not assessed* apart from *assessed and clear*. *Supersedes the deferred half of 0030* | M15 |
 
 ---
 

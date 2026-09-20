@@ -534,11 +534,19 @@ class Loom:
             ctx.memories[actor_id] = memory.remember(
                 observation, action=decision.action, window=window
             )
-            # Counted off `from_model`, not off the number of decisions: a
-            # stand-in decider makes none, and §12.4 sums this column as
-            # *calls*. A heuristic run reporting one call per decision made the
-            # cost reconciliation compare zero against zero and pass.
-            ctx.llm_calls += int(decision.from_model)
+            # Counted off `model_turns`, not off the number of decisions and
+            # no longer off `from_model`: a stand-in decider makes no calls,
+            # and §12.4 sums this column as *calls*. A heuristic run reporting
+            # one call per decision made the cost reconciliation compare zero
+            # against zero and pass (M8).
+            #
+            # `int(from_model)` was right only while every decision that
+            # reached the model cost exactly one call. A tool-using decision
+            # costs up to `kernel.tools.max_turns` (ADR-0049), so counting it
+            # that way would under-report this arm by `max_turns - 1` per
+            # decision -- M8's defect re-opened by a multi-turn decider, and
+            # in the direction that makes the study look cheaper than it was.
+            ctx.llm_calls += decision.model_turns
             ctx.cache_hits += int(decision.cache_hit)
             ctx.tokens_in += decision.tokens_in
             ctx.tokens_out += decision.tokens_out

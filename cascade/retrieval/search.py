@@ -422,7 +422,22 @@ class Chronofence:
             return self._reranker
         rerank = self._settings.retrieval.rerank
         if rerank.provider == "local":
-            return LexicalReranker(model_id=rerank.model_id)
+            # Refuse a half-switched configuration. `model_id` names the
+            # scorer *in the cache key*, so a config whose `model_id` has
+            # already been moved to a managed reranker while `provider` still
+            # says `local` would record BM25 scores under the managed model's
+            # key -- and ADR-0047's promise that changing reranker invalidates
+            # recordings would be false in the one direction that matters: the
+            # stale scores would be served to a later run that really did
+            # switch. Caught here, where both halves are visible.
+            if rerank.model_id != LexicalReranker.model_id:
+                raise RuntimeError(
+                    f"retrieval.rerank.provider is 'local' but model_id is "
+                    f"{rerank.model_id!r}, not {LexicalReranker.model_id!r}. The local "
+                    "reranker would record its own scores under another scorer's cache "
+                    "key; set both fields together or inject the reranker you mean."
+                )
+            return LexicalReranker()
         raise RuntimeError(
             f"retrieval.rerank.provider is {rerank.provider!r}, which reaches a service, but no "
             "reranker was injected into Chronofence; construct it at the call site so the one "

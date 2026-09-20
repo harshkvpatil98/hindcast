@@ -26,7 +26,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from cascade.aperture.projection import Observation
 from cascade.config import Settings, ToolsConfig
@@ -88,6 +88,33 @@ class Decision(BaseModel):
     carried here rather than folded into a sum, because a ledger that
     disagrees with the provider by a factor it cannot name is the failure
     §12.4's gate exists to catch."""
+
+    @model_validator(mode="after")
+    def _turns_and_from_model_agree(self) -> Decision:
+        """Refuse a decision whose two accounts of itself disagree.
+
+        The kernel books `runs.llm_calls` off `model_turns` and stamps the run
+        `policy` off `from_model`. A decision claiming to have reached the
+        model while reporting no turns would be booked as free and reported as
+        a model run -- which is exactly the shape of M8's finding, where a
+        heuristic run recorded 452,328 calls costing nothing and the
+        reconciliation compared zero against zero and passed.
+
+        Enforced here rather than at the two call sites so a decider added
+        later cannot reintroduce it by forgetting a field.
+        """
+        if self.from_model and self.model_turns == 0:
+            raise ValueError(
+                "a decision from the model must report at least one turn; "
+                "model_turns=0 with from_model=True would book a paid call as free"
+            )
+        if not self.from_model and self.model_turns:
+            raise ValueError(
+                f"a decision that did not reach the model reports {self.model_turns} "
+                "turn(s); a stand-in decider makes no calls and booking them would "
+                "inflate the ledger against a provider record that shows none"
+            )
+        return self
 
 
 class DecisionPolicy(Protocol):

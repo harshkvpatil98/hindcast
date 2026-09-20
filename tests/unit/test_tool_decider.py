@@ -30,6 +30,7 @@ from typing import Any
 
 import httpx
 import pytest
+from pydantic import ValidationError
 
 from cascade.aperture.projection import Observation
 from cascade.config import Settings, ToolsConfig
@@ -615,8 +616,30 @@ def test_a_disabled_policy_is_refused_rather_than_degraded(settings: Settings) -
         tool_policy(settings)
 
 
-def test_a_policy_with_no_tools_is_refused(settings: Settings) -> None:
-    tuned = with_tools(settings, allow=())
+def test_a_config_with_no_tools_cannot_be_constructed(settings: Settings) -> None:
+    """The first of two guards: an enabled arm with no tools is not a config.
+
+    Refused by `ToolsConfig` itself (M15 integration), so the incoherent
+    combination cannot reach a run through the ordinary path at all.
+    """
+    with pytest.raises(ValidationError, match="empty allow-list"):
+        with_tools(settings, allow=())
+
+
+def test_a_policy_with_no_tools_is_refused_when_validation_was_bypassed(
+    settings: Settings,
+) -> None:
+    """The second guard, and why it is not redundant.
+
+    `model_copy(update=...)` and `model_construct` skip validation by design,
+    and the test suite uses both to build awkward states. So the reader checks
+    again at the point of use: a guard that only fires on the constructor is
+    absent from exactly the paths that build a config without one.
+    """
+    unvalidated = ToolsConfig.model_construct(enabled=True, max_turns=3, k_tool=6, allow=())
+    tuned = settings.model_copy(
+        update={"kernel": settings.kernel.model_copy(update={"tools": unvalidated})}
+    )
     with pytest.raises(ToolsDisabled, match="allow is empty"):
         tool_policy(tuned)
 
