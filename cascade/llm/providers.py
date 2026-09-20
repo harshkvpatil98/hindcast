@@ -27,6 +27,14 @@ $240 ceiling only at the 50% batch rate (ADR-0020); unbatched it is roughly
 twice that. A provider without batches is therefore refused at the batch door
 before any spend, rather than silently falling back to one call at a time.
 
+**That refusal is about money, so it does not bind a provider that charges
+none** (ADR-0052). ``claude_code`` runs under a flat-rate subscription: its
+price table is zero by construction, so a phase costs the same batched or not
+and there is no discount for an unbatched run to lose. :func:`charges_per_call`
+is the one place that distinction is drawn, and it reads the static
+:class:`ProviderSpec` rather than the price table -- a configured table is
+configuration, and a zeroed one would otherwise exempt a paid provider.
+
 **The wire id is rendered here and nowhere else.** Requests carry the logical
 model everywhere else -- in the cache key (ADR-0029), in the price lookup, in
 the event log -- so switching provider changes where a call is sent and how it
@@ -43,6 +51,7 @@ from cascade.config import LLMProvider, Settings
 __all__ = [
     "PROVIDERS",
     "ProviderSpec",
+    "charges_per_call",
     "client_kwargs",
     "endpoint",
     "readiness_problems",
@@ -118,6 +127,33 @@ PROVIDERS: dict[LLMProvider, ProviderSpec] = {
 def spec_for(provider: LLMProvider) -> ProviderSpec:
     """Return the static description of ``provider``."""
     return PROVIDERS[provider]
+
+
+def charges_per_call(provider: str) -> bool:
+    """Whether ADR-0020's ceiling argument binds ``provider``. Pure.
+
+    Preserves the invariant that a phase priced at the 50% batch rate is never
+    run unbatched at list price. ADR-0020 made batching functional because
+    simulate is $126 batched and $252 not against a $240 ceiling -- an argument
+    about *money*, which is why it does not bind a provider that charges none:
+    a subscription's price table is zero by construction
+    (``Settings.pricing_table``), so the same phase costs the same either way.
+
+    Three properties make this hard to get around, and each has a test:
+
+    - It reads :attr:`ProviderSpec.billing`, a frozen module constant. Reading
+      the price table instead would let ``providers.bedrock.pricing`` zeroed in
+      a YAML file exempt a paid provider from the ceiling that guards the
+      study's cost claim.
+    - It keys off billing, not off the provider's name, so a fifth provider
+      added later is bound unless someone writes ``subscription`` next to it.
+    - An unrecognised name is charged. A typo must not buy an exemption.
+
+    Read live from :data:`PROVIDERS` rather than from a table built at import,
+    so the registry and this answer cannot disagree.
+    """
+    billing: dict[str, str] = {name: PROVIDERS[name].billing for name in sorted(PROVIDERS)}
+    return billing.get(provider, "per_token") != "subscription"
 
 
 def render_model(settings: Settings, logical: str) -> str:

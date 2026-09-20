@@ -31,7 +31,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from cascade.aperture.projection import Observation
 from cascade.config import Settings, ToolsConfig
 from cascade.llm.client import estimate_tokens
-from cascade.llm.types import BatchItem, LLMRequest
+from cascade.llm.providers import charges_per_call
+from cascade.llm.types import BatchItem, LLMError, LLMRequest
 from cascade.sim.actions import Action, ActionSpace, Wait, admit
 from cascade.sim.prompts import (
     ACTION_TOOL,
@@ -143,7 +144,16 @@ class BatchingPolicy(Protocol):
     This is the seam the 50% batch discount lives in (§12.2) -- the kernel
     still asks for one decision at a time, and by then every answer is already
     on disk.
+
+    ``prepare`` returns how many turns it resolved; ``submits_batches`` says
+    whether it did so by submitting a batch. The runner needs both because it
+    reports them separately (ADR-0052): a wave resolved one call at a time
+    under a subscription has resolved every turn and submitted nothing, and a
+    report that counted it as 24 batch submissions would be a measured figure
+    that never happened.
     """
+
+    submits_batches: bool
 
     def prepare(self, turns: Sequence[Any]) -> int: ...
 
@@ -243,14 +253,46 @@ class LLMAgents:
             prompt_rev=self.settings.llm.prompt_rev,
         )
 
+    @property
+    def submits_batches(self) -> bool:
+        """Whether :meth:`prepare` resolves a wave by submitting a batch.
+
+        Preserves ADR-0020's ceiling argument exactly where it applies and
+        nowhere else. The argument is about money -- the simulate phase is $126
+        at the 50% batch rate and $252 without, against a $240 ceiling -- so it
+        binds every provider that charges per call and no provider that charges
+        none (ADR-0052). Asked of the client that will actually serve the call
+        rather than of ``self.settings``, so an agent built against one
+        configuration and a client built against another cannot answer for each
+        other; a client that does not name a provider is charged, because
+        failing toward "this is free" is how a phase silently costs double.
+        """
+        provider = getattr(self.client, "provider", None)
+        return charges_per_call(provider) if isinstance(provider, str) else True
+
     def prepare(self, turns: Sequence[Any]) -> int:
-        """Resolve a whole wave of turns up front, batching the cache misses.
+        """Resolve a whole wave of turns up front, filling the cache.
 
         Returns the number of turns whose answers are now available locally.
         Nothing is decided here: this only fills the cache, so the decisions
         that follow are byte-identical to the ones an unbatched run would make.
         That equivalence is what lets M6 take the 50% discount without M8's
         replay hash changing.
+
+        **Filling the cache is the contract; the batch is one way to honour
+        it.** Where :attr:`submits_batches` is false the wave is resolved one
+        call at a time through the same door, in the same sorted order, into
+        the same content-addressed cache -- so ``decide`` still serves every
+        turn from disk. That is not a cosmetic difference: ``cache_hit`` is one
+        of the fields ``DecisionEvent.canonical`` hashes, so a decider that
+        skipped preparation and let ``decide`` reach the model would write
+        ``cache_hit=False`` into the event log and every one of those runs
+        would fail M8's replay criterion against its own recording.
+
+        Duplicates inside the wave still cost one call: the cache is
+        content-addressed, so the second identical request is a hit. The batch
+        path deduplicates explicitly and this path deduplicates by arriving
+        second, which is the same saving by a slower route.
         """
         if not turns:
             return 0
@@ -266,7 +308,22 @@ class LLMAgents:
             )
             for turn in sorted(turns, key=lambda t: (t.scenario_id, t.run_id, t.actor_id))
         ]
-        self.client.complete_batch(items, trace_name="loom.decide.batch")
+        if self.submits_batches:
+            self.client.complete_batch(items, trace_name="loom.decide.batch")
+            return len(items)
+        if getattr(self.client, "mode", "") == "live":
+            # The same refusal `complete_batch` makes, for the same reason:
+            # live bypasses the cache, so preparing a turn there would answer
+            # it once here and ask again at decide time. A free provider makes
+            # that two calls against its usage limit rather than two charges,
+            # which is still twice the work and a different set of answers.
+            raise LLMError(
+                "preparing a wave is not available in live mode: live bypasses the cache, "
+                "so every prepared answer would be requested again at decide time. "
+                "Use record (to keep the responses) or replay."
+            )
+        for item in items:
+            self.client.complete(item.request, trace_name="loom.decide.serial")
         return len(items)
 
     def decide(

@@ -10,6 +10,13 @@ can be assembled before any of them is decided -- and then resolved in one
 batch at the 50% rate §12.1 assumes. Deciding run-by-run instead would submit
 one request at a time to an API whose SLA is measured in hours.
 
+The wave is still assembled and still resolved before any decision when the
+provider has no batch endpoint *and* charges nothing per call (ADR-0052): the
+lockstep is what makes preparation possible, the batch is what makes it cheap,
+and only the second has a ceiling behind it. The report counts the two shapes
+in separate columns, because a count of submissions and a count of single
+calls are different facts about what happened.
+
 **The cache.** Replicates of one scenario share their early steps exactly:
 until the seeded noise pushes them apart, the same actor sees the same rounded
 observation and produces the same request bytes. Those are served from disk and
@@ -94,6 +101,16 @@ class FanoutReport(BaseModel):
     cache_hits: int
     batches: int
     batched_turns: int
+    unbatched_turns: int = 0
+    """Turns resolved one call at a time because the provider charges none.
+
+    Kept apart from ``batched_turns`` rather than folded into it (ADR-0052).
+    Both are turns whose answers were on disk before any decision was made, and
+    the study's cost claim rests on the first having gone out at the 50% batch
+    rate -- so a phase that resolved its turns serially and reported them as
+    batched would put a submission count in the phase report that no provider
+    ever served."""
+
     waves: int
     steps: int
     elapsed_s: float
@@ -182,6 +199,7 @@ class EnsembleRunner:
             cache_hits=report.cache_hits,
             batches=report.batches,
             batched_turns=report.batched_turns,
+            unbatched_turns=report.unbatched_turns,
             waves=report.waves,
             steps=report.steps,
             elapsed_s=time.perf_counter() - started,
@@ -216,10 +234,14 @@ class EnsembleRunner:
                     bucket[1].extend(turn for turn in turns if turn.run_id == handle.spec.run_id)
                 for key in sorted(by_decider):
                     decider, owned = by_decider[key]
-                    prepared = _prepare(decider, owned)
-                    if prepared:
+                    resolved, submitted = _prepare(decider, owned)
+                    if not resolved:
+                        continue
+                    if submitted:
                         report.batches += 1
-                        report.batched_turns += prepared
+                        report.batched_turns += resolved
+                    else:
+                        report.unbatched_turns += resolved
 
             for loom, handle in live:
                 loom.complete_step(handle)
@@ -235,19 +257,28 @@ class EnsembleRunner:
                 self.on_complete(result)
 
 
-def _prepare(decider: Any, turns: Sequence[PendingTurn]) -> int:
-    """Resolve a group of turns up front where the decider supports it.
+def _prepare(decider: Any, turns: Sequence[PendingTurn]) -> tuple[int, bool]:
+    """Resolve a group of turns up front, and report how they were resolved.
 
-    Grouped by decider rather than assumed shared: one model-backed decider
-    serving every scenario batches a whole wave in one submission, while the
-    per-scenario stand-in has no ``prepare`` and simply decides turn by turn.
-    Both are correct; only the first is cheap.
+    Returns ``(turns resolved, a batch was submitted)``. Grouped by decider
+    rather than assumed shared: one model-backed decider serving every scenario
+    batches a whole wave in one submission, while the per-scenario stand-in has
+    no ``prepare`` and simply decides turn by turn. Both are correct; only the
+    first is cheap.
+
+    The decider is the authority on the second value, not this function and not
+    ``settings`` (ADR-0052): inferring the shape from a second copy of the
+    provider name would be two accounts of one fact that can disagree, which is
+    the defect ``Decision.model_turns`` exists to refuse. A decider that does
+    not answer is read as batching, which is what every implementor did before
+    the question was asked.
     """
     prepare = getattr(decider, "prepare", None)
     if prepare is None or not turns:
-        return 0
+        return 0, False
     count = prepare(turns)
-    return int(count) if count else 0
+    resolved = int(count) if count else 0
+    return resolved, bool(getattr(decider, "submits_batches", True))
 
 
 @dataclass
@@ -258,6 +289,7 @@ class _Tally:
     cache_hits: int = 0
     batches: int = 0
     batched_turns: int = 0
+    unbatched_turns: int = 0
     waves: int = 0
     steps: int = 0
 

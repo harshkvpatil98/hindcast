@@ -43,7 +43,13 @@ from cascade.config import Settings, claude_cli_environment, repo_root
 from cascade.llm.cache import CallCache, cache_domain, cache_key
 from cascade.llm.claude_cli import build_invocation, parse_cli_output, to_messages_payload
 from cascade.llm.meter import CostMeter
-from cascade.llm.providers import client_kwargs, readiness_problems, render_model, spec_for
+from cascade.llm.providers import (
+    charges_per_call,
+    client_kwargs,
+    readiness_problems,
+    render_model,
+    spec_for,
+)
 from cascade.llm.tracing import Tracer, null_tracer
 from cascade.llm.types import (
     SOURCE,
@@ -357,14 +363,29 @@ class LLMClient:
         # there is no batch endpoint, and the per-call fallback would run the
         # phase at roughly twice the rate its ceiling was set against.
         if not spec_for(self._provider).supports_batches:
+            # Refused either way -- there is no batch endpoint to reach, and
+            # looping `complete` here would make one function mean two things
+            # for every caller, including the ones that need the discount. The
+            # remedy differs, so the message names the right one: a provider
+            # that charges per call has to record the phase somewhere the
+            # ceiling was set against, while one that charges nothing has no
+            # ceiling to breach and needs a caller that prepares serially
+            # (ADR-0052). Both answers are wrong for the other provider.
+            remedy = (
+                "Record this phase through `anthropic` or `aws` -- the recordings then "
+                "replay through any provider (ADR-0029)"
+                if charges_per_call(self._provider)
+                else "This provider bills a subscription rather than tokens, so the "
+                "ceiling argument does not apply to it: resolve the wave through a "
+                "decider that prepares serially (`LLMAgents.prepare`, ADR-0052) "
+                "rather than through this door"
+            )
             raise ProviderNotReady(
                 self._provider,
                 [
                     f"{len(pending)} uncached request(s) need the Message Batches API, which "
                     f"{spec_for(self._provider).operated_by} does not provide; the batched "
-                    "phase's ceiling assumes the batch rate (ADR-0020). Record this phase "
-                    "through `anthropic` or `aws` -- the recordings then replay through any "
-                    "provider (ADR-0029)"
+                    f"phase's ceiling assumes the batch rate (ADR-0020). {remedy}"
                 ],
             )
 
