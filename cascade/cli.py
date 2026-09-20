@@ -1341,9 +1341,13 @@ def _print_relevance_report(report: Any, settings: Settings) -> None:
         )
         table.add_column("Metric", style="cyan")
         table.add_column("names")
-        table.add_column("vector", justify="right")
-        table.add_column("hybrid", justify="right")
-        table.add_column("hybrid - vector", justify="right")
+        # The arm names come from the report, not from this file: since M15 the
+        # harness compares any two arms (vector/hybrid, or rerank off/on), and
+        # a header that said "hybrid - vector" over a rerank pairing would be a
+        # table nobody could interpret.
+        table.add_column(report.baseline_arm, justify="right")
+        table.add_column(report.candidate_arm, justify="right")
+        table.add_column(f"{report.candidate_arm} - {report.baseline_arm}", justify="right")
         table.add_column("95% CI", justify="right")
         table.add_column("p", justify="right")
         table.add_column("n", justify="right")
@@ -1353,8 +1357,8 @@ def _print_relevance_report(report: Any, settings: Settings) -> None:
             table.add_row(
                 item.label,
                 item.names,
-                number(item.vector_mean, item.metric),
-                number(item.hybrid_mean, item.metric),
+                number(item.baseline_mean, item.metric),
+                number(item.candidate_mean, item.metric),
                 "-" if interval is None else f"{interval.point:+.4f}",
                 "-" if interval is None else f"[{interval.lo:+.4f}, {interval.hi:+.4f}]",
                 "-" if interval is None else f"{interval.p_value:.4f}",
@@ -1364,13 +1368,13 @@ def _print_relevance_report(report: Any, settings: Settings) -> None:
         console.print(table)
         console.print(
             f"  overlap of the two arms' chunks (Jaccard): [bold]{kind.mean_overlap:.4f}[/bold] · "
-            f"hybrid queries with no entity term: [bold]{kind.queries_without_terms:,}[/bold]"
-            f"/{kind.queries:,}"
+            f"{report.candidate_arm} queries with no entity term: "
+            f"[bold]{kind.queries_without_terms:,}[/bold]/{kind.queries:,}"
         )
         console.print(
-            f"  latency p50/p95: vector {kind.vector_latency.p50:.1f}/"
-            f"{kind.vector_latency.p95:.1f} ms · hybrid {kind.hybrid_latency.p50:.1f}/"
-            f"{kind.hybrid_latency.p95:.1f} ms"
+            f"  latency p50/p95: {report.baseline_arm} {kind.baseline_latency.p50:.1f}/"
+            f"{kind.baseline_latency.p95:.1f} ms · {report.candidate_arm} "
+            f"{kind.candidate_latency.p50:.1f}/{kind.candidate_latency.p95:.1f} ms"
         )
 
     console.print(
@@ -1415,6 +1419,14 @@ def retrieval_bench(
         int | None,
         typer.Option("--limit", help="With --relevance: only the first N scenarios by id."),
     ] = None,
+    pairing: Annotated[
+        str,
+        typer.Option(
+            "--pairing",
+            help="With --relevance: which two arms to compare -- 'hybrid' (vector vs hybrid) "
+            "or 'rerank' (the configured mode, reranking off vs on).",
+        ),
+    ] = "hybrid",
 ) -> None:
     """Benchmark time-locked retrieval: p50/p95/p99 and recall@k (M3).
 
@@ -1432,8 +1444,23 @@ def retrieval_bench(
 
     settings = _settings(config)
     if relevance:
+        from cascade.retrieval.bench import PAIRINGS
+
+        if pairing not in PAIRINGS:
+            _fail(
+                f"--pairing must be one of {sorted(PAIRINGS)}, got {pairing!r}",
+                EXIT_PRECONDITION,
+            )
+        reranker: Any = None
+        if pairing == "rerank" and settings.retrieval.rerank.provider != "local":
+            _fail(
+                f"retrieval.rerank.provider is {settings.retrieval.rerank.provider!r}, which "
+                "reaches a service; construct it at the call site and pass it in, so the one "
+                "call site owns every request that leaves this process",
+                EXIT_PRECONDITION,
+            )
         try:
-            report = run_relevance(settings, limit=limit)
+            report = run_relevance(settings, limit=limit, pairing=pairing, reranker=reranker)
         except HybridNotReady as exc:
             _fail("; ".join(exc.reasons), EXIT_PRECONDITION)
         _print_relevance_report(report, settings)
