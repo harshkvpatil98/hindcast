@@ -253,4 +253,8 @@ module "study" {
   model_region   = var.study.model_region
   workspace_id   = var.study.workspace_id
   api_key_secret = var.study.api_key_secret
+
+  # Where the deliverable goes (ADR-0046). Passed whole from the platform
+  # root's `reports_publish`, so the prefix is named in one place.
+  reports = var.study.reports
 }

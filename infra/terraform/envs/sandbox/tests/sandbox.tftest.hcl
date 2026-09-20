@@ -91,6 +91,11 @@ variables {
     kms_key_arn      = "arn:aws:kms:us-east-1:123456789012:key/platform"
     llm_cache_prefix = "llm-cache"
   }
+  reports = {
+    bucket_arn  = "arn:aws:s3:::cascade-reports-123456789012-us-east-1"
+    kms_key_arn = "arn:aws:kms:us-east-1:123456789012:key/platform"
+    prefix      = "reports"
+  }
   egress_tier = {
     availability_zone   = "us-east-1a"
     allowed_domains     = ["data.commoncrawl.org", "en.wikipedia.org", "www.federalregister.gov", "www.sec.gov", "api.gdeltproject.org"]
@@ -283,6 +288,7 @@ run "a_study_on_claude_platform_without_a_private_path_leaves_only_for_its_model
       model_region             = "us-east-1"
       workspace_id             = "wrkspc_01ABC"
       recovery                 = var.recovery
+      reports                  = var.reports
       sync_schedule_expression = "rate(1 hour)"
     }
   }
@@ -341,6 +347,7 @@ run "a_study_on_claude_platform_with_its_endpoint_named_never_leaves" {
       workspace_id                = "wrkspc_01ABC"
       model_endpoint_service_name = "com.amazonaws.us-east-1.example-claude-platform"
       recovery                    = var.recovery
+      reports                     = var.reports
       sync_schedule_expression    = "rate(1 hour)"
     }
   }
@@ -369,6 +376,7 @@ run "a_study_on_anthropic_needs_the_egress_tier" {
         kms_key_arn = "arn:aws:kms:us-east-1:123456789012:key/secrets"
       }
       recovery                 = var.recovery
+      reports                  = var.reports
       sync_schedule_expression = "rate(1 hour)"
     }
   }
@@ -386,6 +394,7 @@ run "a_study_on_anthropic_with_the_egress_tier_allows_the_api_host" {
         kms_key_arn = "arn:aws:kms:us-east-1:123456789012:key/secrets"
       }
       recovery                 = var.recovery
+      reports                  = var.reports
       sync_schedule_expression = "rate(1 hour)"
     }
   }
@@ -407,6 +416,7 @@ run "a_study_on_bedrock_gets_its_endpoint_and_cannot_have_the_chain" {
       model_provider           = "bedrock"
       model_region             = "us-east-1"
       recovery                 = var.recovery
+      reports                  = var.reports
       sync_schedule_expression = "rate(1 hour)"
     }
   }
@@ -429,6 +439,7 @@ run "the_study_chain_on_bedrock_is_refused_at_plan" {
       model_provider           = "bedrock"
       model_region             = "us-east-1"
       recovery                 = var.recovery
+      reports                  = var.reports
       sync_schedule_expression = "rate(1 hour)"
     }
   }
@@ -442,6 +453,7 @@ run "a_private_path_in_another_region_is_refused" {
       model_provider           = "bedrock"
       model_region             = "us-west-2"
       recovery                 = var.recovery
+      reports                  = var.reports
       sync_schedule_expression = "rate(1 hour)"
     }
   }

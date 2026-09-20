@@ -123,3 +123,36 @@ variable "ephemeral_storage_gib" {
   type        = number
   default     = 21
 }
+
+variable "reports" {
+  description = <<-EOT
+    Where this sandbox publishes what `cascade report` writes (ADR-0046) --
+    the platform root's `reports_publish` output, passed whole, so the two
+    roots cannot spell the prefix differently.
+
+    Required, like `cache`. A study task that cannot publish reproduces the
+    gap this closes: the deliverable existed only in a task's scratch storage,
+    which dies with the task.
+
+    There is deliberately no environment variable for the destination. The CLI
+    writes `reports/study_<ts>/` locally and the upload is one
+    `aws s3 cp --recursive` (the sandbox root prints it); a `CASCADE_`-prefixed
+    variable the settings do not define is a validation error by design, so
+    inventing one here would stop the task rather than configure it.
+  EOT
+  type = object({
+    bucket_arn  = string
+    kms_key_arn = string
+    prefix      = string
+  })
+
+  validation {
+    condition     = can(regex("^arn:[^:]+:s3:::[^/*]+$", var.reports.bucket_arn))
+    error_message = "reports.bucket_arn must be a bare bucket ARN (arn:aws:s3:::name)."
+  }
+
+  validation {
+    condition     = can(regex("^[a-z0-9-]+$", var.reports.prefix))
+    error_message = "reports.prefix is one path segment: lower-case letters, digits and hyphens, no slashes."
+  }
+}

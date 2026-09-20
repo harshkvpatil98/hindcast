@@ -126,6 +126,11 @@ variables {
   model_provider = "aws"
   model_region   = "us-east-1"
   workspace_id   = "wrkspc_01ABC"
+  reports = {
+    bucket_arn  = "arn:aws:s3:::cascade-reports-123456789012-us-east-1"
+    kms_key_arn = "arn:aws:kms:us-east-1:123456789012:key/platform"
+    prefix      = "reports"
+  }
 }
 
 run "the_study_records_through_claude_platform_on_aws_onto_a_durable_cache" {
@@ -320,4 +325,48 @@ run "anthropic_without_a_secret_is_refused" {
     api_key_secret = null
   }
   expect_failures = [var.api_key_secret]
+}
+
+# --- Publishing the deliverable (ADR-0046) ---------------------------------------------
+
+run "the_study_task_publishes_reports_and_can_never_read_one_back" {
+  command = apply
+  module {
+    source = "../../modules/study"
+  }
+
+  assert {
+    condition     = tolist(output.controls.reports_resources) == tolist(["arn:aws:s3:::cascade-reports-123456789012-us-east-1/reports/t/*"])
+    error_message = "Under this sandbox's own directory of the reports prefix; two sandboxes must not interleave."
+  }
+  assert {
+    condition = length(setintersection(
+      toset(output.controls.s3_actions),
+      toset(["s3:GetObject", "s3:GetObjectVersion", "s3:DeleteObject", "s3:DeleteObjectVersion"]),
+    )) == 0
+    error_message = "A report carries the labels: the process that writes one may not read one back, and may not remove one. Write-only is the design, not an accident of scoping."
+  }
+  assert {
+    condition     = contains(output.controls.reports_actions, "s3:PutObject") && contains(output.controls.reports_actions, "s3:ListBucket")
+    error_message = "It can add a report, and list the destination so `aws s3 cp --recursive` knows where it is going."
+  }
+  assert {
+    condition     = output.reports_uri == "s3://cascade-reports-123456789012-us-east-1/reports/t/"
+    error_message = "The task is told where to publish by an output, not by an environment variable: a CASCADE_-prefixed name the settings do not define is a validation error by design."
+  }
+}
+
+run "a_reports_bucket_arn_with_a_path_is_refused" {
+  command = plan
+  module {
+    source = "../../modules/study"
+  }
+  variables {
+    reports = {
+      bucket_arn  = "arn:aws:s3:::cascade-reports/reports"
+      kms_key_arn = "arn:aws:kms:us-east-1:123456789012:key/platform"
+      prefix      = "reports"
+    }
+  }
+  expect_failures = [var.reports]
 }

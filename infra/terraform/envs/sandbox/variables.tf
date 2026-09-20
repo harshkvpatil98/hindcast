@@ -114,6 +114,15 @@ variable "study" {
       kms_key_arn      = string
       llm_cache_prefix = string
     })
+    # The platform root's `reports_publish` output, passed whole: where this
+    # sandbox publishes what `cascade report` writes (ADR-0046). Required for
+    # the same reason `recovery` is -- a study whose deliverable has nowhere
+    # to go leaves it in scratch storage that dies with the task.
+    reports = object({
+      bucket_arn  = string
+      kms_key_arn = string
+      prefix      = string
+    })
     sync_schedule_expression = string
   })
   default = null

@@ -34,12 +34,19 @@
 
 data "aws_partition" "current" {}
 data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
 
 locals {
   partition = data.aws_partition.current.partition
   account   = data.aws_caller_identity.current.account_id
 
   cache_mount = "/cache/llm"
+
+  # Under the reports bucket's own prefix, one directory per sandbox: two
+  # sandboxes must not interleave, and each `cascade report` run writes a
+  # timestamped `study_<ts>/` directory beneath this (Appendix D).
+  reports_subdirectory = "${var.reports.prefix}/${var.name}"
+  reports_objects_arn  = "${var.reports.bucket_arn}/${var.reports.prefix}/${var.name}/*"
 
   provider_environment = {
     anthropic = {}
@@ -201,6 +208,43 @@ data "aws_iam_policy_document" "task" {
     sid       = "ConnectAsAppRoles"
     actions   = ["rds-db:connect"]
     resources = var.db_user_arns
+  }
+
+  # Publishing what `cascade report` writes (ADR-0046). Add-only, under this
+  # sandbox's own directory: put, and list the destination so `aws s3 sync`
+  # can decide what to send. No GetObject -- and not merely because it is not
+  # needed here. A report carries the resolution labels (`baselines.csv` and
+  # `ablation_grid.csv` are one row per scenario with an `outcome` column), so
+  # the process that writes one may not read one back. The reports bucket's
+  # own policy Denies this role the read as well, because this role appears in
+  # the platform root's `simulation_principal_arns`; withholding it here too
+  # means the grant reads the way the design does.
+  statement {
+    sid       = "PublishReportsUnderThisSandboxsDirectory"
+    actions   = ["s3:PutObject", "s3:AbortMultipartUpload", "s3:ListMultipartUploadParts"]
+    resources = [local.reports_objects_arn]
+  }
+  statement {
+    sid       = "ListWhatThisSandboxHasPublished"
+    actions   = ["s3:ListBucket"]
+    resources = [var.reports.bucket_arn]
+    condition {
+      test     = "StringLike"
+      variable = "s3:prefix"
+      values   = ["${local.reports_subdirectory}/*", local.reports_subdirectory]
+    }
+  }
+  # The reports bucket is encrypted under the platform root's key; through S3
+  # only, as modules/cache does for the recovery key.
+  statement {
+    sid       = "EncryptReportsThroughS3"
+    actions   = ["kms:GenerateDataKey"]
+    resources = [var.reports.kms_key_arn]
+    condition {
+      test     = "StringEquals"
+      variable = "kms:ViaService"
+      values   = ["s3.${data.aws_region.current.region}.amazonaws.com"]
+    }
   }
 }
 

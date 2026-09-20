@@ -206,6 +206,15 @@ NEVER_DEFAULTED = {
     "dns_firewall_action": "whether an unlisted name is refused or merely logged is a security posture, chosen knowingly at first apply",
     "sync_schedule_expression": "the RPO for the LLM cache against a per-run cost that grows with it; neither is measured",
     "guardduty_min_severity": "what severity pages a human is a decision, not a constant",
+    # ADR-0046
+    "report_lock_retention_days": (
+        "how long a published claim cannot be withdrawn is a decision about the record, "
+        "and the operational cost of getting it wrong is paid for that whole period"
+    ),
+    "inventory_schedule": (
+        "how often the tier-0 archive is listed prices noticing an omission against a "
+        "per-run charge that grows with the archive; neither has been measured"
+    ),
 }
 
 
@@ -249,6 +258,34 @@ def test_a_never_defaulted_input_is_not_defaulted_through_an_object_attribute() 
     ]
     assert not offenders, "a required decision is defaulted inside an object type:\n" + "\n".join(
         offenders
+    )
+
+
+# ADR-0046 rejected serving the study's report directory as a static site. The
+# rejection is a security property, not a preference: every report carries
+# `baselines.csv` and `ablation_grid.csv`, which are one row per scenario with
+# an `outcome` column, and §1.3's frozen split and §4.4's memorisation probe
+# both rest on the labels not being crawlable. A distribution is a standing
+# public endpoint; a presigned URL made by an assumed role dies with the
+# session. Nothing here may grow one by accident, in any module.
+CDN_PATTERNS = (
+    r'resource\s+"aws_cloudfront_',
+    r"cloudfront\.amazonaws\.com",
+    r'resource\s+"aws_s3_bucket_website_configuration"',
+)
+
+
+@pytest.mark.parametrize("pattern", CDN_PATTERNS)
+def test_no_report_is_served_from_a_public_endpoint(pattern: str) -> None:
+    found = [
+        f"{rel(path)}:{number}: {line.strip()}"
+        for path in terraform_sources()
+        for number, line in code_lines(path)
+        if re.search(pattern, line)
+    ]
+    assert not found, (
+        "a study report carries the resolution labels; it is fetched by a named "
+        "principal, never served (ADR-0046):\n" + "\n".join(found)
     )
 
 

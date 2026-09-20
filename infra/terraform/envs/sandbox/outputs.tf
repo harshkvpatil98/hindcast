@@ -58,5 +58,20 @@ output "study" {
     sync_task_arn       = module.cache[0].sync_task_arn
     efs_location_arn    = module.cache[0].efs_location_arn
     s3_location_arn     = module.cache[0].s3_location_arn
+    reports_uri         = module.study[0].reports_uri
   }
+}
+
+# The exact command that publishes a report, printed rather than documented so
+# it cannot drift from the resources it names (ADR-0046). `cascade report`
+# writes `reports/study_<ts>/` inside the task; this sends that directory to
+# the bucket the platform root owns. Run it from the task, whose role may add
+# objects there and may not read one back.
+output "publish_report" {
+  description = "Null unless the study task was asked for. Replace STUDY_ID with the study_<ts> directory `cascade report` printed."
+  value = var.study == null ? null : join(" ", [
+    "aws s3 cp --recursive reports/STUDY_ID",
+    "${module.study[0].reports_uri}STUDY_ID/",
+    "--region ${var.region}",
+  ])
 }
