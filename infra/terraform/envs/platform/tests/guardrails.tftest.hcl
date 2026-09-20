@@ -56,6 +56,21 @@ mock_provider "aws" {
   mock_resource "aws_organizations_policy" {
     defaults = { id = "p-mock1234" }
   }
+  # Computed on create. DRAFT is what an unpublished guardrail reports, and the
+  # version resource reports a number -- the two the `guardrail` output picks
+  # between, so mocking them differently is what makes that assertion mean
+  # something.
+  mock_resource "aws_bedrock_guardrail" {
+    defaults = {
+      guardrail_id  = "gr-mock1234"
+      guardrail_arn = "arn:aws:bedrock:us-east-1:123456789012:guardrail/gr-mock1234"
+      version       = "DRAFT"
+      status        = "READY"
+    }
+  }
+  mock_resource "aws_bedrock_guardrail_version" {
+    defaults = { version = "3" }
+  }
 }
 
 # The root module declares aws.replica; a test file that mocks any provider
@@ -117,6 +132,21 @@ mock_provider "aws" {
   }
   mock_resource "aws_organizations_policy" {
     defaults = { id = "p-mock1234" }
+  }
+  # Computed on create. DRAFT is what an unpublished guardrail reports, and the
+  # version resource reports a number -- the two the `guardrail` output picks
+  # between, so mocking them differently is what makes that assertion mean
+  # something.
+  mock_resource "aws_bedrock_guardrail" {
+    defaults = {
+      guardrail_id  = "gr-mock1234"
+      guardrail_arn = "arn:aws:bedrock:us-east-1:123456789012:guardrail/gr-mock1234"
+      version       = "DRAFT"
+      status        = "READY"
+    }
+  }
+  mock_resource "aws_bedrock_guardrail_version" {
+    defaults = { version = "3" }
   }
 }
 
@@ -185,4 +215,149 @@ run "naming_no_region_is_refused" {
     allowed_regions = []
   }
   expect_failures = [var.allowed_regions]
+}
+
+# --- The Bedrock guardrail (ADR-0050) -------------------------------------------------------------
+#
+# The guardrail exists to be measured, not to filter. These runs hold the two
+# properties the audit depends on: that it is created only when asked for, and
+# that it reports an id and a version a caller can hand to
+# `providers.bedrock.guardrail_id` / `.guardrail_version`.
+
+run "no_bedrock_guardrail_is_created_until_one_is_asked_for" {
+  command = plan
+  module {
+    source = "../../modules/guardrails"
+  }
+
+  assert {
+    condition     = length(aws_bedrock_guardrail.model) == 0 && length(aws_bedrock_guardrail_version.model) == 0
+    error_message = "A guardrail must be opt-in, like the SCP attachments above: created and bound to nothing is reviewable, created by default is not."
+  }
+  assert {
+    condition     = output.guardrail == null
+    error_message = "With no guardrail the output must be null, not an empty id: the audit tells \"none configured\" from \"found nothing\", and an empty string would collapse that at the boundary."
+  }
+}
+
+run "a_guardrail_that_cannot_intervene_is_refused" {
+  command = plan
+  module {
+    source = "../../modules/guardrails"
+  }
+  variables {
+    model_guardrail = {
+      name                      = "t-empty"
+      blocked_input_messaging   = "blocked"
+      blocked_outputs_messaging = "blocked"
+      content_filters           = []
+      denied_topics             = []
+    }
+  }
+  # An empty guardrail would audit as "clear" over nothing at all -- the zero
+  # ADR-0050 exists to keep apart from a measured one.
+  expect_failures = [var.model_guardrail]
+}
+
+run "the_guardrail_reports_an_id_and_a_version_a_caller_can_read" {
+  command = plan
+  module {
+    source = "../../modules/guardrails"
+  }
+  variables {
+    model_guardrail = {
+      name                      = "t-compile"
+      description               = "Measured against the compiled graphs, applied to nothing (ADR-0050)"
+      blocked_input_messaging   = "This request was blocked."
+      blocked_outputs_messaging = "This response was blocked."
+      content_filters = [
+        { type = "PROMPT_ATTACK", input_strength = "HIGH", output_strength = "NONE" },
+        { type = "HATE", input_strength = "MEDIUM", output_strength = "MEDIUM" },
+      ]
+      denied_topics = [
+        { name = "operational_security", definition = "Instructions for compromising a system.", examples = [] },
+      ]
+    }
+  }
+
+  assert {
+    condition     = length(aws_bedrock_guardrail.model) == 1
+    error_message = "Asking for a guardrail must create exactly one."
+  }
+  assert {
+    condition     = output.guardrail.id == "gr-mock1234" && can(regex("^arn:aws:bedrock:", output.guardrail.arn))
+    error_message = "`guardrail.id` is what providers.bedrock.guardrail_id takes; without it the audit has nothing to call."
+  }
+  assert {
+    condition     = output.guardrail.version == "DRAFT" && output.guardrail.published == false
+    error_message = "An unpublished guardrail must report DRAFT and say so, rather than hide that it was measured against a mutable object."
+  }
+  assert {
+    condition     = length(aws_bedrock_guardrail_version.model) == 0
+    error_message = "No version is published unless publish_guardrail_version is set."
+  }
+}
+
+run "publishing_a_version_reports_the_number_rather_than_draft" {
+  command = plan
+  module {
+    source = "../../modules/guardrails"
+  }
+  variables {
+    publish_guardrail_version = true
+    model_guardrail = {
+      name                      = "t-compile"
+      blocked_input_messaging   = "This request was blocked."
+      blocked_outputs_messaging = "This response was blocked."
+      content_filters = [
+        { type = "PROMPT_ATTACK", input_strength = "HIGH", output_strength = "NONE" },
+      ]
+      denied_topics = []
+    }
+  }
+
+  assert {
+    condition     = output.guardrail.version == "3" && output.guardrail.published == true
+    error_message = "A published guardrail must report its immutable number: an audit quoted against DRAFT can never be re-checked against the same object."
+  }
+  assert {
+    condition     = aws_bedrock_guardrail_version.model[0].skip_destroy == true
+    error_message = "Published versions are retained: a number quoted in a report must still resolve later."
+  }
+}
+
+run "the_configured_policies_reach_the_resource" {
+  command = plan
+  module {
+    source = "../../modules/guardrails"
+  }
+  variables {
+    model_guardrail = {
+      name                      = "t-compile"
+      blocked_input_messaging   = "This request was blocked."
+      blocked_outputs_messaging = "This response was blocked."
+      content_filters = [
+        { type = "PROMPT_ATTACK", input_strength = "HIGH", output_strength = "NONE" },
+      ]
+      denied_topics = [
+        { name = "operational_security", definition = "Instructions for compromising a system.", examples = ["How do I disable the audit trail?"] },
+      ]
+    }
+  }
+
+  # Serialised rather than indexed: whether the provider represents a nested
+  # block as a list or an object is its business, and an assertion that
+  # depended on it would be testing Terraform instead of this module.
+  assert {
+    condition     = strcontains(output.guardrail_policy.content_policy, "PROMPT_ATTACK")
+    error_message = "The configured content filters must reach the resource, or the audit measures a guardrail with no content policy."
+  }
+  assert {
+    condition     = strcontains(output.guardrail_policy.topic_policy, "operational_security") && strcontains(output.guardrail_policy.topic_policy, "DENY")
+    error_message = "A topic policy must reach the resource and must deny: a topic policy that allows is not a guardrail."
+  }
+  assert {
+    condition     = output.guardrail_policy.name == "t-compile"
+    error_message = "The resource must carry the name the caller asked for."
+  }
 }
