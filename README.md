@@ -75,7 +75,9 @@ compiling needs the corpus, which is not rebuilt on this machine. See
 | Prompt injection (threat T3) | a document impersonating a system notice was obeyed on **20 of 30** scenarios (95% CI [0.49, 0.81], mean shift +0.491); a plain "ignore your instructions" on **0 of 30**. After quoting documents in a frame they cannot forge ([ADR-0045](docs/adr/0045-quoted-evidence.md), prompt revision r4): **0 of 30**, intervals disjoint | M14 |
 | Arbiter properties | bounded, conserving, permutation-invariant, monotone — all pass under Hypothesis | M5 |
 | Replay determinism | **25/25** runs byte-identical across processes, 24.3 s; re-measured **25/25 in 8.4 s** on the rebuilt environment | M8 / M10 |
-| Parametric memorization | **180/180** answers parsed; median confidence **0.70**; direction correct on **97/180** — not distinguishable from chance (two-sided p ≈ 0.33); probe Brier **0.2616** against climatology's 0.2500. Measured through `claude_code`, **not the pinned configuration** | M3 / M10 |
+| Parametric memorization | **180/180** answers parsed; median confidence **0.70**; **directionally correct on 89/180 -- chance**; probe Brier **0.2970** against climatology's 0.2500, so the model's confident priors about these questions do not predict them. Measured through `claude_code`, **not the pinned configuration** | M3 / M14 |
+| Compiled causal graphs | **155 of the 165 scored** scenarios, 594 model calls; mean 12.34 actors (14 +/- 2 criterion **met**), 7.46 factors; every stored graph re-hashes and re-validates (**155/155**); **10 hard failures**, nine of them two factors too alike on "which team wins X" questions | M4 / M14 |
+| Market at the cutoff (benchmark) | Brier **0.207828** over the 107 test scenarios with a usable price, **BSS 0.1687** against climatology's 0.250000 | M14 |
 | Provenance chain | complete to a root cause in **0.27 s** | M8 |
 | Test suite | **1,998 passing** offline, 1 skipped; ruff, black and mypy strict clean over 117 modules. Against the rebuilt corpus: **150 integration** and **74 leakage/property** tests pass, including the poison pill planted for every scenario and never returned through the new keyword pool | all |
 

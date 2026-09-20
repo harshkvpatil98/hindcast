@@ -2120,16 +2120,19 @@ flagged chunks to 4**, and all four are stamps later than the page's own fetch
 **M4's acceptance numbers exist for the first time**, compiled through the
 Claude Code CLI under the owner's subscription (622 calls, $0):
 
-| # | Criterion | Measured | Verdict |
+| # | Criterion | Measured (under r4) | Verdict |
 |---|---|---|---|
-| 1 | every scenario passes the validator within 2 repairs | **158 of the 165 scored**; 7 hard failures | **MISSED** |
-| 2 | mean actor count 14 +/- 2; factors in [4, 12] | **12.63** actors (range 10-17); 7.27 factors (range 4-11) | **PASS** |
-| 3 | recompiling an unchanged input reproduces the hash | 158 distinct hashes for 158 graphs; `compile verify` re-hashes and re-validates **158/158** | **PASS** |
-| 4 | 20-graph audit, mean >= 1.5 | worksheet written (19 graphs; the 20th sampled scenario is a hard failure and is recorded as one) | **awaiting a human reviewer** |
+| 1 | every scenario passes the validator within 2 repairs | **155 of the 165 scored**; 10 hard failures | **MISSED** |
+| 2 | mean actor count 14 +/- 2; factors in [4, 12] | **12.34** actors (range 11-15); 7.46 factors (range 5-12) | **PASS** |
+| 3 | recompiling an unchanged input reproduces the hash | 155 distinct hashes for 155 graphs; `compile verify` re-hashes and re-validates **155/155** | **PASS** |
+| 4 | 20-graph audit, mean >= 1.5 | worksheet written over the r4 graphs (20 sampled) | **awaiting a human reviewer** |
 
-Repair retries: 43 graphs needed none (27.2%), 82 one (51.9%), 33 two (20.9%).
-**The 7 failures are one pattern**: six are `factor_orthogonality` (two factors
-within cosine 0.8) and five of those six are "which team wins X" questions,
+Repair retries: 47 graphs needed none (30.3%), 87 one (56.1%), 21 two (13.6%).
+594 calls. The first pass, under r2, compiled 158 with 7 failures at 12.63 mean
+actors; **the r4 quoting change cost three more scenarios** to the same
+orthogonality rule, which is reported rather than tuned away.
+**The 10 failures are one pattern**: nine are `factor_orthogonality` (two
+factors within cosine 0.8) and most are "which team wins X" questions,
 where the honest decomposition has one driver and the compiler keeps inventing
 near-duplicates; the seventh is `edge_sanity`. They replay from cache, so they
 fail identically and cost nothing to re-attempt; changing the outcome means a
@@ -2173,7 +2176,22 @@ never enters. Same probe, same 30 scenarios:
 The intervals for the attack that worked are disjoint. The residual ~+0.085 is
 the same for all three attacks including the one that never worked, so it is
 what appending any extra document does, not obedience. r4 invalidates every
-recording, so the graphs were recompiled under it.
+recording, so all 165 scenarios were recompiled under it.
+
+**The parametric probe, re-run under r4** (`cascade retrieval memorization`,
+through `claude_code`, not the pinned configuration): 180/180 answers parsed,
+mean confidence **0.6429**, median **0.70**, **directionally correct on 89 of
+180** -- chance -- and a probe Brier of **0.297026** against climatology's
+0.250000. The model states confident priors about these questions (69 answers
+at confidence >= 0.9) and they do not predict the outcomes. Under r2 the same
+probe measured 97/180 and 0.261562.
+
+**The report artifact was written from the rebuilt state** and says what it
+has: the headline is "not produced" because no forecast exists for `C01`, the
+four stand-in cells are flagged above every number they touch, and the
+baselines table carries climatology (Brier 0.250000 over 125 test scenarios)
+and the market at the cutoff (**Brier 0.207828 over 107 test scenarios, BSS
+0.1687 against climatology**) -- the bar the study has to clear.
 
 **Deferred, with reasons:**
 
