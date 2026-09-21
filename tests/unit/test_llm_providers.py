@@ -524,6 +524,48 @@ def test_a_transient_status_is_retried(
     assert len(runner.calls) == 2
 
 
+def test_exhausted_structured_output_retries_are_retried_not_fatal(
+    cli_settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A CLI-side parse failure carries no HTTP status, so it matches on subtype.
+
+    Measured in the M15 fan-out: this killed a whole scenario worker and with
+    it every replicate it had not yet run -- three of thirty-six scenarios,
+    ten replicates each, about fifteen minutes in. It is transient in the same
+    sense as a 529: the model failed to emit a parseable tool call that time,
+    and a fresh call may succeed. It reaches the retry loop with
+    `api_error_status=None`, so neither the 429 branch nor
+    `_CLI_TRANSIENT_STATUSES` can see it.
+    """
+    monkeypatch.setattr(LLMClient, "_sleep", lambda self, seconds: None)
+    runner = FakeCli(
+        cli_body(
+            is_error=True,
+            api_error_status=None,
+            subtype="error_max_structured_output_retries",
+            result="",
+        ),
+        cli_body(),
+    )
+    result = LLMClient(cli_settings, phase="bench", cli_runner=runner).complete(request_for())
+    assert result.text == '{"p": 0.6}'
+    assert len(runner.calls) == 2
+
+
+def test_an_unknown_cli_error_subtype_is_still_fatal(cli_settings: Settings) -> None:
+    """The retry set is a whitelist: an unrecognised failure must not loop silently.
+
+    A blanket retry on `is_error` would turn a permanent misconfiguration into
+    an unbounded loop that spends the subscription and reports nothing.
+    """
+    runner = FakeCli(
+        cli_body(is_error=True, api_error_status=None, subtype="error_during_execution")
+    )
+    with pytest.raises(LLMError, match="reported an error"):
+        LLMClient(cli_settings, phase="bench", cli_runner=runner).complete(request_for())
+    assert len(runner.calls) == 1
+
+
 def test_a_missing_executable_is_a_precondition(cli_settings: Settings) -> None:
     runner = FakeCli(FileNotFoundError("claude"))
     with pytest.raises(ProviderNotReady, match="not on PATH"):

@@ -102,6 +102,27 @@ _CHARS_PER_TOKEN = 3.6
 # the plan's usage limit, which retrying in a loop only extends.
 _CLI_TRANSIENT_STATUSES = frozenset({500, 502, 503, 504, 529})
 
+# The CLI reports its own exhausted structured-output retries as an error with
+# no HTTP status, so it matches neither the 429 guard nor the statuses above
+# and would otherwise be fatal. Measured in the M15 fan-out: three of
+# thirty-six scenarios died about fifteen minutes in, each losing all ten of
+# its replicates, to one identical cause -- `claude -p` exhausting its internal
+# attempts to emit a parseable tool call, arriving as
+# `subtype='error_max_structured_output_retries' status=None`, falling through
+# to `to_messages_payload` and raising.
+#
+# It is transient in exactly the sense a 529 is: the model failed to emit a
+# parseable tool call that time, and a fresh call may succeed. Retrying here
+# does not fabricate a decision -- a failed parse is not an action, so
+# ADR-0018's coercion to WAIT does not apply. That coercion belongs to
+# `_tool_input()` returning None, which is a different fact: there the CLI
+# answered and the answer carried no usable action, where this subtype means
+# no answer came back at all.
+#
+# A whitelist rather than a blanket retry on `is_error`, so an unrecognised
+# failure still fails loudly instead of looping in silence.
+_CLI_TRANSIENT_SUBTYPES = frozenset({"error_max_structured_output_retries"})
+
 
 # The label per-query rerank spend is booked under in the cost meter. One
 # constant, because the wrapper books the hits and the reranker books the
@@ -552,6 +573,10 @@ class LLMClient:
                 )
             if cli.get("is_error") and status in _CLI_TRANSIENT_STATUSES:
                 failure = f"transient API status {status}"
+                self._sleep(5.0 * 2**attempt)
+                continue
+            if cli.get("is_error") and cli.get("subtype") in _CLI_TRANSIENT_SUBTYPES:
+                failure = f"transient CLI subtype {cli.get('subtype')!r}"
                 self._sleep(5.0 * 2**attempt)
                 continue
             return to_messages_payload(cli, invocation=invocation, logical_model=request.model)
