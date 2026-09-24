@@ -553,6 +553,28 @@ class LLMClient:
                         "log in with the subscription (`claude` then `/login`)"
                     ],
                 ) from None
+            except OSError as exc:
+                # An executable that exists but cannot be run. Measured during
+                # the M15 fan-out: a failed Claude Code auto-update left a stub
+                # at the install path, and every worker raised ENOEXEC as a raw
+                # traceback -- sixty lines each, sixteen at a time -- while the
+                # diagnostic written for exactly this situation sat one branch
+                # above, unreachable because `FileNotFoundError` is only the
+                # *missing* case.
+                #
+                # Caught after `FileNotFoundError` rather than instead of it:
+                # that subclass carries its own remedy ("install it"), and this
+                # one carries a different remedy ("it is there and broken"),
+                # which is the distinction worth keeping.
+                raise ProviderNotReady(
+                    "claude_code",
+                    [
+                        f"{config.executable!r} exists but could not be executed ({exc}). "
+                        "A partial or failed Claude Code update leaves a stub that is "
+                        "found on PATH and is not runnable; reinstall it and check "
+                        "`claude --version` returns before re-running"
+                    ],
+                ) from None
             except subprocess.TimeoutExpired:
                 failure = f"timed out after {self._settings.llm.timeout_s:.0f}s"
                 self._sleep(5.0 * 2**attempt)

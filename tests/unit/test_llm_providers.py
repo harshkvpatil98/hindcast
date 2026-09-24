@@ -572,6 +572,37 @@ def test_a_missing_executable_is_a_precondition(cli_settings: Settings) -> None:
         LLMClient(cli_settings, phase="bench", cli_runner=runner).complete(request_for())
 
 
+def test_an_unexecutable_binary_is_a_precondition_not_a_traceback(
+    cli_settings: Settings,
+) -> None:
+    """A CLI that exists but cannot run must reach the same diagnostic.
+
+    Measured during the M15 fan-out: a failed Claude Code auto-update left a
+    stub at the install path. `FileNotFoundError` is only the *missing* case,
+    so every worker raised ENOEXEC as a sixty-line traceback -- sixteen at a
+    time -- while the message written for exactly this situation sat one
+    branch above, unreachable.
+
+    The two remedies differ, which is why the branches stay separate: one says
+    install it, this one says it is installed and broken.
+    """
+    runner = FakeCli(OSError(8, "Exec format error"))
+    with pytest.raises(ProviderNotReady, match="could not be executed"):
+        LLMClient(cli_settings, phase="bench", cli_runner=runner).complete(request_for())
+
+
+def test_a_missing_executable_still_says_install_it(cli_settings: Settings) -> None:
+    """Guard the guard: the new branch must not swallow the missing case.
+
+    `FileNotFoundError` is a subclass of `OSError`, so ordering decides which
+    message a user sees. Wrong order and "install Claude Code" becomes "it
+    exists but could not be executed" -- advice that is false and unactionable.
+    """
+    runner = FakeCli(FileNotFoundError("claude"))
+    with pytest.raises(ProviderNotReady, match="not on PATH"):
+        LLMClient(cli_settings, phase="bench", cli_runner=runner).complete(request_for())
+
+
 def test_a_workdir_below_a_claude_md_is_refused_before_the_cli_runs(
     cli_settings: Settings, tmp_path: Path
 ) -> None:
