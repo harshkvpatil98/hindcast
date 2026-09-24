@@ -47,6 +47,7 @@ from dataclasses import dataclass
 from cascade.config import Settings
 from cascade.eval.market import MARKET_CONFIG_ID
 from cascade.ledger.schema import Scenario
+from cascade.llm.providers import charges_per_call
 from cascade.llm.types import BatchItem, LLMRequest
 from cascade.quoting import EVIDENCE_RULE, quote_documents
 
@@ -397,10 +398,31 @@ def run_single_model(
             )
         )
 
+    # ADR-0052, applied to this phase as well as to the fan-out. The batch door
+    # refuses a provider with no Batches API because ADR-0020 prices the study
+    # at the 50% rate against a ceiling -- an argument about money, which does
+    # not bind a provider that charges none. `charges_per_call` reads
+    # `ProviderSpec.billing`, a frozen constant, never the price table, so a
+    # zeroed `pricing` block in YAML cannot exempt a paid provider.
+    serial = not charges_per_call(str(getattr(llm, "provider", "")))
+
     answers: dict[str, str] = {}
     for start in range(0, len(items), max(1, batch_size)):
         group = items[start : start + max(1, batch_size)]
-        results = llm.complete_batch(group, trace_name=f"baseline.{config_id}")  # type: ignore[attr-defined]
+        if serial:
+            # One call each, through the same door, in sorted order. The cache
+            # is content-addressed, so this reaches exactly the recordings a
+            # batched submission would have produced -- batching is a cost
+            # change, not a behaviour change, and that has to hold in both
+            # directions.
+            results = {
+                item.custom_id: llm.complete(  # type: ignore[attr-defined]
+                    item.request, trace_name=f"baseline.{config_id}"
+                )
+                for item in sorted(group, key=lambda entry: entry.custom_id)
+            }
+        else:
+            results = llm.complete_batch(group, trace_name=f"baseline.{config_id}")  # type: ignore[attr-defined]
         for custom_id in sorted(results):
             answers[custom_id] = results[custom_id].text
 

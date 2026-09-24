@@ -2285,3 +2285,76 @@ against the owner's instruction to finish rather than stop at the gate:
   `model_json_schema()` was lifting this project's docstrings onto the wire,
   including the cutoff's argument name -- 455 tokens with the prose, 253
   without.
+
+### M16 — The first measured study · *complete on the development partition; the
+headline is a null, and the test partition is deliberately unspent*
+
+Shipped: nothing new. This milestone ran what M4–M15 built, end to end, with a
+real model deciding every turn for the first time in the project's history.
+
+**What ran.** 36 of the 40 development scenarios (four had no compiled graph --
+the M4 hard failures), 10 replicates each, **360 runs and 66,231 model calls**,
+through `claude -p` under a Claude subscription on a 16-core university
+machine, with the database reached over an SSH reverse tunnel. The fan-out ran
+unbatched (ADR-0052), because a subscription charges nothing per call and
+ADR-0020's ceiling argument is about money.
+
+**Measured acceptance values.**
+
+| # | Criterion | Measured | Verdict |
+|---|---|---|---|
+| 1 | A headline Brier exists at all | **0.219709** over 36 scored dev scenarios, decider `agent` | **PASS** |
+| 2 | Beats the climatology floor | climatology **0.250000**, Cascade **0.219709**, difference **-0.030291**, 95% CI **[-0.09714, +0.04265]**, **p 0.3912** | **NOT DEMONSTRATED** |
+| 3 | Beats a single model given the same evidence (§10.2) | single-model direct **0.206903** (165/165 scenarios, 0 unparseable); Cascade **minus** single **+0.012806**, 95% CI **[-0.08526, +0.11007]**, **p 0.7950** | **NOT DEMONSTRATED** |
+| 4 | Activation rate 34.7% ± 4 pts (M5 crit. 2) | **0.6301** | **FAIL** |
+| 5 | Action-cache hit rate >= 88% (M6 crit. 2) | **0.0746** | **FAIL** |
+| 6 | Convergence curve (§9.3) | **NOT PRODUCED** -- the ladder's first rung is 25 replicates and the study ran 10 | **BLOCKED** |
+
+**The headline is a null, and it is the point of the exercise.** §1 says: "If
+the true Brier lands at 0.168, the report says 0.168 and every downstream claim
+is restated." The true Brier landed at 0.2197 against a target of 0.141, and
+the single-model reference landed at 0.2069 against a predicted 0.203 -- the
+baseline the spec predicted almost exactly, and the system it predicted not at
+all.
+
+At 36 scenarios **no pairwise comparison is distinguishable from zero**, Cascade
+against climatology included. The point estimates order single-model < Cascade
+< climatology and every interval straddles zero. The honest statement is that
+this study cannot distinguish the three, not that Cascade is worse.
+
+**The power arithmetic, which is worth as much as the result.** The per-scenario
+difference has SD ~= 0.30. For 80% power at alpha 0.05 two-sided:
+
+- to detect the spec's hoped-for 0.062 Cascade advantage: **n ~= 180** -- which
+  is exactly the size the registry was built to (§3.1, ADR-0008). The study was
+  correctly powered *for the effect it expected*.
+- to detect the 0.013 actually measured: **n ~= 2,000**.
+
+So the design was sound and the effect is five times smaller than hoped. No
+feasible scenario count within this project resolves it.
+
+**Criteria 4 and 5 trace to one measured fact, and M5 predicted it.** The
+compiler returned factor volatility with median **0.06** across 1,148 factors.
+M5's entry states: "If compiled graphs come back with volatility ~0.1, the study
+runs ~184 decisions per run instead of 116.6." Measured: **184.0**, to the
+decimal, two milestones later. The cache criterion follows from the same fact --
+at sigma 0.06 against `OBSERVATION_DECIMALS = 2`, replicates diverge past the
+rounding within three steps, and **0 of 585** (scenario, actor, step) slots
+observed in more than one replicate ever shared an observation. §12.1's 91% hit
+rate implies volatility near 0.01-0.02. Neither criterion was tuned toward.
+
+**Calibration.** ECE 0.1783, MCE 0.5012; the isotonic refit recovers 0.201023
+from 0.219709, so roughly 0.019 of the loss is miscalibration rather than
+discrimination. AUC 0.7031 against the single model's 0.8321. At n = 36 the
+calibration bins hold 1-7 scenarios each, so this is indicative only.
+
+**Deferred, with reasons:**
+
+- **The 125 test scenarios.** Deliberately unspent. A second run of this size
+  would tighten the intervals and, on the measured effect, return the same
+  answer -- and the partition can only be spent once.
+- **The 12-cell ablation grid and the self-consistency baseline** -- the grid is
+  eight cells this study did not run, and the baseline is 36,000 calls.
+- **The dispersion finding (§9.2, sigma > 0.3 in ~31%)** -- measured 0.0244
+  multi-modal share, but Hartigan's dip has no power at 10 replicates, so the
+  figure is not a reading and is reported as not produced.
