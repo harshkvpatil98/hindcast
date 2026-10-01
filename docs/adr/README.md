@@ -1,6 +1,6 @@
 # Architecture decision records
 
-Fifty records here, plus 0032 (live mode, proposed), which lives on the `m13/live-mode` branch. Each states the decision, the evidence behind it, and
+Fifty-three records, 0001 to 0053 (0032 is a proposal the owner parked). Each states the decision, the evidence behind it, and
 what it costs. They exist because this project's specification is detailed
 enough to be wrong in specific, checkable ways — and when it was, the record
 says so with the measurement that showed it.
@@ -41,7 +41,7 @@ this build. The rest record a choice the specification left open.
 | [0029](0029-api-providers-share-one-cache-namespace.md) | The API providers share one cache namespace — conditional on a measured equivalence probe | M10 |
 | [0030](0030-knowledge-bases-rejected-guardrails-deferred.md) | Bedrock Knowledge Bases rejected: a managed KB cannot enforce the time lock. Guardrails deferred: no path through the one door | M10 |
 | [0031](0031-claude-code-cli-provider.md) | A Claude Code CLI provider under a subscription, keyed apart because it cannot honour `temperature` or `max_tokens` | M10 |
-| 0032 | *Live mode (proposed) — on branch `m13/live-mode`* | M13 |
+| [0032](0032-live-mode-intake-snapshot.md) | **Proposed and parked.** Live mode for forward questions: two intake rounds frozen into a content-addressed snapshot before any simulation step. Deferred by the owner until the backtest and platform work was finished; nothing is built | M13 |
 | [0033](0033-infrastructure-as-code-terraform.md) | Terraform, pinned and run in Docker; gated offline with mock-provider tests, TFLint and triaged Checkov — no AWS account needed | M11 |
 | [0034](0034-aurora-data-plane.md) | Aurora 16.11 with pgvector pinned at 0.8.0, an isolated VPC, the bench as a Fargate task inside it, fixed capacity, and a copy-on-write clone for the partitioning experiment | M11 |
 | [0035](0035-platform-design.md) | One dedicated account; a budget derived from the study configuration; SCP guardrails; an event lake that makes append-only two independent controls; recovery tiers set by cost-to-lose | M12 |
@@ -61,3 +61,4 @@ this build. The rest record a choice the specification left open.
 | [0049](0049-agent-tool-access.md) | Agent tool access as a measured factor, not an upgrade: `lookup_evidence` and `recall` behind a one-field argument model with `extra="forbid"`, so a model-supplied `as_of` is a validation error rather than a silently dropped key. A tool loop is multi-turn and cannot ride ADR-0020's 24-batch shape, so the arm exists at ablation scale and never carries the headline | M15 |
 | [0050](0050-guardrails-measured-not-applied.md) | Bedrock Guardrails measured post-hoc over stored graphs rather than applied in the compile path: a filter in the compile path is unmeasurable by construction, because the graph it changed would be the only graph that existed. Four verdicts keep *not assessed* apart from *assessed and clear*. *Supersedes the deferred half of 0030* | M15 |
 | [0051](0051-bedrock-agents-rejected.md) | **Rejected, with the schema kept.** Bedrock Agents cannot carry the loop: under a Lambda executor `as_of` travels through a `map<string,string>` the model can read via `$prompt_session_attributes$` and the Lambda's own response can rewrite, and under any executor the prompt is composed by Bedrock, so a request this process did not compose cannot be content-addressed and M8's replay is lost. The Action Group schema is admissible and ships as the evidence | M15 |
+| [0053](0053-portfolio-completion-provider-interface-and-region.md) | **The project finishes as a portfolio.** Four provider classes behind one interface in the one call site, named as the deployment names them (`claude_cli`, `claude_platform_aws`; the old spellings stay aliases, the CLI's cache namespace keeps its old name); `LLM_PROVIDER` and three AWS-side variables as plain aliases read by `config.py`; everything regional in us-west-2; request ids and a structured call log; the Terraform roots completed; `cascade aws check`; the M16 null stands and nothing is spent to move it | M17 |

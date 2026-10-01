@@ -64,7 +64,8 @@ enforces 1, 5 and 7 statically.
 5. **One LLM call site**: `cascade/llm/client.py`. A grep for the Anthropic SDK
    import anywhere else fails CI. It is also the only place the Claude Code CLI
    is run, so every provider's calls are cached, metered and traced alike
-   (ADR-0028, ADR-0031). **And the only place a `boto3` client for a
+   (ADR-0028, ADR-0031); the four provider classes live there behind one
+   interface, `ModelProvider` (ADR-0053). **And the only place a `boto3` client for a
    model-serving AWS service may be built** — `bedrock`, `bedrock-runtime`,
    `bedrock-agent-runtime`, `sagemaker-runtime`. The SDK grep said nothing
    about `boto3`, so a module could reach `ApplyGuardrail` or `Rerank` with CI
@@ -89,13 +90,20 @@ Python 3.12 · LangGraph 0.2.x · PostgreSQL 16 + pgvector 0.8 ·
 Claude Sonnet 4.6 (compiler) · Langfuse self-hosted · DuckDB + Parquet ·
 Typer + Rich · uv + Docker Compose · pytest + hypothesis.
 
-Model access (ADR-0028, approved 2026-09-18): the pinned models are reached
-through `llm.provider` — the Anthropic API, Claude Platform on AWS, or Amazon
-Bedrock, whose clients all ship in the one `anthropic` package (the `aws`
-extra adds boto3/botocore for SigV4). `claude_code` (ADR-0031) runs the Claude
-Code CLI locally under a subscription; it is **not** the pinned configuration,
-because the CLI cannot set `temperature` or `max_tokens`, and its results must
-be labelled as such.
+Model access (ADR-0028, approved 2026-09-18; names and aliases ADR-0053): the
+pinned models are reached through `llm.provider` -- set as `LLM_PROVIDER` in
+`.env` -- which is `anthropic` (the Anthropic API), `claude_platform_aws`
+(Claude Platform on AWS) or `bedrock` (Amazon Bedrock), whose clients all ship
+in the one `anthropic` package (the `aws` extra adds boto3/botocore for
+SigV4), or `claude_cli` (ADR-0031), the Claude Code CLI run locally under a
+subscription. `claude_cli` is the provider **in use today**; it is **not** the
+pinned configuration, because the CLI cannot set `temperature` or
+`max_tokens`, and its results must be labelled as such. `claude_platform_aws`
+is implemented and mock-tested and waits on account provisioning. `aws` and
+`claude_code` are accepted aliases. Everything regional on AWS is
+**us-west-2**: the Terraform roots, Bedrock Rerank (`amazon.rerank-v1:0`,
+ADR-0047) and Bedrock Guardrails (the account's `cascade-audit-guardrail`,
+ADR-0050). Claude inference does not run through AWS today.
 
 Infrastructure (ADR-0033, M11): Terraform **1.16.3**, AWS provider **6.65.0**,
 random **3.9.1** (locked for darwin_arm64, linux_amd64, linux_arm64), TFLint
@@ -202,6 +210,7 @@ cascade eval score --config-id C01   # §10.1 metrics for one configuration
 cascade eval significance  # paired bootstrap + Holm-Bonferroni (§10.4)
 cascade eval prompt-audit  # §1.3's before/after Brier for a prompt revision
 cascade eval equivalence --reference anthropic --candidate bedrock  # ADR-0029's condition; exits 3 on divergence
+cascade aws check          # identity + the configured Bedrock guardrail and reranker, read without spending; exits 3 on a failure (ADR-0053)
 cascade eval guardrails    # ADR-0050's post-hoc audit over stored graphs; exits 3 on a confound *or* an incomplete pass
 cascade eval split         # the declared dev/test split and its exclusions; exits 3 if it is not the pinned one (ADR-0038)
 cascade eval tune-guard --scenario ID   # refuse any set touching test, an excluded or an undeclared scenario
@@ -213,7 +222,8 @@ cascade eval injection     # threat T3: can a document in the evidence give the 
 cascade report             # write reports/study_{ts}/ (Appendix D)
 
 cascade trace status       # what is replayable and traceable
-cascade trace replay --runs 25   # M8: byte-identical event-log hash, across processes
+cascade trace replay --runs 25   # M8: byte-identical event log, across processes; --policy heuristic verifies the stand-in runs anywhere
+cascade trace rehash --apply     # recompute runs.event_log_hash from the untouched events after a hash-domain change (M17); dry run without --apply
 cascade trace explain --run ID   # §11.2's chain from an outcome to a root cause
 cascade trace cost         # §12.4: reconcile the run ledger against Langfuse
 ```
@@ -222,7 +232,7 @@ cascade trace cost         # §12.4: reconcile the run ledger against Langfuse
 
 ## 7. Architecture decisions
 
-Fifty ADRs in `docs/adr/` on this branch; 0032 (live mode, proposed) lives on `m13/live-mode`. Fifteen correct defects found in the spec,
+Fifty-three ADRs in `docs/adr/` (0032 is a parked proposal). Fifteen correct defects found in the spec,
 and 0023, 0025 and 0026 correct defects found in **this build** -- an ingest order
 that satisfied every criterion while covering the wrong years, and two ablation
 factors that were configured, documented and inert. The rest record choices the
@@ -261,6 +271,7 @@ spec left open.
 | 0029 | The three API providers share one cache namespace — the key carries the logical model, the wire id is rendered at the boundary — *conditional* on `cascade eval equivalence`, which bootstraps cross-provider against within-provider disagreement | M10 |
 | 0030 | Bedrock Knowledge Bases rejected: a managed KB cannot enforce the `as_of` time lock the leakage suite verifies. Bedrock Guardrails deferred: the SDK's Bedrock client has no guardrail parameter, and `ApplyGuardrail` would be a second door | M10 |
 | 0031 | A Claude Code CLI provider for local runs under a subscription, keyed apart because it cannot honour `temperature` or `max_tokens`; measured 448-token harness overhead, thinking on by default, and a working-directory guard against auto-loading this file into every call | M10 |
+| 0032 | **Proposed and parked.** Live mode for forward questions from a frozen, content-addressed intake snapshot; deferred by the owner until the backtest and platform work was finished | M13 |
 | 0033 | Terraform 1.16.3 pinned and run in Docker (the system has 1.5.7, which predates `terraform test`); gated offline by mock-provider tests, TFLint and Checkov triaged skip by skip; no AWS account needed | M11 |
 | 0034 | Aurora 16.11 so pgvector stays 0.8.0 as locally (16.13 moves it to 0.8.1), minor upgrades off; an isolated VPC with no internet path; the bench as a Fargate task inside it; fixed ACU per measurement; a copy-on-write clone for the partitioning experiment | M11 |
 | 0035 | One dedicated account, because Marketplace billing defeats tag-based budgets; the budget is *derived* from `configs/base.yaml`, never restated; SCP guardrails bound to nothing until targets are named; the event lake makes invariant 6 two independent controls (Object Lock + an explicit Deny); recovery tiers follow cost-to-lose, set by this project's own data-loss incident | M12 |
@@ -280,6 +291,7 @@ spec left open.
 | 0049 | Agent tool access as a measured factor, not an upgrade: `lookup_evidence` and `recall` behind a one-field argument model with `extra="forbid"`, so a model-supplied `as_of` is a validation error rather than a silently dropped key. A tool loop is multi-turn and cannot ride ADR-0020's 24-batch shape, so the arm exists at ablation scale and never carries the headline | M15 |
 | 0050 | Bedrock Guardrails measured post-hoc over stored graphs rather than applied in the compile path: a filter in the compile path is unmeasurable by construction, because the graph it changed would be the only graph that existed. Four verdicts keep *not assessed* apart from *assessed and clear*. *Supersedes the deferred half of 0030* | M15 |
 | 0051 | **Rejected, with the schema kept.** Bedrock Agents cannot carry the loop: under a Lambda executor `as_of` travels through a `map<string,string>` the model can read via `$prompt_session_attributes$` and the Lambda's own response can rewrite, and under any executor the prompt is composed by Bedrock, so a request this process did not compose cannot be content-addressed and M8's replay is lost. The Action Group schema is admissible and ships as the evidence | M15 |
+| 0053 | **The project finishes as a portfolio** (owner's decision, 2026-09-30). Four provider classes behind one interface in the one call site, named `anthropic`, `claude_platform_aws`, `bedrock`, `claude_cli` (`aws` and `claude_code` stay aliases; the CLI's cache namespace keeps its old spelling so no recording is orphaned); `LLM_PROVIDER`, `ANTHROPIC_AWS_WORKSPACE_ID`, `CASCADE_GUARDRAIL_ID` and `CASCADE_GUARDRAIL_VERSION` as plain aliases read by `config.py` -- a narrow amendment of 0028, with the region still never ambient; everything regional in us-west-2; request ids on every call and a JSON-lines call log; the platform root exposes the guardrail and makes the SCPs optional; `cascade aws check`; the M16 null stands and nothing is spent to move it | M17 |
 
 ---
 
@@ -2376,3 +2388,140 @@ calibration bins hold 1-7 scenarios each, so this is indicative only.
 - **The dispersion finding (§9.2, sigma > 0.3 in ~31%)** -- measured 0.0244
   multi-modal share, but Hartigan's dip has no power at 10 replicates, so the
   figure is not a reading and is reported as not produced.
+
+### M17 — Portfolio completion · *complete; every gate green offline and against the live corpus; nothing has reached AWS from this repository, by the owner's instruction*
+
+The owner changed the objective on 2026-09-30 (ADR-0053): finish Cascade as
+an engineering portfolio project, on the Claude Code CLI under a subscription,
+with Claude Platform on AWS supported but not enabled, everything regional in
+us-west-2, Bedrock Rerank and Bedrock Guardrails as the AWS-native
+integrations, the Terraform audited and completed, and **no paid workload
+run to finish** -- not the study, not the rerank bench, not the guardrail
+audit over the stored graphs. Started from `m15/aws-genai` with
+`m14/forecast-quality`'s two documentation commits merged in (the r4
+recompile record and the memorization re-run), and the parked ADR-0032 brought
+onto the branch so the numbering has no hole.
+
+Shipped: `cascade/llm/providers.py` -- the `ModelProvider` Protocol, the
+canonical names with `aws` and `claude_code` as aliases, `status` per provider;
+`cascade/llm/client.py` -- `AnthropicApiProvider`, `ClaudePlatformAwsProvider`,
+`BedrockProvider`, `ClaudeCliProvider`, `build_provider`, request ids on every
+call, one search unit per 100 documents in the reranker, the guardrail's
+request id, `describe_aws_access`; `cascade/config.py` -- `normalise_provider`,
+`ENV_ALIASES` (`LLM_PROVIDER`, `ANTHROPIC_AWS_WORKSPACE_ID`,
+`CASCADE_GUARDRAIL_ID`, `CASCADE_GUARDRAIL_VERSION`) through an alias settings
+source, renamed provider sections, `observability.call_log`;
+`cascade/llm/tracing.py` -- `CallLogTracer`, `CompositeTracer`;
+`cascade aws check`; `cascade trace rehash`, replay targets re-hashed from the
+stored events with `--policy` and `run_id` filters, and a replay report that
+keeps *diverged* apart from *unreplayable here*; `doctor` rows for the
+provider's status, the region, the reranker, the guardrail and the call log; `configs/tuning/rerank_bedrock.yaml`;
+the platform root's `model_guardrail` / `publish_guardrail_version` /
+`create_service_control_policies` and its `guardrail` outputs;
+`envs/platform/terraform.tfvars.example`; us-west-2 in both roots' examples
+and the runbook; `.env.example` with `LLM_PROVIDER=claude_cli`; README,
+architecture overview, threat model, Well-Architected status, changelog
+(M15-M17), ADR-0053 and the index.
+
+**Measured acceptance values -- against the brief's twelve points.**
+
+| # | Criterion | Measured | Verdict |
+|---|---|---|---|
+| 1 | Claude runs through the locally authenticated CLI; no token handled | `LLM_PROVIDER=claude_cli` selects `ClaudeCliProvider`; `cascade doctor` (live): `llm provider claude_cli (alias: claude_code)`, `claude cli 2.1.286`, `ready to record yes`, all checks passed. The adapter builds `claude -p` arguments and reads the CLI's JSON; no credential is read, copied or stored (`claude_cli_environment` strips `ANTHROPIC_API_KEY`/`ANTHROPIC_AUTH_TOKEN`) | **PASS** |
+| 2 | A common provider interface; `ClaudeCliProvider` active, `ClaudePlatformAwsProvider` ready; switching is `LLM_PROVIDER=claude_platform_aws` + `ANTHROPIC_AWS_WORKSPACE_ID` | Four classes behind `ModelProvider`; `isinstance` holds for each; both aliases build the same class; the switch is tested end to end against the real SDK over a mock transport (SigV4 scope `/us-east-1/aws-external-anthropic/`, `anthropic-workspace-id` header). Not enabled: no workspace exists yet | **PASS** (built); **not live** |
+| 3 | AWS region us-west-2 everywhere | `providers.bedrock.region`, `providers.claude_platform_aws.region`, `observability.aws_region` = us-west-2 (tested); both `terraform.tfvars.example` files and the runbook; `cascade aws check` reports `region us-west-2 OK`. The one deliberate exception is the tier-0 replica (`us-west-1`) | **PASS** |
+| 4 | Bedrock Rerank, `amazon.rerank-v1:0`, the real API | `BedrockReranker` calls `bedrock-agent-runtime:Rerank` with the body botocore's own service model accepts (tested against the real signer: host `bedrock-agent-runtime.<region>.amazonaws.com`, scope `/bedrock/`); overlay `configs/tuning/rerank_bedrock.yaml` names the model; **search units are now booked per 100 documents**, the service's published rule | **PASS** (built); **not run against the account** |
+| 5 | Bedrock Guardrails, `cascade-audit-guardrail`, `CASCADE_GUARDRAIL_ID` / `_VERSION=1`, `ApplyGuardrail` direct | `BedrockGuardrail.screen` calls `bedrock-runtime:ApplyGuardrail` with the four required members; the id and version bind from the two environment variables (tested, from the shell and from `.env`; an empty value is *not configured*); `cascade eval guardrails` prints the request id per graph. ADR-0050's shape stands: an audit after compilation, never a filter inside it | **PASS** (built); **not run against the account** |
+| 6 | Terraform audited and complete: VPC, Aurora Serverless v2, S3, KMS, IAM, security groups, outputs | All present (16 modules, 3 roots). Completed: the platform root now passes the guardrail through and prints `guardrail` / `guardrail_environment`; the SCPs are optional for a standalone account. Gates under the pinned 1.16.3 in Docker: fmt clean, 3 roots valid, **62 + 112** mock-provider runs pass, TFLint clean, Checkov **1,027 passed / 0 failed / 73 skipped**, Dockerfile check clean (`make infra-check` exit 0) | **PASS** |
+| 7 | Observability: request ids and provider metadata kept; structured logging | `request-id` / `x-amzn-requestid` / the CLI session on every `LLMResult`, in `CachedCall.provider_metadata`, in the trace and in the `.jsonl` call log; tested through the recording and the replay | **PASS** |
+| 8 | Documentation says what runs where, and does not claim Claude runs on AWS | README, `docs/architecture/README.md` ("What runs where, today"), threat model, Well-Architected review, infra runbook, CHANGELOG, this file | **PASS** |
+| 9 | Zero-cost tests only | Nothing was spent. Offline: ruff, black, mypy strict (**123** source files), **2,491 passed, 1 skipped** (baseline on the frontier branch before this work: 2,451 passed, 2 skipped; **+40**). Live, against the rebuilt corpus and the live database: `make verify` exit 0 (registry `91ccd314…` re-hashed, corpus invariants, 180/180 coverage, Chronofence preconditions); the integration, leakage and property suites **272 passed, 48 skipped, 2 xfailed, 1 failed** on the first pass -- the one failure being the stale-digest finding below -- and **16/16** in the replay module after the refresh; `cascade trace replay --runs 25 --policy heuristic` **25/25** byte-identical | **PASS** |
+| 10 | No fake benchmark claims | The M16 null is on the front page as measured, with its intervals; the measurement contract's literals appear in no document as a result | **PASS** |
+
+**What was deliberately not done.** Nothing reached AWS: the development
+machine has no credentials (`cascade aws check` exits 3 with
+`NoCredentialsError`, which is the honest answer), and the owner asked that
+the rerank bench and the guardrail audit not be run to finish. The Terraform
+has not been applied end to end from this repository; the account's existing
+CloudTrail, budget and guardrail were created outside it, and the runbook now
+says to import the guardrail rather than recreate it. The 125 test scenarios
+stay unspent.
+
+**Defects found and fixed at M17** (each has a regression test where one
+applies):
+
+- **2,492 stored event-log digests predated the current hash domain.** M16's
+  `e3e13b5` dropped `cache_hit` from `DecisionEvent.canonical()` -- correctly
+  -- and did not re-hash the runs stored before it; its gates were offline-only,
+  so the live replay check never ran against them. Found here when it did:
+  the first 25 targets by id held 21 stale digests, a fresh replay of one
+  reproduced all 24 per-step state hashes and a different event-log hash, and
+  the unmodified frontier code produced the same fresh hash as this branch --
+  so the code was deterministic and the cached column was wrong. Re-hashing
+  the stored rows reproduced the fresh hash exactly (`bd79d7d5…` for
+  `00093629…`). Replay targets are now hashed from the stored events under the
+  current domain; the cached digest is reported as *stale*, never as a
+  divergence; `cascade trace rehash --apply` refreshed **2,492 of 2,492**
+  (358 were current) as the admin role, the replaced values archived to
+  `.logs/rehash-20261001T034526Z.json`, the events untouched (invariant 6).
+- **A run whose recordings are on another machine read as a divergence.** The
+  M16 study's 66,231 recordings live where the study ran; the first 25 replay
+  targets include 4 of its runs, and the child's `CacheMiss` arrived as a
+  generic error. The child now exits with the cache-miss code, the outcome is
+  *unreplayable here*, the report keeps *diverged* and *unverified* apart, and
+  `--policy heuristic` verifies the stand-in runs on any machine with the
+  database. Measured: 21/25 reproduced, 0 diverged, 4 unverified, exit 3 with
+  the reason.
+
+- **The guardrail Terraform tests had never executed, and one failed when they
+  did.** ADR-0050 recorded that `terraform test` needs core >= 1.6 and the
+  development machine has 1.5.7. Run under the pinned 1.16.3 in Docker for the
+  first time, `the_guardrail_reports_an_id_and_a_version_a_caller_can_read`
+  failed with *Unknown condition value*: a `plan` run cannot assert on a
+  computed attribute. Three runs now `apply` under mock providers; the file's
+  109 → 112 passing runs are the three.
+- **The platform root never passed `model_guardrail` through.** The module had
+  the variable since M15; the root did not expose it, so no root could have
+  created the guardrail the audit reads. Now exposed, with the `.env` lines as
+  an output.
+- **The SCPs made the platform root unusable in a standalone account.**
+  `aws_organizations_policy` needs an Organizations management account and was
+  unconditional. Behind `create_service_control_policies` now, default true.
+- **The reranker booked one query per call regardless of pool size.** AWS
+  prices "a single call ... that can contain up to 100 document chunks" as one
+  query; a pool of 150 is two. `math.ceil(n / 100)` units, so the ledger gate
+  would not understate a wide pool.
+- **A test measured the machine.** `test_budget_ceiling_aborts_with_exit_code_two`
+  ran the console script against the repository's `.env`; once that file said
+  `LLM_PROVIDER=claude_cli`, the probe priced every call at zero and the
+  ceiling could not be reached. The subprocess now gets a `CASCADE_ENV_FILE`
+  that does not exist, as every in-process test already did.
+- **`make test` would have routed the provider tests at the CLI.** It exports
+  `.env`, and the autouse fixture stripped only `CASCADE_*`; the plain aliases
+  are stripped too now.
+- **CI linted fifteen Terraform modules and the Makefile sixteen.**
+  `modules/reports` was missing from `ci.yml`.
+- **`CONTRIBUTING.md` still said `make install` was `uv sync --extra dev`**, two
+  milestones after M9 corrected the Makefile.
+
+Decisions recorded (ADR-0053): the CLI provider's cache namespace keeps its
+old spelling so no recording made since M10 is orphaned; the workspace id is
+admitted from `ANTHROPIC_AWS_WORKSPACE_ID` **through `Settings`** (shown by
+`doctor`, outranked by the nested `CASCADE_` spelling) as a narrow amendment
+of ADR-0028, while the region is never read from a shell; the pinned
+configuration in `configs/base.yaml` stays `anthropic` and the machine's
+provider is a `.env` fact.
+
+Deferred, with reasons:
+
+- **Every AWS-side number** → credentials on a machine that has them:
+  `cascade aws check`, then `cascade eval guardrails`, then
+  `cascade retrieval bench --relevance --pairing rerank --config rerank_bedrock`
+  once the price is confirmed in the overlay. The owner asked that none of
+  these be run to finish.
+- **Claude Platform on AWS** → the workspace. `LLM_PROVIDER=claude_platform_aws`,
+  `ANTHROPIC_AWS_WORKSPACE_ID`, and the price table under
+  `providers.claude_platform_aws` in `configs/base.yaml`.
+- **Applying the Terraform from this repository** → the owner's decision; the
+  runbook imports the existing guardrail rather than recreating it.
+- **The study** → unchanged from M16 by design.

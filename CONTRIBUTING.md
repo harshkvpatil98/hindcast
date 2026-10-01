@@ -17,7 +17,7 @@ one with an explanation.
 ## Setting up
 
 ```bash
-make install      # uv sync --extra dev
+make install      # uv sync --extra dev --extra kernel --extra aws
 make env          # writes .env from .env.example
 make up           # Postgres 16 + pgvector 0.8, Langfuse; waits for healthy
 make migrate      # forward-only SQL migrations
@@ -27,7 +27,7 @@ cascade doctor    # asserts the pinned stack; exits 0 or tells you what drifted
 For the corpus and retrieval paths you also need the embedding stack:
 
 ```bash
-uv sync --extra dev --extra embed --extra kernel
+make install-full   # adds the embedding stack (torch) and analytics
 ```
 
 ## Before you push
@@ -57,7 +57,10 @@ wanting an exemption, the exemption is the bug.
 4. **One RNG per run**, seeded once, drawn in a fixed documented order. Never
    re-seeded mid-run.
 5. **One LLM call site**: `cascade/llm/client.py`. A grep for the Anthropic SDK
-   import anywhere else fails CI.
+   import anywhere else fails CI, and so does a `boto3` client for a
+   model-serving AWS service built anywhere else. The four provider classes
+   (`AnthropicApiProvider`, `ClaudePlatformAwsProvider`, `BedrockProvider`,
+   `ClaudeCliProvider`) live there, behind one interface (ADR-0053).
 6. **The event log is append-only.** No `UPDATE`, no `DELETE`, ever.
 7. **All iteration over collections is sorted.** Dict and set order is a
    nondeterminism vector, and the static check is deliberately blunt — uniform

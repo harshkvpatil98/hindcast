@@ -1,9 +1,15 @@
 # Well-Architected review
 
 A review against the six pillars of the AWS Well-Architected Framework, of the
-design as it stands at M12. A review with no findings is not a review, so each
+design as it stands at M17. A review with no findings is not a review, so each
 pillar states what holds, **what does not**, and what would close the gap.
-Nothing here has run on AWS; "holds" means *designed and gated offline*.
+The Terraform here has not been applied end to end from this repository, and
+Claude inference runs through the Claude Code CLI on the operator's machine,
+not through AWS (ADR-0053); "holds" means *designed and gated offline* under
+the pinned Terraform 1.16.3 in Docker. The account itself holds CloudTrail, a
+budget and the `cascade-audit-guardrail`; the two Bedrock integrations
+(Rerank, Guardrails) are built and tested against the installed service
+models and have not been run against the account.
 
 ## Operational excellence
 

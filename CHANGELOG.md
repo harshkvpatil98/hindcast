@@ -9,6 +9,101 @@ package index.
 
 ---
 
+## M17 — Portfolio completion
+
+The project owner changed the objective on 2026-09-30: finish Cascade as an
+engineering portfolio project, on the Claude Code CLI under a subscription,
+with Claude Platform on AWS supported but not enabled, everything regional in
+us-west-2, and no further paid workloads
+([ADR-0053](docs/adr/0053-portfolio-completion-provider-interface-and-region.md)).
+
+- **One provider interface, four classes, inside the one call site.**
+  `ModelProvider` in `cascade/llm/providers.py`; `AnthropicApiProvider`,
+  `ClaudePlatformAwsProvider`, `BedrockProvider` and `ClaudeCliProvider` in
+  `cascade/llm/client.py`, built by `build_provider`. `LLMClient` talks to
+  the provider through the interface alone, so the cache, the meter, the
+  tracer and replay are written once.
+- **The names the deployment uses.** `claude_cli` and `claude_platform_aws`
+  are canonical; `claude_code` and `aws` are accepted aliases, normalised at
+  the configuration boundary. The CLI provider's cache namespace keeps its old
+  spelling, so no recording made since M10 is orphaned.
+- **Plain environment aliases.** `LLM_PROVIDER`, `ANTHROPIC_AWS_WORKSPACE_ID`,
+  `CASCADE_GUARDRAIL_ID` and `CASCADE_GUARDRAIL_VERSION`, read by
+  `config.py` -- the only module that may -- with the nested `CASCADE_`
+  spelling outranking each, and `.env` supplying either. Switching to Claude
+  Platform on AWS is two variables and a price table. The region has no alias.
+- **One region.** `us-west-2` in `configs/base.yaml` for Bedrock, Claude
+  Platform on AWS and the invocation-log reader; both Terraform roots'
+  `terraform.tfvars.example`; the runbook.
+- **Request ids and a call log.** Every call keeps the provider's request id
+  (`request-id`, `x-amzn-requestid`, the CLI's session) on the result, the
+  recording and the trace; the Bedrock reranker books one search unit per 100
+  documents, the service's own rule; `observability.call_log` appends one
+  JSON object per call.
+- **The Terraform roots completed.** The platform root exposes the Bedrock
+  guardrail (`model_guardrail`, `publish_guardrail_version`, the `guardrail`
+  and `guardrail_environment` outputs) and makes the two SCPs optional for a
+  standalone account. The guardrail tests ADR-0050 recorded as never having
+  executed ran for the first time under Terraform 1.16.3 in Docker; three
+  needed `apply` rather than `plan`.
+- **`cascade aws check`**: identity, guardrail and reranker resolved with
+  three control-plane reads and no spend; exit 3 on a failure.
+- **A stale derived digest, found by the live replay check and refreshed.**
+  M16 dropped `cache_hit` from the event hash domain and did not re-hash the
+  2,480 runs stored before it, so `runs.event_log_hash` no longer matched
+  what their untouched events hash to. Replay targets are now re-hashed from
+  the stored events under the current domain, the cached column is reported
+  as *stale* rather than as a divergence, `cascade trace rehash --apply`
+  refreshes it (events never touched, replaced values archived), and a run
+  whose model recordings are not on this machine is reported as
+  *unverified here*, never as nondeterministic.
+- **Documentation says what runs where.** Claude inference runs through the
+  locally authenticated Claude Code CLI; Bedrock Rerank and Guardrails are the
+  AWS-native integrations; infrastructure is Terraform; Claude Platform on AWS
+  is supported by the provider layer and not enabled. The M16 null result is
+  on the front page as measured.
+
+## M16 — The first measured study
+
+Nothing new shipped. What M4-M15 built ran end to end with a real model
+deciding every turn: 36 of the 40 development scenarios, 10 replicates each,
+360 runs and 66,231 model calls through `claude -p` under a subscription.
+
+- **The headline is a null.** Cascade Brier **0.219709**; climatology
+  **0.250000** (difference -0.030291, 95% CI [-0.09714, +0.04265], p 0.3912);
+  single model given the same evidence **0.206903** (Cascade minus single
+  +0.012806, CI [-0.08526, +0.11007], p 0.7950). At 36 scenarios no pairwise
+  comparison is distinguishable from zero.
+- **The power arithmetic.** Per-scenario differences have SD ~0.30: detecting
+  the hoped-for advantage needed n ~180, which the registry was built to;
+  detecting the measured one would need n ~2,000.
+- **Two acceptance criteria failed for one measured reason.** Median compiled
+  factor volatility 0.06 pins activation at **0.6301** (criterion 0.347 +/-
+  0.04) and the action-cache hit rate at **0.0746** (criterion >= 0.88) --
+  exactly what the M5 entry predicted. Neither was tuned toward.
+- The 125 test scenarios are deliberately unspent; the report artifact is
+  written and, carrying the labels, stays out of the repository.
+
+## M15 — AWS Gen AI surfaces
+
+- **Bedrock Rerank** as a second ranking stage over the time-locked pool
+  ([ADR-0047](docs/adr/0047-reranking-is-a-permutation.md)): admissible
+  because a reranker permutes a set the database already filtered; handed
+  bodies, returns numbers; recorded and replayed like a model call; the
+  poison-pill probe runs through it (0 of 500).
+- **Bedrock Guardrails as a post-hoc audit**
+  ([ADR-0050](docs/adr/0050-guardrails-measured-not-applied.md)): `cascade
+  eval guardrails` asks the configured guardrail what it *would* have done to
+  each compiled graph and keeps *not assessed* apart from *clear*; a flagged
+  graph is a confound, never a safety win.
+- **Agent tool access as a measured factor**
+  ([ADR-0049](docs/adr/0049-agent-tool-access.md)), **a second record of
+  spend** ([ADR-0048](docs/adr/0048-a-second-record-of-spend.md)) and
+  **Bedrock Agents rejected** for the loop
+  ([ADR-0051](docs/adr/0051-bedrock-agents-rejected.md)).
+- **Invariant 5 had a second door**: nothing refused a `boto3` client for a
+  model-serving service outside the call site. Now refused.
+
 ## M14 — Forecast quality: a benchmark, a held-out split, better evidence
 
 In progress. The corpus, retrieval and evaluation mechanisms are done and
