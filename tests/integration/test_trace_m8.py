@@ -43,9 +43,17 @@ def _connect(settings: Settings) -> Any:
 
 @pytest.fixture(scope="module")
 def stored_runs(live_settings: Settings) -> tuple[Any, ...]:
-    targets = load_replay_targets(live_settings, limit=25)
+    """The stand-in runs: replayable on any machine with the database.
+
+    A model-backed run replays only where its recordings are (`llm.cache_dir`),
+    and the M16 study's recordings live on the machine that ran it. The
+    determinism property is the same for both deciders, so it is checked here
+    on the runs this machine can replay, and the model-backed case has its own
+    test below that asks for the honest word rather than a pass.
+    """
+    targets = load_replay_targets(live_settings, limit=25, policy="heuristic")
     if not targets:
-        pytest.skip("no stored runs; run `cascade simulate all` or `cascade eval grid`")
+        pytest.skip("no stored stand-in runs; run `cascade eval grid --policy heuristic`")
     return targets
 
 
@@ -73,6 +81,34 @@ class TestReplayDeterminism:
         assert report.ok, [
             (item.run_id, item.first_divergent_step, item.error) for item in report.diverged
         ]
+
+    def test_the_stored_digests_are_under_the_current_hash_domain(
+        self, stored_runs: tuple[Any, ...]
+    ) -> None:
+        """`runs.event_log_hash` is derived from the events. M16 moved the hash
+        domain under 2,480 stored runs without refreshing it, and M17 found the
+        column stale; `cascade trace rehash --apply` recomputes it from the
+        untouched events. A stale column is not a determinism defect -- the
+        replay above compares against the events -- but it is a wrong number in
+        the database, and this is where it shows."""
+        stale = [target.run_id for target in stored_runs if target.digest_stale]
+        assert stale == [], (
+            f"{len(stale)} stored digest(s) predate the current hash domain; run "
+            "`cascade trace rehash --apply`"
+        )
+
+    def test_a_run_whose_recordings_are_elsewhere_is_unverified_not_diverged(
+        self, live_settings: Settings
+    ) -> None:
+        """A model-backed run replays where its recordings are. Anywhere else the
+        honest outcome is *unreplayable here*, and the one thing it must never be
+        called is a divergence."""
+        agents = load_replay_targets(live_settings, limit=1, policy="agent")
+        if not agents:
+            pytest.skip("no model-backed runs stored")
+        report = verify_replays(agents, workers=1, env_file=_env_file())
+        (only,) = report.outcomes
+        assert only.kind in {"reproduced", "unreplayable"}, (only.kind, only.error)
 
     def test_the_replay_writes_nothing_to_the_append_only_log(
         self, live_settings: Settings, stored_runs: tuple[Any, ...]

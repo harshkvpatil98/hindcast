@@ -48,10 +48,14 @@ def _clear_settings_cache(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> An
     """
     import os
 
-    from cascade.config import _cached_settings
+    from cascade.config import ENV_ALIASES, _cached_settings
 
     for name in sorted(os.environ):
-        if name.startswith("CASCADE_"):
+        if name.startswith("CASCADE_") or name in ENV_ALIASES:
+            # The plain aliases (LLM_PROVIDER, ANTHROPIC_AWS_WORKSPACE_ID, ...)
+            # bind to settings too, and `make test` exports the repo's .env --
+            # whose LLM_PROVIDER=claude_cli would route every provider test
+            # built against an HTTP mock at the CLI instead (ADR-0053).
             monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("CASCADE_ENV_FILE", str(tmp_path / "absent.env"))
     _cached_settings.cache_clear()

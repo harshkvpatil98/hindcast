@@ -349,3 +349,119 @@ def test_overlay_deep_merges_rather_than_replacing() -> None:
 def test_missing_overlay_raises() -> None:
     with pytest.raises(FileNotFoundError, match="ablation overlay not found"):
         load_settings("C99")
+
+
+# ---------------------------------------------------------------------------
+# Provider names and the plain environment aliases (ADR-0053)
+# ---------------------------------------------------------------------------
+
+
+def test_llm_provider_binds_from_the_plain_alias(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`LLM_PROVIDER=claude_cli` is how the brief selects the provider."""
+    monkeypatch.setenv("LLM_PROVIDER", "claude_cli")
+    assert Settings().llm.provider == "claude_cli"
+
+
+@pytest.mark.parametrize(
+    ("spelling", "canonical"),
+    [("aws", "claude_platform_aws"), ("claude_code", "claude_cli"), ("claude_cli", "claude_cli")],
+)
+def test_legacy_provider_spellings_normalise_to_the_canonical_name(
+    monkeypatch: pytest.MonkeyPatch, spelling: str, canonical: str
+) -> None:
+    """A configuration written against the M10-M16 names keeps working."""
+    monkeypatch.setenv("CASCADE_LLM__PROVIDER", spelling)
+    assert Settings().llm.provider == canonical
+
+
+def test_the_nested_spelling_outranks_the_plain_alias(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Documented precedence: CASCADE_LLM__PROVIDER beats LLM_PROVIDER."""
+    monkeypatch.setenv("LLM_PROVIDER", "claude_cli")
+    monkeypatch.setenv("CASCADE_LLM__PROVIDER", "bedrock")
+    assert Settings().llm.provider == "bedrock"
+
+
+def test_an_unknown_provider_lists_the_choices(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LLM_PROVIDER", "openai")
+    with pytest.raises(ValidationError, match="unknown model provider 'openai'") as caught:
+        Settings()
+    message = str(caught.value)
+    assert "claude_platform_aws" in message and "claude_cli" in message
+    assert "aws -> claude_platform_aws" in message
+
+
+def test_the_workspace_and_guardrail_aliases_bind_and_are_not_rejected(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The three AWS-side aliases reach their fields, and the CASCADE_-prefixed
+    two are not mistaken for an override that binds to nothing."""
+    monkeypatch.setenv("ANTHROPIC_AWS_WORKSPACE_ID", "wrkspc_01")
+    monkeypatch.setenv("CASCADE_GUARDRAIL_ID", "gr-abc123")
+    monkeypatch.setenv("CASCADE_GUARDRAIL_VERSION", "1")
+    settings = Settings()
+    assert settings.providers.claude_platform_aws.workspace_id == "wrkspc_01"
+    assert settings.providers.bedrock.guardrail_id == "gr-abc123"
+    assert settings.providers.bedrock.guardrail_version == "1"
+
+
+def test_the_nested_workspace_outranks_the_sdk_variable(monkeypatch: pytest.MonkeyPatch) -> None:
+    """ADR-0028's property, kept: a value in a reviewed CASCADE_ setting wins
+    over the variable the SDK would have read on its own."""
+    monkeypatch.setenv("ANTHROPIC_AWS_WORKSPACE_ID", "wrkspc_ambient")
+    monkeypatch.setenv("CASCADE_PROVIDERS__CLAUDE_PLATFORM_AWS__WORKSPACE_ID", "wrkspc_reviewed")
+    assert Settings().providers.claude_platform_aws.workspace_id == "wrkspc_reviewed"
+
+
+def test_aliases_are_read_from_dot_env_too(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    env_file = tmp_path / "dotenv"
+    env_file.write_text(
+        "LLM_PROVIDER=bedrock\nCASCADE_GUARDRAIL_ID=gr-from-file\n", encoding="utf-8"
+    )
+    monkeypatch.setenv("CASCADE_ENV_FILE", str(env_file))
+    settings = Settings()
+    assert settings.llm.provider == "bedrock"
+    assert settings.providers.bedrock.guardrail_id == "gr-from-file"
+
+
+def test_an_empty_alias_is_absent_not_an_empty_name(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A placeholder `CASCADE_GUARDRAIL_ID=` configures no guardrail: the audit
+    must then read *not assessed*, never a guardrail with an empty id."""
+    env_file = tmp_path / "dotenv"
+    env_file.write_text("CASCADE_GUARDRAIL_ID=\nLLM_PROVIDER=\n", encoding="utf-8")
+    monkeypatch.setenv("CASCADE_ENV_FILE", str(env_file))
+    settings = Settings()
+    assert settings.providers.bedrock.guardrail_id is None
+    assert settings.llm.provider == "anthropic"  # the YAML default survived
+
+
+def test_the_env_example_documents_every_alias() -> None:
+    example_text = (repo_root() / ".env.example").read_text(encoding="utf-8")
+    for name in (
+        "LLM_PROVIDER=",
+        "ANTHROPIC_AWS_WORKSPACE_ID",
+        "CASCADE_GUARDRAIL_ID",
+        "CASCADE_GUARDRAIL_VERSION",
+    ):
+        assert name in example_text, f"{name} is not documented in .env.example"
+
+
+def test_the_aws_footprint_is_one_region() -> None:
+    """ADR-0053: every AWS surface is routed at us-west-2, in the reviewed file."""
+    settings = Settings()
+    assert settings.providers.bedrock.region == "us-west-2"
+    assert settings.providers.claude_platform_aws.region == "us-west-2"
+    assert settings.observability.aws_region == "us-west-2"
+
+
+def test_the_call_log_path_is_only_derived_when_configured() -> None:
+    base = Settings()
+    with pytest.raises(ValueError, match=r"observability\.call_log is not set"):
+        base.call_log_path()
+    configured = base.model_copy(
+        update={
+            "observability": base.observability.model_copy(update={"call_log": ".logs/x.jsonl"})
+        }
+    )
+    assert configured.call_log_path() == repo_root() / ".logs" / "x.jsonl"

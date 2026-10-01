@@ -152,7 +152,7 @@ class TestSampleRequests:
 
     def test_the_sample_index_never_reaches_the_wire(self) -> None:
         """It is a cache-domain field, not an API parameter."""
-        from cascade.llm.client import _batch_params
+        from cascade.llm.client import _messages_params as _batch_params
 
         settings = load_settings(None)
         item = sample_requests(

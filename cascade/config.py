@@ -45,6 +45,9 @@ from pydantic_settings import (
 )
 
 __all__ = [
+    "ENV_ALIASES",
+    "PROVIDER_ALIASES",
+    "PROVIDER_NAMES",
     "LLMMode",
     "LLMProvider",
     "Settings",
@@ -52,6 +55,7 @@ __all__ = [
     "claude_cli_environment",
     "env_file_path",
     "load_settings",
+    "normalise_provider",
     "overlay_kind",
     "repo_root",
 ]
@@ -63,13 +67,76 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 _NON_FIELD_ENV_VARS = frozenset({"CASCADE_CONFIG", "CASCADE_ENV_FILE"})
 
 LLMMode = Literal["record", "replay", "live"]
-# Who serves the model (ADR-0028, ADR-0031). The first three are SDK clients
-# from the one `anthropic` package; `claude_code` is the Claude Code CLI run
-# headless on the operator's machine. All four are reached only through
-# LLMClient, so invariant 5's single door is unaffected by the choice.
-LLMProvider = Literal["anthropic", "aws", "bedrock", "claude_code"]
+# Who serves the model (ADR-0028, ADR-0031, ADR-0053), by canonical name:
+#
+#   anthropic            the Anthropic API, with a key
+#   claude_platform_aws  Claude Platform on AWS -- Anthropic-operated, IAM/SigV4
+#   bedrock              Amazon Bedrock -- partner-operated, IAM/SigV4
+#   claude_cli           the Claude Code CLI (`claude -p`), headless, under the
+#                        operator's own Claude subscription
+#
+# The first three are SDK clients from the one `anthropic` package; the fourth
+# is a local process. All four are reached only through LLMClient, so
+# invariant 5's single door is unaffected by the choice.
+LLMProvider = Literal["anthropic", "claude_platform_aws", "bedrock", "claude_cli"]
+PROVIDER_NAMES: tuple[LLMProvider, ...] = (
+    "anthropic",
+    "bedrock",
+    "claude_cli",
+    "claude_platform_aws",
+)
+# Spellings accepted at the configuration boundary and normalised to the
+# canonical name. `aws` and `claude_code` are what M10-M16 called the same two
+# providers; a stored configuration, a Terraform input or a command written
+# against them keeps working (ADR-0053). The CLI provider's *cache namespace*
+# keeps the old spelling too, so its recordings still resolve
+# (`cascade/llm/providers.py`).
+PROVIDER_ALIASES: dict[str, LLMProvider] = {
+    "aws": "claude_platform_aws",
+    "claude_code": "claude_cli",
+}
 Grounding = Literal["chronofence", "parametric_only"]
 CacheTTL = Literal["5m", "1h"]
+
+# Plain-named environment variables that each stand for one nested setting
+# (ADR-0053). They exist so the two facts a deployment changes most often --
+# which provider serves the model, and the Claude Platform workspace it is
+# billed to -- can be set the way the brief and the provider document them,
+# and so a Bedrock guardrail's identity can be read from the two variables an
+# account operator is given. Each binds to exactly one field. The nested
+# `CASCADE_<SECTION>__<FIELD>` spelling for the same field outranks the alias,
+# and `.env` supplies either. The region is deliberately NOT here: where spend
+# lands is configured in a reviewed file, never read from a shell (ADR-0028).
+ENV_ALIASES: dict[str, tuple[str, ...]] = {
+    "LLM_PROVIDER": ("llm", "provider"),
+    "ANTHROPIC_AWS_WORKSPACE_ID": ("providers", "claude_platform_aws", "workspace_id"),
+    "CASCADE_GUARDRAIL_ID": ("providers", "bedrock", "guardrail_id"),
+    "CASCADE_GUARDRAIL_VERSION": ("providers", "bedrock", "guardrail_version"),
+}
+
+
+def normalise_provider(value: Any) -> LLMProvider:
+    """The canonical name for a provider spelling, or a ValueError naming the choices.
+
+    Preserves the invariant that the rest of the package compares provider
+    names against exactly four strings: every spelling a configuration may
+    carry is folded here, once, at the boundary -- so `aws` and
+    `claude_platform_aws` cannot be two different providers anywhere
+    downstream. Pure.
+    """
+    if not isinstance(value, str):
+        raise ValueError(f"model provider must be a name, not {type(value).__name__}")
+    name = value.strip()
+    canonical = PROVIDER_ALIASES.get(name, name)
+    if canonical not in PROVIDER_NAMES:
+        aliases = ", ".join(
+            f"{alias} -> {target}" for alias, target in sorted(PROVIDER_ALIASES.items())
+        )
+        raise ValueError(
+            f"unknown model provider {value!r}; one of {', '.join(PROVIDER_NAMES)} "
+            f"(accepted aliases: {aliases})"
+        )
+    return canonical
 
 
 def repo_root() -> Path:
@@ -413,25 +480,29 @@ class LLMConfig(_Model):
     mode: LLMMode
     # Not part of the cache key (ADR-0029): the key carries the logical model,
     # and the provider only decides where the request is sent and how it is
-    # billed.
-    provider: LLMProvider
+    # billed. Normalised before validation, so `aws` and `claude_code` (the
+    # M10-M16 spellings) resolve to the canonical names (ADR-0053).
+    provider: Annotated[LLMProvider, BeforeValidator(normalise_provider)]
     cache_dir: str
     prompt_rev: str
     max_retries: int
     timeout_s: float
 
 
-class AWSProviderConfig(_Model):
-    """Routing for Claude Platform on AWS (ADR-0028).
+class ClaudePlatformAwsConfig(_Model):
+    """Routing for Claude Platform on AWS (ADR-0028), the ``claude_platform_aws`` provider.
 
     Routing only. Identity is the ambient IAM principal resolved by the
     standard AWS credential chain -- an instance or task role in the cloud, a
     profile on a workstation -- so no credential ever appears in this file.
 
-    Every routing value is passed to the SDK explicitly. Left unset, the SDK
-    falls back to ``AWS_REGION`` and ``ANTHROPIC_AWS_WORKSPACE_ID`` from
-    whatever shell it runs in, which would decide where the study's spend
-    lands without that choice appearing in any reviewed file.
+    Every routing value is passed to the SDK explicitly, so the SDK's own
+    fallback to ``AWS_REGION`` from whatever shell it runs in never runs: the
+    region is configured in a reviewed file and nowhere else. The workspace
+    id may arrive as ``ANTHROPIC_AWS_WORKSPACE_ID`` -- the variable the
+    provider documents and the brief names -- but it is read *here*, into this
+    field, where it is validated and printed by ``cascade doctor``, rather than
+    consumed silently by the SDK (ADR-0053).
     """
 
     region: str | None
@@ -465,12 +536,14 @@ class BedrockProviderConfig(_Model):
     guardrail_version: str | None = None
 
 
-class ClaudeCodeProviderConfig(_Model):
+class ClaudeCliProviderConfig(_Model):
     """The Claude Code CLI, run headless under a Claude subscription (ADR-0031).
 
-    Local-only by design: it authenticates as the person logged in to Claude
-    Code on this machine, which is not an identity that belongs inside cloud
-    infrastructure. The deployed design uses ``aws`` or ``bedrock``.
+    The ``claude_cli`` provider. Local-only by design: it authenticates as the
+    person logged in to Claude Code on this machine -- no token is read,
+    copied or stored by this project -- which is not an identity that belongs
+    inside cloud infrastructure. The deployed design uses
+    ``claude_platform_aws`` or ``bedrock``.
     """
 
     executable: str
@@ -497,12 +570,19 @@ class ObservabilityConfig(_Model):
     aws_invocation_log_group: str | None = None
     # Routing, explicit as everywhere else (ADR-0028).
     aws_region: str | None = None
+    # A structured call log: one JSON object per model, rerank or guardrail
+    # call, carrying the provider, the model, the provider's request id, the
+    # token counts, the cost and whether the cache served it (ADR-0053). Null
+    # switches it off. Relative paths resolve against the repository.
+    call_log: str | None = None
 
 
 class ProvidersConfig(_Model):
-    aws: AWSProviderConfig
+    """One routing section per provider, keyed by the provider's canonical name."""
+
+    claude_platform_aws: ClaudePlatformAwsConfig
     bedrock: BedrockProviderConfig
-    claude_code: ClaudeCodeProviderConfig
+    claude_cli: ClaudeCliProviderConfig
 
 
 SSLMode = Literal["disable", "allow", "prefer", "require", "verify-ca", "verify-full"]
@@ -709,6 +789,46 @@ class _YamlSource(PydanticBaseSettingsSource):
         return loaded
 
 
+class _AliasEnvSource(PydanticBaseSettingsSource):
+    """Feed :data:`ENV_ALIASES` into their nested fields (ADR-0053).
+
+    Reads the process environment first and the ``.env`` file second, exactly
+    as the two ``CASCADE_`` sources above it do, so an alias and its nested
+    spelling follow one precedence rule. An empty value is an absent one: a
+    ``.env`` that carries ``CASCADE_GUARDRAIL_ID=`` as a placeholder configures
+    no guardrail, which the audit then reports as *not assessed* rather than
+    as a guardrail with an empty name (the same reading `readiness_problems`
+    gives an empty API key).
+    """
+
+    def __init__(self, settings_cls: type[BaseSettings], env_path: Path) -> None:
+        super().__init__(settings_cls)
+        self._env_path = env_path
+
+    def get_field_value(self, field: Any, field_name: str) -> tuple[Any, str, bool]:
+        # Whole-document source, like _YamlSource: __call__ does the work.
+        raise NotImplementedError
+
+    def __call__(self) -> dict[str, Any]:
+        from_file: dict[str, str | None] = {}
+        if self._env_path.is_file():
+            from dotenv import dotenv_values
+
+            from_file = dotenv_values(self._env_path, encoding="utf-8")
+        out: dict[str, Any] = {}
+        for name, path in sorted(ENV_ALIASES.items()):
+            raw = os.environ.get(name)
+            if raw is None:
+                raw = from_file.get(name)
+            if raw is None or not raw.strip():
+                continue
+            node = out
+            for key in path[:-1]:
+                node = node.setdefault(key, {})
+            node[path[-1]] = raw.strip()
+        return out
+
+
 class Settings(BaseSettings):
     """Root configuration object. Constructed once, passed explicitly thereafter."""
 
@@ -796,6 +916,7 @@ class Settings(BaseSettings):
             for name in os.environ
             if name.startswith("CASCADE_")
             and name not in _NON_FIELD_ENV_VARS
+            and name not in ENV_ALIASES
             and name[len("CASCADE_") :].split("__", 1)[0] not in known
         )
         if offenders:
@@ -841,6 +962,9 @@ class Settings(BaseSettings):
                 # a CASCADE_-prefixed name.
                 dotenv_filtering="only_existing",
             ),
+            # Below both CASCADE_ sources, above the YAML: a plain alias never
+            # outranks the nested spelling of the same field (ADR-0053).
+            _AliasEnvSource(settings_cls, env_path),
             _YamlSource(settings_cls, yaml_path),
         )
 
@@ -864,6 +988,17 @@ class Settings(BaseSettings):
     def curated_path(self) -> Path:
         return self._resolve(self.ledger.curated_dir)
 
+    def call_log_path(self) -> Path:
+        """Where the structured call log is appended (``observability.call_log``).
+
+        Raises rather than inventing a location when none is configured: the
+        caller checks the setting first, and a log that quietly landed in the
+        working directory would be one nobody knew to read.
+        """
+        if not self.observability.call_log:
+            raise ValueError("observability.call_log is not set; there is no call log to write")
+        return self._resolve(self.observability.call_log)
+
     def _resolve(self, raw: str) -> Path:
         candidate = Path(raw)
         return candidate if candidate.is_absolute() else REPO_ROOT / candidate
@@ -879,8 +1014,8 @@ class Settings(BaseSettings):
         provider = self.llm.provider
         if provider == "anthropic":
             return self.pricing
-        if provider == "aws":
-            return self.providers.aws.pricing
+        if provider == "claude_platform_aws":
+            return self.providers.claude_platform_aws.pricing
         if provider == "bedrock":
             return self.providers.bedrock.pricing
         # A subscription bills no tokens, so every model it serves costs zero

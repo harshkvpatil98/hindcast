@@ -1,26 +1,38 @@
-"""Who serves the model, and what each server can and cannot do (ADR-0028).
+"""Who serves the model, and what each server can and cannot do (ADR-0028, ADR-0053).
 
 Four providers sit behind the one call site (invariant 5). This module is
 pure -- no SDK import, no I/O, no environment read -- so it can describe them
 without becoming a second door: ``cascade/llm/client.py`` remains the only
-module that imports ``anthropic`` or runs the CLI, and every call it makes is
-cached, metered and traced the same way.
+module that imports ``anthropic``, builds a client for a model-serving AWS
+service, or runs the CLI, and every call it makes is cached, metered and
+traced the same way.
 
 The providers differ in ways that are load-bearing for the study, not cosmetic:
 
-=========== ==================== ======= ================== =========== =========
-provider    operated by          batches wire model id      priced by   cache
-=========== ==================== ======= ================== =========== =========
-anthropic   Anthropic            yes     logical            ``pricing`` shared
-aws         Anthropic, via AWS   yes     logical            its own     shared
-bedrock     AWS (partner)        **no**  ``anthropic.<id>`` its own     shared
-claude_code Claude Code CLI      **no**  logical            zero (sub.) **own**
-=========== ==================== ======= ================== =========== =========
+=================== ==================== ======= ================== =========== =========
+provider            operated by          batches wire model id      priced by   cache
+=================== ==================== ======= ================== =========== =========
+anthropic           Anthropic            yes     logical            ``pricing`` shared
+claude_platform_aws Anthropic, via AWS   yes     logical            its own     shared
+bedrock             AWS (partner)        **no**  ``anthropic.<id>`` its own     shared
+claude_cli          Claude Code CLI      **no**  logical            zero (sub.) **own**
+=================== ==================== ======= ================== =========== =========
 
-``claude_code`` is the one provider that cannot serve the request its cache
+``claude_cli`` is the one provider that cannot serve the request its cache
 key describes -- the CLI cannot set ``temperature`` or ``max_tokens`` -- so it
 records under a namespace of its own (ADR-0031) and is never mixed with the
-three API providers, which share one (ADR-0029).
+three API providers, which share one (ADR-0029). It is the provider in use
+while the project runs on a Claude subscription; ``claude_platform_aws`` is
+the deployed design, implemented and tested against the real SDK, and waits on
+account provisioning (ADR-0053).
+
+**Names.** ``claude_cli`` and ``claude_platform_aws`` are the canonical
+names; ``claude_code`` and ``aws`` are the spellings M10-M16 used for the
+same two providers and are accepted everywhere a name is read
+(``cascade.config.normalise_provider``). The CLI provider's cache namespace
+keeps its original spelling, ``claude_code``, so every recording made under
+ADR-0031 still resolves: a namespace is an identity for stored bytes, not a
+display name.
 
 **Bedrock cannot carry a batched phase.** The simulate phase is inside its
 $240 ceiling only at the 50% batch rate (ADR-0020); unbatched it is roughly
@@ -28,7 +40,7 @@ twice that. A provider without batches is therefore refused at the batch door
 before any spend, rather than silently falling back to one call at a time.
 
 **That refusal is about money, so it does not bind a provider that charges
-none** (ADR-0052). ``claude_code`` runs under a flat-rate subscription: its
+none** (ADR-0052). ``claude_cli`` runs under a flat-rate subscription: its
 price table is zero by construction, so a phase costs the same batched or not
 and there is no discount for an unbatched run to lose. :func:`charges_per_call`
 is the one place that distinction is drawn, and it reads the static
@@ -39,17 +51,27 @@ configuration, and a zeroed one would otherwise exempt a paid provider.
 model everywhere else -- in the cache key (ADR-0029), in the price lookup, in
 the event log -- so switching provider changes where a call is sent and how it
 is billed, and never which recording it resolves to.
+
+**The interface.** :class:`ModelProvider` is the shape every provider class
+in ``client.py`` has: one ``complete`` that returns the provider's own
+Messages body with the request id it answered under, one ``batches`` that
+either returns the SDK's batch resource or refuses, and a static
+:class:`ProviderSpec`. It is a Protocol defined here, where nothing can reach
+a network, so the shell can ask the same questions of every provider without
+importing the module that does.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Literal, Protocol, runtime_checkable
 
-from cascade.config import LLMProvider, Settings
+from cascade.config import PROVIDER_ALIASES, LLMProvider, Settings, normalise_provider
+from cascade.llm.types import LLMRequest, ProviderResponse
 
 __all__ = [
     "PROVIDERS",
+    "ModelProvider",
     "ProviderSpec",
     "charges_per_call",
     "client_kwargs",
@@ -68,7 +90,7 @@ _BEDROCK_MODEL_PREFIX = "anthropic."
 # tests/unit/test_llm_providers.py asserts these agree with what the installed
 # SDK derives, so the copy cannot drift silently.
 _ENDPOINT_TEMPLATES: dict[str, str] = {
-    "aws": "https://aws-external-anthropic.{region}.api.aws",
+    "claude_platform_aws": "https://aws-external-anthropic.{region}.api.aws",
     "bedrock": "https://bedrock-mantle.{region}.api.aws/anthropic",
 }
 
@@ -88,6 +110,11 @@ class ProviderSpec:
     # None means the shared API namespace (ADR-0029). A provider that cannot
     # honour every field of the cache key domain must set one (ADR-0031).
     cache_namespace: str | None = None
+    # Spellings an older configuration may carry for this provider (ADR-0053).
+    aliases: tuple[str, ...] = ()
+    # Where the provider stands in this project, in one line, for `doctor`
+    # and the README: the brief's own vocabulary.
+    status: str = ""
 
 
 PROVIDERS: dict[LLMProvider, ProviderSpec] = {
@@ -97,13 +124,16 @@ PROVIDERS: dict[LLMProvider, ProviderSpec] = {
         supports_batches=True,
         client_class="Anthropic",
         pricing_source="https://www.anthropic.com/pricing",
+        status="the pinned study configuration; needs a pay-as-you-go key",
     ),
-    "aws": ProviderSpec(
-        name="aws",
+    "claude_platform_aws": ProviderSpec(
+        name="claude_platform_aws",
         operated_by="Anthropic, through AWS (Claude Platform on AWS)",
         supports_batches=True,
         client_class="AnthropicAWS",
         pricing_source="the Claude Platform on AWS listing in AWS Marketplace",
+        aliases=("aws",),
+        status="implemented and mock-tested; not enabled -- account provisioning pending",
     ),
     "bedrock": ProviderSpec(
         name="bedrock",
@@ -111,22 +141,28 @@ PROVIDERS: dict[LLMProvider, ProviderSpec] = {
         supports_batches=False,
         client_class="AnthropicBedrockMantle",
         pricing_source="https://aws.amazon.com/bedrock/pricing/",
+        status="implemented and mock-tested; cannot carry a batched phase",
     ),
-    "claude_code": ProviderSpec(
-        name="claude_code",
+    "claude_cli": ProviderSpec(
+        name="claude_cli",
         operated_by="the Claude Code CLI (headless, under a Claude subscription)",
         supports_batches=False,
         client_class=None,
         pricing_source="a Claude subscription, which bills no tokens",
         billing="subscription",
+        # Deliberately the pre-ADR-0053 spelling: recordings made under ADR-0031
+        # are filed under this namespace, and a renamed namespace would turn
+        # every one of them into a replay miss.
         cache_namespace="claude_code",
+        aliases=("claude_code",),
+        status="ACTIVE -- the current provider; not the pinned configuration (ADR-0031)",
     ),
 }
 
 
-def spec_for(provider: LLMProvider) -> ProviderSpec:
-    """Return the static description of ``provider``."""
-    return PROVIDERS[provider]
+def spec_for(provider: str) -> ProviderSpec:
+    """Return the static description of ``provider``, accepting its aliases."""
+    return PROVIDERS[normalise_provider(provider)]
 
 
 def charges_per_call(provider: str) -> bool:
@@ -150,10 +186,12 @@ def charges_per_call(provider: str) -> bool:
     - An unrecognised name is charged. A typo must not buy an exemption.
 
     Read live from :data:`PROVIDERS` rather than from a table built at import,
-    so the registry and this answer cannot disagree.
+    so the registry and this answer cannot disagree. Aliases resolve to their
+    canonical name first, so ``claude_code`` is as exempt as ``claude_cli``.
     """
+    canonical = PROVIDER_ALIASES.get(provider, provider)
     billing: dict[str, str] = {name: PROVIDERS[name].billing for name in sorted(PROVIDERS)}
-    return billing.get(provider, "per_token") != "subscription"
+    return billing.get(canonical, "per_token") != "subscription"
 
 
 def render_model(settings: Settings, logical: str) -> str:
@@ -177,15 +215,20 @@ def endpoint(settings: Settings) -> str | None:
     """The base URL the active provider's requests go to. Pure.
 
     ``None`` for the first-party provider, whose SDK default is not
-    environment-derived in a way this study configures. For the AWS providers
-    it is the configured ``base_url`` if one is set, else the documented
-    regional endpoint -- and ``None`` when there is no region to derive it
-    from, which :func:`readiness_problems` reports.
+    environment-derived in a way this study configures, and for the CLI,
+    which has no URL. For the AWS providers it is the configured ``base_url``
+    if one is set, else the documented regional endpoint -- and ``None`` when
+    there is no region to derive it from, which :func:`readiness_problems`
+    reports.
     """
     provider = settings.llm.provider
-    if provider in ("anthropic", "claude_code"):
+    if provider in ("anthropic", "claude_cli"):
         return None
-    section = settings.providers.aws if provider == "aws" else settings.providers.bedrock
+    section = (
+        settings.providers.claude_platform_aws
+        if provider == "claude_platform_aws"
+        else settings.providers.bedrock
+    )
     if section.base_url:
         return section.base_url
     if not section.region:
@@ -211,18 +254,21 @@ def readiness_problems(settings: Settings, *, models: tuple[str, ...]) -> list[s
         # variable nor this project.
         if key is None or not key.get_secret_value().strip():
             problems.append("CASCADE_ANTHROPIC_API_KEY is not set")
-    elif provider == "aws":
-        aws = settings.providers.aws
-        if not aws.region:
-            problems.append("providers.aws.region is not set")
-        if not aws.workspace_id:
-            problems.append("providers.aws.workspace_id is not set")
+    elif provider == "claude_platform_aws":
+        platform = settings.providers.claude_platform_aws
+        if not platform.region:
+            problems.append("providers.claude_platform_aws.region is not set")
+        if not platform.workspace_id:
+            problems.append(
+                "providers.claude_platform_aws.workspace_id is not set -- set "
+                "ANTHROPIC_AWS_WORKSPACE_ID (or CASCADE_PROVIDERS__CLAUDE_PLATFORM_AWS__WORKSPACE_ID)"
+            )
     elif provider == "bedrock":
         if not settings.providers.bedrock.region:
             problems.append("providers.bedrock.region is not set")
     else:
-        if not settings.providers.claude_code.executable.strip():
-            problems.append("providers.claude_code.executable is not set")
+        if not settings.providers.claude_cli.executable.strip():
+            problems.append("providers.claude_cli.executable is not set")
 
     if spec_for(provider).billing == "subscription":
         # Nothing to price: a subscription bills no tokens.
@@ -244,8 +290,9 @@ def client_kwargs(settings: Settings) -> dict[str, Any]:
     Preserves the invariant that routing is explicit. Every routing value is
     passed even when it is the one the SDK would have found on its own,
     because the SDK's fallback reads ``AWS_REGION`` and
-    ``ANTHROPIC_AWS_WORKSPACE_ID`` from the ambient environment -- which would
-    let a developer's shell decide where the study's spend lands.
+    ``ANTHROPIC_AWS_WORKSPACE_ID`` from the ambient environment -- the
+    workspace id is admitted from that variable only by way of ``Settings``,
+    where `doctor` shows it (ADR-0053), and the region never is.
 
     Identity is deliberately *not* passed for the AWS providers: credentials
     come from the standard AWS chain (a task or instance role in the cloud, a
@@ -256,23 +303,62 @@ def client_kwargs(settings: Settings) -> dict[str, Any]:
         "timeout": settings.llm.timeout_s,
     }
     provider = settings.llm.provider
-    if provider == "claude_code":
-        raise ValueError("claude_code is a CLI, not an SDK client; it takes no constructor")
+    if provider == "claude_cli":
+        raise ValueError("claude_cli is a CLI, not an SDK client; it takes no constructor")
     if provider == "anthropic":
         key = settings.anthropic_api_key
         return {**common, "api_key": key.get_secret_value() if key is not None else None}
-    if provider == "aws":
-        aws = settings.providers.aws
+    if provider == "claude_platform_aws":
+        platform = settings.providers.claude_platform_aws
         routed: dict[str, Any] = {
-            "aws_region": aws.region,
-            "workspace_id": aws.workspace_id,
+            "aws_region": platform.region,
+            "workspace_id": platform.workspace_id,
             "base_url": endpoint(settings),
         }
-        if aws.profile:
-            routed["aws_profile"] = aws.profile
+        if platform.profile:
+            routed["aws_profile"] = platform.profile
         return {**common, **routed}
     bedrock = settings.providers.bedrock
     routed = {"aws_region": bedrock.region, "base_url": endpoint(settings)}
     if bedrock.profile:
         routed["aws_profile"] = bedrock.profile
     return {**common, **routed}
+
+
+@runtime_checkable
+class ModelProvider(Protocol):
+    """One way of reaching a Claude model (ADR-0053).
+
+    Every provider class in ``cascade/llm/client.py`` has this shape, and
+    :class:`~cascade.llm.client.LLMClient` talks to whichever one the
+    configuration names through it alone -- so caching, metering, tracing and
+    the record/replay contract are written once, above this seam, and a fifth
+    provider is a class here and a row in :data:`PROVIDERS`, nothing else.
+
+    Narrow on purpose. ``complete`` takes the request the cache key was
+    computed over and returns the provider's own Messages body; it is given
+    nothing about the cache, the meter or the tracer, which is what keeps a
+    provider from being able to bypass any of them.
+    """
+
+    @property
+    def spec(self) -> ProviderSpec:
+        """The static description of this provider."""
+        ...  # pragma: no cover -- protocol
+
+    @property
+    def constructed_sdk_client(self) -> bool:
+        """Whether an SDK client has been built. Replay must never build one."""
+        ...  # pragma: no cover -- protocol
+
+    def sdk_client(self) -> Any:
+        """The SDK client for an SDK-served provider; :class:`LLMError` for the CLI."""
+        ...  # pragma: no cover -- protocol
+
+    def complete(self, request: LLMRequest) -> ProviderResponse:
+        """Serve one request and return the raw Messages body with its request id."""
+        ...  # pragma: no cover -- protocol
+
+    def batches(self) -> Any:
+        """The SDK's Message Batches resource, or :class:`ProviderNotReady`."""
+        ...  # pragma: no cover -- protocol

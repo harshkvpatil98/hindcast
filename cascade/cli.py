@@ -91,6 +91,11 @@ trace_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(trace_app, name="trace")
+aws_app = typer.Typer(
+    help="The AWS surfaces: identity, Bedrock Rerank and Guardrails, read without spending.",
+    no_args_is_help=True,
+)
+app.add_typer(aws_app, name="aws")
 
 console = Console()
 err_console = Console(stderr=True)
@@ -129,20 +134,26 @@ def _dep_version(dist: str) -> str | None:
 
 
 def _provider_rows(table: Table, settings: Settings) -> bool:
-    """Describe the active model provider; fail only where it would spend.
+    """Describe the active model provider and the AWS surfaces; fail only where it would spend.
 
     Preserves the invariant that `doctor` never costs anything: it reports
     what a record run would do without making a model call. An unready
     provider fails the check only in record or live mode -- replay reaches no
-    provider, and demanding one there would break the keyless demo path.
+    provider, and demanding one there would break the keyless demo path. The
+    Bedrock reranker and guardrail are optional controls (ADR-0047,
+    ADR-0050), so they are reported and never failed on; `cascade aws check`
+    is the command that asks AWS whether they resolve.
     """
+    from cascade.config import PROVIDER_NAMES
     from cascade.llm.claude_cli import UNCONTROLLED_FIELDS
     from cascade.llm.providers import endpoint, readiness_problems, spec_for
 
     provider = settings.llm.provider
     spec = spec_for(provider)
     ok_mark, no_mark, info_mark = "[green]OK[/green]", "[red]NO[/red]", "[yellow]--[/yellow]"
-    table.add_row("llm provider", "anthropic|aws|bedrock|claude_code", provider, ok_mark)
+    aliases = f" (alias: {', '.join(spec.aliases)})" if spec.aliases else ""
+    table.add_row("llm provider", "|".join(PROVIDER_NAMES), f"{provider}{aliases}", ok_mark)
+    table.add_row("  status", "ADR-0053", spec.status, ok_mark)
     table.add_row("  operated by", "", spec.operated_by, ok_mark)
     table.add_row(
         "  batches",
@@ -167,8 +178,8 @@ def _provider_rows(table: Table, settings: Settings) -> bool:
         table.add_row("  endpoint", "explicit, never ambient", route, ok_mark)
 
     healthy = True
-    if provider == "claude_code":
-        executable = settings.providers.claude_code.executable
+    if provider == "claude_cli":
+        executable = settings.providers.claude_cli.executable
         found = _tool_version(executable, ["--version"])
         table.add_row(
             "  claude cli", executable, found or "not found", ok_mark if found else no_mark
@@ -180,6 +191,14 @@ def _provider_rows(table: Table, settings: Settings) -> bool:
             info_mark,
         )
         healthy = found is not None or settings.llm.mode == "replay"
+    elif provider == "claude_platform_aws":
+        workspace = settings.providers.claude_platform_aws.workspace_id
+        table.add_row(
+            "  workspace",
+            "ANTHROPIC_AWS_WORKSPACE_ID",
+            workspace or "not set",
+            ok_mark if workspace else info_mark,
+        )
 
     problems = readiness_problems(
         settings, models=(settings.models.agent, settings.models.compiler)
@@ -195,6 +214,40 @@ def _provider_rows(table: Table, settings: Settings) -> bool:
         healthy = healthy and not spending
     else:
         table.add_row("  ready to record", "routed + priced", "yes", ok_mark)
+
+    # The AWS surfaces beside the model. Reported, never failed on: both are
+    # optional controls, and `doctor` must stay green on a machine with no
+    # AWS account at all (the keyless demo path).
+    bedrock = settings.providers.bedrock
+    rerank = settings.retrieval.rerank
+    table.add_row(
+        "aws region",
+        "us-west-2 (ADR-0053)",
+        bedrock.region or "not set",
+        ok_mark if bedrock.region else info_mark,
+    )
+    table.add_row(
+        "bedrock rerank",
+        "retrieval.rerank (ADR-0047)",
+        f"{'on' if rerank.enabled else 'off'}: {rerank.provider} ({rerank.model_id})",
+        info_mark,
+    )
+    table.add_row(
+        "bedrock guardrail",
+        "CASCADE_GUARDRAIL_ID / _VERSION (ADR-0050)",
+        (
+            f"{bedrock.guardrail_id} (version {bedrock.guardrail_version or 'DRAFT'})"
+            if bedrock.guardrail_id
+            else "not configured -- `cascade eval guardrails` reports NOT ASSESSED"
+        ),
+        info_mark,
+    )
+    table.add_row(
+        "call log",
+        "observability.call_log",
+        settings.observability.call_log or "off",
+        info_mark,
+    )
     return healthy
 
 
@@ -4908,6 +4961,9 @@ def eval_guardrails(
     table.add_column("assessed", justify="right")
     table.add_column("action")
     table.add_column("policies / error", overflow="fold")
+    # AWS's request id per call, so a flagged graph can be matched to the
+    # CloudTrail record of the ApplyGuardrail call that flagged it.
+    table.add_column("request id", overflow="fold")
     for item in assessments:
         result = item.result
         table.add_row(
@@ -4915,6 +4971,7 @@ def eval_guardrails(
             "yes" if item.assessed else "no",
             result.action if result is not None else "-",
             ", ".join(result.policies) if result is not None else item.error,
+            result.request_id if result is not None and result.request_id else "-",
         )
     if assessments:
         console.print(table)
@@ -4946,15 +5003,18 @@ def eval_equivalence(
     with itself. Exits 3 on divergence: the provider must then join the key.
     Makes live calls -- 3 x limit of them -- metered against `bench`.
     """
+    from cascade.config import normalise_provider
     from cascade.eval.equivalence import run_equivalence
     from cascade.ledger.store import load_scenarios
-    from cascade.llm.providers import PROVIDERS
 
     settings = _settings(config)
-    known = sorted(PROVIDERS)
-    for name in (reference, candidate):
-        if name not in PROVIDERS:
-            _fail(f"unknown provider {name!r}; known: {', '.join(known)}", EXIT_PRECONDITION)
+    try:
+        # Aliases are accepted here as everywhere a provider is named
+        # (ADR-0053); an unknown name lists the choices.
+        reference = normalise_provider(reference)
+        candidate = normalise_provider(candidate)
+    except ValueError as exc:
+        _fail(str(exc), EXIT_PRECONDITION)
     if limit <= 0:
         _fail(f"--limit must be positive, got {limit}", EXIT_PRECONDITION)
 
@@ -4967,8 +5027,8 @@ def eval_equivalence(
         report = run_equivalence(
             settings,
             scenarios[:limit],
-            reference=reference,  # type: ignore[arg-type]  # validated above
-            candidate=candidate,  # type: ignore[arg-type]
+            reference=reference,
+            candidate=candidate,
         )
     except ValueError as exc:
         _fail(str(exc), EXIT_PRECONDITION)
@@ -4999,6 +5059,41 @@ def eval_equivalence(
         "the cache namespace; it is not proof of equivalence, and a small n may only mean the "
         "probe was underpowered."
     )
+
+
+# ---------------------------------------------------------------------------
+# aws: the surfaces this project reaches on AWS, read without spending (ADR-0053)
+# ---------------------------------------------------------------------------
+
+
+@aws_app.command("check")
+def aws_check(config: OverlayOpt = None) -> None:
+    """Confirm the AWS identity and the configured Bedrock surfaces resolve. Spends nothing.
+
+    Three control-plane reads -- `sts:GetCallerIdentity`, `bedrock:GetGuardrail`
+    for the configured guardrail and `bedrock:GetFoundationModel` for the
+    configured reranker -- none of which invokes a model or screens text, so
+    the command costs nothing and changes nothing. Every client is built for
+    `providers.bedrock.region` (us-west-2), never for an ambient `AWS_REGION`
+    (ADR-0028); credentials come from the standard AWS chain. Exits 3 when any
+    check fails, so a deployment can gate a paid phase on it.
+    """
+    from cascade.llm.client import describe_aws_access
+
+    settings = _settings(config)
+    report = describe_aws_access(settings)
+
+    table = Table(title=f"AWS surfaces ({report.region or 'no region configured'})")
+    table.add_column("Check", style="cyan")
+    table.add_column("Result", overflow="fold")
+    table.add_column("", width=3)
+    for check in report.checks:
+        table.add_row(
+            check.name, check.detail, "[green]OK[/green]" if check.ok else "[red]NO[/red]"
+        )
+    console.print(table)
+    if not report.ok:
+        _fail("an AWS check failed; see the table above", EXIT_PRECONDITION)
 
 
 # ---------------------------------------------------------------------------
@@ -5580,8 +5675,15 @@ def trace_replay(
         str | None, typer.Option("--config-id", help="Restrict to one configuration.")
     ] = None,
     workers: Annotated[int, typer.Option("--workers", help="Concurrent child processes.")] = 4,
+    policy: Annotated[
+        str | None,
+        typer.Option(
+            "--policy",
+            help="Restrict to runs made by one decider: `heuristic` (the stand-in) or `agent`.",
+        ),
+    ] = None,
 ) -> None:
-    """Re-run stored runs in fresh processes and compare the event-log hashes.
+    """Re-run stored runs in fresh processes and compare them with the stored event log.
 
     M8's first criterion. Each replay runs in its own interpreter under a
     different `PYTHONHASHSEED`: within one process a dependency on dict
@@ -5589,18 +5691,27 @@ def trace_replay(
     one. Nothing is written -- a verification pass that inserted its own copy
     of the log would make the M6 event count drift every time someone checked.
 
+    The comparison is against the stored events hashed under the current hash
+    domain, not against the cached `runs.event_log_hash` (M17): a digest from
+    an older domain is reported as *stale*, and `cascade trace rehash`
+    refreshes it. A run whose model recordings are not on this machine is
+    reported as *unverified here*, not as a divergence; `--policy heuristic`
+    verifies the stand-in runs anywhere.
+
     Exits **3** on any divergence, naming the first step whose state hash
     differs (§8.4: the bisect names the first divergent field, and the fix is
-    the source, never a tolerance).
+    the source, never a tolerance) -- and on any run it could not verify,
+    because a pass must mean every requested run was checked.
     """
     from cascade.trace.replay import load_replay_targets, verify_replays
 
     settings = _settings(config)
-    targets = load_replay_targets(settings, limit=runs, config_id=config_id)
+    targets = load_replay_targets(settings, limit=runs, config_id=config_id, policy=policy)
     if not targets:
         _fail(
             "no stored runs to replay; run `cascade simulate all` first"
-            + (f" (config {config_id})" if config_id else ""),
+            + (f" (config {config_id})" if config_id else "")
+            + (f" (policy {policy})" if policy else ""),
             EXIT_PRECONDITION,
         )
 
@@ -5612,17 +5723,29 @@ def trace_replay(
     table.add_column("Criterion", justify="right")
     table.add_row("runs replayed", f"{report.attempted:,}", f"{runs:,}")
     table.add_row(
-        "byte-identical event-log hash",
+        "byte-identical event log",
         f"{report.matched:,}/{report.attempted:,}",
         f"{report.attempted:,}/{report.attempted:,}",
+    )
+    table.add_row("diverged", f"{len(report.nondeterministic):,}", "0")
+    table.add_row(
+        "unverified here (recordings missing, or the child failed)",
+        f"{len(report.unverified):,}",
+        "0",
+    )
+    table.add_row(
+        "stored digests from an older hash domain",
+        f"{report.stale_digests:,}",
+        "0 -- `cascade trace rehash --apply` refreshes them",
     )
     table.add_row("child hash seed", CHILD_HASH_SEED, "differs from the parent's")
     table.add_row("elapsed", f"{report.elapsed_s:.1f}s", "-")
     console.print(table)
 
     if report.diverged:
-        detail = Table(title="Divergences")
+        detail = Table(title="Not reproduced")
         detail.add_column("run", style="cyan", overflow="fold")
+        detail.add_column("kind")
         detail.add_column("first divergent step", justify="right")
         detail.add_column("stored state hash")
         detail.add_column("replayed state hash")
@@ -5630,18 +5753,103 @@ def trace_replay(
         for outcome in report.diverged:
             detail.add_row(
                 outcome.run_id,
+                outcome.kind,
                 "-" if outcome.first_divergent_step is None else str(outcome.first_divergent_step),
                 (outcome.expected_state_hash or "-")[:16],
                 (outcome.actual_state_hash or "-")[:16],
-                outcome.error or "",
+                (outcome.error or "")[-200:],
             )
         console.print(detail)
+        if report.nondeterministic:
+            _fail(
+                f"{len(report.nondeterministic)} of {report.attempted} run(s) did not replay "
+                "identically; fix the source of the nondeterminism, never add a tolerance",
+                EXIT_PRECONDITION,
+            )
         _fail(
-            f"{len(report.diverged)} of {report.attempted} run(s) did not replay identically; "
-            "fix the source of the nondeterminism, never add a tolerance",
+            f"{len(report.unverified)} of {report.attempted} run(s) could not be verified on this "
+            "machine: a model-backed run replays only where its recordings are "
+            "(`llm.cache_dir`). Nothing here says they are nondeterministic; nothing here says "
+            "they are not. `--policy heuristic` verifies the stand-in runs anywhere.",
             EXIT_PRECONDITION,
         )
-    console.print("[bold green]every replayed run reproduced its event-log hash[/bold green]")
+    console.print("[bold green]every replayed run reproduced its stored event log[/bold green]")
+    if report.stale_digests:
+        console.print(
+            f"[yellow]{report.stale_digests} run(s) carry a cached digest from an older hash "
+            "domain (M16 moved it; found at M17). The events are intact and reproduce; "
+            "`cascade trace rehash --apply` refreshes the column.[/yellow]"
+        )
+
+
+@trace_app.command("rehash")
+def trace_rehash(
+    config: OverlayOpt = None,
+    config_id: Annotated[
+        str | None, typer.Option("--config-id", help="Restrict to one configuration.")
+    ] = None,
+    limit: Annotated[
+        int | None, typer.Option("--limit", help="Plan over the first N runs by id only.")
+    ] = None,
+    apply: Annotated[
+        bool,
+        typer.Option(
+            "--apply",
+            help="Write the recomputed digests to runs.event_log_hash (admin role). Dry run otherwise.",
+        ),
+    ] = False,
+) -> None:
+    """Recompute each stored run's event-log digest from its events; refresh the stale ones.
+
+    `runs.event_log_hash` is a derived column. The domain it is computed over
+    moved at M16 (`cache_hit` left `DecisionEvent.canonical()`), and the 2,480
+    runs stored before that kept digests nothing could reproduce -- found at
+    M17 when the live replay check failed on them. The events are the record
+    and are never touched (invariant 6); this recomputes the column from them.
+
+    A dry run by default: it prints how many digests are stale. `--apply`
+    writes the recomputed values as the admin role after archiving every
+    replaced digest to `.logs/rehash-<timestamp>.json`.
+    """
+    from datetime import UTC, datetime
+
+    from cascade.trace.replay import apply_rehash, plan_rehash
+
+    settings = _settings(config)
+    items = plan_rehash(settings, config_id=config_id, limit=limit)
+    stale = [item for item in items if item.stale]
+
+    table = Table(title="Stored event-log digests")
+    table.add_column("Quantity", style="cyan")
+    table.add_column("Measured", justify="right")
+    table.add_row("runs read", f"{len(items):,}")
+    table.add_row("digests current", f"{len(items) - len(stale):,}")
+    table.add_row("digests from an older hash domain", f"{len(stale):,}")
+    console.print(table)
+
+    if not stale:
+        console.print(
+            "[bold green]every stored digest is under the current hash domain[/bold green]"
+        )
+        return
+    if not apply:
+        console.print(
+            f"[yellow]dry run: {len(stale)} digest(s) would be refreshed. Re-run with "
+            "--apply to write them (admin role; the old values are archived first).[/yellow]"
+        )
+        return
+    archive = repo_root() / ".logs" / f"rehash-{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}.json"
+    updated = apply_rehash(settings, items, archive=archive)
+    console.print(
+        f"[bold green]refreshed {updated:,} of {len(stale):,} stale digest(s)[/bold green]; "
+        f"the replaced values are in {archive}"
+    )
+    if updated != len(stale):
+        _fail(
+            f"{len(stale) - updated} planned row(s) were not updated: their digest changed "
+            "between the plan and the apply. Re-run to re-plan.",
+            EXIT_PRECONDITION,
+        )
 
 
 @trace_app.command("cost")

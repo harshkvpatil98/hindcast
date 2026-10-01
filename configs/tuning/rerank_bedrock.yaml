@@ -1,0 +1,28 @@
+# Bedrock Rerank over the fused retrieval pool (ADR-0047), as a tuning overlay.
+#
+# A *tuning* overlay is a variant under development: `cascade eval tune-guard`
+# admits it on the development partition and refuses it on test (ADR-0038).
+# Reranking changes the evidence every prompt carries, and evidence is part of
+# the LLM cache key, so a run under this overlay records afresh and invalidates
+# nothing recorded without it.
+#
+# Routing is providers.bedrock.region in configs/base.yaml (us-west-2); the
+# call is one `bedrock-agent-runtime:Rerank` per query, through the one call
+# site (cascade/llm/client.py, BedrockReranker). `cascade aws check` confirms
+# the model resolves before anything is spent.
+retrieval:
+  rerank:
+    enabled: true
+    provider: bedrock
+    # Amazon Rerank 1.0, the Bedrock-native reranker. Passed verbatim as the
+    # request's modelArn; the field's published pattern admits a bare id.
+    model_id: amazon.rerank-v1:0
+    # Shown whole to the reranker; 60 documents is one search unit per call
+    # ("a query ... can contain up to 100 document chunks").
+    pool: 60
+    # Per 1,000 queries, as an exact decimal. Observed at $1.00 per 1,000
+    # queries ($0.001 per query) on 2026-09-30, but prices change and this
+    # project transcribes none: confirm it on https://aws.amazon.com/bedrock/pricing/
+    # and set it here before a paid run. At "0.00" the reranker refuses to
+    # spend and names this field (BedrockReranker._readiness_problems).
+    price_per_1k_queries: "0.00"

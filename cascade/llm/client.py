@@ -17,17 +17,29 @@ Three modes, and the difference between them is the whole point:
     Bypasses the cache entirely. Used only by the M3 latency benchmark, where
     the thing being measured is the provider's own round trip.
 
-Four providers can sit behind this door (ADR-0028, ADR-0031): Anthropic
-directly, Claude Platform on AWS, Amazon Bedrock, and the Claude Code CLI run
-headless under a subscription. The three SDK client classes live in the one
-``anthropic`` package, so this module is still the only importer of it, and it
-is also the only place the CLI is run -- so every call, whichever provider
-serves it, is cached, metered and traced the same way. What differs between
-them is described in :mod:`cascade.llm.providers`, which is pure.
+Four providers can sit behind this door (ADR-0028, ADR-0031, ADR-0053), each
+a class in this module implementing :class:`~cascade.llm.providers.ModelProvider`:
+
+* :class:`AnthropicApiProvider` -- the Anthropic API, with a key;
+* :class:`ClaudePlatformAwsProvider` -- Claude Platform on AWS through the
+  SDK's ``AnthropicAWS`` client (IAM, batches); implemented and tested
+  against the real SDK, enabled once the account is provisioned;
+* :class:`BedrockProvider` -- Amazon Bedrock through ``AnthropicBedrockMantle``;
+* :class:`ClaudeCliProvider` -- the Claude Code CLI run headless under the
+  operator's own subscription; the provider in use today.
+
+The three SDK client classes live in the one ``anthropic`` package, so this
+module is still the only importer of it, and it is also the only place the CLI
+is run and the only place a ``boto3`` client for a model-serving AWS service
+is built -- so every call, whichever provider serves it, is cached, metered
+and traced the same way. :class:`LLMClient` owns that discipline and talks to
+the provider through the interface alone. What differs between the providers
+is described in :mod:`cascade.llm.providers`, which is pure.
 """
 
 from __future__ import annotations
 
+import math
 import subprocess
 import tempfile
 import time
@@ -39,13 +51,16 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from cascade.canonical import canonical_json
-from cascade.config import Settings, claude_cli_environment, repo_root
+from cascade.config import LLMProvider, Settings, claude_cli_environment, repo_root
 from cascade.llm.cache import CallCache, cache_domain, cache_key
 from cascade.llm.claude_cli import build_invocation, parse_cli_output, to_messages_payload
 from cascade.llm.meter import CostMeter
 from cascade.llm.providers import (
+    ModelProvider,
+    ProviderSpec,
     charges_per_call,
     client_kwargs,
+    endpoint,
     readiness_problems,
     render_model,
     spec_for,
@@ -62,6 +77,7 @@ from cascade.llm.types import (
     LLMResult,
     PromptTooShortToCache,
     ProviderNotReady,
+    ProviderResponse,
     ScreenResult,
     Usage,
 )
@@ -73,13 +89,21 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
 __all__ = [
     "BATCH_MAX_REQUESTS",
     "RERANK_BILLING_KIND",
+    "AnthropicApiProvider",
+    "AwsAccessReport",
+    "AwsCheck",
     "BedrockGuardrail",
+    "BedrockProvider",
     "BedrockReranker",
+    "ClaudeCliProvider",
+    "ClaudePlatformAwsProvider",
     "CliCompleted",
     "CliRunner",
     "LLMClient",
     "RecordedReranker",
     "assert_cacheable_prefix",
+    "build_provider",
+    "describe_aws_access",
     "estimate_tokens",
 ]
 
@@ -145,6 +169,16 @@ RERANK_BILLING_KIND = "rerank"
 _RERANK_SERVICE = "bedrock-agent-runtime"
 _RERANK_MAX_SOURCES = 1000
 _RERANK_MAX_DOCUMENT_CHARS = 32_000
+# How the service bills: "Reranking is priced per query. A query is a single
+# call to the reranker model that can contain up to 100 document chunks"
+# (Amazon Bedrock user guide, "Pricing and search units", read 2026-09-30).
+# A pool wider than that is therefore more than one search unit, and the meter
+# books it as such rather than as one.
+_RERANK_DOCUMENTS_PER_QUERY = 100
+
+# Headers a provider files a call under, in the order they are looked for:
+# the Messages API's own, AWS's, and the generic one some gateways set.
+_REQUEST_ID_HEADERS = ("request-id", "x-amzn-requestid", "x-request-id")
 
 
 @dataclass(frozen=True)
@@ -231,14 +265,20 @@ class LLMClient:
         self.cache = cache if cache is not None else CallCache(settings.cache_path())
         self.meter = meter if meter is not None else CostMeter(settings, phase)
         self._tracer = tracer if tracer is not None else null_tracer()
-        self._http_client = http_client
-        self._sdk: Any | None = None
-        self._provider = settings.llm.provider
+        self._provider: LLMProvider = settings.llm.provider
+        # The one object that reaches a provider, chosen by name (ADR-0053).
+        # Everything above it -- cache, meter, tracer, replay -- is provider-
+        # agnostic. `sleep` is late-bound so a test may patch `_sleep` on the
+        # class before or after construction.
+        self._backend: ModelProvider = build_provider(
+            settings,
+            http_client=http_client,
+            cli_runner=cli_runner,
+            sleep=lambda seconds: self._sleep(seconds),
+        )
         # None for the three API providers, which share one namespace
         # (ADR-0029); the CLI gets its own (ADR-0031).
-        self._namespace = spec_for(self._provider).cache_namespace
-        self._cli_runner: CliRunner = cli_runner if cli_runner is not None else _run_cli
-        self._cli_workdir: Path | None = None
+        self._namespace = self._backend.spec.cache_namespace
 
         # Fail before the first dollar, not at the first miss. A provider that
         # cannot be routed explicitly or priced exactly would either send the
@@ -264,6 +304,11 @@ class LLMClient:
         return self._provider
 
     @property
+    def backend(self) -> ModelProvider:
+        """The provider serving this client, behind its interface."""
+        return self._backend
+
+    @property
     def constructed_sdk_client(self) -> bool:
         """Whether an SDK client has ever been built in this process.
 
@@ -271,7 +316,7 @@ class LLMClient:
         A transport that raises proves no call was *sent*; this proves none
         could have been, because no client exists to send one.
         """
-        return self._sdk is not None
+        return self._backend.constructed_sdk_client
 
     # -- the one door -------------------------------------------------------
 
@@ -383,7 +428,7 @@ class LLMClient:
         # a batched study through Bedrock is fine. Submitting one is not --
         # there is no batch endpoint, and the per-call fallback would run the
         # phase at roughly twice the rate its ceiling was set against.
-        if not spec_for(self._provider).supports_batches:
+        if not self._backend.spec.supports_batches:
             # Refused either way -- there is no batch endpoint to reach, and
             # looping `complete` here would make one function mean two things
             # for every caller, including the ones that need the discount. The
@@ -393,8 +438,8 @@ class LLMClient:
             # ceiling to breach and needs a caller that prepares serially
             # (ADR-0052). Both answers are wrong for the other provider.
             remedy = (
-                "Record this phase through `anthropic` or `aws` -- the recordings then "
-                "replay through any provider (ADR-0029)"
+                "Record this phase through `anthropic` or `claude_platform_aws` -- the "
+                "recordings then replay through any provider (ADR-0029)"
                 if charges_per_call(self._provider)
                 else "This provider bills a subscription rather than tokens, so the "
                 "ceiling argument does not apply to it: resolve the wave through a "
@@ -405,7 +450,7 @@ class LLMClient:
                 self._provider,
                 [
                     f"{len(pending)} uncached request(s) need the Message Batches API, which "
-                    f"{spec_for(self._provider).operated_by} does not provide; the batched "
+                    f"{self._backend.spec.operated_by} does not provide; the batched "
                     f"phase's ceiling assumes the batch rate (ADR-0020). {remedy}"
                 ],
             )
@@ -435,11 +480,11 @@ class LLMClient:
         timeout_s: float,
     ) -> dict[str, LLMResult]:
         """Submit one batch keyed by cache key, wait for it, and price the results."""
-        client = self._client()
+        batches = self._backend.batches()
         payload = [
             {
                 "custom_id": _batch_id(key),
-                "params": _batch_params(
+                "params": _messages_params(
                     requests[key], model=render_model(self._settings, requests[key].model)
                 ),
             }
@@ -453,7 +498,7 @@ class LLMClient:
             )
 
         started = time.perf_counter()
-        batch = client.messages.batches.create(requests=payload)
+        batch = batches.create(requests=payload)
         batch_id = str(getattr(batch, "id", ""))
         status = str(getattr(batch, "processing_status", ""))
         while status != "ended":
@@ -463,7 +508,7 @@ class LLMClient:
                     "the provider's own SLA is 24h -- raise the timeout or cancel it"
                 )
             self._sleep(poll_interval_s)
-            batch = client.messages.batches.retrieve(batch_id)
+            batch = batches.retrieve(batch_id)
             status = str(getattr(batch, "processing_status", ""))
 
         out: dict[str, LLMResult] = {}
@@ -471,7 +516,7 @@ class LLMClient:
         elapsed_ms = (time.perf_counter() - started) * 1000.0
         by_batch_id = {_batch_id(key): key for key in sorted(requests)}
 
-        for entry in client.messages.batches.results(batch_id):
+        for entry in batches.results(batch_id):
             key = by_batch_id.get(str(getattr(entry, "custom_id", "")))
             if key is None:
                 continue
@@ -497,6 +542,11 @@ class LLMClient:
                         usage=usage,
                         latency_ms=elapsed_ms,
                         recorded_at=datetime.now(UTC).isoformat(),
+                        provider_metadata={
+                            "provider": self._provider,
+                            "batch_id": batch_id,
+                            "wire_model": payload_model(raw),
+                        },
                     )
                 )
             # Priced by the logical model the request named, not the string the
@@ -510,6 +560,8 @@ class LLMClient:
                 cost_usd=cost,
                 cached=False,
                 latency_ms=elapsed_ms,
+                provider=self._provider,
+                request_id=batch_id or None,
             )
             out[key] = result
 
@@ -521,123 +573,6 @@ class LLMClient:
         """Wait between polls. Isolated so a test can drive the loop instantly."""
         time.sleep(seconds)
 
-    # -- the CLI provider (ADR-0031) ------------------------------------------
-
-    def _call_cli(self, request: LLMRequest) -> dict[str, Any]:
-        """Serve one request through ``claude -p`` and return a Messages body.
-
-        Retries only the provider's own transient failures. A 429 is raised at
-        once: under a subscription it usually means the plan's usage limit,
-        and every phase is resumable (invariant 8), so the honest response is
-        to stop and say so rather than spin against the limit.
-        """
-        config = self._settings.providers.claude_code
-        invocation = build_invocation(
-            request,
-            executable=config.executable,
-            model=render_model(self._settings, request.model),
-        )
-        workdir = self._cli_directory()
-        attempts = self._settings.llm.max_retries + 1
-        failure = "no attempt made"
-        for attempt in range(attempts):
-            try:
-                done = self._cli_runner(
-                    invocation.argv, invocation.stdin, workdir, self._settings.llm.timeout_s
-                )
-            except FileNotFoundError:
-                raise ProviderNotReady(
-                    "claude_code",
-                    [
-                        f"{config.executable!r} is not on PATH -- install Claude Code and "
-                        "log in with the subscription (`claude` then `/login`)"
-                    ],
-                ) from None
-            except OSError as exc:
-                # An executable that exists but cannot be run. Measured during
-                # the M15 fan-out: a failed Claude Code auto-update left a stub
-                # at the install path, and every worker raised ENOEXEC as a raw
-                # traceback -- sixty lines each, sixteen at a time -- while the
-                # diagnostic written for exactly this situation sat one branch
-                # above, unreachable because `FileNotFoundError` is only the
-                # *missing* case.
-                #
-                # Caught after `FileNotFoundError` rather than instead of it:
-                # that subclass carries its own remedy ("install it"), and this
-                # one carries a different remedy ("it is there and broken"),
-                # which is the distinction worth keeping.
-                raise ProviderNotReady(
-                    "claude_code",
-                    [
-                        f"{config.executable!r} exists but could not be executed ({exc}). "
-                        "A partial or failed Claude Code update leaves a stub that is "
-                        "found on PATH and is not runnable; reinstall it and check "
-                        "`claude --version` returns before re-running"
-                    ],
-                ) from None
-            except subprocess.TimeoutExpired:
-                failure = f"timed out after {self._settings.llm.timeout_s:.0f}s"
-                self._sleep(5.0 * 2**attempt)
-                continue
-            if not done.stdout.strip():
-                raise LLMError(
-                    f"claude -p exited {done.returncode} with no result; stderr: "
-                    f"{done.stderr.strip()[-400:]!r}. If it is not logged in, run `claude` "
-                    "and `/login` with the subscription."
-                )
-            cli = parse_cli_output(done.stdout)
-            status = _status_code(cli.get("api_error_status"))
-            if cli.get("is_error") and status == 429:
-                raise LLMError(
-                    "claude -p hit a rate or usage limit (429). Under a subscription this is "
-                    "usually the plan's usage window; the phase is resumable, so re-run the "
-                    "same command once the limit resets. Recorded calls are not repeated."
-                )
-            if cli.get("is_error") and status in _CLI_TRANSIENT_STATUSES:
-                failure = f"transient API status {status}"
-                self._sleep(5.0 * 2**attempt)
-                continue
-            if cli.get("is_error") and cli.get("subtype") in _CLI_TRANSIENT_SUBTYPES:
-                failure = f"transient CLI subtype {cli.get('subtype')!r}"
-                self._sleep(5.0 * 2**attempt)
-                continue
-            return to_messages_payload(cli, invocation=invocation, logical_model=request.model)
-        raise LLMError(f"claude -p failed after {attempts} attempt(s): {failure}")
-
-    def _cli_directory(self) -> Path:
-        """The working directory the CLI runs in, checked once per client.
-
-        Preserves the invariant that nothing reaches the model except the
-        request. The CLI loads every CLAUDE.md from its working directory
-        upward, plus the user's own; this repository's build contract alone is
-        ~27k tokens, so a working directory under it would put the contract
-        into every forecasting call. Refused rather than warned about.
-        """
-        if self._cli_workdir is not None:
-            return self._cli_workdir
-        configured = self._settings.providers.claude_code.workdir
-        path = (
-            Path(configured) if configured else Path(tempfile.mkdtemp(prefix="cascade-claude-cli-"))
-        ).resolve()
-        problems: list[str] = []
-        root = repo_root().resolve()
-        if path == root or root in path.parents:
-            problems.append(f"providers.claude_code.workdir {path} is inside the repository")
-        memories = [
-            directory / name
-            for directory in (path, *path.parents)
-            for name in ("CLAUDE.md", ".claude/CLAUDE.md")
-        ]
-        memories.append(Path.home() / ".claude" / "CLAUDE.md")
-        for memory in sorted(set(memories)):
-            if memory.is_file():
-                problems.append(f"{memory} would be loaded into every call")
-        if problems:
-            raise ProviderNotReady("claude_code", sorted(problems))
-        path.mkdir(parents=True, exist_ok=True)
-        self._cli_workdir = path
-        return path
-
     # -- internals ----------------------------------------------------------
 
     def _from_recording(self, recorded: CachedCall, *, trace_name: str) -> LLMResult:
@@ -647,11 +582,13 @@ class LLMClient:
         spend have to appear on the same dashboard, or the biggest cost lever
         in the study is invisible.
         """
+        metadata = recorded.provider_metadata or {}
         result = _result_from_payload(
             recorded.raw_response,
             usage=recorded.usage,
             latency_ms=recorded.latency_ms,
             served_from_cache=True,
+            request_id=_optional_str(metadata.get("request_id")),
         )
         self.meter.record_cache_hit(model=result.model, usage=result.usage)
         self._tracer.generation(
@@ -661,40 +598,19 @@ class LLMClient:
             cost_usd=None,
             cached=True,
             latency_ms=recorded.latency_ms,
+            provider=self._provider,
+            request_id=result.request_id,
         )
         return result
 
     def _client(self) -> Any:
-        """Construct the SDK client lazily, exactly once.
+        """The provider's SDK client, constructed lazily, exactly once.
 
         Lazy so that ``replay`` never builds one -- see
-        :attr:`constructed_sdk_client`.
+        :attr:`constructed_sdk_client`. Kept as a method on the client for the
+        callers that need the SDK object itself (the latency bench).
         """
-        if self._sdk is not None:
-            return self._sdk
-        import anthropic  # the single SDK import in the codebase (invariant 5)
-
-        # Re-checked here as well as at construction: a client built in replay
-        # mode can still reach this door through `live`-only paths in tests,
-        # and the SDK's own error for an empty key -- `TypeError: Could not
-        # resolve authentication method` -- names neither the variable nor
-        # this project. Measured on a checkout whose .env carried the key with
-        # no value.
-        problems = readiness_problems(
-            self._settings,
-            models=(self._settings.models.agent, self._settings.models.compiler),
-        )
-        if problems:
-            raise ProviderNotReady(self._provider, problems)
-
-        class_name = spec_for(self._provider).client_class
-        if class_name is None:
-            raise LLMError(f"provider {self._provider!r} is not served by an SDK client")
-        kwargs = client_kwargs(self._settings)
-        if self._http_client is not None:
-            kwargs["http_client"] = self._http_client
-        self._sdk = getattr(anthropic, class_name)(**kwargs)
-        return self._sdk
+        return self._backend.sdk_client()
 
     def _call_api(
         self,
@@ -707,29 +623,17 @@ class LLMClient:
     ) -> LLMResult:
         """Send one request, price it, and persist it when recording."""
         started = time.perf_counter()
-        if self._provider == "claude_code":
-            raw = self._call_cli(request)
-        else:
-            client = self._client()
-            payload: dict[str, Any] = {
-                "model": render_model(self._settings, request.model),
-                "messages": request.messages,
-                "max_tokens": request.max_tokens,
-                "temperature": request.temperature,
-            }
-            if request.system is not None:
-                payload["system"] = request.system
-            if request.tools:
-                payload["tools"] = request.tools
-            if request.tool_choice is not None:
-                payload["tool_choice"] = request.tool_choice
-            message = client.messages.create(**payload)
-            raw = message.model_dump(mode="json")
+        response = self._backend.complete(request)
         latency_ms = (time.perf_counter() - started) * 1000.0
+        raw = response.body
 
         usage = _usage_from_payload(raw)
         result = _result_from_payload(
-            raw, usage=usage, latency_ms=latency_ms, served_from_cache=False
+            raw,
+            usage=usage,
+            latency_ms=latency_ms,
+            served_from_cache=False,
+            request_id=response.request_id,
         )
 
         cost = self.meter.record(model=request.model, usage=usage, batch=batch)
@@ -740,6 +644,8 @@ class LLMClient:
             cost_usd=cost,
             cached=False,
             latency_ms=latency_ms,
+            provider=self._provider,
+            request_id=response.request_id,
         )
 
         if store:
@@ -751,6 +657,11 @@ class LLMClient:
                     usage=usage,
                     latency_ms=latency_ms,
                     recorded_at=datetime.now(UTC).isoformat(),
+                    provider_metadata={
+                        "provider": self._provider,
+                        "request_id": response.request_id,
+                        **{k: response.metadata[k] for k in sorted(response.metadata)},
+                    },
                 )
             )
         return result
@@ -777,11 +688,44 @@ def _batch_id(key: str) -> str:
     return f"k{key[:56]}"
 
 
-def _batch_params(request: LLMRequest, *, model: str) -> dict[str, Any]:
-    """Project a request onto the Batches API's per-item ``params`` object.
+def _optional_str(value: Any) -> str | None:
+    return str(value) if isinstance(value, str) and value else None
 
-    ``model`` is the provider's wire id, rendered by the caller; the request
-    itself only ever carries the logical model (ADR-0029).
+
+def payload_model(raw: Mapping[str, Any]) -> str | None:
+    """The model string a response body echoes, if any -- metadata, never a price key."""
+    return _optional_str(raw.get("model"))
+
+
+def _request_id_from_headers(headers: Any) -> str | None:
+    """The provider's request id from a response's headers, or None.
+
+    Looked up by the names each provider documents, case-insensitively, so
+    the same code reads the Messages API's `request-id` and AWS's
+    `x-amzn-requestid`. Absence is None, never an empty string: a recording
+    must be able to say "the provider sent no id" distinctly from "an id that
+    happens to be blank".
+    """
+    if headers is None:
+        return None
+    for name in _REQUEST_ID_HEADERS:
+        try:
+            value = headers.get(name)
+        except AttributeError:
+            return None
+        if value:
+            return str(value)
+    return None
+
+
+def _messages_params(request: LLMRequest, *, model: str) -> dict[str, Any]:
+    """Project a request onto the Messages API's parameters.
+
+    One projection for the single-call and the batch door, so the two cannot
+    drift: a field sent on one path and not the other would make a recording
+    made through batches answer a different request from the one `complete`
+    would send. ``model`` is the provider's wire id, rendered by the caller;
+    the request itself only ever carries the logical model (ADR-0029).
     """
     params: dict[str, Any] = {
         "model": model,
@@ -842,6 +786,7 @@ def _result_from_payload(
     usage: Usage,
     latency_ms: float,
     served_from_cache: bool,
+    request_id: str | None = None,
 ) -> LLMResult:
     """Project a stored response body onto the boundary type.
 
@@ -865,7 +810,335 @@ def _result_from_payload(
         latency_ms=latency_ms,
         served_from_cache=served_from_cache,
         tool_calls=tool_calls,
+        request_id=request_id,
     )
+
+
+# ---------------------------------------------------------------------------
+# The providers, behind the one door (ADR-0028, ADR-0031, ADR-0053)
+#
+# One class per way of reaching a model, all implementing
+# `cascade.llm.providers.ModelProvider`. `LLMClient` holds exactly one and
+# never asks it anything the interface does not offer, which is what keeps the
+# cache, the meter, the tracer and the record/replay contract above this line
+# and provider-agnostic. Everything below this line is the only code in the
+# package that reaches a network or a process on a model's behalf.
+# ---------------------------------------------------------------------------
+
+
+class _SdkProvider:
+    """Shared machinery for the three providers served by the ``anthropic`` SDK.
+
+    The client is constructed lazily, exactly once, so ``replay`` never builds
+    one (:attr:`constructed_sdk_client` is the M0 acceptance instrument).
+    Routing is explicit (ADR-0028): every constructor argument comes from
+    :func:`~cascade.llm.providers.client_kwargs`, never from the shell.
+    """
+
+    name: LLMProvider
+
+    def __init__(self, settings: Settings, *, http_client: httpx.Client | None = None) -> None:
+        self._settings = settings
+        self._http_client = http_client
+        self._sdk: Any | None = None
+
+    @property
+    def spec(self) -> ProviderSpec:
+        return spec_for(self.name)
+
+    @property
+    def constructed_sdk_client(self) -> bool:
+        return self._sdk is not None
+
+    def sdk_client(self) -> Any:
+        """Construct the SDK client lazily, exactly once."""
+        if self._sdk is not None:
+            return self._sdk
+        import anthropic  # the single SDK import in the codebase (invariant 5)
+
+        # Re-checked here as well as at construction: a client built in replay
+        # mode can still reach this door through `live`-only paths in tests,
+        # and the SDK's own error for an empty key -- `TypeError: Could not
+        # resolve authentication method` -- names neither the variable nor
+        # this project. Measured on a checkout whose .env carried the key with
+        # no value.
+        problems = readiness_problems(
+            self._settings,
+            models=(self._settings.models.agent, self._settings.models.compiler),
+        )
+        if problems:
+            raise ProviderNotReady(self.name, problems)
+
+        class_name = self.spec.client_class
+        if class_name is None:  # pragma: no cover -- every SDK provider names one
+            raise LLMError(f"provider {self.name!r} is not served by an SDK client")
+        kwargs = client_kwargs(self._settings)
+        if self._http_client is not None:
+            kwargs["http_client"] = self._http_client
+        self._sdk = getattr(anthropic, class_name)(**kwargs)
+        return self._sdk
+
+    def complete(self, request: LLMRequest) -> ProviderResponse:
+        """One ``messages.create``, returning the body with the provider's request id.
+
+        Goes through ``with_raw_response`` so the response headers are in
+        hand: the Messages API files every call under a `request-id`, AWS
+        under `x-amzn-requestid`, and a recording that carries it can be
+        matched to the provider's own record of the call (ADR-0053). The body
+        is the SDK's own parse of the response, dumped as JSON, exactly as
+        before.
+        """
+        client = self.sdk_client()
+        params = _messages_params(request, model=render_model(self._settings, request.model))
+        raw = client.messages.with_raw_response.create(**params)
+        message = raw.parse()
+        body: dict[str, Any] = dict(message.model_dump(mode="json"))
+        route = endpoint(self._settings)
+        metadata: dict[str, Any] = {"wire_model": params["model"]}
+        if route is not None:
+            metadata["endpoint"] = route
+        return ProviderResponse(
+            body=body,
+            request_id=_request_id_from_headers(getattr(raw, "headers", None)),
+            metadata=metadata,
+        )
+
+    def batches(self) -> Any:
+        """The SDK's Message Batches resource; refused where the service has none."""
+        if not self.spec.supports_batches:
+            raise ProviderNotReady(
+                self.name,
+                [
+                    f"{self.spec.operated_by} has no Message Batches API; the batched phases "
+                    "need `anthropic` or `claude_platform_aws` (ADR-0028)"
+                ],
+            )
+        return self.sdk_client().messages.batches
+
+
+class AnthropicApiProvider(_SdkProvider):
+    """The Anthropic API, with a pay-as-you-go key -- the pinned configuration."""
+
+    name = "anthropic"
+
+
+class ClaudePlatformAwsProvider(_SdkProvider):
+    """Claude Platform on AWS: Anthropic-operated, reached with IAM/SigV4 (ADR-0028).
+
+    The SDK's ``AnthropicAWS`` client, routed to the configured region and
+    workspace and never to an ambient one. Implemented and tested against the
+    real SDK over a mock transport; it is **not enabled** in this project yet
+    because the account is still being provisioned, and switching to it is
+    configuration -- ``LLM_PROVIDER=claude_platform_aws`` and
+    ``ANTHROPIC_AWS_WORKSPACE_ID`` -- not code (ADR-0053). It is the
+    provider that can carry a batched phase on AWS.
+    """
+
+    name = "claude_platform_aws"
+
+
+class BedrockProvider(_SdkProvider):
+    """Amazon Bedrock through the SDK's ``AnthropicBedrockMantle`` client.
+
+    Partner-operated, priced from its own table, and without a Message
+    Batches API -- so it serves the unbatched phases and refuses the fan-out
+    before any spend (ADR-0028).
+    """
+
+    name = "bedrock"
+
+
+class ClaudeCliProvider:
+    """The Claude Code CLI, headless, under the operator's own login (ADR-0031).
+
+    The provider in use while the project runs on a Claude subscription. It
+    invokes the locally installed, already-authenticated ``claude`` binary in
+    its documented print mode and never touches the subscription's token: the
+    CLI authenticates itself. What it cannot do is set ``temperature`` or
+    ``max_tokens``, so it records under a namespace of its own and its results
+    are labelled as not the pinned configuration wherever they appear.
+
+    Retries only the provider's own transient failures. A 429 is raised at
+    once: under a subscription it usually means the plan's usage limit, and
+    every phase is resumable (invariant 8), so the honest response is to stop
+    and say so rather than spin against the limit.
+    """
+
+    name: LLMProvider = "claude_cli"
+
+    def __init__(
+        self,
+        settings: Settings,
+        *,
+        runner: CliRunner | None = None,
+        sleep: Callable[[float], None] | None = None,
+    ) -> None:
+        self._settings = settings
+        self._runner: CliRunner = runner if runner is not None else _run_cli
+        self._sleep: Callable[[float], None] = sleep if sleep is not None else time.sleep
+        self._workdir: Path | None = None
+
+    @property
+    def spec(self) -> ProviderSpec:
+        return spec_for(self.name)
+
+    @property
+    def constructed_sdk_client(self) -> bool:
+        """Always False: the CLI is a process, not an SDK client."""
+        return False
+
+    def sdk_client(self) -> Any:
+        raise LLMError(f"provider {self.name!r} is not served by an SDK client")
+
+    def batches(self) -> Any:
+        raise ProviderNotReady(
+            self.name,
+            [
+                "the Claude Code CLI has no Message Batches API; a subscription bills no "
+                "tokens, so resolve the wave serially (`LLMAgents.prepare`, ADR-0052)"
+            ],
+        )
+
+    def complete(self, request: LLMRequest) -> ProviderResponse:
+        """Serve one request through ``claude -p`` and return a Messages body."""
+        config = self._settings.providers.claude_cli
+        invocation = build_invocation(
+            request,
+            executable=config.executable,
+            model=render_model(self._settings, request.model),
+        )
+        workdir = self._directory()
+        attempts = self._settings.llm.max_retries + 1
+        failure = "no attempt made"
+        for attempt in range(attempts):
+            try:
+                done = self._runner(
+                    invocation.argv, invocation.stdin, workdir, self._settings.llm.timeout_s
+                )
+            except FileNotFoundError:
+                raise ProviderNotReady(
+                    self.name,
+                    [
+                        f"{config.executable!r} is not on PATH -- install Claude Code and "
+                        "log in with the subscription (`claude` then `/login`)"
+                    ],
+                ) from None
+            except OSError as exc:
+                # An executable that exists but cannot be run. Measured during
+                # the M15 fan-out: a failed Claude Code auto-update left a stub
+                # at the install path, and every worker raised ENOEXEC as a raw
+                # traceback -- sixty lines each, sixteen at a time -- while the
+                # diagnostic written for exactly this situation sat one branch
+                # above, unreachable because `FileNotFoundError` is only the
+                # *missing* case.
+                #
+                # Caught after `FileNotFoundError` rather than instead of it:
+                # that subclass carries its own remedy ("install it"), and this
+                # one carries a different remedy ("it is there and broken"),
+                # which is the distinction worth keeping.
+                raise ProviderNotReady(
+                    self.name,
+                    [
+                        f"{config.executable!r} exists but could not be executed ({exc}). "
+                        "A partial or failed Claude Code update leaves a stub that is "
+                        "found on PATH and is not runnable; reinstall it and check "
+                        "`claude --version` returns before re-running"
+                    ],
+                ) from None
+            except subprocess.TimeoutExpired:
+                failure = f"timed out after {self._settings.llm.timeout_s:.0f}s"
+                self._sleep(5.0 * 2**attempt)
+                continue
+            if not done.stdout.strip():
+                raise LLMError(
+                    f"claude -p exited {done.returncode} with no result; stderr: "
+                    f"{done.stderr.strip()[-400:]!r}. If it is not logged in, run `claude` "
+                    "and `/login` with the subscription."
+                )
+            cli = parse_cli_output(done.stdout)
+            status = _status_code(cli.get("api_error_status"))
+            if cli.get("is_error") and status == 429:
+                raise LLMError(
+                    "claude -p hit a rate or usage limit (429). Under a subscription this is "
+                    "usually the plan's usage window; the phase is resumable, so re-run the "
+                    "same command once the limit resets. Recorded calls are not repeated."
+                )
+            if cli.get("is_error") and status in _CLI_TRANSIENT_STATUSES:
+                failure = f"transient API status {status}"
+                self._sleep(5.0 * 2**attempt)
+                continue
+            if cli.get("is_error") and cli.get("subtype") in _CLI_TRANSIENT_SUBTYPES:
+                failure = f"transient CLI subtype {cli.get('subtype')!r}"
+                self._sleep(5.0 * 2**attempt)
+                continue
+            body = to_messages_payload(cli, invocation=invocation, logical_model=request.model)
+            return ProviderResponse(
+                body=body,
+                # The CLI's session is the id its own logs file the call under.
+                request_id=_optional_str(cli.get("session_id")) or _optional_str(cli.get("uuid")),
+                metadata={"executable": config.executable, "num_turns": cli.get("num_turns")},
+            )
+        raise LLMError(f"claude -p failed after {attempts} attempt(s): {failure}")
+
+    def _directory(self) -> Path:
+        """The working directory the CLI runs in, checked once per provider.
+
+        Preserves the invariant that nothing reaches the model except the
+        request. The CLI loads every CLAUDE.md from its working directory
+        upward, plus the user's own; this repository's build contract alone is
+        ~27k tokens, so a working directory under it would put the contract
+        into every forecasting call. Refused rather than warned about.
+        """
+        if self._workdir is not None:
+            return self._workdir
+        configured = self._settings.providers.claude_cli.workdir
+        path = (
+            Path(configured) if configured else Path(tempfile.mkdtemp(prefix="cascade-claude-cli-"))
+        ).resolve()
+        problems: list[str] = []
+        root = repo_root().resolve()
+        if path == root or root in path.parents:
+            problems.append(f"providers.claude_cli.workdir {path} is inside the repository")
+        memories = [
+            directory / name
+            for directory in (path, *path.parents)
+            for name in ("CLAUDE.md", ".claude/CLAUDE.md")
+        ]
+        memories.append(Path.home() / ".claude" / "CLAUDE.md")
+        for memory in sorted(set(memories)):
+            if memory.is_file():
+                problems.append(f"{memory} would be loaded into every call")
+        if problems:
+            raise ProviderNotReady(self.name, sorted(problems))
+        path.mkdir(parents=True, exist_ok=True)
+        self._workdir = path
+        return path
+
+
+def build_provider(
+    settings: Settings,
+    *,
+    http_client: httpx.Client | None = None,
+    cli_runner: CliRunner | None = None,
+    sleep: Callable[[float], None] | None = None,
+) -> ModelProvider:
+    """The provider class ``settings.llm.provider`` names, ready to serve.
+
+    Preserves the invariant that a provider is chosen by its canonical name
+    and nothing else: aliases were folded at the configuration boundary, so
+    this is a four-way dispatch with no default -- a fifth name is a
+    programming error here, not a fallback to some provider nobody chose.
+    """
+    provider = settings.llm.provider
+    if provider == "claude_cli":
+        return ClaudeCliProvider(settings, runner=cli_runner, sleep=sleep)
+    if provider == "anthropic":
+        return AnthropicApiProvider(settings, http_client=http_client)
+    if provider == "claude_platform_aws":
+        return ClaudePlatformAwsProvider(settings, http_client=http_client)
+    if provider == "bedrock":
+        return BedrockProvider(settings, http_client=http_client)
+    raise LLMError(f"no provider class for {provider!r}")  # pragma: no cover -- Literal
 
 
 class BedrockReranker:
@@ -914,6 +1187,9 @@ class BedrockReranker:
         # must never construct one.
         self._client: Any | None = client
         self._price_per_1k = _rerank_price(self._config.price_per_1k_queries)
+        # AWS's request ids for the most recent `score` call, one per page, so
+        # a recording can be matched to the CloudTrail record of the call.
+        self.last_request_ids: tuple[str, ...] = ()
 
     @property
     def model_id(self) -> str:
@@ -1092,20 +1368,26 @@ class BedrockReranker:
         served and still billed. A continuation is part of the same query, so
         it books once however many pages arrive -- at the pool sizes
         ``retrieval.rerank.pool`` permits, bounded above by ``max_k``, one page
-        is what is expected.
+        is what is expected. How many search units that query is, is a
+        function of the pool size (``_RERANK_DOCUMENTS_PER_QUERY``).
         """
         body = self._request_body(query=query, documents=documents)
         scored: dict[int, float] = {}
         token: str | None = None
         billed = False
+        request_ids: list[str] = []
 
         while True:
             payload = dict(body)
             if token is not None:
                 payload["nextToken"] = token
             response: Mapping[str, Any] = client.rerank(**payload)
+            request_id = _aws_request_id(response)
+            if request_id:
+                request_ids.append(request_id)
+            self.last_request_ids = tuple(request_ids)
             if not billed:
-                self._book_one_query()
+                self._book_query(documents=len(documents))
                 billed = True
 
             before = len(scored)
@@ -1128,19 +1410,30 @@ class BedrockReranker:
                     f"{len(scored)} of {len(documents)}; following it again would not terminate"
                 )
 
-    def _book_one_query(self) -> None:
-        """Charge one query to the phase, at the configured per-query rate.
+    def _book_query(self, *, documents: int) -> None:
+        """Charge one call to the phase, at the configured per-query rate.
 
-        One call is one query: the request shape carries exactly one query
-        (the field is a fixed-size array of 1), whatever the pool size, which
-        is why the configured rate is per thousand *queries* and not per
-        document.
+        The request shape carries exactly one query (the field is a
+        fixed-size array of 1), which is why the configured rate is per
+        thousand *queries* and not per document. But a query "can contain up
+        to 100 document chunks" (the service's own pricing page), so a pool of
+        150 is two search units, and booking it as one would understate the
+        phase by exactly the amount the ledger gate exists to catch.
         """
         if self._meter is None:
             return
+        units = max(1, math.ceil(documents / _RERANK_DOCUMENTS_PER_QUERY))
         self._meter.record_units(
-            kind=RERANK_BILLING_KIND, units=1, price_per_1k_usd=self._price_per_1k
+            kind=RERANK_BILLING_KIND, units=units, price_per_1k_usd=self._price_per_1k
         )
+
+
+def _aws_request_id(response: Mapping[str, Any]) -> str | None:
+    """boto3's `ResponseMetadata.RequestId`, when the response carries one."""
+    metadata = response.get("ResponseMetadata")
+    if not isinstance(metadata, Mapping):
+        return None
+    return _optional_str(metadata.get("RequestId"))
 
 
 def _rerank_price(configured: str) -> Decimal:
@@ -1282,6 +1575,7 @@ class RecordedReranker:
         latency_ms = (time.perf_counter() - started) * 1000.0
 
         if self.mode == "record":
+            request_ids = tuple(getattr(self.inner, "last_request_ids", ()) or ())
             self.cache.put(
                 CachedCall(
                     key=key,
@@ -1303,6 +1597,11 @@ class RecordedReranker:
                     usage=Usage(input_tokens=0, output_tokens=0),
                     latency_ms=latency_ms,
                     recorded_at=datetime.now(UTC).isoformat(),
+                    provider_metadata={
+                        "kind": "rerank",
+                        "model_id": self.model_id,
+                        "request_ids": list(request_ids),
+                    },
                 )
             )
         return scores
@@ -1439,4 +1738,154 @@ class BedrockGuardrail:
             action="GUARDRAIL_INTERVENED" if action == "GUARDRAIL_INTERVENED" else "NONE",
             reason=str(response.get("actionReason") or ""),
             policies=tuple(policies),
+            request_id=_aws_request_id(response) or "",
         )
+
+
+# ---------------------------------------------------------------------------
+# `cascade aws check`: the AWS surfaces, read without spending (ADR-0053)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class AwsCheck:
+    """One read-only check: what was asked, whether it held, and what came back."""
+
+    name: str
+    ok: bool
+    detail: str
+
+
+@dataclass(frozen=True, slots=True)
+class AwsAccessReport:
+    """What `describe_aws_access` found. ``ok`` only when every check held."""
+
+    region: str | None
+    checks: tuple[AwsCheck, ...]
+
+    @property
+    def ok(self) -> bool:
+        return all(check.ok for check in self.checks)
+
+
+def describe_aws_access(settings: Settings, *, session: Any | None = None) -> AwsAccessReport:
+    """Who the ambient AWS identity is, and whether the configured surfaces resolve.
+
+    Three control-plane reads and nothing else -- ``sts:GetCallerIdentity``,
+    ``bedrock:GetGuardrail`` for the configured guardrail, and
+    ``bedrock:GetFoundationModel`` for the configured reranker -- so it
+    invokes no model, screens no text, bills nothing and changes nothing.
+    Preserves ADR-0028's routing rule: every client is built for
+    ``providers.bedrock.region``, never for an ambient ``AWS_REGION``, and
+    credentials stay ambient. Lives here because a ``bedrock`` client is a
+    model-serving service's client and may be built nowhere else
+    (invariant 5, ``tests/unit/test_invariants.py``).
+
+    Failures are reported per check, by the exception class AWS raised, so an
+    operator sees "no credentials" beside "the guardrail resolves" rather than
+    one traceback. Only botocore's own exceptions are caught; anything else is
+    a bug and propagates.
+    """
+    bedrock = settings.providers.bedrock
+    region = bedrock.region
+    checks: list[AwsCheck] = []
+    if not region:
+        checks.append(
+            AwsCheck(
+                "region",
+                False,
+                "providers.bedrock.region is not set; the AWS surfaces are routed nowhere",
+            )
+        )
+        return AwsAccessReport(region=None, checks=tuple(checks))
+    checks.append(AwsCheck("region", True, region))
+
+    try:
+        import boto3
+        from botocore.config import Config
+        from botocore.exceptions import BotoCoreError, ClientError
+    except ImportError:
+        checks.append(
+            AwsCheck("boto3", False, "boto3 is not installed: `uv sync --extra aws` (ADR-0028)")
+        )
+        return AwsAccessReport(region=region, checks=tuple(checks))
+
+    if session is None:
+        session = boto3.session.Session(profile_name=bedrock.profile or None)
+    config = Config(
+        ignore_configured_endpoint_urls=True,
+        retries={"max_attempts": 2, "mode": "standard"},
+        connect_timeout=10,
+        read_timeout=20,
+    )
+
+    try:
+        identity = session.client("sts", region_name=region, config=config).get_caller_identity()
+    except (BotoCoreError, ClientError) as exc:
+        checks.append(AwsCheck("identity", False, f"{type(exc).__name__}: {exc}"))
+        # Without an identity nothing else can be asked; say so once.
+        return AwsAccessReport(region=region, checks=tuple(checks))
+    checks.append(
+        AwsCheck(
+            "identity",
+            True,
+            f"account {identity.get('Account', '?')}, principal {identity.get('Arn', '?')}",
+        )
+    )
+
+    control_plane = session.client("bedrock", region_name=region, config=config)
+
+    if bedrock.guardrail_id:
+        try:
+            guardrail = control_plane.get_guardrail(
+                guardrailIdentifier=bedrock.guardrail_id,
+                guardrailVersion=bedrock.guardrail_version or "DRAFT",
+            )
+        except (BotoCoreError, ClientError) as exc:
+            checks.append(AwsCheck("guardrail", False, f"{type(exc).__name__}: {exc}"))
+        else:
+            checks.append(
+                AwsCheck(
+                    "guardrail",
+                    True,
+                    f"{guardrail.get('name', '?')} ({bedrock.guardrail_id} version "
+                    f"{guardrail.get('version', bedrock.guardrail_version or 'DRAFT')}), "
+                    f"status {guardrail.get('status', '?')}",
+                )
+            )
+    else:
+        checks.append(
+            AwsCheck(
+                "guardrail",
+                True,
+                "not configured -- set CASCADE_GUARDRAIL_ID and CASCADE_GUARDRAIL_VERSION "
+                "for `cascade eval guardrails` (ADR-0050)",
+            )
+        )
+
+    rerank = settings.retrieval.rerank
+    if rerank.provider == "bedrock":
+        try:
+            model = control_plane.get_foundation_model(modelIdentifier=rerank.model_id)
+        except (BotoCoreError, ClientError) as exc:
+            checks.append(AwsCheck("rerank model", False, f"{type(exc).__name__}: {exc}"))
+        else:
+            details = model.get("modelDetails") or {}
+            checks.append(
+                AwsCheck(
+                    "rerank model",
+                    True,
+                    f"{details.get('modelName', rerank.model_id)} ({rerank.model_id}), "
+                    f"lifecycle {(details.get('modelLifecycle') or {}).get('status', '?')}",
+                )
+            )
+    else:
+        checks.append(
+            AwsCheck(
+                "rerank model",
+                True,
+                f"local reranker ({rerank.model_id}); Bedrock Rerank is opt-in through "
+                "retrieval.rerank.provider=bedrock (ADR-0047)",
+            )
+        )
+    return AwsAccessReport(region=region, checks=tuple(checks))

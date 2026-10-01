@@ -54,6 +54,7 @@ IMPLEMENTED_SUBAPPS = [
     "ensemble",
     "eval",
     "trace",
+    "aws",
 ]
 
 
@@ -244,6 +245,11 @@ def test_budget_ceiling_aborts_with_exit_code_two(tmp_path: Path) -> None:
         "HOME": str(tmp_path),
         "CASCADE_PATHS__CHECKPOINTS": str(tmp_path / "checkpoints"),
         "CASCADE_LLM__CACHE_DIR": str(tmp_path / "llm-cache"),
+        # Detached from the repository's .env, as every in-process test is
+        # (conftest): a machine whose .env selects the subscription provider
+        # prices every call at zero, and a ceiling nothing can reach measures
+        # that machine rather than the meter.
+        "CASCADE_ENV_FILE": str(tmp_path / "absent.env"),
     }
     result = subprocess.run(
         [str(CONSOLE_SCRIPT), "dev", "budget-probe", "--ceiling", "0.01", "--phase", "simulate"],

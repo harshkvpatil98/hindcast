@@ -1,10 +1,14 @@
 """Adapter for serving requests through the Claude Code CLI (ADR-0031). Pure.
 
-The ``claude_code`` provider runs ``claude -p`` -- Claude Code's documented
-headless mode -- on the operator's own machine, under their own Claude
-subscription. It exists so the pipeline can produce real-model output before a
-pay-as-you-go key is added. It is **not** the pinned configuration, and this
-module is where the difference is made explicit rather than hidden:
+The ``claude_cli`` provider (``claude_code`` until ADR-0053; both spellings
+are accepted) runs ``claude -p`` -- Claude Code's documented headless mode --
+on the operator's own machine, under their own Claude subscription. The
+project never reads, copies or stores the subscription's token: the CLI
+authenticates itself from its own login, and this adapter only builds the
+process's arguments. It exists so the pipeline can produce real-model output
+before a pay-as-you-go key or a Claude Platform on AWS workspace is added. It
+is **not** the pinned configuration, and this module is where the difference
+is made explicit rather than hidden:
 
 * ``temperature`` and ``max_tokens`` cannot be set through the CLI. Every
   request in the cache key domain carries them, so a CLI response is not a
@@ -251,12 +255,16 @@ def to_messages_payload(
             "cache_creation_input_tokens": int(usage.get("cache_creation_input_tokens") or 0),
             "cache_read_input_tokens": int(usage.get("cache_read_input_tokens") or 0),
         },
-        "claude_code": {
+        "claude_cli": {
             # What the CLI says the call would have cost at list price. Not
             # booked: a subscription call bills no tokens (ADR-0031).
             "notional_cost_usd": cli.get("total_cost_usd"),
             "num_turns": cli.get("num_turns"),
             "duration_api_ms": cli.get("duration_api_ms"),
+            # The CLI's own identifiers for the call, kept so a recording can
+            # be matched to the session the CLI wrote (ADR-0053).
+            "session_id": cli.get("session_id"),
+            "uuid": cli.get("uuid"),
         },
     }
 

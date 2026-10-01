@@ -83,7 +83,7 @@ def ready_bedrock(settings: Settings, **extra: Any) -> Settings:
 def ready_aws(settings: Settings, **extra: Any) -> Settings:
     return on(
         settings,
-        "aws",
+        "claude_platform_aws",
         region="us-east-1",
         workspace_id="wrkspc_test",
         pricing=PARTNER_PRICES,
@@ -116,14 +116,17 @@ def aws_identity(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
 class Captured:
     """A transport that answers /v1/messages and keeps every request it saw."""
 
-    def __init__(self) -> None:
+    def __init__(self, headers: dict[str, str] | None = None) -> None:
         self.requests: list[httpx.Request] = []
+        self.headers = dict(headers or {})
 
     def client(self) -> httpx.Client:
         def handler(request: httpx.Request) -> httpx.Response:
             self.requests.append(request)
             body = json.loads(request.content)
-            return httpx.Response(200, json=message_payload(model=body["model"]))
+            return httpx.Response(
+                200, json=message_payload(model=body["model"]), headers=self.headers
+            )
 
         return httpx.Client(transport=httpx.MockTransport(handler))
 
@@ -144,21 +147,21 @@ def test_only_the_cli_has_a_cache_namespace_of_its_own() -> None:
     """The three API providers share one namespace (ADR-0029); the CLI cannot."""
     assert {name: spec.cache_namespace for name, spec in sorted(PROVIDERS.items())} == {
         "anthropic": None,
-        "aws": None,
+        "claude_platform_aws": None,
         "bedrock": None,
-        "claude_code": "claude_code",
+        "claude_cli": "claude_code",
     }
 
 
 def test_only_anthropic_and_aws_can_carry_a_batched_phase() -> None:
     assert sorted(name for name, spec in PROVIDERS.items() if spec.supports_batches) == [
         "anthropic",
-        "aws",
+        "claude_platform_aws",
     ]
 
 
 def test_the_wire_id_is_logical_except_on_bedrock(settings: Settings) -> None:
-    for provider in ("anthropic", "aws", "claude_code"):
+    for provider in ("anthropic", "claude_platform_aws", "claude_cli"):
         assert render_model(on(settings, provider), HAIKU) == HAIKU
     assert render_model(on(settings, "bedrock"), HAIKU) == f"anthropic.{HAIKU}"
 
@@ -175,7 +178,9 @@ def test_a_bedrock_model_override_wins_over_the_derived_id(settings: Settings) -
 
 
 def test_an_unconfigured_provider_reports_every_problem_at_once(settings: Settings) -> None:
-    problems = readiness_problems(on(settings, "bedrock"), models=(HAIKU, SONNET))
+    # base.yaml routes Bedrock at us-west-2 (ADR-0053), so the unconfigured
+    # case is made explicitly rather than inherited from the shipped file.
+    problems = readiness_problems(on(settings, "bedrock", region=None), models=(HAIKU, SONNET))
     assert problems == sorted(problems)
     assert "providers.bedrock.region is not set" in problems
     assert sum("providers.bedrock.pricing has no entry" in p for p in problems) == 2
@@ -183,12 +188,14 @@ def test_an_unconfigured_provider_reports_every_problem_at_once(settings: Settin
 
 
 def test_claude_platform_on_aws_needs_a_workspace(settings: Settings) -> None:
-    problems = readiness_problems(on(settings, "aws", region="us-east-1"), models=(HAIKU,))
-    assert "providers.aws.workspace_id is not set" in problems
+    problems = readiness_problems(
+        on(settings, "claude_platform_aws", region="us-east-1"), models=(HAIKU,)
+    )
+    assert any("providers.claude_platform_aws.workspace_id is not set" in p for p in problems)
 
 
 def test_a_subscription_needs_no_price_table_and_books_zero(settings: Settings) -> None:
-    cli = on(settings, "claude_code")
+    cli = on(settings, "claude_cli")
     assert readiness_problems(cli, models=(HAIKU, SONNET)) == []
     assert cli.price_for(HAIKU) == PricingEntry(
         input_per_mtok=Decimal(0), output_per_mtok=Decimal(0)
@@ -198,7 +205,9 @@ def test_a_subscription_needs_no_price_table_and_books_zero(settings: Settings) 
 def test_record_mode_refuses_an_unready_provider_at_construction(settings: Settings) -> None:
     transport = Captured()
     with pytest.raises(ProviderNotReady, match="region is not set"):
-        LLMClient(on(settings, "bedrock"), phase="compile", http_client=transport.client())
+        LLMClient(
+            on(settings, "bedrock", region=None), phase="compile", http_client=transport.client()
+        )
     assert transport.requests == []
 
 
@@ -267,7 +276,7 @@ def test_the_endpoint_templates_agree_with_the_installed_sdk(
     sdk_aws = anthropic.AnthropicAWS(aws_region="us-east-1", workspace_id="w", **creds)
     sdk_bedrock = anthropic.AnthropicBedrockMantle(aws_region="us-east-1", **creds)
 
-    ours_aws = endpoint(on(settings, "aws", region="us-east-1"))
+    ours_aws = endpoint(on(settings, "claude_platform_aws", region="us-east-1"))
     ours_bedrock = endpoint(on(settings, "bedrock", region="us-east-1"))
     assert ours_aws is not None and ours_bedrock is not None
     assert str(sdk_aws.base_url).rstrip("/") == ours_aws.rstrip("/")
@@ -420,7 +429,7 @@ def test_a_text_result_becomes_a_messages_body_that_states_how_it_was_made() -> 
     assert payload["content"] == [{"type": "text", "text": '{"p": 0.6}'}]
     assert payload["model"] == HAIKU
     assert payload["usage"]["input_tokens"] == 448
-    assert payload["claude_code"]["notional_cost_usd"] == 0.001718
+    assert payload["claude_cli"]["notional_cost_usd"] == 0.001718
 
 
 def test_structured_output_returns_as_the_tool_call_the_caller_parses() -> None:
@@ -465,7 +474,7 @@ class FakeCli:
 def cli_settings(settings: Settings, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Settings:
     """The CLI provider, in a clean working directory, with no user memory."""
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
-    return on(settings, "claude_code", workdir=str(tmp_path / "cli-work"))
+    return on(settings, "claude_cli", workdir=str(tmp_path / "cli-work"))
 
 
 def test_a_cli_call_is_recorded_booked_at_zero_and_never_repeated(cli_settings: Settings) -> None:
@@ -610,7 +619,7 @@ def test_a_workdir_below_a_claude_md_is_refused_before_the_cli_runs(
     (project / "nested").mkdir(parents=True)
     (project / "CLAUDE.md").write_text("a build contract the model must not see")
     runner = FakeCli(cli_body())
-    configured = on(cli_settings, "claude_code", workdir=str(project / "nested"))
+    configured = on(cli_settings, "claude_cli", workdir=str(project / "nested"))
     with pytest.raises(ProviderNotReady, match="would be loaded into every call"):
         LLMClient(configured, phase="bench", cli_runner=runner).complete(request_for())
     assert runner.calls == []
@@ -619,7 +628,7 @@ def test_a_workdir_below_a_claude_md_is_refused_before_the_cli_runs(
 def test_a_workdir_inside_the_repository_is_refused(cli_settings: Settings) -> None:
     from cascade.config import repo_root
 
-    inside = on(cli_settings, "claude_code", workdir=str(repo_root() / "docs"))
+    inside = on(cli_settings, "claude_cli", workdir=str(repo_root() / "docs"))
     with pytest.raises(ProviderNotReady, match="inside the repository"):
         LLMClient(inside, phase="bench", cli_runner=FakeCli(cli_body())).complete(request_for())
 
@@ -747,3 +756,106 @@ class TestTheCliSchemaStrip:
         )
         invocation = build_invocation(request, executable="claude", model="claude-haiku-4-5")
         assert "discriminator" not in " ".join(invocation.argv)
+
+
+# ---------------------------------------------------------------------------
+# The provider interface (ADR-0053)
+# ---------------------------------------------------------------------------
+
+
+def test_every_provider_class_implements_the_interface(settings: Settings) -> None:
+    """One class per provider, all the same shape, chosen by canonical name."""
+    from cascade.llm.client import (
+        AnthropicApiProvider,
+        BedrockProvider,
+        ClaudeCliProvider,
+        ClaudePlatformAwsProvider,
+        build_provider,
+    )
+    from cascade.llm.providers import ModelProvider
+
+    expected = {
+        "anthropic": AnthropicApiProvider,
+        "claude_platform_aws": ClaudePlatformAwsProvider,
+        "bedrock": BedrockProvider,
+        "claude_cli": ClaudeCliProvider,
+    }
+    for name, cls in sorted(expected.items()):
+        provider = build_provider(on(settings, name, mode="replay"))
+        assert isinstance(provider, cls)
+        assert isinstance(provider, ModelProvider)
+        assert provider.spec.name == name
+        assert not provider.constructed_sdk_client
+
+
+def test_a_legacy_spelling_builds_the_same_provider(settings: Settings) -> None:
+    """`claude_code` and `aws` resolve at the configuration boundary (ADR-0053)."""
+    from cascade.llm.client import ClaudeCliProvider, ClaudePlatformAwsProvider, build_provider
+
+    def with_provider(spelling: str) -> Settings:
+        dumped = settings.model_dump(mode="python")
+        dumped["llm"] = {**dumped["llm"], "provider": spelling, "mode": "replay"}
+        return Settings(**dumped)
+
+    assert with_provider("claude_code").llm.provider == "claude_cli"
+    assert isinstance(build_provider(with_provider("claude_code")), ClaudeCliProvider)
+    assert with_provider("aws").llm.provider == "claude_platform_aws"
+    assert isinstance(build_provider(with_provider("aws")), ClaudePlatformAwsProvider)
+
+
+def test_the_cli_keeps_its_recording_namespace_under_its_new_name() -> None:
+    """Renaming the provider must not orphan every recording made under ADR-0031."""
+    from cascade.llm.providers import charges_per_call, spec_for
+
+    assert PROVIDERS["claude_cli"].cache_namespace == "claude_code"
+    assert spec_for("claude_code") is PROVIDERS["claude_cli"]
+    assert spec_for("aws") is PROVIDERS["claude_platform_aws"]
+    assert charges_per_call("claude_code") is False
+    assert charges_per_call("aws") is True
+
+
+def test_the_request_id_is_kept_on_the_result_the_recording_and_the_replay(
+    settings: Settings,
+) -> None:
+    """The provider's own id for the call, so a recording matches the provider's logs."""
+    transport = Captured(headers={"request-id": "req_01HELLO"})
+    recorder = LLMClient(on(settings, "anthropic"), phase="compile", http_client=transport.client())
+    live = recorder.complete(request_for())
+    assert live.request_id == "req_01HELLO"
+
+    key = cache_key(request_for())
+    recorded = recorder.cache.get(key)
+    assert recorded is not None and recorded.provider_metadata is not None
+    assert recorded.provider_metadata["request_id"] == "req_01HELLO"
+    assert recorded.provider_metadata["provider"] == "anthropic"
+    assert recorded.provider_metadata["wire_model"] == HAIKU
+
+    replay = LLMClient(on(settings, "anthropic", mode="replay"), phase="compile")
+    served = replay.complete(request_for())
+    assert served.served_from_cache and served.request_id == "req_01HELLO"
+
+
+def test_a_provider_that_sends_no_request_id_records_none(settings: Settings) -> None:
+    transport = Captured()
+    client = LLMClient(on(settings, "anthropic"), phase="compile", http_client=transport.client())
+    assert client.complete(request_for()).request_id is None
+    recorded = client.cache.get(cache_key(request_for()))
+    assert recorded is not None and recorded.provider_metadata is not None
+    assert recorded.provider_metadata["request_id"] is None
+
+
+def test_the_cli_result_carries_the_session_the_cli_filed_it_under(
+    cli_settings: Settings,
+) -> None:
+    runner = FakeCli(cli_body(session_id="sess-7"))
+    result = LLMClient(cli_settings, phase="bench", cli_runner=runner).complete(request_for())
+    assert result.request_id == "sess-7"
+
+
+def test_the_backend_is_the_one_object_that_reaches_a_provider(cli_settings: Settings) -> None:
+    from cascade.llm.client import ClaudeCliProvider
+
+    client = LLMClient(cli_settings, phase="bench", cli_runner=FakeCli())
+    assert isinstance(client.backend, ClaudeCliProvider)
+    with pytest.raises(LLMError, match="not served by an SDK client"):
+        client._client()

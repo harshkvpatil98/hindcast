@@ -292,3 +292,97 @@ def test_tracing_actually_contains_the_sanctioned_guards() -> None:
     handlers = _broad_handlers(SANCTIONED_GUARD_MODULE)
     assert len(handlers) >= 4, "tracing.py must guard trace, span, generation and flush"
     assert all(annotated for _, annotated, _ in handlers)
+
+
+# ---------------------------------------------------------------------------
+# The structured call log (ADR-0053)
+# ---------------------------------------------------------------------------
+
+
+def test_the_call_log_writes_one_json_object_per_event(tmp_path: Path) -> None:
+    import json
+
+    from cascade.llm.tracing import CallLogTracer
+
+    path = tmp_path / "logs" / "calls.jsonl"
+    tracer = CallLogTracer(path)
+    with tracer.run(run_id="r1"), tracer.step(index=3):
+        tracer.generation(
+            name="llm.complete",
+            model="claude-haiku-4-5-20251001",
+            usage=USAGE,
+            cost_usd=Decimal("0.000338"),
+            cached=False,
+            latency_ms=12.3456,
+            provider="claude_cli",
+            request_id="sess-1",
+        )
+    lines = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    assert [line["event"] for line in lines] == ["run.start", "generation", "run.end"]
+    call = lines[1]
+    assert call["provider"] == "claude_cli" and call["request_id"] == "sess-1"
+    assert call["run_id"] == "r1" and call["step"] == 3
+    assert call["cost_usd"] == "0.000338"  # exact, as the meter has it
+    assert call["usage"]["cache_read_input_tokens"] == 1900
+    assert call["latency_ms"] == 12.346
+    assert tracer.degraded_reason is None
+
+
+def test_the_call_log_degrades_rather_than_failing_a_run(tmp_path: Path) -> None:
+    """A path that cannot be a directory: the write fails, the run does not."""
+    from cascade.llm.tracing import CallLogTracer
+
+    blocker = tmp_path / "not-a-directory"
+    blocker.write_text("occupied", encoding="utf-8")
+    tracer = CallLogTracer(blocker / "calls.jsonl")
+    tracer.generation(
+        name="llm.complete",
+        model="m",
+        usage=USAGE,
+        cost_usd=None,
+        cached=True,
+        latency_ms=0.1,
+    )
+    assert tracer.degraded_reason is not None
+    assert "call log write failed" in tracer.degraded_reason
+
+
+def test_build_tracer_returns_the_call_log_when_only_it_is_configured(
+    settings: Settings, tmp_path: Path
+) -> None:
+    from cascade.llm.tracing import CallLogTracer
+
+    configured = settings.model_copy(
+        update={
+            "langfuse": settings.langfuse.model_copy(update={"enabled": False}),
+            "observability": settings.observability.model_copy(
+                update={"call_log": str(tmp_path / "calls.jsonl")}
+            ),
+        }
+    )
+    tracer = build_tracer(configured)
+    assert isinstance(tracer, CallLogTracer)
+    assert tracer.path == tmp_path / "calls.jsonl"
+
+
+def test_the_composite_fans_out_and_reports_every_members_degradation() -> None:
+    from cascade.llm.tracing import CompositeTracer
+
+    recording = RecordingClient()
+    exploding = LangfuseTracer(ExplodingClient())
+    composite = CompositeTracer([LangfuseTracer(recording), exploding])
+    with composite.run(run_id="r1"):
+        composite.generation(
+            name="llm.complete",
+            model="m",
+            usage=USAGE,
+            cost_usd=Decimal("0.1"),
+            cached=False,
+            latency_ms=1.0,
+            provider="anthropic",
+            request_id="req_1",
+        )
+    composite.flush()
+    assert len(recording.generations) == 1
+    assert recording.generations[0]["metadata"]["request_id"] == "req_1"
+    assert composite.degraded_reason is not None and "failed" in composite.degraded_reason

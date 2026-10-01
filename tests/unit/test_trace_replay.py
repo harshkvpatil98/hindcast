@@ -97,3 +97,77 @@ class TestChildIsolation:
 
     def test_the_base_configuration_needs_no_overlay(self) -> None:
         assert load_settings_for("base").flags.causal_decomposition is True
+
+
+class TestKinds:
+    """Three kinds of "not a pass", kept apart because their remedies differ (M17)."""
+
+    def test_a_missing_recording_is_unverified_not_a_divergence(self) -> None:
+        missing = outcome(
+            "r1", actual=None, error="no recorded response for key abc", unreplayable=True
+        )
+        assert not missing.matched
+        assert missing.kind == "unreplayable"
+        report = ReplayReport(outcomes=[missing])
+        assert not report.ok  # nothing was verified, so nothing passed
+        assert report.unverified == (missing,)
+        assert report.nondeterministic == ()
+
+    def test_a_differing_hash_is_the_only_determinism_defect(self) -> None:
+        differing = outcome("r1", actual="zzz")
+        assert differing.kind == "diverged"
+        report = ReplayReport(outcomes=[differing])
+        assert report.nondeterministic == (differing,)
+        assert report.unverified == ()
+
+    def test_a_harness_failure_is_unverified(self) -> None:
+        dead = outcome("r1", actual=None, error="connection refused")
+        assert dead.kind == "failed"
+        assert ReplayReport(outcomes=[dead]).unverified == (dead,)
+
+    def test_a_stale_cached_digest_is_counted_and_never_fails_a_reproduced_run(self) -> None:
+        """The events reproduce; only the derived column lagged the hash domain."""
+        fine = outcome("r1", actual="abc", digest_stale=True)
+        assert fine.matched and fine.kind == "reproduced"
+        report = ReplayReport(outcomes=[fine])
+        assert report.ok
+        assert report.stale_digests == 1
+
+
+class TestRehash:
+    def test_an_item_is_stale_only_when_the_digests_differ(self) -> None:
+        from cascade.trace.replay import RehashItem
+
+        assert RehashItem(run_id="r", stored_digest="a", current_digest="b").stale
+        assert not RehashItem(run_id="r", stored_digest="a", current_digest="a").stale
+
+    def test_a_target_knows_whether_its_cached_digest_is_stale(self) -> None:
+        from cascade.trace.replay import ReplayTarget
+
+        def target(stored: str | None) -> ReplayTarget:
+            return ReplayTarget(
+                run_id="r",
+                scenario_id="s",
+                config_id="C09",
+                replicate=0,
+                policy="heuristic",
+                event_log_hash="current",
+                state_hashes=("h",),
+                outcome_score=0.5,
+                decisions=1,
+                stored_digest=stored,
+            )
+
+        assert target("older").digest_stale
+        assert not target("current").digest_stale
+        assert not target(None).digest_stale  # built by hand: nothing to compare
+
+    def test_the_child_exit_code_for_a_missing_recording_is_the_cache_miss_code(self) -> None:
+        """The parent keys on it, so it must be the project's own code (4)."""
+        from pathlib import Path
+
+        from cascade.version import EXIT_CACHE_MISS
+
+        source = Path("cascade/trace/replay_child.py").read_text(encoding="utf-8")
+        assert EXIT_CACHE_MISS == 4
+        assert "except CacheMiss" in source and "return EXIT_CACHE_MISS" in source

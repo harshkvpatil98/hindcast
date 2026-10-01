@@ -9,7 +9,7 @@ replay divergence rather than here as a validation error.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any, Literal, Protocol
 
@@ -29,6 +29,7 @@ __all__ = [
     "LLMResult",
     "PromptTooShortToCache",
     "ProviderNotReady",
+    "ProviderResponse",
     "ScreenResult",
     "Usage",
 ]
@@ -239,6 +240,27 @@ class LLMResult(_Frozen):
     latency_ms: float
     served_from_cache: bool
     tool_calls: list[dict[str, Any]] = Field(default_factory=list)
+    # The provider's own identifier for the call -- the Messages API's
+    # `request-id` header, AWS's `x-amzn-requestid`, the CLI's session id --
+    # so a result can be matched to the provider's logs (ADR-0053). None when
+    # the provider sent none, or the recording predates the field.
+    request_id: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ProviderResponse:
+    """What a provider hands back through :class:`~cascade.llm.providers.ModelProvider`.
+
+    ``body`` is the provider's own Messages JSON, untouched, because replay
+    reconstructs the result from it. ``request_id`` and ``metadata`` are the
+    provider's identifiers for the call and are kept *beside* the body: they
+    describe how the call was made, never what was asked, so they stay out of
+    the cache key (ADR-0007's rule, applied to response metadata).
+    """
+
+    body: dict[str, Any]
+    request_id: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class BatchItem(_Frozen):
@@ -269,6 +291,13 @@ class CachedCall(_Frozen):
     latency_ms: float
     recorded_at: str
     cache_format: Literal[1] = 1
+    # Who served the call and under which request id (ADR-0053): the provider's
+    # name, the wire model id, the endpoint or region, and the request id the
+    # provider's own logs (CloudTrail, model-invocation logs, the CLI session)
+    # file it under. Optional, so every recording made before this field
+    # existed still validates; never part of the key, because it describes
+    # the call and not the request.
+    provider_metadata: dict[str, Any] | None = None
 
 
 def _strip_cache_control(value: Any) -> Any:
@@ -318,6 +347,9 @@ class ScreenResult:
     action: GuardrailAction
     reason: str = ""
     policies: tuple[str, ...] = ()
+    # AWS's request id for the `ApplyGuardrail` call, so an assessment can be
+    # matched to the CloudTrail record of the call that produced it.
+    request_id: str = ""
 
 
 class GuardrailScreen(Protocol):

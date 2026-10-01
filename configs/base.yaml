@@ -201,11 +201,15 @@ retrieval:
   rerank:
     enabled: false
     # `local` is deterministic BM25 over the pool and needs no credential, so
-    # `make demo` is unaffected. `bedrock` routes through the one call site.
+    # `make demo` is unaffected. `bedrock` routes through the one call site to
+    # the Bedrock Rerank API in providers.bedrock.region (us-west-2), with
+    # `model_id: amazon.rerank-v1:0`; configs/tuning/rerank_bedrock.yaml is
+    # that configuration as an overlay, to be measured on the dev partition.
     provider: local
     # Shown to the reranker, then truncated to the caller's k. 60 matches
     # `k_compiler`, so the compiler's pool is reranked whole; it must lie
-    # between the smallest caller k and `max_k`.
+    # between the smallest caller k and `max_k`. Bedrock bills one search unit
+    # per 100 documents in a query, so 60 is one unit per call.
     pool: 60
     model_id: bm25-local-v1
     # Managed rerankers bill per query rather than per token, so this cannot
@@ -298,11 +302,19 @@ flags: # ablation switches
 
 llm:
   mode: replay # record | replay | live -- replay is the safe default
-  # Who serves the model: anthropic | aws | bedrock | claude_code (ADR-0028,
-  # ADR-0031). The three API providers share one cache namespace (ADR-0029), so
-  # a recording made through one replays through the others. claude_code has
-  # its own. Neither bedrock nor claude_code has a batch API, so neither can
-  # carry a batched phase: `complete_batch` refuses before any spend (exit 3).
+  # Who serves the model (ADR-0028, ADR-0031, ADR-0053), by canonical name:
+  #   anthropic            the Anthropic API, with a pay-as-you-go key
+  #   claude_platform_aws  Claude Platform on AWS (IAM; batches); account pending
+  #   bedrock              Amazon Bedrock (IAM; no batches)
+  #   claude_cli           the locally installed, logged-in Claude Code CLI
+  # `aws` and `claude_code` are accepted as aliases of the second and fourth.
+  # This file holds the *pinned study configuration*, which is the API; which
+  # provider a machine actually has is machine-local, so it is set in `.env`
+  # as LLM_PROVIDER (the shipped `.env.example` says claude_cli). The three
+  # API providers share one cache namespace (ADR-0029), so a recording made
+  # through one replays through the others; claude_cli has its own. Neither
+  # bedrock nor claude_cli has a batch API, so neither can carry a batched
+  # phase: `complete_batch` refuses before any spend (exit 3).
   provider: anthropic
   cache_dir: .cache/llm
   # r2 (migration 010) gave `volatility` a scale anchor. r3 (migration 019) is
@@ -317,52 +329,73 @@ llm:
   max_retries: 2
   timeout_s: 600.0
 
-# Routing for the two AWS surfaces (ADR-0028). Identity is never configured
-# here: it is the ambient IAM principal from the standard AWS credential chain.
+# Routing for the AWS surfaces (ADR-0028). Identity is never configured here:
+# it is the ambient IAM principal from the standard AWS credential chain.
 # Every routing value is passed to the SDK explicitly, so an ambient AWS_REGION
 # in someone's shell cannot decide where the study's spend lands.
 #
-# Both ship empty. Enabling a provider means filling in its region and its
-# price table from the provider's live pricing page -- `cascade doctor` and the
-# client refuse to spend on a provider that cannot be priced.
+# The whole AWS footprint is us-west-2 (ADR-0053): the Terraform roots, the
+# Bedrock reranker and guardrail, and Claude Platform on AWS when it is
+# enabled. The price tables ship empty on purpose: enabling a paid provider
+# means filling its table from the provider's live pricing page -- `cascade
+# doctor` and the client refuse to spend on a provider that cannot be priced.
 providers:
-  aws: # Claude Platform on AWS: Anthropic-operated, SigV4 + IAM, batches supported
-    region: null
-    workspace_id: null # required by the service; not a credential
+  # Claude Platform on AWS: Anthropic-operated, SigV4 + IAM, batches supported.
+  # Implemented and tested against the real SDK; not enabled, because the
+  # account is being provisioned. Enabling it is LLM_PROVIDER=claude_platform_aws
+  # plus ANTHROPIC_AWS_WORKSPACE_ID in .env, and the price table below.
+  claude_platform_aws:
+    region: us-west-2
+    workspace_id: null # wrkspc_...; not a credential. ANTHROPIC_AWS_WORKSPACE_ID sets it.
     base_url: null # null = derived from region by the SDK
     profile: null # null = default credential chain
     pricing: {}
-  bedrock: # Amazon Bedrock: partner-operated, no Message Batches
-    region: null
+  # Amazon Bedrock: partner-operated, no Message Batches. Also where the two
+  # AWS-native integrations are routed: Bedrock Rerank (retrieval.rerank) and
+  # Bedrock Guardrails (the guardrail below), both in this region.
+  bedrock:
+    region: us-west-2
     base_url: null
     profile: null
     model_ids: {} # logical -> Bedrock id; absent = "anthropic.<logical>"
     pricing: {}
-    # A Bedrock Guardrail applied to the compile path (M15). ADR-0030 deferred
-    # guardrails on two grounds: the SDK's Bedrock client had no guardrail
-    # parameter, and an unmeasured filter that alters one decomposition is a
-    # confound. Measuring it addresses the second -- a guardrail that provably
-    # changes no compiled graph is a safety control worth shipping, and one
-    # that changes a graph is reported as a confound, not as a win.
+    # The Bedrock Guardrail `cascade eval guardrails` measures the compiled
+    # graphs against (ADR-0050). ADR-0030 deferred guardrails on two grounds:
+    # the SDK's Bedrock client had no guardrail parameter, and an unmeasured
+    # filter that alters one decomposition is a confound. Measuring it
+    # addresses the second -- a guardrail that provably changes no compiled
+    # graph is a safety control worth shipping, and one that changes a graph
+    # is reported as a confound, not as a win. Set from the environment as
+    # CASCADE_GUARDRAIL_ID and CASCADE_GUARDRAIL_VERSION (the account's
+    # `cascade-audit-guardrail`, published version 1); null = none configured.
     guardrail_id: null
     guardrail_version: null
-  # The Claude Code CLI run headless under a Claude subscription (ADR-0031).
-  # Local-only, not the pinned configuration: the CLI cannot set temperature or
-  # max_tokens, so it records under its own cache namespace and is never mixed
-  # with API recordings. Switching to a pay-as-you-go key later is
-  # `llm.provider: anthropic` plus CASCADE_ANTHROPIC_API_KEY -- nothing else.
-  claude_code:
+  # The Claude Code CLI run headless under a Claude subscription (ADR-0031):
+  # the provider in use today, selected by LLM_PROVIDER=claude_cli. Local-only
+  # and not the pinned configuration: the CLI cannot set temperature or
+  # max_tokens, so it records under its own cache namespace and is never
+  # mixed with API recordings. Switching to a pay-as-you-go key later is
+  # `LLM_PROVIDER=anthropic` plus CASCADE_ANTHROPIC_API_KEY -- nothing else.
+  claude_cli:
     executable: claude
     workdir: null # null = fresh temp dir; must not sit below any CLAUDE.md
 
-# A second, independent record of spend (M15). M8 criterion 3 exits 3 today
-# because there is exactly one record -- the meter's own -- and a gate that
-# compares a number to itself cannot fail. Bedrock model-invocation logging is
-# written by AWS rather than by this process, which is what makes it
-# independent. Absent means *unreachable*, never *reconciled*.
+# Observability beyond Langfuse (M15, ADR-0053).
+#
+# `aws_invocation_log_group`: a second, independent record of spend. M8
+# criterion 3 exits 3 today because there is exactly one record -- the meter's
+# own -- and a gate that compares a number to itself cannot fail. Bedrock
+# model-invocation logging is written by AWS rather than by this process, which
+# is what makes it independent. Absent means *unreachable*, never *reconciled*.
+#
+# `call_log`: one JSON object per model, rerank or guardrail call -- provider,
+# model, the provider's request id, tokens, cost, cached or not -- so a phase
+# can be matched to CloudTrail or the CLI's own session by id. Null is off; the
+# shipped .env.example turns it on at .logs/llm-calls.jsonl.
 observability:
   aws_invocation_log_group: null
-  aws_region: null # routing explicit, as everywhere else (ADR-0028)
+  aws_region: us-west-2 # routing explicit, as everywhere else (ADR-0028)
+  call_log: null
 
 ledger: # scenario registry (spec §3.1)
   target_scenarios: 180

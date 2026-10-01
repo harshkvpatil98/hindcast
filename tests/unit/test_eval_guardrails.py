@@ -395,8 +395,15 @@ def test_only_policy_members_of_an_assessment_are_reported_as_policies() -> None
 
 def test_a_partial_configuration_is_refused_by_name_never_guessed(settings: Settings) -> None:
     """``ResourceNotFoundException`` over 180 graphs reads as an outage."""
+    unrouted = settings.model_copy(
+        update={
+            "providers": settings.providers.model_copy(
+                update={"bedrock": settings.providers.bedrock.model_copy(update={"region": None})}
+            )
+        }
+    )
     with pytest.raises(ValueError) as caught:
-        BedrockGuardrail.from_settings(settings)
+        BedrockGuardrail.from_settings(unrouted)
     message = str(caught.value)
     assert "providers.bedrock.guardrail_id" in message
     assert "providers.bedrock.region" in message

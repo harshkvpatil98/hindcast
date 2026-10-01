@@ -268,7 +268,7 @@ def test_a_subscription_is_priced_identically_batched_and_not(settings: Settings
     usage = Usage(input_tokens=4200, output_tokens=45)
     subscription = CostMeter(
         settings.model_copy(
-            update={"llm": settings.llm.model_copy(update={"provider": "claude_code"})}
+            update={"llm": settings.llm.model_copy(update={"provider": "claude_cli"})}
         ),
         "simulate",
     )
@@ -307,7 +307,7 @@ def test_an_unbatched_subscription_run_books_nothing(settings: Settings, tmp_pat
     _, _transport, _runner, results = _hash_of_one_run(settings, tmp_path, cls=SerialAgents)
     subscription = CostMeter(
         settings.model_copy(
-            update={"llm": settings.llm.model_copy(update={"provider": "claude_code"})}
+            update={"llm": settings.llm.model_copy(update={"provider": "claude_cli"})}
         ),
         "simulate",
     )
@@ -330,7 +330,7 @@ def test_an_unbatched_subscription_run_books_nothing(settings: Settings, tmp_pat
 
 @pytest.mark.parametrize(
     ("provider", "charged"),
-    [("anthropic", True), ("aws", True), ("bedrock", True), ("claude_code", False)],
+    [("anthropic", True), ("claude_platform_aws", True), ("bedrock", True), ("claude_cli", False)],
 )
 def test_every_provider_that_charges_is_bound_by_the_ceiling(provider: str, charged: bool) -> None:
     """Bedrock is the case that matters: no batches *and* per-call billing.
@@ -341,7 +341,7 @@ def test_every_provider_that_charges_is_bound_by_the_ceiling(provider: str, char
     """
     assert charges_per_call(provider) is charged
     assert PROVIDERS["bedrock"].supports_batches is False
-    assert PROVIDERS["claude_code"].supports_batches is False
+    assert PROVIDERS["claude_cli"].supports_batches is False
 
 
 def test_an_unknown_provider_is_charged() -> None:
@@ -416,13 +416,13 @@ def test_the_agents_ask_the_client_that_will_serve_the_call(
     transport = BothDoors()
     graph = make_graph(n_actors=8, n_factors=4, scenario_id="s1")
     subscription_settings = settings.model_copy(
-        update={"llm": settings.llm.model_copy(update={"provider": "claude_code"})}
+        update={"llm": settings.llm.model_copy(update={"provider": "claude_cli"})}
     )
     paid_client = _client(settings, tmp_path, transport)
 
     agents = _agents(subscription_settings, graph, paid_client)
 
-    assert agents.settings.llm.provider == "claude_code"
+    assert agents.settings.llm.provider == "claude_cli"
     assert paid_client.provider == "anthropic"
     assert agents.submits_batches is True
 
@@ -450,7 +450,7 @@ def test_the_batch_door_still_refuses_a_subscription(settings: Settings, tmp_pat
     transport = BothDoors()
     client = _client(
         settings.model_copy(
-            update={"llm": settings.llm.model_copy(update={"provider": "claude_code"})}
+            update={"llm": settings.llm.model_copy(update={"provider": "claude_cli"})}
         ),
         tmp_path,
         transport,
