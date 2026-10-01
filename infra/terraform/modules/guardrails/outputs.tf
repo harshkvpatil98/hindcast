@@ -7,10 +7,11 @@ output "integrity_policy_json" {
 }
 
 output "policy_ids" {
-  value = {
-    regions   = aws_organizations_policy.regions.id
-    integrity = aws_organizations_policy.integrity.id
-  }
+  description = "The two SCP ids, or null when create_service_control_policies is false."
+  value = var.create_service_control_policies ? {
+    regions   = aws_organizations_policy.regions[0].id
+    integrity = aws_organizations_policy.integrity[0].id
+  } : null
 }
 
 # The statement itself, not its rendered JSON: under mock providers the JSON is

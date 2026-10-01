@@ -1,6 +1,7 @@
-# Copy to terraform.tfvars (gitignored). Every routing value is explicit.
-region             = "us-east-1"
-availability_zones = ["us-east-1a", "us-east-1b"]
+# Copy to terraform.tfvars (gitignored). Every routing value is explicit, and
+# the whole AWS footprint is us-west-2 (ADR-0053).
+region             = "us-west-2"
+availability_zones = ["us-west-2a", "us-west-2b"]
 acu                = 8
 
 # --- Opt-ins (ADR-0042). Each is a decision; none has a default. -----------------
@@ -8,7 +9,7 @@ acu                = 8
 # The way out, for the ingest. Hosts from cascade/corpus/sources/*.py; drop
 # any source you are not ingesting. Start in ALERT, read the DNS log, then BLOCK.
 # egress = {
-#   availability_zone   = "us-east-1a"            # one of availability_zones
+#   availability_zone   = "us-west-2a"            # one of availability_zones
 #   allowed_domains     = ["data.commoncrawl.org", "en.wikipedia.org", "www.federalregister.gov", "www.sec.gov", "api.gdeltproject.org"]
 #   dns_firewall_action = "ALERT"                 # then "BLOCK"
 # }
@@ -19,10 +20,10 @@ acu                = 8
 # the RPO for the LLM cache against a per-run cost that grows with it; hourly
 # is the minimum.
 # study = {
-#   model_provider           = "aws"              # aws | bedrock | anthropic
-#   model_region             = "us-east-1"
+#   model_provider           = "aws"              # aws (= claude_platform_aws) | bedrock | anthropic
+#   model_region             = "us-west-2"
 #   workspace_id             = "wrkspc_..."       # aws only; not a credential
-#   # model_endpoint_service_name = "com.amazonaws.us-east-1...."   # aws: when you have the PrivateLink name; else needs `egress`
+#   # model_endpoint_service_name = "com.amazonaws.us-west-2...."   # aws: when you have the PrivateLink name; else needs `egress`
 #   # api_key_secret = { arn = "arn:aws:secretsmanager:...", kms_key_arn = "arn:aws:kms:..." }   # anthropic only; needs `egress`
 #   recovery = {
 #     bucket_arn       = "arn:aws:s3:::cascade-recovery-ACCOUNT_ID-REGION"

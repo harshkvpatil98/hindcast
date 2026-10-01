@@ -17,7 +17,8 @@
 #   anthropic  api.anthropic.com. An API key in Secrets Manager, no IAM, and no
 #              private path: those states run in the egress tier
 #              (modules/egress), with that host on its allow-list.
-#   aws        Claude Platform on AWS, https://aws-external-anthropic.<region>.api.aws.
+#   aws        Claude Platform on AWS (`claude_platform_aws` in the settings),
+#              https://aws-external-anthropic.<region>.api.aws.
 #              SigV4 as the task role; IAM service prefix aws-external-anthropic,
 #              scoped to the one workspace. Anthropic's documentation states
 #              PrivateLink is supported and publishes no endpoint service name
@@ -48,11 +49,18 @@ locals {
   reports_subdirectory = "${var.reports.prefix}/${var.name}"
   reports_objects_arn  = "${var.reports.bucket_arn}/${var.reports.prefix}/${var.name}/*"
 
+  # The settings' canonical provider names (cascade/config.py, ADR-0053). This
+  # module's own `model_provider` vocabulary is the AWS-side one -- `aws` is
+  # the service prefix the IAM grant below is written against -- and the
+  # settings accept it as an alias; the task is nonetheless handed the
+  # canonical spelling, so `cascade doctor` inside it reads as the docs do.
+  settings_provider_name = lookup({ aws = "claude_platform_aws" }, var.model_provider, var.model_provider)
+
   provider_environment = {
     anthropic = {}
     aws = {
-      CASCADE_PROVIDERS__AWS__REGION       = coalesce(var.model_region, "unset")
-      CASCADE_PROVIDERS__AWS__WORKSPACE_ID = coalesce(var.workspace_id, "unset")
+      CASCADE_PROVIDERS__CLAUDE_PLATFORM_AWS__REGION       = coalesce(var.model_region, "unset")
+      CASCADE_PROVIDERS__CLAUDE_PLATFORM_AWS__WORKSPACE_ID = coalesce(var.workspace_id, "unset")
     }
     bedrock = {
       CASCADE_PROVIDERS__BEDROCK__REGION = coalesce(var.model_region, "unset")
@@ -66,7 +74,7 @@ locals {
     { for e in var.container_definition.environment : e.name => e.value },
     {
       CASCADE_LLM__MODE      = "record"
-      CASCADE_LLM__PROVIDER  = var.model_provider
+      CASCADE_LLM__PROVIDER  = local.settings_provider_name
       CASCADE_LLM__CACHE_DIR = local.cache_mount
     },
     local.provider_environment[var.model_provider],

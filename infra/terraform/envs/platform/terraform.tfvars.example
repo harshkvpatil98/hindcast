@@ -1,0 +1,50 @@
+# Copy to terraform.tfvars (gitignored). Every routing value is explicit
+# (ADR-0028), and the whole AWS footprint is us-west-2 (ADR-0053).
+region = "us-west-2"
+# The tier-0 recovery replica is the one deliberate second region: a replica
+# in the same region is not a replica. Nearest to the primary.
+replica_region = "us-west-1"
+
+# --- Decisions. None has a default; each is a number somebody chose. ------------
+
+# Monthly allowance for everything that is not a model call, on top of the
+# phase ceilings modules/governance reads from configs/base.yaml.
+infrastructure_allowance_usd = 50
+# GuardDuty findings at or above this severity go to the alerts topic.
+guardduty_min_severity = 7
+# How long a published study report cannot be withdrawn (ADR-0046).
+report_lock_retention_days = 365
+# How often the tier-0 archive is listed: "Daily" or "Weekly".
+inventory_schedule = "Weekly"
+alert_emails       = ["you@example.com"]
+
+# --- Service control policies ----------------------------------------------------
+# They can only be created from an AWS Organizations management account. In a
+# standalone account set this false; nothing else in the root depends on it.
+create_service_control_policies = false
+# guardrail_target_ids = ["ou-xxxx-xxxxxxxx"]   # when there is an organization
+
+# --- The Bedrock guardrail (ADR-0050) --------------------------------------------
+# What `cascade eval guardrails` measures the compiled graphs against -- never
+# a filter in the compile path. The account's `cascade-audit-guardrail`
+# already exists with published version 1; this object describes one like it.
+# Either import the existing resource before the first apply --
+#   terraform import 'module.guardrails.aws_bedrock_guardrail.model[0]' <guardrail-id>
+# -- or leave `model_guardrail` null and put the id and version from the
+# console straight into .env as CASCADE_GUARDRAIL_ID / CASCADE_GUARDRAIL_VERSION.
+model_guardrail = {
+  name                      = "cascade-audit-guardrail"
+  description               = "Measured against the compiled causal graphs, applied to nothing (ADR-0050)"
+  blocked_input_messaging   = "This request was blocked by the audit guardrail."
+  blocked_outputs_messaging = "This response was blocked by the audit guardrail."
+  content_filters = [
+    { type = "PROMPT_ATTACK", input_strength = "HIGH", output_strength = "NONE" },
+    { type = "HATE", input_strength = "MEDIUM", output_strength = "MEDIUM" },
+    { type = "VIOLENCE", input_strength = "MEDIUM", output_strength = "MEDIUM" },
+  ]
+  denied_topics = []
+}
+# Publish an immutable version: an audit quoted against DRAFT can never be
+# re-checked against the same object. After apply,
+# `terraform output guardrail_environment` prints the two .env lines.
+publish_guardrail_version = true

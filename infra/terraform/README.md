@@ -1,8 +1,11 @@
-# Cascade infrastructure (M11–M12)
+# Cascade infrastructure (M11–M17)
 
 Aurora PostgreSQL 16 + pgvector 0.8.0 in an isolated VPC, with the retrieval
 bench running as a Fargate task beside it. Built to be **created, measured and
-destroyed**. Design: [ADR-0034](../../docs/adr/0034-aurora-data-plane.md);
+destroyed**. Everything regional is **us-west-2**
+([ADR-0053](../../docs/adr/0053-portfolio-completion-provider-interface-and-region.md));
+the tier-0 replica is the one deliberate second region.
+Design: [ADR-0034](../../docs/adr/0034-aurora-data-plane.md);
 toolchain and gates: [ADR-0033](../../docs/adr/0033-infrastructure-as-code-terraform.md);
 the platform: [ADR-0035](../../docs/adr/0035-platform-design.md); the way
 out, model access and the caches:
@@ -18,7 +21,7 @@ modules/network  private subnets only, VPC endpoints, flow logs -- no internet p
 modules/database Aurora 16.11 Serverless v2, KMS, TLS forced, IAM auth, role secrets
 modules/bench    ECR, ECS/Fargate task, artifacts bucket, least-privilege roles
 modules/governance  budget derived from configs/base.yaml, anomaly detection, alerts
-modules/guardrails  service control policies; attached to nothing until targets are named
+modules/guardrails  service control policies (optional: they need an Organizations management account) and the Bedrock guardrail `cascade eval guardrails` audits against
 modules/eventlake   Object-Locked event log, Glue catalog, Athena workgroup, writer/analyst roles
 modules/recovery    tier-0 recovery bucket: locked, replicated cross-region, closed to the simulation; the restore-drill role and a scheduled archive inventory
 modules/reports     where `cascade report` publishes: versioned, encrypted, Object-Locked, fetched by a named reader and never served
@@ -45,13 +48,13 @@ to go first and the trail records that it did (ADR-0046).
 | | Status |
 |---|---|
 | Configuration valid against provider schemas (AWS 6.65.0) | **verified offline** |
-| Security properties (encryption, TLS, IAM auth, nothing public, pgvector pinned, fixed capacity, secrets never in plain env) | **verified offline** — 62 `terraform test` runs in `envs/sandbox`, 107 in `envs/platform`, against mock providers |
+| Security properties (encryption, TLS, IAM auth, nothing public, pgvector pinned, fixed capacity, secrets never in plain env) | **verified offline** — 62 `terraform test` runs in `envs/sandbox`, 112 in `envs/platform`, against mock providers under the pinned Terraform 1.16.3 in Docker (M17 was the first time the guardrail runs executed; three needed `apply` rather than `plan`) |
 | The isolated tier never routes out, even with the egress tier on; only `CorpusBuild` and (without PrivateLink) the three model-calling states leave; the study grant is three routes in one workspace; the cache is encrypted and copied add-only; findings are admitted by ARN | **verified offline** — `terraform test`, and each broken on purpose once (ADR-0042) |
 | A study report is private, versioned and locked; the task that writes one cannot read one back; the restore role cannot write the archive it restores from; the archivist's key must name its seal | **verified offline** — `terraform test`, and each broken on purpose once (ADR-0046) |
 | The pgvector gate rejects an engine that is too old | **verified offline** — the test expects 16.6 to fail |
 | Every gateway, route and open CIDR lives in `modules/egress`; the two opt-ins default to null; no decision input has a default; no report is ever served from a public endpoint; every Checkov skip justified; images pinned by digest; every third-party action in every workflow pinned by SHA | **verified offline** — `tests/unit/test_infra_invariants.py` |
 | TFLint (AWS ruleset 0.48.0), Checkov 3.3.19 | **clean** — 1,027 passed, 0 failed, 73 justified skips |
-| AWS accepts the configuration at apply | **not verified** — no AWS account yet. In particular: that DataSync writes into the locked recovery bucket; that S3 Inventory delivers under the destination policy here; that the regional DNS allow-list is complete; the Claude Platform on AWS PrivateLink service name |
+| AWS accepts the configuration at apply | **not verified** — this Terraform has not been applied end to end from this repository. The owner's account (us-west-2) holds CloudTrail, a budget and the `cascade-audit-guardrail`, created outside this tree. Still open in particular: that DataSync writes into the locked recovery bucket; that S3 Inventory delivers under the destination policy here; that the regional DNS allow-list is complete; the Claude Platform on AWS PrivateLink service name |
 | Any restore actually works | **not verified** — no drill has been run. The procedure, its checks and the role it runs as are in [docs/architecture/dr-runbook.md](../../docs/architecture/dr-runbook.md) |
 | The bench image builds and runs | **not verified** — linted, not built |
 | Any Aurora latency or recall number | **does not exist** |
@@ -67,14 +70,32 @@ running.
 **1. State bucket** (once per account and region)
 ```bash
 cd infra/terraform/envs/bootstrap
-terraform init && terraform apply -var region=us-east-1
+terraform init && terraform apply -var region=us-west-2
 ```
+
+**1b. The platform root** (governance, audit, the event lake, the Bedrock
+guardrail). `terraform.tfvars.example` carries us-west-2, the replica region
+and every required decision; in a standalone account leave
+`create_service_control_policies = false` -- the SCPs need an Organizations
+management account and nothing else depends on them. The account's existing
+`cascade-audit-guardrail` is imported rather than recreated:
+```bash
+cd ../platform
+cp terraform.tfvars.example terraform.tfvars
+terraform init -backend-config=backend.hcl
+terraform import 'module.guardrails.aws_bedrock_guardrail.model[0]' <guardrail-id>
+terraform apply
+terraform output guardrail_environment               # the two .env lines the audit reads
+```
+Or leave `model_guardrail` null and put the id and version from the console
+into `.env` as `CASCADE_GUARDRAIL_ID` / `CASCADE_GUARDRAIL_VERSION=1`; then
+`cascade aws check` confirms they resolve, without invoking anything.
 
 **2. Configure the sandbox**
 ```bash
 cd ../sandbox
 cp backend.hcl.example backend.hcl                  # fill from bootstrap's outputs
-cp terraform.tfvars.example terraform.tfvars        # region, AZs, acu
+cp terraform.tfvars.example terraform.tfvars        # us-west-2, AZs, acu
 terraform init -backend-config=backend.hcl
 ```
 
@@ -138,8 +159,9 @@ refused; then switch to `BLOCK`. The NAT gateway bills per hour from `apply`
 to `destroy`, and the sources see one address (`nat_public_ip`).
 
 **6d. The study, with a model, a cache that outlives the task, and somewhere
-to publish.** Set `study`: the provider (`aws`, `bedrock` or `anthropic`), its
-routing, `recovery` copied whole from the platform root's `terraform output
+to publish.** Set `study`: the provider (`aws` -- Claude Platform on AWS,
+`claude_platform_aws` in the settings --, `bedrock` or `anthropic`; the
+subscription CLI is local-only and refused here), its routing, `recovery` copied whole from the platform root's `terraform output
 recovery`, and `reports` copied whole from its `terraform output
 reports_publish`.
 The task runs on its own definition, records through the provider, and keeps

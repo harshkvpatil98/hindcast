@@ -260,7 +260,10 @@ run "a_guardrail_that_cannot_intervene_is_refused" {
 }
 
 run "the_guardrail_reports_an_id_and_a_version_a_caller_can_read" {
-  command = plan
+  # apply, not plan: the id, arn and version are computed, and a plan-time
+  # assertion on a computed value is "Unknown condition value" (measured, the
+  # first time this file executed under terraform 1.16.3).
+  command = apply
   module {
     source = "../../modules/guardrails"
   }
@@ -299,7 +302,10 @@ run "the_guardrail_reports_an_id_and_a_version_a_caller_can_read" {
 }
 
 run "publishing_a_version_reports_the_number_rather_than_draft" {
-  command = plan
+  # apply, not plan: the id, arn and version are computed, and a plan-time
+  # assertion on a computed value is "Unknown condition value" (measured, the
+  # first time this file executed under terraform 1.16.3).
+  command = apply
   module {
     source = "../../modules/guardrails"
   }
@@ -327,7 +333,10 @@ run "publishing_a_version_reports_the_number_rather_than_draft" {
 }
 
 run "the_configured_policies_reach_the_resource" {
-  command = plan
+  # apply, not plan: the id, arn and version are computed, and a plan-time
+  # assertion on a computed value is "Unknown condition value" (measured, the
+  # first time this file executed under terraform 1.16.3).
+  command = apply
   module {
     source = "../../modules/guardrails"
   }

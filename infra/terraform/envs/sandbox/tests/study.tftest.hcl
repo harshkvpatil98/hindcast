@@ -140,8 +140,8 @@ run "the_study_records_through_claude_platform_on_aws_onto_a_durable_cache" {
   }
 
   assert {
-    condition     = output.controls.environment["CASCADE_LLM__MODE"] == "record" && output.controls.environment["CASCADE_LLM__PROVIDER"] == "aws"
-    error_message = "The study task records through the chosen provider; the bench's replay pin is overridden, not restated."
+    condition     = output.controls.environment["CASCADE_LLM__MODE"] == "record" && output.controls.environment["CASCADE_LLM__PROVIDER"] == "claude_platform_aws"
+    error_message = "The study task records through the chosen provider, under the settings' canonical name (ADR-0053); the bench's replay pin is overridden, not restated."
   }
   assert {
     condition     = output.controls.environment["CASCADE_LLM__CACHE_DIR"] == "/cache/llm" && output.controls.mount_points["/cache/llm"] == "llm-cache"
@@ -152,7 +152,7 @@ run "the_study_records_through_claude_platform_on_aws_onto_a_durable_cache" {
     error_message = "The cache volume is EFS, mounted with TLS and IAM authorization through the access point."
   }
   assert {
-    condition     = output.controls.environment["CASCADE_PROVIDERS__AWS__REGION"] == "us-east-1" && output.controls.environment["CASCADE_PROVIDERS__AWS__WORKSPACE_ID"] == "wrkspc_01ABC"
+    condition     = output.controls.environment["CASCADE_PROVIDERS__CLAUDE_PLATFORM_AWS__REGION"] == "us-east-1" && output.controls.environment["CASCADE_PROVIDERS__CLAUDE_PLATFORM_AWS__WORKSPACE_ID"] == "wrkspc_01ABC"
     error_message = "Routing is explicit in the task's environment (ADR-0028)."
   }
   assert {

@@ -64,6 +64,50 @@ variable "guardrail_target_ids" {
   default     = []
 }
 
+variable "create_service_control_policies" {
+  description = <<-EOT
+    Create the two service control policies. They need an AWS Organizations
+    management account; a standalone account sets this false and keeps
+    everything else in this root, the Bedrock guardrail included (ADR-0053).
+  EOT
+  type        = bool
+  default     = true
+}
+
+variable "model_guardrail" {
+  description = <<-EOT
+    The Bedrock guardrail `cascade eval guardrails` measures the compiled
+    graphs against (ADR-0050), or null to create none. Passed whole to
+    modules/guardrails, whose variable of the same name documents each field.
+    The account's `cascade-audit-guardrail` is this object as
+    terraform.tfvars.example spells it; a guardrail that already exists is
+    imported rather than recreated (infra/terraform/README.md).
+  EOT
+  type = object({
+    name                      = string
+    description               = optional(string)
+    blocked_input_messaging   = string
+    blocked_outputs_messaging = string
+    content_filters = optional(list(object({
+      type            = string
+      input_strength  = string
+      output_strength = string
+    })), [])
+    denied_topics = optional(list(object({
+      name       = string
+      definition = string
+      examples   = optional(list(string), [])
+    })), [])
+  })
+  default = null
+}
+
+variable "publish_guardrail_version" {
+  description = "Publish an immutable numbered version of the guardrail and report it instead of DRAFT (modules/guardrails)."
+  type        = bool
+  default     = false
+}
+
 variable "report_lock_retention_days" {
   description = "Object Lock retention on every published study report. Required: see modules/reports."
   type        = number
@@ -320,10 +364,29 @@ module "audit" {
 }
 
 module "guardrails" {
-  source          = "../../modules/guardrails"
-  name            = var.name
-  allowed_regions = distinct(concat([var.region, var.replica_region], var.additional_allowed_regions))
-  target_ids      = var.guardrail_target_ids
+  source                          = "../../modules/guardrails"
+  name                            = var.name
+  allowed_regions                 = distinct(concat([var.region, var.replica_region], var.additional_allowed_regions))
+  target_ids                      = var.guardrail_target_ids
+  create_service_control_policies = var.create_service_control_policies
+  model_guardrail                 = var.model_guardrail
+  publish_guardrail_version       = var.publish_guardrail_version
+}
+
+# The two values the audit reads (ADR-0050), in the shape `.env` takes them
+# (ADR-0053). Null when no guardrail was asked for -- never an empty id, so
+# "none configured" stays distinct from "found nothing" at this boundary too.
+output "guardrail" {
+  description = "The Bedrock guardrail's id, arn and version, or null. Feed id and version to CASCADE_GUARDRAIL_ID / CASCADE_GUARDRAIL_VERSION."
+  value       = module.guardrails.guardrail
+}
+
+output "guardrail_environment" {
+  description = "The two .env lines `cascade eval guardrails` and `cascade aws check` read, or null."
+  value = module.guardrails.guardrail == null ? null : {
+    CASCADE_GUARDRAIL_ID      = module.guardrails.guardrail.id
+    CASCADE_GUARDRAIL_VERSION = module.guardrails.guardrail.version
+  }
 }
 
 output "alerts_topic_arn" {

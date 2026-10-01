@@ -95,6 +95,7 @@ data "aws_iam_policy_document" "integrity" {
 }
 
 resource "aws_organizations_policy" "regions" {
+  count       = var.create_service_control_policies ? 1 : 0
   name        = "${var.name}-allowed-regions"
   description = "Deny every regional action outside the allowed regions"
   type        = "SERVICE_CONTROL_POLICY"
@@ -102,6 +103,7 @@ resource "aws_organizations_policy" "regions" {
 }
 
 resource "aws_organizations_policy" "integrity" {
+  count       = var.create_service_control_policies ? 1 : 0
   name        = "${var.name}-integrity"
   description = "Protect the audit trail, encryption and the public-access block"
   type        = "SERVICE_CONTROL_POLICY"
@@ -109,14 +111,14 @@ resource "aws_organizations_policy" "integrity" {
 }
 
 resource "aws_organizations_policy_attachment" "regions" {
-  for_each  = var.target_ids
-  policy_id = aws_organizations_policy.regions.id
+  for_each  = var.create_service_control_policies ? var.target_ids : toset([])
+  policy_id = aws_organizations_policy.regions[0].id
   target_id = each.value
 }
 
 resource "aws_organizations_policy_attachment" "integrity" {
-  for_each  = var.target_ids
-  policy_id = aws_organizations_policy.integrity.id
+  for_each  = var.create_service_control_policies ? var.target_ids : toset([])
+  policy_id = aws_organizations_policy.integrity[0].id
   target_id = each.value
 }
 

@@ -12,6 +12,19 @@ variable "allowed_regions" {
   }
 }
 
+variable "create_service_control_policies" {
+  description = <<-EOT
+    Create the two service control policies. True by default, which is the
+    design: an organization-level deny that no principal in the account can
+    undo. `aws_organizations_policy` can only be created from an AWS
+    Organizations management account, so a standalone account sets this false
+    and keeps the rest of the module -- the Bedrock guardrail below is
+    independent of it (ADR-0053).
+  EOT
+  type        = bool
+  default     = true
+}
+
 variable "target_ids" {
   description = <<-EOT
     Organizational units or accounts the policies attach to. Empty by default:

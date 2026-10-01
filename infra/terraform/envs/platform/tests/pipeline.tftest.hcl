@@ -458,7 +458,7 @@ run "the_dials_reach_the_commands" {
     fanout_timeout_seconds = 777
     step_timeout_seconds   = 55
     build_timeout_seconds  = 66
-    study_environment      = { CASCADE_LLM__PROVIDER = "aws", CASCADE_LLM__MODE = "record" }
+    study_environment      = { CASCADE_LLM__PROVIDER = "claude_platform_aws", CASCADE_LLM__MODE = "record" }
   }
 
   # Different values from the defaults, so a restated constant cannot pass.
@@ -485,7 +485,7 @@ run "the_dials_reach_the_commands" {
       for state in ["SimulateEstimate", "SimulateAll", "EnsembleCollapse", "EvalGrid", "Report"] :
       one(jsondecode(aws_sfn_state_machine.this["study"].definition).States[state].Parameters.Overrides.ContainerOverrides).Environment == [
         { Name = "CASCADE_LLM__MODE", Value = "record" },
-        { Name = "CASCADE_LLM__PROVIDER", Value = "aws" },
+        { Name = "CASCADE_LLM__PROVIDER", Value = "claude_platform_aws" },
       ]
     ])
     error_message = "Every study task carries the study environment, sorted."
