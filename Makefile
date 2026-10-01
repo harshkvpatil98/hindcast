@@ -160,8 +160,8 @@ demo: ## The 90-second path: four ablation cells -> replay -> trace -> report
 	@echo "==> 2/5  running the four cells that need no compiled graph"
 	$(RUN) cascade eval grid --policy heuristic \
 		--cell C09 --cell C10 --cell C11 --cell C12 --limit 40
-	@echo "==> 3/5  proving the runs replay byte-identically in fresh processes"
-	$(RUN) cascade trace replay --runs 25
+	@echo "==> 3/5  proving the stand-in runs replay byte-identically in fresh processes"
+	$(RUN) cascade trace replay --runs 25 --policy heuristic
 	@echo "==> 4/5  walking one outcome back to its root cause"
 	$(RUN) cascade trace explain
 	@echo "==> 5/5  writing the report artifact"

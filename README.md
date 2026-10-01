@@ -255,8 +255,9 @@ cascade ledger build && cascade ledger seal
 # 2. Run four ablation cells that need no compiled graph (~3 min)
 cascade eval grid --policy heuristic --cell C09 --cell C10 --cell C11 --cell C12 --limit 40
 
-# 3. Prove the runs replay byte-identically in fresh processes
-cascade trace replay --runs 25
+# 3. Prove the stand-in runs replay byte-identically in fresh processes
+#    (--policy heuristic: a model-backed run replays only where its recordings are)
+cascade trace replay --runs 25 --policy heuristic
 
 # 4. Walk one outcome back to the exogenous shock that caused it
 cascade trace explain
