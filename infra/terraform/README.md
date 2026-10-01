@@ -62,6 +62,13 @@ to go first and the trail records that it did (ADR-0046).
 Run every offline gate with `make infra-check` (Docker required; no AWS
 credentials needed).
 
+**Where to run Terraform.** There is no root at the top of the repository:
+the three roots are `infra/terraform/envs/bootstrap`, `envs/platform` and
+`envs/sandbox`, and `terraform init` anywhere else finds an empty directory.
+They need Terraform **>= 1.10** and are gated at **1.16.3**; an older binary
+stops with "Unsupported Terraform Core version". Check `terraform version`
+first.
+
 ## Runbook
 
 Everything below needs an AWS account. Each step says what it costs to leave
@@ -77,19 +84,44 @@ terraform init && terraform apply -var region=us-west-2
 guardrail). `terraform.tfvars.example` carries us-west-2, the replica region
 and every required decision; in a standalone account leave
 `create_service_control_policies = false` -- the SCPs need an Organizations
-management account and nothing else depends on them. The account's existing
-`cascade-audit-guardrail` is imported rather than recreated:
+management account and nothing else depends on them.
 ```bash
 cd ../platform
+cp backend.hcl.example backend.hcl                   # fill from bootstrap's outputs
 cp terraform.tfvars.example terraform.tfvars
 terraform init -backend-config=backend.hcl
-terraform import 'module.guardrails.aws_bedrock_guardrail.model[0]' <guardrail-id>
-terraform apply
+terraform plan -out=platform.tfplan                  # read it before anything else
+```
+**The account's existing `cascade-audit-guardrail` stays outside Terraform by
+default**: `model_guardrail` is null in the example, nothing about the
+guardrail is planned, and its id and version go into `.env` as
+`CASCADE_GUARDRAIL_ID` / `CASCADE_GUARDRAIL_VERSION=1`; `cascade aws check`
+then confirms they resolve, without invoking anything. To manage it here
+instead, fill `model_guardrail` to match the console exactly and import both
+resources before the first plan -- the ids are comma-delimited:
+```bash
+terraform import 'module.guardrails.aws_bedrock_guardrail.model[0]' '<guardrail-id>,DRAFT'
+terraform import 'module.guardrails.aws_bedrock_guardrail_version.model[0]' '<guardrail-arn>,1'
+terraform plan      # must show no change to either; an update means the block does not match
 terraform output guardrail_environment               # the two .env lines the audit reads
 ```
-Or leave `model_guardrail` null and put the id and version from the console
-into `.env` as `CASCADE_GUARDRAIL_ID` / `CASCADE_GUARDRAIL_VERSION=1`; then
-`cascade aws check` confirms they resolve, without invoking anything.
+
+**Before the first platform apply, check what the account already has.** This
+root creates a CloudTrail trail, a GuardDuty detector, an AWS Config recorder
+and delivery channel, a budget (`cascade-study`) and a cost-anomaly monitor.
+GuardDuty allows one detector and Config one recorder per region, and an
+account has one AWS-services anomaly monitor, so an apply fails on any that
+exist; a second trail is allowed and bills its own copy of management events.
+Read-only checks:
+```bash
+aws guardduty list-detectors --region us-west-2
+aws configservice describe-configuration-recorders --region us-west-2
+aws ce get-anomaly-monitors
+aws cloudtrail describe-trails --region us-west-2
+aws budgets describe-budgets --account-id "$(aws sts get-caller-identity --query Account --output text)"
+```
+An existing one is imported (`terraform import`) or the plan is not applied;
+nothing here deletes what it did not create.
 
 **2. Configure the sandbox**
 ```bash

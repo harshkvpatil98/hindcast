@@ -26,25 +26,34 @@ create_service_control_policies = false
 
 # --- The Bedrock guardrail (ADR-0050) --------------------------------------------
 # What `cascade eval guardrails` measures the compiled graphs against -- never
-# a filter in the compile path. The account's `cascade-audit-guardrail`
-# already exists with published version 1; this object describes one like it.
-# Either import the existing resource before the first apply --
-#   terraform import 'module.guardrails.aws_bedrock_guardrail.model[0]' <guardrail-id>
-# -- or leave `model_guardrail` null and put the id and version from the
-# console straight into .env as CASCADE_GUARDRAIL_ID / CASCADE_GUARDRAIL_VERSION.
-model_guardrail = {
-  name                      = "cascade-audit-guardrail"
-  description               = "Measured against the compiled causal graphs, applied to nothing (ADR-0050)"
-  blocked_input_messaging   = "This request was blocked by the audit guardrail."
-  blocked_outputs_messaging = "This response was blocked by the audit guardrail."
-  content_filters = [
-    { type = "PROMPT_ATTACK", input_strength = "HIGH", output_strength = "NONE" },
-    { type = "HATE", input_strength = "MEDIUM", output_strength = "MEDIUM" },
-    { type = "VIOLENCE", input_strength = "MEDIUM", output_strength = "MEDIUM" },
-  ]
-  denied_topics = []
-}
-# Publish an immutable version: an audit quoted against DRAFT can never be
-# re-checked against the same object. After apply,
-# `terraform output guardrail_environment` prints the two .env lines.
-publish_guardrail_version = true
+# a filter in the compile path.
+#
+# The account's `cascade-audit-guardrail` ALREADY EXISTS (published version 1).
+# The default here is therefore to leave it out of Terraform: `model_guardrail`
+# stays null, nothing about the guardrail is planned or changed, and the id and
+# version from the console go straight into .env --
+#   CASCADE_GUARDRAIL_ID=<guardrail-id>
+#   CASCADE_GUARDRAIL_VERSION=1
+# -- after which `cascade aws check` confirms they resolve.
+#
+# To bring the existing guardrail UNDER Terraform instead, uncomment the block
+# below, make every field match what the console shows, and import BEFORE the
+# first plan. The import ids are comma-delimited (AWS provider docs):
+#   terraform import 'module.guardrails.aws_bedrock_guardrail.model[0]' '<guardrail-id>,DRAFT'
+#   terraform import 'module.guardrails.aws_bedrock_guardrail_version.model[0]' '<guardrail-arn>,1'
+# Then `terraform plan` must show NO change to either resource. If it shows an
+# update, the block below does not match the real guardrail, and applying
+# would rewrite its DRAFT; fix the block, do not apply. Without the import,
+# apply would try to create a second guardrail with the same name.
+#
+# model_guardrail = {
+#   name                      = "cascade-audit-guardrail"
+#   description               = "<as in the console>"
+#   blocked_input_messaging   = "<as in the console>"
+#   blocked_outputs_messaging = "<as in the console>"
+#   content_filters = [
+#     { type = "PROMPT_ATTACK", input_strength = "HIGH", output_strength = "NONE" },
+#   ]
+#   denied_topics = []
+# }
+# publish_guardrail_version = true   # only with the version import above
