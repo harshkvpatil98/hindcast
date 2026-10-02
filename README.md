@@ -198,7 +198,7 @@ through AWS today; what does is below.
 |---|---|---|
 | **Bedrock Rerank** | `amazon.rerank-v1:0` as a second ranking stage over the time-locked pool. Admissible because it is handed document *bodies* and returns numbers — it cannot name a chunk the database did not return ([ADR-0047](docs/adr/0047-reranking-is-a-permutation.md)). Opt-in through `configs/tuning/rerank_bedrock.yaml`; recorded and replayed like a model call; billed one search unit per 100 documents, the service's own rule | `BedrockReranker` in `cascade/llm/client.py` |
 | **Bedrock Guardrails** | The account's `cascade-audit-guardrail`, applied through `ApplyGuardrail` to every compiled graph *after* compilation and never inside it, so the audit can tell *not assessed* from *assessed and clear* and a guardrail that would alter a graph is reported as a confound ([ADR-0050](docs/adr/0050-guardrails-measured-not-applied.md)). `CASCADE_GUARDRAIL_ID` / `CASCADE_GUARDRAIL_VERSION=1` in `.env` | `BedrockGuardrail`; `cascade eval guardrails` |
-| **Terraform** | 3 roots and 16 modules: an isolated VPC with interface endpoints, Aurora PostgreSQL 16 Serverless v2 with pgvector pinned, KMS keys, S3 (state, artifacts, an Object-Locked event lake, recovery and reports buckets), least-privilege IAM, Fargate tasks, a budget derived from the study configuration, CloudTrail, GuardDuty, the Bedrock guardrail, optional SCPs. Gated offline with mock-provider tests, TFLint and Checkov | [`infra/terraform/`](infra/terraform/README.md) |
+| **Terraform** | 3 roots and 15 modules: an isolated VPC with interface endpoints, Aurora PostgreSQL 16 Serverless v2 with pgvector pinned, KMS keys, S3 (state, artifacts, an Object-Locked event lake, recovery and reports buckets), least-privilege IAM, Fargate tasks, a budget derived from the study configuration, CloudTrail, GuardDuty, the Bedrock guardrail, optional SCPs. Gated offline with mock-provider tests, TFLint and Checkov | [`infra/terraform/`](infra/terraform/README.md) |
 | **Observability** | Every call carries the provider's request id (`request-id`, `x-amzn-requestid`, or the CLI's session) on the result, the recording and the trace; `observability.call_log` appends one JSON object per call; Langfuse traces when configured | `cascade/llm/tracing.py` |
 | **`cascade aws check`** | Three control-plane reads — the caller's identity, the configured guardrail, the configured reranker — that invoke nothing and spend nothing; exit 3 on any failure | `describe_aws_access` |
 
@@ -344,7 +344,7 @@ cascade/
 │  ├─ trace/             # M8  Strata: event log, replay, provenance, cost ledger
 │  └─ llm/               # the single model call site: four providers behind one interface
 ├─ configs/              # base.yaml + 12 ablation overlays + supplementary and tuning overlays
-├─ infra/terraform/      # 3 roots, 16 modules, mock-provider tests; infra/docker/ the task image
+├─ infra/terraform/      # 3 roots, 15 modules, mock-provider tests; infra/docker/ the task image
 ├─ migrations/           # 21 numbered, forward-only SQL migrations
 ├─ docs/adr/             # 53 architecture decision records
 ├─ docs/architecture/    # the AWS architecture, threat model, DR runbook, Well-Architected review
@@ -412,11 +412,16 @@ Stated plainly, because a result that hides these is not a result.
 4. **Every model-produced number came through the Claude Code CLI**, which
    cannot set `temperature` or `max_tokens` and adds its own harness context.
    Nothing has been measured under the pinned configuration.
-5. **Nothing has reached AWS from this repository.** Claude Platform on AWS,
-   the Bedrock reranker, the guardrail audit and `cascade aws check` are built
-   and tested against the real SDKs over mocks; the account is being
-   provisioned, and the owner chose not to run paid workloads to finish.
-   The Terraform has not been applied end to end from this repository.
+5. **What has reached AWS is small, and named.** On 2026-10-01 the owner's
+   account (us-west-2) got the state bucket and the platform root's *portfolio
+   profile* -- one CMK, the event lake and an alerts topic, 21 resources
+   ([ADR-0054](docs/adr/0054-a-portfolio-deployment-profile.md)) -- and
+   `cascade aws smoke-test` sent three synthetic events through S3, Glue and
+   Athena as the lake's own roles. Nothing else has: the full platform, the
+   sandbox, Claude Platform on AWS, the Bedrock reranker and the guardrail
+   audit are built and tested against the real SDKs over mocks, no real event
+   has been exported to the lake, and the owner chose not to run paid
+   workloads to finish.
 6. **The curated scenarios are not independently verified**, Metaculus is
    unavailable without a token, and GDELT contributed nothing — all recorded in
    the registry and corpus milestones.

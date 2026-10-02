@@ -2530,26 +2530,39 @@ Deferred, with reasons:
   runbook imports the existing guardrail rather than recreating it.
 - **The study** → unchanged from M16 by design.
 
-### After M17 — The platform's portfolio profile · *planned against the owner's account; nothing applied*
+### After M17 — The platform's portfolio profile · *applied to the owner's account on 2026-10-01: 21 resources in us-west-2; the lake's round trip proven with synthetic events, as its own roles*
 
 The owner's account became reachable from the development machine on
-2026-10-01 (a named profile; the owner applied `envs/bootstrap` themselves).
-The platform root was then planned, twice, and never applied.
+2026-10-01 (a named `aws login` profile; the owner applied `envs/bootstrap`
+themselves). The platform root was planned twice, reduced to a portfolio
+profile at the owner's request (ADR-0054), and applied -- each apply from a
+saved plan generated on `main` and read in full, each confirmed by the owner.
 
 **Measured.**
 
 | | Result |
 |---|---|
-| Read-only account checks | a multi-region trail, a $10 budget and `Default-Services-Monitor` exist; no GuardDuty detector, no Config recorder, not an Organizations member; every name the plan claims is free |
-| Full platform plan, with `create_audit_trail`, `create_budget`, `create_cost_anomaly_detection` and the SCPs off | **74 to add, 0 to change, 0 to destroy** |
-| Portfolio profile plan (`portfolio.tfvars`, ADR-0054) | **21 to add, 0 to change, 0 to destroy**: one CMK, the event lake (18), the alerts topic and its policy |
-| `terraform test`, `envs/platform` | **130 passed** (was 112); `envs/sandbox` 62 unchanged |
+| Read-only account checks, before and after | a multi-region trail, a $10 budget, `Default-Services-Monitor` and the audit guardrail exist and are unchanged; no GuardDuty detector, no Config recorder, not an Organizations member |
+| Full platform plan, with the trail, budget, anomaly monitor and SCP switches off | **74 to add, 0 to change, 0 to destroy** -- never applied |
+| Portfolio profile plan (`portfolio.tfvars`) | **21 to add, 0 to change, 0 to destroy**: one CMK, the event lake (18), the alerts topic and its policy; one region |
+| Apply | **21 added, 0 changed, 0 destroyed**; the plan that followed: **no changes** |
+| `cascade aws smoke-test`, first run | writer put **OK**, writer delete **refused (required)**, partition **registered**, analyst query **FAILED** -- `glue:GetPartition` not allowed |
+| Second apply, the fix | **0 added, 1 changed, 0 destroyed** (the analyst role's inline policy); the plan that followed: no changes |
+| `cascade aws smoke-test`, second run | **round trip complete**: 3 synthetic rows written, 3 equal rows returned, 953 bytes scanned, exit 0 |
+| `terraform test` | **131** in `envs/platform` (was 112), **62** in `envs/sandbox` |
 | Checkov | **1,027 passed, 0 failed, 73 skipped**, unchanged |
-| Static infrastructure invariants | **45 passed** |
-| Mutation | 16 properties of the new switches broken on purpose; 15 failed a test at once, and the sixteenth -- a switch's *default* flipped -- survived until the defaults were asserted statically |
+| `make ci` | ruff, black, mypy strict (**124** files), **2,533 passed, 2 skipped** offline |
+| Mutation | 16 properties of the Terraform switches and 5 of the smoke test broken on purpose; 20 failed a test at once, and one -- a switch's *default* flipped -- survived until the defaults were asserted statically |
 
 **Defects found** (each has a test):
 
+- **The analyst role could not read one partition.** Its policy had
+  `glue:GetPartitions` and not `glue:GetPartition`, which is what Athena calls
+  for a query that filters on the partition key -- and `config_id` is the
+  partition every analysis filters on. No offline gate could see it, because
+  none knows which Glue calls Athena makes on a caller's behalf; the first
+  query the role ever ran did. CloudTrail showed
+  `BatchGetTable` allowed and `GetPartition` denied.
 - **A real plan found what 118 mock-provider runs could not.** The provider
   reports a policy document with no statements as null; a mock provider
   reports an empty list. An output that iterated one failed only against AWS.
@@ -2565,11 +2578,18 @@ The platform root was then planned, twice, and never applied.
 - **A trail with no bucket to name carried an empty data selector**, which the
   provider refuses; and with every audit tier off, `buckets_private` was
   `alltrue([])`, which is true.
-- ADR-0052 had never been indexed, here or in `docs/adr/README.md`.
+- **`boto3[crt]` was missing.** A profile made by `aws login` is signed
+  through the AWS Common Runtime; without `awscrt` botocore loads no
+  credentials. It is in the `aws` extra, and `cascade doctor` shows it.
+- ADR-0052 had never been indexed, here or in `docs/adr/README.md`; and M17
+  counted 16 Terraform modules where there are 15.
 
-**Not verified, and the one thing the profile does not yet prove.** Nothing
-is applied. And no code here exports the event log to Parquet, so the deployed
-lake is a table with no rows: the profile proves the S3, Glue and Athena
-wiring, not a query. `make infra-check` must be run on a copy of the tree
-while `envs/platform` is initialised against the real backend -- it
-re-initialises each root with `-backend=false`.
+**Not verified, and the one thing the deployment does not prove.** The smoke
+test is not the event export: no code here moves the real event log from
+Postgres to the lake, so apart from three synthetic rows the table is empty,
+and an export would need an identity allowed to register partitions, which
+neither lake role is. The full platform and the sandbox are not applied.
+Operational notes: `make infra-check` must be run on a copy of the tree while
+`envs/platform` is initialised against the real backend -- it re-initialises
+each root with `-backend=false`; and the account id is deliberately absent
+from every committed file, since the repository is public.

@@ -24,8 +24,17 @@ production-grade modules kept
   Object Lock is on.
 - **`infra/terraform/envs/platform/portfolio.tfvars`** turns the tiers off:
   **21 resources** in one region -- the CMK, the event lake, the alerts topic.
-  0 to change, 0 to destroy. Nothing has been applied.
-- Not yet proven: a query. Nothing exports the event log to the lake.
+- **Applied on 2026-10-01**: 21 added, 0 changed, 0 destroyed; the next plan
+  showed no changes; the account's own trail, budget, anomaly monitor and
+  guardrail are untouched.
+- **`cascade aws smoke-test`**: three synthetic events to S3 as the writer
+  role, registered in Glue, read back through Athena as the analyst role,
+  rows compared. The writer's delete must be refused, and is.
+- **A defect only the live run could find**: the analyst role had no
+  `glue:GetPartition`, so it could not run a query filtered on `config_id`.
+  Fixed with one in-place change.
+- **`boto3[crt]` in the `aws` extra**, so a profile made by `aws login` works.
+- Still not built: the export of the real event log to the lake.
 
 ## M17 — Portfolio completion
 

@@ -99,10 +99,39 @@ the alerts topic with its policy.
 Ten properties of the switches were broken on purpose, one at a time, and each
 failed a test.
 
-## Not verified
+## Applied, 2026-10-01
 
-Nothing has been applied: these are plans. And **the lake will be empty**.
-No code in this repository exports the event log to Parquet, so after an
-apply Athena has a table and no rows until events are written under
-`events/config_id=<cell>/` and the partitions registered. The deployment
-proves the wiring of S3, Glue and Athena; it does not yet prove a query.
+The profile was applied to the owner's account from `main`, from a saved plan
+that had been read in full: **21 added, 0 changed, 0 destroyed**, all in
+us-west-2. The plan that followed showed no changes. The account's own trail,
+budget, anomaly monitor and guardrail were read before and after and are as
+they were.
+
+`cascade aws smoke-test` then sent three events that say they are synthetic
+round the lake, each step as the identity that should take it:
+
+| Step | Identity | Result |
+|---|---|---|
+| put one Parquet file (4,384 bytes, 13 columns) under `config_id=SMOKE` | the writer role | stored, under the CMK |
+| delete it | the writer role | **refused, AccessDenied** -- the Deny that is the lake's one append-only control here, asserted live |
+| register the partition | the operator | registered |
+| query the partition through the workgroup | the analyst role | **refused** on the first run; 3 rows, 953 bytes scanned, after the fix |
+| compare | -- | the 3 rows returned equal the 3 written |
+
+**The first run found what no offline gate could.** The analyst role had no
+`glue:GetPartition`, which is what Athena calls for a query that filters on
+the partition key -- and `config_id` is the partition every analysis filters
+on. The role could have scanned the whole table and could not read one cell.
+CloudTrail recorded `BatchGetTable` allowed and `GetPartition` denied for the
+role. The policy gained that one action (0 added, 1 changed, 0 destroyed), a
+test holds it there, and the smoke test passed on the next run.
+
+## Still not verified
+
+**The smoke test is not the event export.** No code here moves the real event
+log from Postgres to the lake, so apart from three synthetic rows the table is
+empty. An export needs two things this deployment does not have: a writer of
+Parquet for real runs, and an identity allowed to register partitions --
+neither lake role may change the catalog, by design. The full platform
+(recovery, Object Lock, the audit tier, the reports bucket) and the sandbox
+remain unapplied.
