@@ -12,6 +12,37 @@ Solid green is running today. Dashed is implemented and switched on by
 configuration. A PNG of the same diagram, for slides, is at
 [assets/cascade-architecture.png](assets/cascade-architecture.png).
 
+The same structure as a Mermaid diagram, which GitHub renders from text:
+
+```mermaid
+flowchart TB
+  subgraph APP["Cascade application - Python 3.12"]
+    Q["Question + cutoff date"] --> R["Time-locked retrieval<br/>Postgres 16 + pgvector"]
+    R --> G["Causal-graph compiler"]
+    G --> SIM["24-step multi-agent simulation<br/>deterministic arbiter"]
+    SIM --> EV["Ensemble, scoring, report"]
+    SIM --> LOG[("Append-only event log<br/>byte-exact replay")]
+  end
+
+  subgraph LLM["One door to every model - llm/client.py"]
+    DOOR["Cache, cost meter, tracing, request ids"]
+    DOOR --> CLI["Claude Code CLI<br/><b>active</b>"]
+    DOOR -. "by configuration" .-> ALT["Anthropic API<br/>Claude Platform on AWS<br/>Amazon Bedrock"]
+    DOOR -. "opt-in" .-> RG["Bedrock Rerank<br/>Bedrock Guardrails"]
+  end
+
+  subgraph AWS["AWS us-west-2 - live - 21 Terraform resources"]
+    W["IAM writer role<br/>append-only, delete denied"] --> S3[("S3 event lake<br/>Parquet, KMS-encrypted")]
+    S3 --> GL["Glue Data Catalog<br/>cascade.events"]
+    GL --> ATH["Athena workgroup<br/>encrypted results"]
+    ATH --> AN["IAM analyst role<br/>read-only"]
+  end
+
+  G --> DOOR
+  SIM --> DOOR
+  LOG -->|"cascade aws smoke-test<br/>synthetic events"| W
+```
+
 - [Component responsibilities](#component-responsibilities)
 - [Data flow](#data-flow)
 - [The provider layer](#the-provider-layer)

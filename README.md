@@ -90,41 +90,31 @@ The deeper walkthrough is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ```mermaid
 flowchart TB
-  subgraph APP["Cascade application · Python 3.12"]
+  subgraph APP["Cascade application - Python 3.12"]
     Q["Question + cutoff date"] --> R["Time-locked retrieval<br/>Postgres 16 + pgvector"]
     R --> G["Causal-graph compiler"]
     G --> SIM["24-step multi-agent simulation<br/>deterministic arbiter"]
-    SIM --> EV["Ensemble · scoring · report"]
+    SIM --> EV["Ensemble, scoring, report"]
     SIM --> LOG[("Append-only event log<br/>byte-exact replay")]
   end
 
-  subgraph LLM["One door to every model · llm/client.py"]
-    DOOR["Cache · cost meter · tracing · request ids"]
-    DOOR --> CLI["Claude Code CLI<br/>active"]
-    DOOR -.-> ALT["Anthropic API<br/>Claude Platform on AWS<br/>Amazon Bedrock"]
-    DOOR -.-> RG["Bedrock Rerank<br/>Bedrock Guardrails"]
+  subgraph LLM["One door to every model - llm/client.py"]
+    DOOR["Cache, cost meter, tracing, request ids"]
+    DOOR --> CLI["Claude Code CLI<br/><b>active</b>"]
+    DOOR -. "by configuration" .-> ALT["Anthropic API<br/>Claude Platform on AWS<br/>Amazon Bedrock"]
+    DOOR -. "opt-in" .-> RG["Bedrock Rerank<br/>Bedrock Guardrails"]
   end
 
-  subgraph AWS["AWS us-west-2 · live · 21 Terraform resources"]
-    W["IAM writer role<br/>append-only, delete denied"] --> S3[("S3 event lake<br/>Parquet · KMS-encrypted")]
+  subgraph AWS["AWS us-west-2 - live - 21 Terraform resources"]
+    W["IAM writer role<br/>append-only, delete denied"] --> S3[("S3 event lake<br/>Parquet, KMS-encrypted")]
     S3 --> GL["Glue Data Catalog<br/>cascade.events"]
     GL --> ATH["Athena workgroup<br/>encrypted results"]
     ATH --> AN["IAM analyst role<br/>read-only"]
   end
 
-  GOV["Account governance<br/>CloudTrail · Budget · Cost Anomaly Detection"]
-
   G --> DOOR
   SIM --> DOOR
-  LOG == "cascade aws smoke-test<br/>synthetic events" ==> W
-  AN ~~~ GOV
-
-  classDef live stroke:#3fb950,stroke-width:2px;
-  classDef ready stroke:#8b949e,stroke-dasharray:4 3;
-  classDef gov stroke:#d29922,stroke-width:2px;
-  class Q,R,G,SIM,EV,LOG,DOOR,CLI,W,S3,GL,ATH,AN live;
-  class ALT,RG ready;
-  class GOV gov;
+  LOG -->|"cascade aws smoke-test<br/>synthetic events"| W
 ```
 
 </details>
@@ -134,16 +124,9 @@ flowchart TB
 `cascade aws smoke-test` is a deterministic, end-to-end proof that the deployed lake works, run
 as the lake's own IAM roles rather than as an administrator.
 
-```mermaid
-flowchart LR
-  E["3 synthetic<br/>events"] --> W["Writer<br/>IAM role"]
-  W --> S3[("S3 · Parquet<br/>KMS-encrypted")]
-  S3 --> GL["Glue<br/>Data Catalog"]
-  GL --> ATH["Athena<br/>workgroup"]
-  ATH --> AN["Analyst<br/>IAM role"]
-  AN --> OK(["3 matching<br/>rows returned"])
-  W -. "DELETE" .-> X(["AccessDenied"])
-```
+<p align="center">
+  <img src="docs/assets/aws-proof-flow.svg" alt="Three synthetic events are written by the writer role to S3 as Parquet, catalogued by Glue and queried through Athena by the analyst role; three matching rows return, and the writer role's delete is refused" width="100%">
+</p>
 
 | Measured in the latest run (2026-10-02, `us-west-2`) | |
 |---|---|

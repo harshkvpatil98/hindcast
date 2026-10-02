@@ -33,8 +33,9 @@ Athena, IAM and KMS.
 | 8 | [replay-and-provenance](#8-determinism-and-provenance) | Runs replay byte for byte; outcomes trace to a root cause |
 | 9 | [account-governance](#9-account-governance-and-bedrock) | CloudTrail, budget, anomaly detection and the Bedrock surfaces |
 
-Architecture images are in [`../assets`](../assets): the
-[architecture diagram](../assets/cascade-architecture.svg) and the
+Diagrams are in [`../assets`](../assets): the
+[architecture diagram](../assets/cascade-architecture.svg), the
+[smoke-test flow](../assets/aws-proof-flow.svg) and the
 [repository banner](../assets/cascade-github-banner.png).
 
 ---
