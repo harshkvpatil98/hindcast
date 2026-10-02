@@ -40,8 +40,9 @@ output "controls" {
   value = {
     bucket           = aws_s3_bucket.this.bucket
     locked           = aws_s3_bucket.this.object_lock_enabled
-    retention_mode   = one(one(aws_s3_bucket_object_lock_configuration.this.rule).default_retention).mode
-    retention_days   = one(one(aws_s3_bucket_object_lock_configuration.this.rule).default_retention).days
+    force_destroy    = aws_s3_bucket.this.force_destroy
+    retention_mode   = one([for c in aws_s3_bucket_object_lock_configuration.this : one(one(c.rule).default_retention).mode])
+    retention_days   = one([for c in aws_s3_bucket_object_lock_configuration.this : one(one(c.rule).default_retention).days])
     versioning       = one(aws_s3_bucket_versioning.this.versioning_configuration).status
     encryption_key   = one(one(aws_s3_bucket_server_side_encryption_configuration.this.rule).apply_server_side_encryption_by_default).kms_master_key_id
     object_ownership = one(aws_s3_bucket_ownership_controls.this.rule).object_ownership

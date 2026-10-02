@@ -1,6 +1,9 @@
 # M12: the platform around the study -- cost governance, the event lake, and
-# the organization's guardrails. Designed and gated offline; not applied
-# (ADR-0035).
+# the organization's guardrails. Designed and gated offline (ADR-0035).
+#
+# The defaults are that platform, whole. `portfolio.tfvars` is the profile for
+# a live demonstration: the key, the lake, the alerts topic, and none of the
+# recovery, lock or audit tiers (ADR-0054).
 
 variable "region" {
   description = "AWS region. Required, never defaulted (ADR-0028)."
@@ -101,6 +104,68 @@ variable "create_cost_anomaly_detection" {
   EOT
   type        = bool
   default     = true
+}
+
+# --- Tiers (ADR-0054) ---------------------------------------------------------------
+# Each is on by default: the defaults are the platform as designed. A
+# deployment that demonstrates the architecture rather than operates the
+# study turns the production tiers off in its tfvars (portfolio.tfvars), and
+# the `deployment` output says which were made.
+
+variable "enable_recovery" {
+  description = <<-EOT
+    The tier-0 recovery archive (modules/recovery): the locked primary bucket,
+    its cross-region replica and that region's CMK, the scheduled inventory,
+    and the restore-drill role. Off, nothing is made in the replica region and
+    every recovery output is null.
+  EOT
+  type        = bool
+  default     = true
+}
+
+variable "enable_reports" {
+  description = "The bucket published study reports land in (modules/reports, ADR-0046). Off, the two reports outputs are null and `cascade report` writes locally only."
+  type        = bool
+  default     = true
+}
+
+variable "enable_object_lock" {
+  description = <<-EOT
+    Object Lock on the event lake and the reports bucket. Off, the lake keeps
+    one of invariant 6's two controls there -- the writer role's explicit Deny
+    -- and gives up the other, and both buckets can be emptied. The provider
+    treats a bucket's lock setting as immutable, so turning this on later
+    replaces the buckets: decide before either holds anything that matters.
+  EOT
+  type        = bool
+  default     = true
+}
+
+variable "enable_guardduty" {
+  description = "The GuardDuty detector, its findings rule and its delivery alarm (modules/audit). Off for a deployment nobody operates."
+  type        = bool
+  default     = true
+}
+
+variable "enable_config" {
+  description = "The AWS Config recorder, delivery channel, role and history bucket (modules/audit). Off for a deployment nobody operates."
+  type        = bool
+  default     = true
+}
+
+variable "disposable" {
+  description = <<-EOT
+    Let `terraform destroy` empty the event lake and reports buckets, every
+    version included. For a deployment that is created, shown and removed --
+    the sandbox's `disposable`, for this root. Refused with Object Lock on.
+  EOT
+  type        = bool
+  default     = false
+
+  validation {
+    condition     = !(var.disposable && var.enable_object_lock)
+    error_message = "disposable needs enable_object_lock = false: a locked version cannot be removed, so the destroy would fail halfway."
+  }
 }
 
 variable "model_guardrail" {
@@ -210,10 +275,13 @@ data "aws_iam_policy_document" "key" {
   # statements come from the modules that know what they need, so the key
   # policy cannot fall out of step with what it serves. Each depends on names
   # and the account only, never on the key, so this is not a cycle.
-  source_policy_documents = [
-    module.audit.required_key_policy_statements_json,
-    module.recovery.required_key_policy_statements_json,
-  ]
+  #
+  # `module.recovery[0].<output>`, never a splat: a splat depends on the whole
+  # module, the module depends on this key, and that is a cycle.
+  source_policy_documents = concat(
+    [module.audit.required_key_policy_statements_json],
+    var.enable_recovery ? [module.recovery[0].required_key_policy_statements_json] : [],
+  )
 
   #checkov:skip=CKV_AWS_111:A KMS key policy's "kms:*" for the account root is AWS's default key policy: it delegates to IAM, and Resource "*" in a key policy means this key only.
   #checkov:skip=CKV_AWS_356:Resource "*" in a key policy refers to the key itself, not to all resources.
@@ -341,9 +409,13 @@ module "eventlake" {
   name          = var.name
   bucket_suffix = "${local.account}-${var.region}"
   kms_key_arn   = aws_kms_key.platform.arn
+
+  enable_object_lock = var.enable_object_lock
+  force_destroy      = var.disposable
 }
 
 module "recovery" {
+  count  = var.enable_recovery ? 1 : 0
   source = "../../modules/recovery"
   providers = {
     aws         = aws
@@ -361,7 +433,10 @@ module "recovery" {
 # the sandbox is built to be destroyed and a published report must outlive it
 # -- the same argument that put the recovery bucket here.
 module "reports" {
+  count                      = var.enable_reports ? 1 : 0
   source                     = "../../modules/reports"
+  enable_object_lock         = var.enable_object_lock
+  force_destroy              = var.disposable
   name                       = var.name
   bucket_suffix              = "${local.account}-${var.region}"
   kms_key_arn                = aws_kms_key.platform.arn
@@ -372,9 +447,13 @@ module "reports" {
 }
 
 module "audit" {
-  source        = "../../modules/audit"
-  name          = var.name
-  create_trail  = var.create_audit_trail
+  source       = "../../modules/audit"
+  name         = var.name
+  create_trail = var.create_audit_trail
+
+  enable_guardduty = var.enable_guardduty
+  enable_config    = var.enable_config
+
   bucket_suffix = "${local.account}-${var.region}"
   kms_key_arn   = aws_kms_key.platform.arn
   # Findings above the threshold go where the budget alerts go: one topic, one
@@ -387,11 +466,13 @@ module "audit" {
   # its policy denies lifting the Object Lock, so the only way to withdraw a
   # published figure is to edit that policy and then delete, and the trail is
   # where both acts are recorded (ADR-0046).
+  # Only the buckets that exist: a tier that is off contributes none.
   data_event_bucket_arns = [
-    "arn:${data.aws_partition.current.partition}:s3:::${module.eventlake.events_bucket}",
-    "arn:${data.aws_partition.current.partition}:s3:::${module.recovery.bucket}",
-    "arn:${data.aws_partition.current.partition}:s3:::${module.recovery.inventory_bucket}",
-    "arn:${data.aws_partition.current.partition}:s3:::${module.reports.bucket}",
+    for bucket in concat(
+      [module.eventlake.events_bucket],
+      var.enable_recovery ? [module.recovery[0].bucket, module.recovery[0].inventory_bucket] : [],
+      var.enable_reports ? [module.reports[0].bucket] : [],
+    ) : "arn:${data.aws_partition.current.partition}:s3:::${bucket}"
   ]
 }
 
@@ -436,6 +517,34 @@ output "account_level_services" {
   }
 }
 
+# Which tiers this root made (ADR-0054). Read from the modules, not from the
+# flags: a flag that reached nothing would still read true here as an input.
+output "deployment" {
+  description = "Which tiers exist. All true except `disposable` is the platform as designed; portfolio.tfvars is the demonstration profile."
+  value = {
+    event_lake       = true
+    lake_object_lock = module.eventlake.object_lock
+    recovery         = length(module.recovery) == 1
+    reports          = length(module.reports) == 1
+    guardduty        = module.audit.controls.guardduty_created
+    config           = module.audit.controls.config_created
+    disposable       = module.eventlake.force_destroy
+  }
+}
+
+output "athena_workgroup" {
+  description = "Query the lake through this workgroup: it enforces encryption and the per-query scan limit."
+  value       = module.eventlake.workgroup
+}
+
+output "lake_roles" {
+  description = "The lake's two roles: the writer appends events and can delete nothing; the analyst queries."
+  value = {
+    writer  = module.eventlake.writer_role_arn
+    analyst = module.eventlake.analyst_role_arn
+  }
+}
+
 output "alerts_topic_arn" {
   description = "Feed this to the sandbox's `observability.alerts_topic_arn`."
   value       = module.governance.alerts_topic_arn
@@ -450,28 +559,28 @@ output "monthly_limit_usd" {
 }
 
 output "recovery_registry_prefix" {
-  value = module.recovery.registry_prefix
+  value = one(module.recovery[*].registry_prefix)
 }
 
 output "recovery_source_cache_prefix" {
   description = "Upload ledger.source_cache_dir here after every `ledger seal` (dr-runbook.md), with `recovery_archive_write_policy_arn`."
-  value       = module.recovery.source_cache_prefix
+  value       = one(module.recovery[*].source_cache_prefix)
 }
 
 output "recovery_archive_write_policy_arn" {
   description = "Add-only access to the registry and source-cache archives, for whoever uploads them."
-  value       = module.recovery.archive_write_policy_arn
+  value       = one(module.recovery[*].archive_write_policy_arn)
 }
 
 # Feed this whole object to the sandbox's `study.recovery`: where the LLM cache
 # is archived, under which key, and under which prefix -- passed, so the two
 # roots cannot spell the prefix differently.
 output "recovery" {
-  value = {
-    bucket_arn       = module.recovery.bucket_arn
+  value = one([for r in module.recovery : {
+    bucket_arn       = r.bucket_arn
     kms_key_arn      = aws_kms_key.platform.arn
-    llm_cache_prefix = module.recovery.prefixes.llm_cache
-  }
+    llm_cache_prefix = r.prefixes.llm_cache
+  }])
 }
 
 output "events_bucket" {
@@ -482,25 +591,25 @@ output "events_bucket" {
 
 # Feed this whole object to the sandbox's `study.reports`.
 output "reports_publish" {
-  value = module.reports.publish
+  value = one(module.reports[*].publish)
 }
 
 output "reports_uri" {
   description = "Where published reports live. Read them with `reports_read_policy_arn`; there is no public endpoint, by decision (ADR-0046)."
-  value       = module.reports.uri
+  value       = one(module.reports[*].uri)
 }
 
 output "reports_read_policy_arn" {
   description = "Attach to whoever may read a published report. Read-only, and never granted to a simulation principal."
-  value       = module.reports.read_policy_arn
+  value       = one(module.reports[*].read_policy_arn)
 }
 
 output "recovery_restore_role_arn" {
   description = "The identity the restore drill runs as (docs/architecture/dr-runbook.md). Reads tier 0 in both regions; cannot write either."
-  value       = module.recovery.restore_role_arn
+  value       = one(module.recovery[*].restore_role_arn)
 }
 
 output "recovery_inventory_uri" {
   description = "The scheduled listing of the tier-0 archive: what is there, how many objects, and under what retention."
-  value       = module.recovery.inventory_uri
+  value       = one(module.recovery[*].inventory_uri)
 }

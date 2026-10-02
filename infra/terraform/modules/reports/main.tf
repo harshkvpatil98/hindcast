@@ -75,8 +75,11 @@ resource "aws_s3_bucket" "this" {
 
   # Object Lock is decided, not inherited. See var.report_lock_retention_days
   # for why a report is the one derived artifact that is worth locking, and
-  # what it costs operationally.
-  object_lock_enabled = true
+  # what it costs operationally. `enable_object_lock = false` is the
+  # demonstration deployment's choice (ADR-0054): no lock, no deny on lifting
+  # one, and a bucket that can be emptied.
+  object_lock_enabled = var.enable_object_lock
+  force_destroy       = var.force_destroy
 }
 
 resource "aws_s3_bucket_versioning" "this" {
@@ -92,6 +95,8 @@ resource "aws_s3_bucket_versioning" "this" {
 # recorded act -- not by deleting the account. modules/eventlake made the same
 # choice for the same reason.
 resource "aws_s3_bucket_object_lock_configuration" "this" {
+  count = var.enable_object_lock ? 1 : 0
+
   bucket = aws_s3_bucket.this.id
   rule {
     default_retention {
@@ -159,20 +164,27 @@ data "aws_iam_policy_document" "bucket" {
   # being created". Re-uploading `headline.md` writes a new version; the old
   # one survives and is what a reader can still fetch. Immutability here means
   # the history is complete, not that the latest bytes never change.
-  statement {
-    sid    = "NoVersionIsEverRemovedAndNoLockIsEverLifted"
-    effect = "Deny"
-    actions = [
-      "s3:DeleteObjectVersion",
-      "s3:BypassGovernanceRetention",
-      "s3:PutObjectRetention",
-      "s3:PutObjectLegalHold",
-      "s3:PutBucketObjectLockConfiguration",
-    ]
-    resources = [aws_s3_bucket.this.arn, "${aws_s3_bucket.this.arn}/*"]
-    principals {
-      type        = "*"
-      identifiers = ["*"]
+  #
+  # Only with the lock. Without one this statement would be the lock by another
+  # name -- nobody could remove a version, so nobody could destroy the bucket --
+  # which is the thing `enable_object_lock = false` is asking not to have.
+  dynamic "statement" {
+    for_each = var.enable_object_lock ? [1] : []
+    content {
+      sid    = "NoVersionIsEverRemovedAndNoLockIsEverLifted"
+      effect = "Deny"
+      actions = [
+        "s3:DeleteObjectVersion",
+        "s3:BypassGovernanceRetention",
+        "s3:PutObjectRetention",
+        "s3:PutObjectLegalHold",
+        "s3:PutBucketObjectLockConfiguration",
+      ]
+      resources = [aws_s3_bucket.this.arn, "${aws_s3_bucket.this.arn}/*"]
+      principals {
+        type        = "*"
+        identifiers = ["*"]
+      }
     }
   }
 

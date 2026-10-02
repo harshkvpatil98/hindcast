@@ -124,6 +124,9 @@ variables {
   name          = "t"
   bucket_suffix = "123456789012-us-east-1"
   kms_key_arn   = "arn:aws:kms:us-east-1:123456789012:key/mock"
+  # Pinned, so a local terraform.tfvars cannot change what is tested.
+  enable_object_lock = true
+  force_destroy      = false
 }
 
 run "the_log_is_locked_versioned_and_private" {
@@ -137,7 +140,7 @@ run "the_log_is_locked_versioned_and_private" {
     error_message = "The events bucket must have Object Lock: the log is append-only (invariant 6)."
   }
   assert {
-    condition     = one(one(aws_s3_bucket_object_lock_configuration.events.rule).default_retention).days == 365
+    condition     = one(one(aws_s3_bucket_object_lock_configuration.events[0].rule).default_retention).days == 365
     error_message = "Every object must get a default retention."
   }
   assert {
@@ -242,7 +245,47 @@ run "compliance_mode_is_available_but_never_the_default" {
   }
 
   assert {
-    condition     = one(one(aws_s3_bucket_object_lock_configuration.events.rule).default_retention).mode == "GOVERNANCE"
+    condition     = one(one(aws_s3_bucket_object_lock_configuration.events[0].rule).default_retention).mode == "GOVERNANCE"
     error_message = "COMPLIANCE cannot be undone by anyone; it must be chosen, not inherited."
   }
+}
+
+# --- Without the lock (ADR-0054) -------------------------------------------------------------
+
+run "without_the_lock_the_lake_keeps_the_writers_deny_and_can_be_emptied" {
+  command = apply
+  module {
+    source = "../../modules/eventlake"
+  }
+  variables {
+    enable_object_lock = false
+    force_destroy      = true
+  }
+
+  assert {
+    condition     = output.object_lock == false && length(aws_s3_bucket_object_lock_configuration.events) == 0 && output.force_destroy == true
+    error_message = "No lock, no default retention, and a destroy may empty the bucket."
+  }
+  assert {
+    condition = length([
+      for s in data.aws_iam_policy_document.writer.statement : s
+      if s.effect == "Deny" && contains(s.actions, "s3:DeleteObject") && contains(s.actions, "s3:DeleteObjectVersion")
+    ]) == 1
+    error_message = "Invariant 6's other control does not go with the lock: the writer still cannot delete."
+  }
+  assert {
+    condition     = one(aws_s3_bucket_versioning.events.versioning_configuration).status == "Enabled" && one(one(aws_s3_bucket_server_side_encryption_configuration.events.rule).apply_server_side_encryption_by_default).sse_algorithm == "aws:kms"
+    error_message = "Versioned and encrypted under the CMK, lock or no lock."
+  }
+}
+
+run "emptying_a_locked_lake_is_refused" {
+  command = plan
+  module {
+    source = "../../modules/eventlake"
+  }
+  variables {
+    force_destroy = true
+  }
+  expect_failures = [var.force_destroy]
 }

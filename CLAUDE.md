@@ -168,6 +168,7 @@ make test-all   # includes integration and leakage tests (needs `make up`)
 make test-leakage  # the M3 time-lock probes alone
 make infra-check   # Terraform fmt/validate, offline tests (mock providers), tflint, checkov -- no AWS account
 make infra-fmt     # format the Terraform
+# the live portfolio deployment: cp infra/terraform/envs/platform/portfolio.tfvars .../terraform.tfvars, then plan (ADR-0054)
 cascade doctor  # toolchain, pinned stack, service health
 
 cascade db enable-iam      # RDS only: switch the app roles to IAM tokens (disables their passwords; ADR-0034)
@@ -232,7 +233,7 @@ cascade trace cost         # §12.4: reconcile the run ledger against Langfuse
 
 ## 7. Architecture decisions
 
-Fifty-three ADRs in `docs/adr/` (0032 is a parked proposal). Fifteen correct defects found in the spec,
+Fifty-four ADRs in `docs/adr/` (0032 is a parked proposal). Fifteen correct defects found in the spec,
 and 0023, 0025 and 0026 correct defects found in **this build** -- an ingest order
 that satisfied every criterion while covering the wrong years, and two ablation
 factors that were configured, documented and inert. The rest record choices the
@@ -291,7 +292,9 @@ spec left open.
 | 0049 | Agent tool access as a measured factor, not an upgrade: `lookup_evidence` and `recall` behind a one-field argument model with `extra="forbid"`, so a model-supplied `as_of` is a validation error rather than a silently dropped key. A tool loop is multi-turn and cannot ride ADR-0020's 24-batch shape, so the arm exists at ablation scale and never carries the headline | M15 |
 | 0050 | Bedrock Guardrails measured post-hoc over stored graphs rather than applied in the compile path: a filter in the compile path is unmeasurable by construction, because the graph it changed would be the only graph that existed. Four verdicts keep *not assessed* apart from *assessed and clear*. *Supersedes the deferred half of 0030* | M15 |
 | 0051 | **Rejected, with the schema kept.** Bedrock Agents cannot carry the loop: under a Lambda executor `as_of` travels through a `map<string,string>` the model can read via `$prompt_session_attributes$` and the Lambda's own response can rewrite, and under any executor the prompt is composed by Bedrock, so a request this process did not compose cannot be content-addressed and M8's replay is lost. The Action Group schema is admissible and ships as the evidence | M15 |
+| 0052 | Batching is a cost requirement, so it binds only providers that charge: a subscription bills nothing per call, so the M16 fan-out ran unbatched through the CLI. *Amends 0020* | M16 |
 | 0053 | **The project finishes as a portfolio** (owner's decision, 2026-09-30). Four provider classes behind one interface in the one call site, named `anthropic`, `claude_platform_aws`, `bedrock`, `claude_cli` (`aws` and `claude_code` stay aliases; the CLI's cache namespace keeps its old spelling so no recording is orphaned); `LLM_PROVIDER`, `ANTHROPIC_AWS_WORKSPACE_ID`, `CASCADE_GUARDRAIL_ID` and `CASCADE_GUARDRAIL_VERSION` as plain aliases read by `config.py` -- a narrow amendment of 0028, with the region still never ambient; everything regional in us-west-2; request ids on every call and a JSON-lines call log; the platform root exposes the guardrail and makes the SCPs optional; `cascade aws check`; the M16 null stands and nothing is spent to move it | M17 |
+| 0054 | **A portfolio deployment profile** (owner's decision, 2026-10-01). The platform's production tiers -- recovery, Object Lock, GuardDuty, Config, the reports bucket -- are switches at the root, each on by default, and `envs/platform/portfolio.tfvars` turns them off: 74 planned resources become 21. The lake keeps the writer's Deny and gives up the lock, and the profile says so | after M17 |
 
 ---
 
@@ -2525,3 +2528,47 @@ Deferred, with reasons:
 - **Applying the Terraform from this repository** → the owner's decision; the
   runbook imports the existing guardrail rather than recreating it.
 - **The study** → unchanged from M16 by design.
+
+### After M17 — The platform's portfolio profile · *planned against the owner's account; nothing applied*
+
+The owner's account became reachable from the development machine on
+2026-10-01 (a named profile; the owner applied `envs/bootstrap` themselves).
+The platform root was then planned, twice, and never applied.
+
+**Measured.**
+
+| | Result |
+|---|---|
+| Read-only account checks | a multi-region trail, a $10 budget and `Default-Services-Monitor` exist; no GuardDuty detector, no Config recorder, not an Organizations member; every name the plan claims is free |
+| Full platform plan, with `create_audit_trail`, `create_budget`, `create_cost_anomaly_detection` and the SCPs off | **74 to add, 0 to change, 0 to destroy** |
+| Portfolio profile plan (`portfolio.tfvars`, ADR-0054) | **21 to add, 0 to change, 0 to destroy**: one CMK, the event lake (18), the alerts topic and its policy |
+| `terraform test`, `envs/platform` | **130 passed** (was 112); `envs/sandbox` 62 unchanged |
+| Checkov | **1,027 passed, 0 failed, 73 skipped**, unchanged |
+| Static infrastructure invariants | **45 passed** |
+| Mutation | 16 properties of the new switches broken on purpose; 15 failed a test at once, and the sixteenth -- a switch's *default* flipped -- survived until the defaults were asserted statically |
+
+**Defects found** (each has a test):
+
+- **A real plan found what 118 mock-provider runs could not.** The provider
+  reports a policy document with no statements as null; a mock provider
+  reports an empty list. An output that iterated one failed only against AWS.
+- **`terraform test` reads the local `terraform.tfvars`.** Once that file
+  switched the trail and the budget off, two tests failed for a reason that
+  was the machine's. The test files now pin every switch -- and that pin hid
+  the defaults from them, which is the surviving mutant above.
+- **A splat on a counted module is a cycle waiting for a key policy.**
+  `module.recovery[*].<output>` depends on the whole module, the module
+  depends on the key, and the key's policy read the output.
+- **The reports bucket's Deny on removing versions is the lock by another
+  name**; left in with the lock off, nothing could have emptied the bucket.
+- **A trail with no bucket to name carried an empty data selector**, which the
+  provider refuses; and with every audit tier off, `buckets_private` was
+  `alltrue([])`, which is true.
+- ADR-0052 had never been indexed, here or in `docs/adr/README.md`.
+
+**Not verified, and the one thing the profile does not yet prove.** Nothing
+is applied. And no code here exports the event log to Parquet, so the deployed
+lake is a table with no rows: the profile proves the S3, Glue and Athena
+wiring, not a query. `make infra-check` must be run on a copy of the tree
+while `envs/platform` is initialised against the real backend -- it
+re-initialises each root with `-backend=false`.

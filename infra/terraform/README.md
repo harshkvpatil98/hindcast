@@ -48,7 +48,7 @@ to go first and the trail records that it did (ADR-0046).
 | | Status |
 |---|---|
 | Configuration valid against provider schemas (AWS 6.65.0) | **verified offline** |
-| Security properties (encryption, TLS, IAM auth, nothing public, pgvector pinned, fixed capacity, secrets never in plain env) | **verified offline** — 62 `terraform test` runs in `envs/sandbox`, 118 in `envs/platform`, against mock providers under the pinned Terraform 1.16.3 in Docker (M17 was the first time the guardrail runs executed; three needed `apply` rather than `plan`) |
+| Security properties (encryption, TLS, IAM auth, nothing public, pgvector pinned, fixed capacity, secrets never in plain env) | **verified offline** — 62 `terraform test` runs in `envs/sandbox`, 130 in `envs/platform`, against mock providers under the pinned Terraform 1.16.3 in Docker (M17 was the first time the guardrail runs executed; three needed `apply` rather than `plan`) |
 | The isolated tier never routes out, even with the egress tier on; only `CorpusBuild` and (without PrivateLink) the three model-calling states leave; the study grant is three routes in one workspace; the cache is encrypted and copied add-only; findings are admitted by ARN | **verified offline** — `terraform test`, and each broken on purpose once (ADR-0042) |
 | A study report is private, versioned and locked; the task that writes one cannot read one back; the restore role cannot write the archive it restores from; the archivist's key must name its seal | **verified offline** — `terraform test`, and each broken on purpose once (ADR-0046) |
 | The pgvector gate rejects an engine that is too old | **verified offline** — the test expects 16.6 to fail |
@@ -133,6 +133,52 @@ A GuardDuty detector or a Config recorder that already exists has no switch:
 it is imported (`terraform import`) or the plan is not applied. Nothing here
 deletes or changes what it did not create. `terraform output
 account_level_services` says which of them this root made.
+
+**1c. Or the portfolio profile: a minimal live deployment** (ADR-0054). The
+defaults above are the platform as designed -- recovery in a second region,
+Object Lock, GuardDuty, Config. A deployment that demonstrates the
+architecture rather than operates the study needs none of them, and
+`portfolio.tfvars` is that profile: every production tier is a switch, each
+on by default, and the profile turns them off without removing a module.
+```bash
+cd infra/terraform/envs/platform
+cp portfolio.tfvars terraform.tfvars                 # gitignored, read automatically
+terraform init -backend-config=backend.hcl
+terraform plan -out=platform.tfplan                  # 21 to add in the owner's account
+terraform output deployment                          # after an apply: which tiers exist
+```
+
+| switch | default | the profile | what off leaves out |
+|---|---|---|---|
+| `enable_recovery` | true | false | `modules/recovery` whole: the replica bucket and its region's CMK, replication, S3 Inventory, the restore role |
+| `enable_reports` | true | false | the reports bucket and its read policy |
+| `enable_object_lock` | true | false | Object Lock on the lake and the reports bucket, and the reports bucket's Deny on removing versions |
+| `enable_guardduty` | true | false | the detector, the findings rule, the delivery alarm |
+| `enable_config` | true | false | the recorder, the delivery channel, its role and its history bucket |
+| `disposable` | false | true | (on) a destroy may empty the lake and reports buckets; refused while the lock is on |
+
+What it keeps is the platform CMK, the event lake -- the events bucket, the
+Athena results bucket, the Glue database and table, the Athena workgroup, the
+writer and analyst roles -- and the alerts topic. One region; nothing in the
+replica region. The Bedrock guardrail and the reranker are not Terraform's in
+either profile: both are read from `.env` and checked with `cascade aws check`.
+
+What it gives up is written in ADR-0054 and is not small: the lake has the
+writer's Deny and no lock, so this profile does not claim the lake is
+immutable; there is no tier-0 archive on AWS; and nothing records who read
+the lake. **GuardDuty and Config are off because they would add cost and
+nothing to show**: a detector is worth the findings somebody reads and Config
+the history somebody consults, both bill on activity, and Config's bucket is
+the one a destroy cannot empty. Turn either on with its switch when the
+account is operated rather than demonstrated.
+
+Two things to know before relying on it. **The lake is deployed empty**: no
+code here exports the event log to Parquet, so Athena has a table and no rows
+until events are written under `events/config_id=<cell>/`. And
+**`terraform test` reads the local `terraform.tfvars`**, which is why every
+test file pins the switches -- and why `make infra-check`, which
+re-initialises each root with `-backend=false`, is run on a copy of the tree
+while this directory is initialised against the real backend.
 
 **2. Configure the sandbox**
 ```bash
@@ -274,7 +320,10 @@ DataSync per GB plus S3 requests per object scanned on every run — which is
 why the schedule is yours to set. In the platform root: S3 storage for the
 published reports and the tier-0 archive, and **S3 Inventory per million
 objects listed on every run**, which is the other schedule that is yours to
-set (`inventory_schedule`) and which grows with the archive. Nothing here is
+set (`inventory_schedule`) and which grows with the archive. Under the
+portfolio profile the standing charge is one KMS key per month; S3 storage,
+Athena bytes scanned and KMS requests bill only when the lake is used, and
+none of the recovery, inventory, GuardDuty or Config charges exist. Nothing here is
 meant to run between measurements. ADR-0042 and ADR-0046 record the prices
 that were verified for their decisions, and the ones that were not — the S3
 pricing table did not render for ADR-0046, so no S3 figure is quoted anywhere

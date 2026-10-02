@@ -37,3 +37,27 @@ variable "query_scan_limit_bytes" {
   type        = number
   default     = 10737418240
 }
+
+variable "enable_object_lock" {
+  description = <<-EOT
+    Object Lock on the events bucket, with the default retention above. On by
+    default: it is one of invariant 6's two controls here. Off, objects can be
+    deleted by anyone the bucket's IAM allows, which is what lets a
+    demonstration deployment be torn down. The provider treats the bucket's
+    lock setting as immutable, so changing this later replaces the bucket:
+    decide before the lake holds anything that matters.
+  EOT
+  type        = bool
+  default     = true
+}
+
+variable "force_destroy" {
+  description = "Let `terraform destroy` empty the events bucket, every version included. Refused while Object Lock is on: a locked version cannot be removed, so the destroy would fail halfway."
+  type        = bool
+  default     = false
+
+  validation {
+    condition     = !(var.force_destroy && var.enable_object_lock)
+    error_message = "force_destroy needs enable_object_lock = false: Object Lock exists to make exactly that deletion fail."
+  }
+}

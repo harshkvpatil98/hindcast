@@ -32,6 +32,17 @@ create_service_control_policies = false
 # create_budget                 = false   # an existing budget stays the only one
 # create_cost_anomaly_detection = false   # Default-Services-Monitor exists: one per account
 
+# --- Tiers (ADR-0054) ------------------------------------------------------------
+# Each is on by default, which is the platform as designed. For a minimal live
+# deployment do not edit these one by one: copy portfolio.tfvars instead, which
+# turns all of them off and is checked by the test suite.
+# enable_recovery    = false   # no replica region, replication, inventory, restore role
+# enable_reports     = false   # no reports bucket
+# enable_object_lock = false   # no Object Lock on the lake or the reports bucket
+# enable_guardduty   = false
+# enable_config      = false
+# disposable         = true    # a destroy may empty the buckets; needs the lock off
+
 # --- The Bedrock guardrail (ADR-0050) --------------------------------------------
 # What `cascade eval guardrails` measures the compiled graphs against -- never
 # a filter in the compile path.

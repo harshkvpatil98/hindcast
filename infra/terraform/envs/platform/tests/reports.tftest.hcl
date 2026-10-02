@@ -131,15 +131,23 @@ variables {
   guardduty_min_severity       = 7
   inventory_schedule           = "Weekly"
   # Pinned, so a local terraform.tfvars cannot change what is tested.
-  create_audit_trail            = true
-  create_budget                 = true
-  create_cost_anomaly_detection = true
+  create_audit_trail              = true
+  create_budget                   = true
+  create_cost_anomaly_detection   = true
+  create_service_control_policies = true
+  enable_recovery                 = true
+  enable_reports                  = true
+  enable_object_lock              = true
+  enable_guardduty                = true
+  enable_config                   = true
+  disposable                      = false
   # Shared by the root and the module.
   name                       = "t"
   report_lock_retention_days = 365
   # Module only.
   bucket_suffix = "123456789012-us-east-1"
   kms_key_arn   = "arn:aws:kms:us-east-1:123456789012:key/platform"
+  force_destroy = false
 }
 
 run "the_reports_bucket_is_private_encrypted_versioned_and_locked" {
@@ -281,18 +289,18 @@ run "the_platform_publishes_reports_and_the_trail_records_who_reads_them" {
   command = apply
 
   assert {
-    condition     = endswith(module.reports.uri, "/reports/")
+    condition     = endswith(module.reports[0].uri, "/reports/")
     error_message = "The root exports where reports go, so a sandbox is told rather than guessing."
   }
   assert {
     condition = alltrue([
-      for bucket in [module.reports.bucket, module.recovery.inventory_bucket] :
+      for bucket in [module.reports[0].bucket, module.recovery[0].inventory_bucket] :
       contains(module.audit.controls.data_event_prefixes, "arn:aws:s3:::${bucket}/")
     ])
     error_message = "The reports and inventory buckets carry no S3 access logging on purpose; CloudTrail data events on a locked trail are their access record -- and the only record of the two acts that could withdraw a report."
   }
   assert {
-    condition     = module.reports.publish.prefix == "reports" && module.reports.publish.kms_key_arn == aws_kms_key.platform.arn
+    condition     = module.reports[0].publish.prefix == "reports" && module.reports[0].publish.kms_key_arn == aws_kms_key.platform.arn
     error_message = "`reports_publish` is passed whole to the sandbox, so the two roots cannot spell the prefix differently."
   }
 }
@@ -303,4 +311,45 @@ run "a_sub_daily_inventory_schedule_is_refused" {
     inventory_schedule = "Hourly"
   }
   expect_failures = [var.inventory_schedule]
+}
+
+# --- Without the lock (ADR-0054) -------------------------------------------------------------
+
+run "without_the_lock_the_bucket_is_private_encrypted_and_can_be_emptied" {
+  command = apply
+  module {
+    source = "../../modules/reports"
+  }
+  variables {
+    enable_object_lock = false
+    force_destroy      = true
+  }
+
+  assert {
+    condition     = output.controls.locked == false && output.controls.retention_mode == null && output.controls.retention_days == null && length(aws_s3_bucket_object_lock_configuration.this) == 0
+    error_message = "No lock and no default retention."
+  }
+  assert {
+    condition     = !contains(output.controls.deny_statements, "NoVersionIsEverRemovedAndNoLockIsEverLifted") && length(output.controls.immutability_deny_actions) == 0
+    error_message = "The Deny on removing versions is the lock by another name: left in, nobody could empty the bucket."
+  }
+  assert {
+    condition     = contains(output.controls.deny_statements, "TlsOnly") && alltrue(output.controls.public_blocks) && output.controls.encryption_key == var.kms_key_arn && output.controls.versioning == "Enabled"
+    error_message = "What does not go with the lock: TLS only, nothing public, the CMK, versioning."
+  }
+  assert {
+    condition     = output.controls.force_destroy == true
+    error_message = "A destroy may empty it."
+  }
+}
+
+run "emptying_a_locked_reports_bucket_is_refused" {
+  command = plan
+  module {
+    source = "../../modules/reports"
+  }
+  variables {
+    force_destroy = true
+  }
+  expect_failures = [var.force_destroy]
 }

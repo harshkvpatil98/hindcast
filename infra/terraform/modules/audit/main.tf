@@ -34,6 +34,11 @@
 # role out -- for an account whose trail was made outside Terraform -- and
 # the three statements with them. GuardDuty and Config are unaffected. What
 # goes with the trail is the data-event record: see the variable.
+#
+# `enable_guardduty` and `enable_config` are the same kind of switch for the
+# other two, for a deployment that is a demonstration and not an operated
+# account (ADR-0054). With all three off this module makes nothing, and every
+# output says so with a null rather than with a vacuous `true`.
 
 data "aws_caller_identity" "current" {}
 data "aws_partition" "current" {}
@@ -57,6 +62,9 @@ locals {
   log_group_arn     = "arn:${local.partition}:logs:${local.region}:${local.account}:log-group:${local.log_group_name}"
   trail_bucket_arn  = "arn:${local.partition}:s3:::${local.trail_bucket}"
   config_bucket_arn = "arn:${local.partition}:s3:::${local.config_bucket}"
+
+  # What the trail records object-level access to.
+  data_event_arns = distinct(concat(var.data_event_bucket_arns, var.enable_config ? [local.config_bucket_arn] : []))
 }
 
 # --- The trail's bucket: locked ------------------------------------------------------
@@ -281,23 +289,28 @@ resource "aws_cloudtrail" "this" {
     }
   }
 
-  # The caller's buckets, and always this module's Config bucket: it has no
-  # lock, so the record of who deleted from it has to live somewhere that does.
-  advanced_event_selector {
-    name = "S3 object reads and writes in the named buckets"
-    field_selector {
-      field  = "eventCategory"
-      equals = ["Data"]
-    }
-    field_selector {
-      field  = "resources.type"
-      equals = ["AWS::S3::Object"]
-    }
-    # A prefix match on the object ARN. The trailing slash is what keeps
-    # "cascade-events" from also selecting "cascade-events-archive".
-    field_selector {
-      field       = "resources.ARN"
-      starts_with = [for arn in distinct(concat(var.data_event_bucket_arns, [local.config_bucket_arn])) : "${arn}/"]
+  # The caller's buckets, and this module's Config bucket whenever there is
+  # one: it has no lock, so the record of who deleted from it has to live
+  # somewhere that does. With no bucket to name there is no selector at all --
+  # the provider refuses an empty prefix list, rightly.
+  dynamic "advanced_event_selector" {
+    for_each = length(local.data_event_arns) > 0 ? [1] : []
+    content {
+      name = "S3 object reads and writes in the named buckets"
+      field_selector {
+        field  = "eventCategory"
+        equals = ["Data"]
+      }
+      field_selector {
+        field  = "resources.type"
+        equals = ["AWS::S3::Object"]
+      }
+      # A prefix match on the object ARN. The trailing slash is what keeps
+      # "cascade-events" from also selecting "cascade-events-archive".
+      field_selector {
+        field       = "resources.ARN"
+        starts_with = [for arn in local.data_event_arns : "${arn}/"]
+      }
     }
   }
 
@@ -319,6 +332,8 @@ resource "aws_cloudtrail" "this" {
 
 resource "aws_guardduty_detector" "this" {
   #checkov:skip=CKV2_AWS_3:Organization-wide auto-enable is set from a delegated administrator, and there is no organization yet (ADR-0035): this detector covers the one account that exists.
+  count = var.enable_guardduty ? 1 : 0
+
   enable = true
   # How soon a finding's UPDATES reach EventBridge (a new finding is sent
   # within minutes regardless). Fifteen is the shortest offered and costs
@@ -348,6 +363,8 @@ locals {
 }
 
 resource "aws_cloudwatch_event_rule" "findings" {
+  count = var.enable_guardduty ? 1 : 0
+
   name        = local.findings_rule_name
   description = "GuardDuty findings of severity ${var.guardduty_min_severity} or higher, to the alerts topic"
 
@@ -361,7 +378,9 @@ resource "aws_cloudwatch_event_rule" "findings" {
 }
 
 resource "aws_cloudwatch_event_target" "findings" {
-  rule      = aws_cloudwatch_event_rule.findings.name
+  count = var.enable_guardduty ? 1 : 0
+
+  rule      = aws_cloudwatch_event_rule.findings[0].name
   target_id = "alerts"
   arn       = var.alerts_topic_arn
 
@@ -393,11 +412,13 @@ resource "aws_cloudwatch_event_target" "findings" {
 # topic policy and its KMS statement are the two ways delivery fails, and
 # neither failure is reported anywhere else.
 resource "aws_cloudwatch_metric_alarm" "findings_delivery" {
+  count = var.enable_guardduty ? 1 : 0
+
   alarm_name          = local.delivery_alarm_name
   alarm_description   = "EventBridge matched a GuardDuty finding and could not publish it to the alerts topic (rule ${local.findings_rule_name}). Check the topic policy and the key policy."
   namespace           = "AWS/Events"
   metric_name         = "FailedInvocations"
-  dimensions          = { RuleName = aws_cloudwatch_event_rule.findings.name }
+  dimensions          = { RuleName = aws_cloudwatch_event_rule.findings[0].name }
   statistic           = "Sum"
   period              = 300
   evaluation_periods  = 1
@@ -424,25 +445,33 @@ resource "aws_s3_bucket" "config" {
   #checkov:skip=CKV_AWS_144:The DR runbook replicates tier 0 only; replicating the audit record is a decision for docs/architecture/dr-runbook.md, not a default.
   #checkov:skip=CKV2_AWS_62:Nothing consumes object events from the Config history bucket.
   #checkov:skip=CKV2_AWS_61:No lifecycle rule on purpose: expiry is carried out by S3 itself, so it is the one deleter the bucket policy's deny would not bind.
+  count = var.enable_config ? 1 : 0
+
   bucket = local.config_bucket
 }
 
 resource "aws_s3_bucket_versioning" "config" {
-  bucket = aws_s3_bucket.config.id
+  count = var.enable_config ? 1 : 0
+
+  bucket = aws_s3_bucket.config[0].id
   versioning_configuration {
     status = "Enabled"
   }
 }
 
 resource "aws_s3_bucket_ownership_controls" "config" {
-  bucket = aws_s3_bucket.config.id
+  count = var.enable_config ? 1 : 0
+
+  bucket = aws_s3_bucket.config[0].id
   rule {
     object_ownership = "BucketOwnerEnforced"
   }
 }
 
 resource "aws_s3_bucket_public_access_block" "config" {
-  bucket                  = aws_s3_bucket.config.id
+  count = var.enable_config ? 1 : 0
+
+  bucket                  = aws_s3_bucket.config[0].id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -450,7 +479,9 @@ resource "aws_s3_bucket_public_access_block" "config" {
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "config" {
-  bucket = aws_s3_bucket.config.id
+  count = var.enable_config ? 1 : 0
+
+  bucket = aws_s3_bucket.config[0].id
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm     = "aws:kms"
@@ -492,7 +523,9 @@ data "aws_iam_policy_document" "config_bucket" {
 }
 
 resource "aws_s3_bucket_policy" "config" {
-  bucket     = aws_s3_bucket.config.id
+  count = var.enable_config ? 1 : 0
+
+  bucket     = aws_s3_bucket.config[0].id
   policy     = data.aws_iam_policy_document.config_bucket.json
   depends_on = [aws_s3_bucket_public_access_block.config]
 }
@@ -514,13 +547,17 @@ data "aws_iam_policy_document" "config_assume" {
 }
 
 resource "aws_iam_role" "config" {
+  count = var.enable_config ? 1 : 0
+
   name               = "${var.name}-audit-config"
   description        = "AWS Config: read resource configurations, deliver history to its bucket"
   assume_role_policy = data.aws_iam_policy_document.config_assume.json
 }
 
 resource "aws_iam_role_policy_attachment" "config" {
-  role       = aws_iam_role.config.name
+  count = var.enable_config ? 1 : 0
+
+  role       = aws_iam_role.config[0].name
   policy_arn = "arn:${local.partition}:iam::aws:policy/service-role/AWS_ConfigRole"
 }
 
@@ -528,6 +565,10 @@ resource "aws_iam_role_policy_attachment" "config" {
 # account Config delivers as this role, so the role is where delivery is
 # granted -- and the bucket policy needs no service principal at all.
 data "aws_iam_policy_document" "config_delivery" {
+  # Counted with the role it is for: it names the caller's key, so left
+  # uncounted it would be read at apply for a recorder that is not there.
+  count = var.enable_config ? 1 : 0
+
   statement {
     sid       = "FindTheBucket"
     actions   = ["s3:GetBucketAcl", "s3:ListBucket"]
@@ -546,14 +587,18 @@ data "aws_iam_policy_document" "config_delivery" {
 }
 
 resource "aws_iam_role_policy" "config_delivery" {
+  count = var.enable_config ? 1 : 0
+
   name   = "deliver-history"
-  role   = aws_iam_role.config.id
-  policy = data.aws_iam_policy_document.config_delivery.json
+  role   = aws_iam_role.config[0].id
+  policy = data.aws_iam_policy_document.config_delivery[0].json
 }
 
 resource "aws_config_configuration_recorder" "this" {
+  count = var.enable_config ? 1 : 0
+
   name     = var.name
-  role_arn = aws_iam_role.config.arn
+  role_arn = aws_iam_role.config[0].arn
 
   # Everything, including types AWS adds later, and the global ones (IAM): a
   # recorder that lists its types is silent about whatever the list forgot.
@@ -564,8 +609,10 @@ resource "aws_config_configuration_recorder" "this" {
 }
 
 resource "aws_config_delivery_channel" "this" {
+  count = var.enable_config ? 1 : 0
+
   name           = var.name
-  s3_bucket_name = aws_s3_bucket.config.bucket
+  s3_bucket_name = aws_s3_bucket.config[0].bucket
   s3_kms_key_arn = var.kms_key_arn
 
   # Config writes a test object when the channel is created.
@@ -578,7 +625,9 @@ resource "aws_config_delivery_channel" "this" {
 
 # A recorder is created stopped, and cannot start without a channel.
 resource "aws_config_configuration_recorder_status" "this" {
-  name       = aws_config_configuration_recorder.this.name
+  count = var.enable_config ? 1 : 0
+
+  name       = aws_config_configuration_recorder.this[0].name
   is_enabled = true
   depends_on = [aws_config_delivery_channel.this]
 }
@@ -591,38 +640,44 @@ resource "aws_config_configuration_recorder_status" "this" {
 # an EventBridge rule -- and are merged by the root the way the key-policy
 # statements below are. Depends on names, never on the topic.
 data "aws_iam_policy_document" "required_topic_policy" {
-  statement {
-    sid       = "GuardDutyFindingsRulePublishes"
-    actions   = ["sns:Publish"]
-    resources = [var.alerts_topic_arn]
-    principals {
-      type        = "Service"
-      identifiers = ["events.amazonaws.com"]
-    }
-    condition {
-      test     = "ArnEquals"
-      variable = "aws:SourceArn"
-      values   = [local.findings_rule_arn]
+  dynamic "statement" {
+    for_each = var.enable_guardduty ? [1] : []
+    content {
+      sid       = "GuardDutyFindingsRulePublishes"
+      actions   = ["sns:Publish"]
+      resources = [var.alerts_topic_arn]
+      principals {
+        type        = "Service"
+        identifiers = ["events.amazonaws.com"]
+      }
+      condition {
+        test     = "ArnEquals"
+        variable = "aws:SourceArn"
+        values   = [local.findings_rule_arn]
+      }
     }
   }
 
-  statement {
-    sid       = "GuardDutyDeliveryAlarmPublishes"
-    actions   = ["sns:Publish"]
-    resources = [var.alerts_topic_arn]
-    principals {
-      type        = "Service"
-      identifiers = ["cloudwatch.amazonaws.com"]
-    }
-    condition {
-      test     = "ArnEquals"
-      variable = "aws:SourceArn"
-      values   = [local.delivery_alarm_arn]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "aws:SourceAccount"
-      values   = [local.account]
+  dynamic "statement" {
+    for_each = var.enable_guardduty ? [1] : []
+    content {
+      sid       = "GuardDutyDeliveryAlarmPublishes"
+      actions   = ["sns:Publish"]
+      resources = [var.alerts_topic_arn]
+      principals {
+        type        = "Service"
+        identifiers = ["cloudwatch.amazonaws.com"]
+      }
+      condition {
+        test     = "ArnEquals"
+        variable = "aws:SourceArn"
+        values   = [local.delivery_alarm_arn]
+      }
+      condition {
+        test     = "StringEquals"
+        variable = "aws:SourceAccount"
+        values   = [local.account]
+      }
     }
   }
 }

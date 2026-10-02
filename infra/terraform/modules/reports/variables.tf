@@ -68,3 +68,27 @@ variable "simulation_principal_arns" {
   type        = list(string)
   default     = []
 }
+
+variable "enable_object_lock" {
+  description = <<-EOT
+    Object Lock on the reports bucket, with `report_lock_retention_days`, and
+    the bucket-policy Deny on lifting it. On by default: a published report is
+    the study's claim. Off for a deployment that publishes nothing it will be
+    held to (ADR-0054); `report_lock_retention_days` is then read by nothing.
+    The provider treats the bucket's lock setting as immutable, so changing
+    this later replaces the bucket.
+  EOT
+  type        = bool
+  default     = true
+}
+
+variable "force_destroy" {
+  description = "Let `terraform destroy` empty the reports bucket, every version included. Refused while Object Lock is on."
+  type        = bool
+  default     = false
+
+  validation {
+    condition     = !(var.force_destroy && var.enable_object_lock)
+    error_message = "force_destroy needs enable_object_lock = false: Object Lock exists to make exactly that deletion fail."
+  }
+}

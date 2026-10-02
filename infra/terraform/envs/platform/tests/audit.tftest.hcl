@@ -139,7 +139,9 @@ variables {
   alerts_topic_arn       = "arn:aws:sns:us-east-1:123456789012:t-cost-alerts"
   guardduty_min_severity = 7
   # Pinned, so a local terraform.tfvars cannot change what is tested.
-  create_trail = true
+  create_trail     = true
+  enable_guardduty = true
+  enable_config    = true
 }
 
 run "the_trail_covers_every_region_and_proves_its_own_integrity" {
@@ -414,7 +416,7 @@ run "guardduty_is_on" {
   }
 
   assert {
-    condition     = aws_guardduty_detector.this.enable
+    condition     = aws_guardduty_detector.this[0].enable
     error_message = "A detector that exists and is disabled satisfies the SCP and detects nothing."
   }
 }
@@ -426,23 +428,23 @@ run "config_records_everything_and_is_actually_recording" {
   }
 
   assert {
-    condition     = one(aws_config_configuration_recorder.this.recording_group).all_supported
+    condition     = one(aws_config_configuration_recorder.this[0].recording_group).all_supported
     error_message = "The recorder must record every supported type, including ones AWS adds later."
   }
   assert {
-    condition     = one(aws_config_configuration_recorder.this.recording_group).include_global_resource_types
+    condition     = one(aws_config_configuration_recorder.this[0].recording_group).include_global_resource_types
     error_message = "Global types are IAM: the recorder must include them."
   }
   assert {
-    condition     = aws_config_configuration_recorder_status.this.is_enabled
+    condition     = aws_config_configuration_recorder_status.this[0].is_enabled
     error_message = "A recorder is created stopped; it must be started."
   }
   assert {
-    condition     = aws_config_delivery_channel.this.s3_kms_key_arn == var.kms_key_arn
+    condition     = aws_config_delivery_channel.this[0].s3_kms_key_arn == var.kms_key_arn
     error_message = "Config history must be encrypted with the CMK."
   }
   assert {
-    condition     = aws_iam_role_policy_attachment.config.policy_arn == "arn:aws:iam::aws:policy/service-role/AWS_ConfigRole"
+    condition     = aws_iam_role_policy_attachment.config[0].policy_arn == "arn:aws:iam::aws:policy/service-role/AWS_ConfigRole"
     error_message = "The recorder reads configurations through AWS's managed policy."
   }
   assert {
@@ -461,15 +463,15 @@ run "config_history_has_its_own_bucket_because_config_cannot_write_to_a_locked_o
   }
 
   assert {
-    condition     = aws_config_delivery_channel.this.s3_bucket_name == "t-audit-config-123456789012-us-east-1"
+    condition     = aws_config_delivery_channel.this[0].s3_bucket_name == "t-audit-config-123456789012-us-east-1"
     error_message = "AWS Config does not support delivery to a bucket with a default Object Lock retention: the channel must not point at the trail's bucket."
   }
   assert {
-    condition     = aws_s3_bucket.config.object_lock_enabled != true
+    condition     = aws_s3_bucket.config[0].object_lock_enabled != true
     error_message = "The Config bucket must stay deliverable: no Object Lock."
   }
   assert {
-    condition     = one(aws_s3_bucket_versioning.config.versioning_configuration).status == "Enabled"
+    condition     = one(aws_s3_bucket_versioning.config[0].versioning_configuration).status == "Enabled"
     error_message = "Without a lock, versioning is what keeps an overwritten or deleted history file."
   }
   assert {
@@ -481,21 +483,21 @@ run "config_history_has_its_own_bucket_because_config_cannot_write_to_a_locked_o
     error_message = "Permanent deletion of a history version must be denied to everyone, unconditionally."
   }
   assert {
-    condition     = one(one(aws_s3_bucket_server_side_encryption_configuration.config.rule).apply_server_side_encryption_by_default).kms_master_key_id == var.kms_key_arn
+    condition     = one(one(aws_s3_bucket_server_side_encryption_configuration.config[0].rule).apply_server_side_encryption_by_default).kms_master_key_id == var.kms_key_arn
     error_message = "The Config bucket must default to the CMK."
   }
   assert {
     condition = alltrue([
-      aws_s3_bucket_public_access_block.config.block_public_acls,
-      aws_s3_bucket_public_access_block.config.block_public_policy,
-      aws_s3_bucket_public_access_block.config.ignore_public_acls,
-      aws_s3_bucket_public_access_block.config.restrict_public_buckets,
+      aws_s3_bucket_public_access_block.config[0].block_public_acls,
+      aws_s3_bucket_public_access_block.config[0].block_public_policy,
+      aws_s3_bucket_public_access_block.config[0].ignore_public_acls,
+      aws_s3_bucket_public_access_block.config[0].restrict_public_buckets,
     ])
     error_message = "Every public-access block must be on."
   }
   assert {
     condition = length([
-      for s in data.aws_iam_policy_document.config_delivery.statement : s
+      for s in data.aws_iam_policy_document.config_delivery[0].statement : s
       if contains(s.resources, "*")
     ]) == 0
     error_message = "Every allow in the delivery policy must name its resources."
@@ -648,23 +650,23 @@ run "findings_at_or_above_the_threshold_go_to_the_alerts_topic" {
   }
 
   assert {
-    condition     = tolist(jsondecode(aws_cloudwatch_event_rule.findings.event_pattern).source) == tolist(["aws.guardduty"]) && tolist(jsondecode(aws_cloudwatch_event_rule.findings.event_pattern)["detail-type"]) == tolist(["GuardDuty Finding"])
+    condition     = tolist(jsondecode(aws_cloudwatch_event_rule.findings[0].event_pattern).source) == tolist(["aws.guardduty"]) && tolist(jsondecode(aws_cloudwatch_event_rule.findings[0].event_pattern)["detail-type"]) == tolist(["GuardDuty Finding"])
     error_message = "The rule matches GuardDuty findings and nothing else."
   }
   assert {
-    condition     = tolist(jsondecode(aws_cloudwatch_event_rule.findings.event_pattern).detail.severity[0].numeric) == tolist([">=", 7])
+    condition     = tolist(jsondecode(aws_cloudwatch_event_rule.findings[0].event_pattern).detail.severity[0].numeric) == tolist([">=", 7])
     error_message = "At or above the caller's threshold: a numeric >= match, not a list of severities somebody typed."
   }
   assert {
-    condition     = aws_cloudwatch_event_target.findings.arn == var.alerts_topic_arn
+    condition     = aws_cloudwatch_event_target.findings[0].arn == var.alerts_topic_arn
     error_message = "The target is the alerts topic."
   }
   assert {
-    condition     = length(aws_cloudwatch_event_target.findings.input_transformer) == 1 && strcontains(one(aws_cloudwatch_event_target.findings.input_transformer).input_template, "<severity>") && strcontains(one(aws_cloudwatch_event_target.findings.input_transformer).input_template, "<id>")
+    condition     = length(aws_cloudwatch_event_target.findings[0].input_transformer) == 1 && strcontains(one(aws_cloudwatch_event_target.findings[0].input_transformer).input_template, "<severity>") && strcontains(one(aws_cloudwatch_event_target.findings[0].input_transformer).input_template, "<id>")
     error_message = "The message names the severity and the finding id, so a person can act on it without the console."
   }
   assert {
-    condition     = aws_guardduty_detector.this.finding_publishing_frequency == "FIFTEEN_MINUTES"
+    condition     = aws_guardduty_detector.this[0].finding_publishing_frequency == "FIFTEEN_MINUTES"
     error_message = "Updates to a finding reach EventBridge at the shortest interval GuardDuty offers."
   }
 }
@@ -679,7 +681,7 @@ run "the_threshold_follows_the_caller" {
   }
 
   assert {
-    condition     = tolist(jsondecode(aws_cloudwatch_event_rule.findings.event_pattern).detail.severity[0].numeric) == tolist([">=", 4])
+    condition     = tolist(jsondecode(aws_cloudwatch_event_rule.findings[0].event_pattern).detail.severity[0].numeric) == tolist([">=", 4])
     error_message = "The pattern must be built from the variable, not restated."
   }
 }
@@ -720,15 +722,15 @@ run "a_rule_that_cannot_deliver_alarms" {
   }
 
   assert {
-    condition     = aws_cloudwatch_metric_alarm.findings_delivery.metric_name == "FailedInvocations" && aws_cloudwatch_metric_alarm.findings_delivery.namespace == "AWS/Events"
+    condition     = aws_cloudwatch_metric_alarm.findings_delivery[0].metric_name == "FailedInvocations" && aws_cloudwatch_metric_alarm.findings_delivery[0].namespace == "AWS/Events"
     error_message = "A matched finding that EventBridge could not publish is the failure that would otherwise be silent."
   }
   assert {
-    condition     = aws_cloudwatch_metric_alarm.findings_delivery.dimensions.RuleName == aws_cloudwatch_event_rule.findings.name
+    condition     = aws_cloudwatch_metric_alarm.findings_delivery[0].dimensions.RuleName == aws_cloudwatch_event_rule.findings[0].name
     error_message = "For this rule."
   }
   assert {
-    condition     = tolist(aws_cloudwatch_metric_alarm.findings_delivery.alarm_actions) == tolist([var.alerts_topic_arn]) && aws_cloudwatch_metric_alarm.findings_delivery.threshold == 1
+    condition     = tolist(aws_cloudwatch_metric_alarm.findings_delivery[0].alarm_actions) == tolist([var.alerts_topic_arn]) && aws_cloudwatch_metric_alarm.findings_delivery[0].threshold == 1
     error_message = "One failed invocation alerts."
   }
 }
@@ -801,5 +803,86 @@ run "with_the_trail_on_the_key_policy_carries_its_three_statements" {
   assert {
     condition     = output.controls.trail_created && toset(output.controls.key_policy_statement_ids) == toset(["CloudTrailEncryptsTheTrail", "CloudTrailDescribesTheKey", "CloudWatchLogsEncryptsTheTrailGroup"])
     error_message = "The default is the trail, with the three key statements it needs."
+  }
+}
+
+# --- A deployment nobody operates (ADR-0054) ----------------------------------------------
+
+run "without_guardduty_there_is_no_detector_no_rule_and_no_grant_on_the_topic" {
+  command = apply
+  module {
+    source = "../../modules/audit"
+  }
+  variables {
+    enable_guardduty = false
+  }
+
+  assert {
+    condition     = length(aws_guardduty_detector.this) == 0 && length(aws_cloudwatch_event_rule.findings) == 0 && length(aws_cloudwatch_event_target.findings) == 0 && length(aws_cloudwatch_metric_alarm.findings_delivery) == 0
+    error_message = "With GuardDuty off there is no detector and nothing that routes its findings."
+  }
+  assert {
+    condition     = output.detector_id == null && !output.controls.guardduty_created && output.controls.guardduty_enabled == null && output.controls.findings_pattern == null && output.controls.findings_delivery_alarm == null
+    error_message = "The outputs say 'not ours' with nulls."
+  }
+  assert {
+    condition     = length(output.controls.topic_allow_source_arns) == 0 && length(output.controls.topic_allow_resources) == 0
+    error_message = "A publish grant for a rule name nobody created is a grant to whoever creates it."
+  }
+  assert {
+    condition     = output.controls.trail_created && output.controls.config_created && output.controls.config_recording
+    error_message = "The trail and Config do not go with GuardDuty."
+  }
+}
+
+run "without_config_there_is_no_recorder_no_bucket_and_no_selector_for_one" {
+  command = apply
+  module {
+    source = "../../modules/audit"
+  }
+  variables {
+    enable_config = false
+  }
+
+  assert {
+    condition     = length(aws_config_configuration_recorder.this) == 0 && length(aws_config_delivery_channel.this) == 0 && length(aws_config_configuration_recorder_status.this) == 0 && length(aws_s3_bucket.config) == 0 && length(aws_s3_bucket_policy.config) == 0 && length(aws_iam_role.config) == 0 && length(aws_iam_role_policy.config_delivery) == 0 && length(aws_iam_role_policy_attachment.config) == 0
+    error_message = "With Config off there is no recorder, channel, role or history bucket."
+  }
+  assert {
+    condition     = output.config_bucket == null && !output.controls.config_created && output.controls.config_recording == null && output.controls.config_records_all_types == null && length(output.controls.config_bucket_deny_sids) == 0
+    error_message = "The outputs say 'not ours' with nulls, and claim no bucket policy that was never attached."
+  }
+  assert {
+    condition     = length(output.controls.data_event_prefixes) == 0
+    error_message = "The trail always records the Config bucket; with no such bucket it must not carry a selector for the name."
+  }
+  assert {
+    condition     = output.controls.trail_created && output.controls.guardduty_created && output.controls.buckets_private
+    error_message = "The trail and GuardDuty do not go with Config."
+  }
+}
+
+run "with_all_three_off_the_module_makes_nothing_and_claims_nothing" {
+  command = apply
+  module {
+    source = "../../modules/audit"
+  }
+  variables {
+    create_trail     = false
+    enable_guardduty = false
+    enable_config    = false
+  }
+
+  assert {
+    condition     = !output.controls.trail_created && !output.controls.guardduty_created && !output.controls.config_created && output.trail_arn == null && output.detector_id == null && output.config_bucket == null
+    error_message = "Nothing is made."
+  }
+  assert {
+    condition     = output.controls.buckets_private == null
+    error_message = "'Every bucket is private' over no buckets is vacuously true; the output must be null instead."
+  }
+  assert {
+    condition     = length(output.controls.key_policy_statement_ids) == 0 && length(output.controls.topic_allow_source_arns) == 0
+    error_message = "No grant on the caller's key or topic survives the things it was for."
   }
 }

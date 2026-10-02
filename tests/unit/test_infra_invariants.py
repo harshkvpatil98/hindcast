@@ -186,7 +186,52 @@ CREATING_BY_DEFAULT = [
     ("envs/platform/main.tf", "create_budget"),
     ("envs/platform/main.tf", "create_cost_anomaly_detection"),
     ("envs/platform/main.tf", "create_service_control_policies"),
+    # ADR-0054: the production tiers. The defaults are the platform as
+    # designed; a demonstration turns them off in its own tfvars, by name.
+    ("modules/audit/variables.tf", "enable_guardduty"),
+    ("modules/audit/variables.tf", "enable_config"),
+    ("modules/eventlake/variables.tf", "enable_object_lock"),
+    ("modules/reports/variables.tf", "enable_object_lock"),
+    ("envs/platform/main.tf", "enable_recovery"),
+    ("envs/platform/main.tf", "enable_reports"),
+    ("envs/platform/main.tf", "enable_object_lock"),
+    ("envs/platform/main.tf", "enable_guardduty"),
+    ("envs/platform/main.tf", "enable_config"),
 ]
+
+# The reverse: what makes a bucket emptiable is asked for, never the default.
+EMPTIABLE_ONLY_WHEN_ASKED = [
+    ("modules/eventlake/variables.tf", "force_destroy"),
+    ("modules/reports/variables.tf", "force_destroy"),
+    ("envs/platform/main.tf", "disposable"),
+]
+
+# ADR-0054's demonstration profile, as the file must spell it. The tier
+# switches are the decision; the four `create_*` lines are facts about the
+# owner's account. A profile that quietly turned a production tier back on
+# would deploy locked buckets and a second region under the name "minimal".
+PORTFOLIO_PROFILE = TERRAFORM / "envs" / "platform" / "portfolio.tfvars"
+PORTFOLIO_SWITCHES = {
+    "enable_recovery": "false",
+    "enable_reports": "false",
+    "enable_object_lock": "false",
+    "enable_guardduty": "false",
+    "enable_config": "false",
+    "disposable": "true",
+    "create_audit_trail": "false",
+    "create_budget": "false",
+    "create_cost_anomaly_detection": "false",
+    "create_service_control_policies": "false",
+}
+
+
+def _tfvars_assignments(path: Path) -> dict[str, str]:
+    found = {}
+    for _, line in code_lines(path):
+        match = re.match(r"^(\w+)\s*=\s*(.+?)\s*$", line)
+        if match:
+            found[match.group(1)] = match.group(2)
+    return found
 
 
 @pytest.mark.parametrize(("source", "switch"), CREATING_BY_DEFAULT)
@@ -199,6 +244,50 @@ def test_a_switch_for_an_existing_account_service_defaults_to_creating(
     assert re.search(
         r"^  default\s*=\s*true\s*$", body, flags=re.MULTILINE
     ), f"{source}: variable {switch!r} must default to true"
+
+
+@pytest.mark.parametrize(("source", "switch"), EMPTIABLE_ONLY_WHEN_ASKED)
+def test_a_bucket_is_emptiable_only_when_asked(source: str, switch: str) -> None:
+    """`terraform destroy` removing every version of the event log is opted into, by name."""
+    text = (TERRAFORM / source).read_text(encoding="utf-8")
+    body = _block_body(text, rf'variable\s+"{switch}"\s*\{{')
+    assert re.search(
+        r"^  default\s*=\s*false\s*$", body, flags=re.MULTILINE
+    ), f"{source}: variable {switch!r} must default to false"
+    assert (
+        "enable_object_lock" in body
+    ), f"{source}: variable {switch!r} must be refused while Object Lock is on"
+
+
+def test_the_portfolio_profile_turns_every_production_tier_off() -> None:
+    """ADR-0054: the committed profile is the minimal deployment, switch by switch."""
+    assigned = _tfvars_assignments(PORTFOLIO_PROFILE)
+    wrong = {
+        name: assigned.get(name)
+        for name, value in PORTFOLIO_SWITCHES.items()
+        if assigned.get(name) != value
+    }
+    assert not wrong, f"portfolio.tfvars departs from the profile: {wrong}"
+    # The existing guardrail stays outside Terraform: naming it here would
+    # plan a second one, or an import nobody asked for.
+    assert "model_guardrail" not in assigned
+    assert "publish_guardrail_version" not in assigned
+
+
+def test_the_portfolio_profile_sets_only_variables_the_root_declares() -> None:
+    """An undeclared name in a tfvars file is a warning Terraform prints once and a switch that reaches nothing."""
+    root = (TERRAFORM / "envs" / "platform" / "main.tf").read_text(encoding="utf-8")
+    declared = {name for name, _ in _variable_bodies(root)}
+    assigned = set(_tfvars_assignments(PORTFOLIO_PROFILE))
+    assert (
+        assigned <= declared
+    ), f"not variables of the platform root: {sorted(assigned - declared)}"
+    required = {
+        name
+        for name, body in _variable_bodies(root)
+        if not re.search(r"^  default\s*=", body, flags=re.MULTILINE)
+    }
+    assert required <= assigned, f"the profile cannot plan without: {sorted(required - assigned)}"
 
 
 def test_the_region_is_never_defaulted() -> None:

@@ -9,6 +9,24 @@ package index.
 
 ---
 
+## After M17 — A portfolio deployment profile
+
+The platform root planned 74 resources against the owner's account. The owner
+asked for a minimal live deployment that proves the architecture, with the
+production-grade modules kept
+([ADR-0054](docs/adr/0054-a-portfolio-deployment-profile.md)).
+
+- **Switches for what an account already has**: `create_audit_trail`,
+  `create_budget`, `create_cost_anomaly_detection`, each true by default.
+- **The production tiers are switches too**: `enable_recovery`,
+  `enable_reports`, `enable_object_lock`, `enable_guardduty`, `enable_config`,
+  each true by default, and `disposable`, false by default and refused while
+  Object Lock is on.
+- **`infra/terraform/envs/platform/portfolio.tfvars`** turns the tiers off:
+  **21 resources** in one region -- the CMK, the event lake, the alerts topic.
+  0 to change, 0 to destroy. Nothing has been applied.
+- Not yet proven: a query. Nothing exports the event log to the lake.
+
 ## M17 — Portfolio completion
 
 The project owner changed the objective on 2026-09-30: finish Cascade as an

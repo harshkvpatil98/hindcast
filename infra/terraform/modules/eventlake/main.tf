@@ -8,6 +8,11 @@
 # every delete and every lock override. Either alone would do; both means a
 # single misconfiguration cannot make the log mutable.
 #
+# `enable_object_lock = false` gives up the first of the two, for a deployment
+# that demonstrates the lake rather than holds the study's record (ADR-0054):
+# the writer's Deny stays, the bucket can be emptied, and nothing here then
+# claims the log is immutable. The source of truth is still Postgres.
+#
 # Resolution labels never come here. The lake holds what the simulation did,
 # not what happened in the world, so invariant 2 -- the simulation never reads
 # the labels -- needs no rule in this module: there is nothing to read.
@@ -38,7 +43,8 @@ resource "aws_s3_bucket" "events" {
   #checkov:skip=CKV2_AWS_62:Nothing consumes object events from the lake.
   #checkov:skip=CKV2_AWS_61:No lifecycle rule on purpose: objects here are under Object Lock, and an expiry rule is a standing attempt to delete them.
   bucket              = "${var.name}-events-${var.bucket_suffix}"
-  object_lock_enabled = true
+  object_lock_enabled = var.enable_object_lock
+  force_destroy       = var.force_destroy
 }
 
 resource "aws_s3_bucket_versioning" "events" {
@@ -49,6 +55,8 @@ resource "aws_s3_bucket_versioning" "events" {
 }
 
 resource "aws_s3_bucket_object_lock_configuration" "events" {
+  count = var.enable_object_lock ? 1 : 0
+
   bucket = aws_s3_bucket.events.id
   rule {
     default_retention {

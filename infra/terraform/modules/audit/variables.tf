@@ -97,3 +97,26 @@ variable "create_trail" {
   type        = bool
   default     = true
 }
+
+variable "enable_guardduty" {
+  description = <<-EOT
+    Create the GuardDuty detector, the rule that sends findings to the alerts
+    topic, and the alarm on failed delivery. Off for a deployment nobody
+    operates: a detector bills on event volume after its trial, and a finding
+    with no reader is not a control (ADR-0054).
+  EOT
+  type        = bool
+  default     = true
+}
+
+variable "enable_config" {
+  description = <<-EOT
+    Create the AWS Config recorder, its delivery channel, its role and its
+    history bucket. Off for a deployment nobody operates: Config bills per
+    recorded configuration item, and its bucket denies permanent deletion to
+    everyone, so it is the one bucket here that a destroy cannot empty without
+    first editing its policy (ADR-0054).
+  EOT
+  type        = bool
+  default     = true
+}
