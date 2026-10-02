@@ -2593,3 +2593,20 @@ Operational notes: `make infra-check` must be run on a copy of the tree while
 `envs/platform` is initialised against the real backend -- it re-initialises
 each root with `-backend=false`; and the account id is deliberately absent
 from every committed file, since the repository is public.
+
+**Presentation pass (2026-10-02).** The README was rewritten to lead with what
+is built, deployed and verified, at the owner's request. Nothing measured was
+dropped: the full table of measured values, the study result and the
+boundaries that the old README carried under "Limitations" now live in
+`docs/RESULTS.md`, and the README's "Current validated scope" states the study
+result in one sentence and links there. New: `docs/ARCHITECTURE.md`,
+`docs/DEMO.md`, `docs/evidence/` (nine sanitized captures, each a `.txt` and an
+`.svg` rendering of it) and `docs/assets/` (the architecture diagram and a
+banner). The front-page metrics were re-measured that day: 2,533 offline
+tests; 131 and 62 Terraform tests; Checkov 1,027 passed, 0 failed; 21 managed
+resources in state and no drift; the smoke test's 3 rows and 953 bytes; 25 of
+25 replays; and, from the database, 360 study runs with 66,231 model calls and
+a development-partition Brier of 0.219709. The front page still states that
+inference runs through the local CLI, that the lake holds synthetic events
+only, and that the production tiers are in the Terraform and not deployed.
+

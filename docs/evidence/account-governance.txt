@@ -1,0 +1,19 @@
+# Made in the account before Terraform, read here, and left exactly as they were.
+
+$ aws cloudtrail describe-trails | get-trail-status
+  cascade-audit-trail        multi-region: true, logging: true
+$ aws budgets describe-budgets
+  cascade budget             $10 monthly
+$ aws ce get-anomaly-monitors
+  Default-Services-Monitor   dimensional, by service
+$ aws bedrock get-guardrail --guardrail-version 1
+  cascade-audit-guardrail    version 1, READY
+                             filters: HATE, INSULTS, MISCONDUCT, PROMPT_ATTACK, SEXUAL, VIOLENCE
+$ aws bedrock get-foundation-model --model-identifier amazon.rerank-v1:0
+  Rerank 1.0                 ACTIVE in us-west-2
+
+$ cascade aws check       # three control-plane reads; invokes nothing, spends nothing
+OK  region      us-west-2
+OK  identity    account <account-id>, principal user/cascade-admin
+OK  guardrail   cascade-audit-guardrail, version 1, status READY
+OK  rerank      local reranker active; Bedrock Rerank is the opt-in overlay

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="834" height="507" viewBox="0 0 834 507" role="img" aria-label="Determinism and provenance - 25/25 replays, a full causal chain">
+<rect width="834" height="507" rx="10" fill="#0d1117"/>
+<rect width="834" height="34" rx="10" fill="#161b22"/>
+<rect y="24" width="834" height="10" fill="#161b22"/>
+<circle cx="20" cy="17" r="5.5" fill="#ff5f56"/><circle cx="38" cy="17" r="5.5" fill="#ffbd2e"/><circle cx="56" cy="17" r="5.5" fill="#27c93f"/>
+<text x="417.0" y="22" text-anchor="middle" fill="#8b949e" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5">Determinism and provenance - 25/25 replays, a full causal chain</text>
+<g font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace" font-size="13" fill="#c9d1d9" xml:space="preserve">
+<text x="18" y="56" xml:space="preserve" style="white-space:pre"><tspan fill="#79c0ff">$ cascade trace replay --runs 25 --policy heuristic</tspan>   <tspan fill="#8b949e"># each run in a fresh interpreter, new hash seed</tspan></text>
+<text x="18" y="75" xml:space="preserve" style="white-space:pre">runs replayed               25</text>
+<text x="18" y="94" xml:space="preserve" style="white-space:pre">byte-identical event log    <tspan fill="#3fb950">25/25</tspan></text>
+<text x="18" y="113" xml:space="preserve" style="white-space:pre">diverged                    0</text>
+<text x="18" y="132" xml:space="preserve" style="white-space:pre">elapsed                     5.4s</text>
+<text x="18" y="151" xml:space="preserve" style="white-space:pre"><tspan fill="#3fb950">every replayed run reproduced its stored event log</tspan></text>
+<text x="18" y="170" xml:space="preserve" style="white-space:pre"></text>
+<text x="18" y="189" xml:space="preserve" style="white-space:pre"><tspan fill="#79c0ff">$ cascade trace explain</tspan>                              <tspan fill="#8b949e"># one outcome, walked back to its root cause</tspan></text>
+<text x="18" y="208" xml:space="preserve" style="white-space:pre"><tspan fill="#f0f6fc">outcome_score 0.53  &lt;- factor &#x27;momentum&#x27; moved last at step 23</tspan></text>
+<text x="18" y="227" xml:space="preserve" style="white-space:pre">  d0  step 23  actor=panelist_forecaster      COMMIT    +0.0007 on momentum</text>
+<text x="18" y="246" xml:space="preserve" style="white-space:pre">  d1  step 19  actor=panelist_advocate        COMMIT    +0.0007 on momentum</text>
+<text x="18" y="265" xml:space="preserve" style="white-space:pre">  d2  step 16  actor=panelist_advocate        COMMIT    +0.0008 on momentum</text>
+<text x="18" y="284" xml:space="preserve" style="white-space:pre">  d3  step 15  actor=panelist_contrarian      COMMIT    -0.0012 on momentum</text>
+<text x="18" y="303" xml:space="preserve" style="white-space:pre">  d4  step 13  actor=panelist_devils_advocate COMMIT    -0.0009 on resistance</text>
+<text x="18" y="322" xml:space="preserve" style="white-space:pre">  d5  step 11  actor=panelist_contrarian      COMMIT    -0.0014 on momentum</text>
+<text x="18" y="341" xml:space="preserve" style="white-space:pre">  d6  step  9  actor=panelist_contrarian      COMMIT    -0.0020 on momentum</text>
+<text x="18" y="360" xml:space="preserve" style="white-space:pre">  d7  step  7  actor=panelist_devils_advocate COMMIT    -0.0022 on resistance</text>
+<text x="18" y="379" xml:space="preserve" style="white-space:pre">  d8  step  5  actor=panelist_devils_advocate COMMIT    -0.0028 on resistance</text>
+<text x="18" y="398" xml:space="preserve" style="white-space:pre">  d9  step  3  actor=panelist_devils_advocate COMMIT    -0.0038 on resistance</text>
+<text x="18" y="417" xml:space="preserve" style="white-space:pre">  d10 step  1  actor=panelist_contrarian      COMMIT    -0.0079 on momentum</text>
+<text x="18" y="436" xml:space="preserve" style="white-space:pre">  d11 step  0  actor=panelist_forecaster      COMMIT    +0.0061 on momentum</text>
+<text x="18" y="455" xml:space="preserve" style="white-space:pre"><tspan fill="#3fb950">  root  step  0  exogenous shock on &#x27;resistance&#x27; +0.04</tspan></text>
+<text x="18" y="474" xml:space="preserve" style="white-space:pre"><tspan fill="#f0f6fc">complete chain: 12 decision(s) to an exogenous shock at step 0</tspan></text>
+</g></svg>

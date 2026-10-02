@@ -1,0 +1,8 @@
+$ make infra-check     # Terraform 1.16.3, TFLint 0.64.0, Checkov 3.3.19 - offline, no account
+terraform fmt        clean
+terraform validate   3 of 3 roots valid   bootstrap, sandbox, platform
+terraform test       62 passed, 0 failed    envs/sandbox, mock providers
+terraform test       131 passed, 0 failed   envs/platform, mock providers
+tflint               clean                 AWS ruleset 0.48.0, 3 roots and 15 modules
+checkov              1,027 passed, 0 failed, 73 skipped - every skip justified in place
+dockerfile           no warnings

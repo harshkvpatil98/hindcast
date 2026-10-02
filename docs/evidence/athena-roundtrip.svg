@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="756" height="507" viewBox="0 0 756 507" role="img" aria-label="Athena round trip - 3 rows written, 3 rows returned">
+<rect width="756" height="507" rx="10" fill="#0d1117"/>
+<rect width="756" height="34" rx="10" fill="#161b22"/>
+<rect y="24" width="756" height="10" fill="#161b22"/>
+<circle cx="20" cy="17" r="5.5" fill="#ff5f56"/><circle cx="38" cy="17" r="5.5" fill="#ffbd2e"/><circle cx="56" cy="17" r="5.5" fill="#27c93f"/>
+<text x="378.0" y="22" text-anchor="middle" fill="#8b949e" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5">Athena round trip - 3 rows written, 3 rows returned</text>
+<g font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace" font-size="13" fill="#c9d1d9" xml:space="preserve">
+<text x="18" y="56" xml:space="preserve" style="white-space:pre"><tspan fill="#79c0ff">$ aws athena get-query-execution / get-query-results</tspan>   <tspan fill="#8b949e"># the analyst role&#x27;s query, read back</tspan></text>
+<text x="18" y="75" xml:space="preserve" style="white-space:pre"></text>
+<text x="18" y="94" xml:space="preserve" style="white-space:pre"><tspan fill="#f0f6fc">SELECT</tspan> run_id, step, seq, actor_id, action, cache_hit, tokens_in, coercion</text>
+<text x="18" y="113" xml:space="preserve" style="white-space:pre"><tspan fill="#f0f6fc">FROM</tspan>   &quot;cascade&quot;.&quot;events&quot;</text>
+<text x="18" y="132" xml:space="preserve" style="white-space:pre"><tspan fill="#f0f6fc">WHERE</tspan>  config_id = &#x27;SMOKE&#x27; AND run_id = &#x27;smoke-test-synthetic-run&#x27;</text>
+<text x="18" y="151" xml:space="preserve" style="white-space:pre"><tspan fill="#f0f6fc">ORDER BY</tspan> step, seq</text>
+<text x="18" y="170" xml:space="preserve" style="white-space:pre"></text>
+<text x="18" y="189" xml:space="preserve" style="white-space:pre">state            <tspan fill="#3fb950">SUCCEEDED</tspan></text>
+<text x="18" y="208" xml:space="preserve" style="white-space:pre">workgroup        cascade   (Athena engine version 3)</text>
+<text x="18" y="227" xml:space="preserve" style="white-space:pre">run as           role/cascade-lake-analyst</text>
+<text x="18" y="246" xml:space="preserve" style="white-space:pre">data scanned     <tspan fill="#f0f6fc">953 bytes</tspan></text>
+<text x="18" y="265" xml:space="preserve" style="white-space:pre">engine time      427 ms</text>
+<text x="18" y="284" xml:space="preserve" style="white-space:pre">results          encrypted, SSE_KMS</text>
+<text x="18" y="303" xml:space="preserve" style="white-space:pre"></text>
+<text x="18" y="322" xml:space="preserve" style="white-space:pre"><tspan fill="#8b949e">step seq actor_id           cache_hit tokens_in coercion</tspan></text>
+<text x="18" y="341" xml:space="preserve" style="white-space:pre">0    0   synthetic-actor-a  false     0         (null)</text>
+<text x="18" y="360" xml:space="preserve" style="white-space:pre">         <tspan fill="#8b949e">{&quot;kind&quot;: &quot;WAIT&quot;, &quot;note&quot;: &quot;smoke test, not a decision&quot;, &quot;synthetic&quot;: true}</tspan></text>
+<text x="18" y="379" xml:space="preserve" style="white-space:pre">1    0   synthetic-actor-b  true      0         (null)</text>
+<text x="18" y="398" xml:space="preserve" style="white-space:pre">         <tspan fill="#8b949e">{&quot;kind&quot;: &quot;INFLUENCE&quot;, &quot;note&quot;: &quot;smoke test, not a decision&quot;, &quot;synthetic&quot;: true}</tspan></text>
+<text x="18" y="417" xml:space="preserve" style="white-space:pre">1    1   synthetic-actor-a  false     0         synthetic: smoke test</text>
+<text x="18" y="436" xml:space="preserve" style="white-space:pre">         <tspan fill="#8b949e">{&quot;kind&quot;: &quot;WAIT&quot;, &quot;note&quot;: &quot;smoke test, not a decision&quot;, &quot;synthetic&quot;: true}</tspan></text>
+<text x="18" y="455" xml:space="preserve" style="white-space:pre"></text>
+<text x="18" y="474" xml:space="preserve" style="white-space:pre"><tspan fill="#3fb950">3 rows returned</tspan> - equal, value for value, to the 3 rows written by the writer role</text>
+</g></svg>

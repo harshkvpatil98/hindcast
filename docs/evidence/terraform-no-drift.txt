@@ -1,0 +1,31 @@
+$ terraform apply platform.tfplan                 # Terraform v1.16.3, saved plan from main
+Apply complete! Resources: 21 added, 0 changed, 0 destroyed.
+
+$ terraform plan -var-file=portfolio.tfvars       # 2026-10-02, after both applies
+No changes. Your infrastructure matches the configuration.
+
+$ terraform state list                            # 21 managed resources, all us-west-2
+root (1)
+  aws_kms_key.platform
+eventlake (18)
+  aws_athena_workgroup.this
+  aws_glue_catalog_database.this
+  aws_glue_catalog_table.events
+  aws_iam_role.analyst
+  aws_iam_role.writer
+  aws_iam_role_policy.analyst
+  aws_iam_role_policy.writer
+  aws_s3_bucket.events
+  aws_s3_bucket.results
+  aws_s3_bucket_lifecycle_configuration.results
+  aws_s3_bucket_ownership_controls.events
+  aws_s3_bucket_ownership_controls.results
+  aws_s3_bucket_policy.events
+  aws_s3_bucket_public_access_block.events
+  aws_s3_bucket_public_access_block.results
+  aws_s3_bucket_server_side_encryption_configuration.events
+  aws_s3_bucket_server_side_encryption_configuration.results
+  aws_s3_bucket_versioning.events
+governance (2)
+  aws_sns_topic.alerts
+  aws_sns_topic_policy.alerts

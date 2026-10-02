@@ -35,6 +35,13 @@ production-grade modules kept
   Fixed with one in-place change.
 - **`boto3[crt]` in the `aws` extra**, so a profile made by `aws login` works.
 - Still not built: the export of the real event log to the lake.
+- **A presentation pass over the repository.** The README now leads with what
+  is built, deployed and verified; the full measured record and its
+  boundaries moved, intact, to [docs/RESULTS.md](docs/RESULTS.md). New:
+  [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), a five-minute
+  [demo script](docs/DEMO.md), and an [evidence pack](docs/evidence/README.md)
+  of sanitized captures from the live account and from `main`. The front-page
+  metrics were re-measured on 2026-10-02.
 
 ## M17 — Portfolio completion
 

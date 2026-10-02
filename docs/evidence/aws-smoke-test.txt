@@ -1,0 +1,24 @@
+$ cascade aws smoke-test
+# us-west-2 - captured 2026-10-02 03:28 UTC - synthetic events, not the event export
+
+OK  region                us-west-2
+OK  parquet               3 synthetic events, 4384 bytes, 13 columns
+OK  identity              account <account-id>, principal user/cascade-admin
+                          request id 0f2cd84a-42e5-40a6-8134-f8b865cc4140
+OK  assume writer         role/cascade-lake-writer
+                          request id ed8b27b0-c9ac-4886-b050-8a28722d92d3
+OK  write events          s3://cascade-events-<account-id>-us-west-2/events/config_id=SMOKE/
+                          smoke-b129c6125ef39d6a.parquet, 4,384 bytes, aws:kms under the platform key
+                          request id HFDXPEQK3NHMFGSC
+OK  writer cannot delete  DeleteObject refused with AccessDenied, as the writer's Deny requires
+                          request id HFDRQ6P1FJZQEX2K
+OK  register partition    config_id=SMOKE was already registered
+                          request id 3e93bf7b-e253-4d32-b800-4b93f42e8bc6
+OK  assume analyst        role/cascade-lake-analyst
+                          request id 851e5d67-59d0-4818-a74d-01c00e70adce
+OK  query                 Athena query in workgroup cascade, 953 bytes scanned
+                          request id e18df0e4-a968-439a-bc8b-f4c3d41c60ea
+OK  round trip            3 rows returned, equal to the 3 written
+                          request id 884d4edd-edf4-4001-9fc8-5be20bc4b6ee
+
+round trip complete: 3 rows written, 3 equal rows returned, 953 bytes scanned
