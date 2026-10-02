@@ -58,6 +58,9 @@ PINNED_STACK: tuple[StackEntry, ...] = (
     # own `aws`/`bedrock` extras; absent, only `llm.provider: anthropic` works.
     StackEntry("boto3", "boto3", ">=1.28.57,<2", required=False, extra="aws"),
     StackEntry("botocore", "botocore", ">=1.31.57,<2", required=False, extra="aws"),
+    # The AWS Common Runtime: what botocore signs an `aws login` session with.
+    # Absent, a profile made by `aws login` yields no credentials at all.
+    StackEntry("awscrt", "awscrt", ">=0.36", required=False, extra="aws"),
     StackEntry("pytest", "pytest", ">=8.2", required=False, extra="dev"),
     StackEntry("hypothesis", "hypothesis", ">=6.100", required=False, extra="dev"),
     StackEntry("mypy", "mypy", ">=1.10", required=False, extra="dev"),

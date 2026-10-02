@@ -38,6 +38,12 @@ kernel = [
 # fails at its first request, which is the worst moment to find out.
 aws = [
     "anthropic[aws,bedrock]>=0.40",
+    # An `aws login` profile (`login_session` in ~/.aws/config) is signed through
+    # the AWS Common Runtime. Without awscrt botocore cannot load those
+    # credentials, and every boto3 client here fails before its first request
+    # -- `cascade aws check` included. 1.43.98 is the version this was verified
+    # against, not a measured minimum.
+    "boto3[crt]>=1.43.98",
 ]
 dev = [
     "pytest>=8.2",
