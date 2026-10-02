@@ -2,7 +2,7 @@
 
 - **Status:** accepted
 - **Milestone:** M1
-- **Resolves:** CLAUDE.md open question **Q2**
+- **Resolves:** open question **Q2**
 
 ## Context
 

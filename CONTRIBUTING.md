@@ -9,8 +9,8 @@ reads the way it does. Read this before opening a pull request.
 with a diagnosis.** Do not relax the criterion. Do not add a tolerance. Do not
 mark it "approximately passing".
 
-Every milestone in `CLAUDE.md` has a row that says a criterion was missed, with
-the number it missed by and why. That is what the build log is for. A run of
+The changelog has rows that say a criterion was missed, with the number it
+missed by and why. That is what the record is for. A run of
 green checkmarks that was achieved by moving the line is worth less than a red
 one with an explanation.
 
@@ -134,4 +134,4 @@ of its documentation — `git log` should read as an engineering record.
 
 Pull requests should state which milestone they belong to, which acceptance
 criteria they move, and the measured values. If you changed a number that
-appears in `README.md` or `CLAUDE.md`, update it there too.
+appears in `README.md` or `docs/RESULTS.md`, update it there too.

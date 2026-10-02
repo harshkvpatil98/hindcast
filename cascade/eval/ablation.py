@@ -95,7 +95,7 @@ def grid_replicates(
 ) -> tuple[int, str]:
     """How many replicates this cell runs at, and the sentence that says why.
 
-    **This is CLAUDE.md's open question Q1, resolved explicitly rather than
+    **This is open question Q1, resolved explicitly rather than
     silently.** Appendix C gives the D factor as ``n in {200, 1}`` per cell,
     while §10.3 and §12.3 describe the 11 non-headline cells as "90 scenarios x
     30 replicates". Both cannot be literally true of a D=200 ablation cell.

@@ -234,7 +234,7 @@ class AblationCell(_Frozen):
     """One of Appendix C's 12 cells, as designed and as executed.
 
     ``replicates_design`` is Appendix C's D factor; ``replicates_executed`` is
-    what the grid driver actually ran. CLAUDE.md Q1 turns on these being
+    what the grid driver actually ran. Open question Q1 turns on these being
     different numbers for the 11 non-headline cells, so the report carries
     both and never reconciles them silently.
     """

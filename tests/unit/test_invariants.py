@@ -1,4 +1,4 @@
-"""Static enforcement of invariants 1, 5 and 7 (CLAUDE.md §2).
+"""Static enforcement of invariants 1, 5 and 7.
 
 These three are checkable without running the system, which means they can be
 checked over code that does not exist yet. That is the point: they are the

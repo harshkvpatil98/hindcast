@@ -190,7 +190,7 @@ class TestDispersionIsReportedHoweverItFell:
 
 class TestCellsAreMachineReadable:
     def test_design_and_executed_replicate_counts_are_both_recorded(self, tmp_path: Path) -> None:
-        """CLAUDE.md Q1 turns on these being different numbers; the report
+        """Open question Q1 turns on these being different numbers; the report
         carries both and never reconciles them silently."""
         cells = (
             AblationCell(

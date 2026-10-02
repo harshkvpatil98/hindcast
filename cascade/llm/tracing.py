@@ -9,7 +9,7 @@ served it -- so a call can be matched to the provider's record of it
 instance in the loop. :class:`CompositeTracer` fans out to both.
 
 This module holds the **one sanctioned broad exception guard** in the codebase
-(CLAUDE.md §4). Observability must never fail a run: a 36,000-run phase that
+(the engineering standards). Observability must never fail a run: a 36,000-run phase that
 dies because a telemetry sidecar restarted has cost real money for nothing.
 Every guard here is annotated, narrow in scope, and covered by a test that
 asserts the tracer degrades to a no-op rather than propagating.

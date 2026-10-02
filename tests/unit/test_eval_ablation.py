@@ -61,7 +61,7 @@ class TestGridDefinition:
 
 
 class TestReplicatePolicy:
-    """CLAUDE.md Q1, resolved explicitly rather than silently."""
+    """Open question Q1, resolved explicitly rather than silently."""
 
     def test_budget_capped_caps_the_non_headline_cells(self) -> None:
         cell = cell_by_id("C05")

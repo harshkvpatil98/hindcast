@@ -1,6 +1,6 @@
 # ADR-0028 — Four model providers behind the one call site
 
-- **Status:** accepted — approved by the project owner, 2026-09-18 (stack change, CLAUDE.md §3)
+- **Status:** accepted — approved by the project owner, 2026-09-18 (a change to the pinned stack)
 - **Milestone:** M10
 - **Records a choice the spec left open, and one constraint it could not have known**
 

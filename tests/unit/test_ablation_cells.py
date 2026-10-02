@@ -90,7 +90,7 @@ def test_grounding_values_are_the_two_the_config_allows() -> None:
 
 
 def test_every_cell_carries_the_appendix_c_design_factor() -> None:
-    """Overlays encode D, not the budget cap. See CLAUDE.md Q1.
+    """Overlays encode D, not the budget cap. See open question Q1.
 
     ``ensemble.replicates`` here is the Appendix C *design* factor D
     (200 or 1). ``ensemble.ablation_replicates`` (30) is the budget cap that

@@ -4079,7 +4079,7 @@ def eval_grid(
     id order, and each is collapsed as soon as it completes, so an interrupted
     grid leaves whole cells scoreable rather than a partial everything.
 
-    `--replicate-policy` resolves CLAUDE.md's open question Q1 explicitly. The
+    `--replicate-policy` resolves open question Q1 explicitly. The
     choice is printed here and written into the report; it is not inferred from
     a run count.
     """
@@ -5478,7 +5478,7 @@ def _replicate_policy_sentence(policy: str, settings: Settings) -> str:
         "Appendix C's D is read as the design factor and "
         f"§10.3/§12.3's {settings.ensemble.ablation_replicates} replicates as a budget "
         "cap on the 11 non-headline cells; the headline cell runs at the full D. "
-        "This resolves the Q1 ambiguity in CLAUDE.md. The ensemble contribution "
+        "This resolves the Q1 replicate-count ambiguity. The ensemble contribution "
         "estimated from a capped cell is an estimate at the capped count, not at D."
     )
 

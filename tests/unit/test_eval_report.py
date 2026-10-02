@@ -25,7 +25,7 @@ from cascade.eval.schema import (
     ScoredForecast,
 )
 
-# Every headline figure from CLAUDE.md §1's measurement contract. None of these
+# Every headline figure from the measurement contract. None of these
 # may appear as a literal anywhere on a report code path.
 TARGET_LITERALS = (
     0.141,

@@ -7,7 +7,7 @@ this repository produced, with where it came from.
 
 Figures marked **2026-10-02** were re-measured that day against `main`, the
 local database and the live AWS account (dates are UTC). The others were
-measured at the milestone shown and are recorded in the [build log](../CLAUDE.md).
+measured at the milestone shown and are recorded in the [changelog](../CHANGELOG.md).
 
 ## The AWS analytics plane
 

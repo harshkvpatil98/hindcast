@@ -236,7 +236,7 @@ run "the_alert_carries_the_exit_code_and_the_reason" {
     ])
     error_message = "Every placeholder in a template must have an input path."
   }
-  # The exit-code contract, CLAUDE.md section 4: all four, each on its own line.
+  # The exit-code contract: all four, each on its own line.
   assert {
     condition = alltrue([
       for line in ["  1 = unexpected error", "  2 = budget ceiling breached", "  3 = precondition failed", "  4 = cache miss in replay"] :

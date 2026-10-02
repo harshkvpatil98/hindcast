@@ -302,7 +302,7 @@ The complete record, including every measured figure and its boundaries, is in
 | [Infrastructure runbook](infra/terraform/README.md) | Deploying, the two profiles, cost |
 | [Decision records](docs/adr/README.md) | 54 ADRs: each decision, its evidence and its cost |
 | [Threat model](docs/architecture/threat-model.md) · [Well-Architected review](docs/architecture/well-architected.md) | Security and operations in depth |
-| [Build log](CLAUDE.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) | The engineering contract and the milestone-by-milestone record |
+| [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) | The milestone-by-milestone record, and how to work on the project |
 
 ## License
 

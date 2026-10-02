@@ -32,3 +32,10 @@ htmlcov/
 infra/terraform/**/backend.hcl
 infra/terraform/**/terraform.tfvars
 .tf-plugin-cache/
+
+# Assistant working files: instructions, prompts, sessions and local tool
+# configuration. Kept on the machine, never in the repository.
+/CLAUDE.md
+/Context Files/
+.claude/
+.mcp.json

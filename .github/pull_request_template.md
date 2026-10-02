@@ -18,7 +18,7 @@
 - [ ] `make test-all` — integration and leakage against live services
 - [ ] No invariant weakened, and no static check exempted
 - [ ] Any new database change is a **new** forward-only migration
-- [ ] `CLAUDE.md` build log updated if this closes or moves a milestone
+- [ ] `CHANGELOG.md` updated if this closes or moves a milestone
 - [ ] `README.md` updated if a number it quotes has changed
 
 ## Notes

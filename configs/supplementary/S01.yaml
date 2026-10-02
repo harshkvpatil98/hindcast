@@ -14,7 +14,7 @@
 #
 # `ensemble.replicates` carries the design factor D, as in every ablation
 # overlay; `ensemble.ablation_replicates` (30) is the budget cap the grid
-# driver applies to every non-headline cell, this one included -- CLAUDE.md Q1.
+# driver applies to every non-headline cell, this one included -- open question Q1.
 #
 # Twelve 900-character excerpts roughly double the evidence block of the cached
 # prefix (ADR-0019), so S01 costs more per cache write than C01. Run

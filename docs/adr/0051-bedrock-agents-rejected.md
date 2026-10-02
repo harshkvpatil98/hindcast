@@ -229,7 +229,7 @@ written here.
   the cached prefix of every request the arm makes. `bedrock_agent.py` drops
   both and takes its operation descriptions from the tool definition's
   model-facing prose instead, so there is still exactly one source.
-- **`docs/adr/README.md` and CLAUDE.md §7 do not yet index this record.** Both
+- **`docs/adr/README.md` did not yet index this record.** Both
   belong to the integrator; ADR-0046 was found unindexed at M15 and the count
   was stale in both directions, so this is worth doing rather than assuming.
 

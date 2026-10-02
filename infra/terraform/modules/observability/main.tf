@@ -3,7 +3,7 @@
 #
 # Four things are watched, and each answers a different question:
 #   * a task stopped badly      -> WHICH exit code, because here they mean
-#                                  different things (CLAUDE.md section 4);
+#                                  different things (the exit-code contract);
 #   * a traceback was logged    -> the one failure class that is always a bug;
 #   * Aurora ran out of room    -> the measurement is capacity-bound, so the
 #                                  number it produced measures the ceiling;
@@ -23,7 +23,7 @@ locals {
   region       = data.aws_region.current.region
   cluster_name = one(regex("cluster/(.+)$", var.cluster_arn))
 
-  # CLAUDE.md section 4, carried into the alert so whoever reads it at 2 a.m.
+  # The exit-code contract, carried into the alert so whoever reads it at 2 a.m.
   # does not need the repository open. The constants live in cascade/version.py.
   exit_code_meanings = {
     "1" = "unexpected error - a bug, unless the command line itself was refused; the traceback is in the task log"

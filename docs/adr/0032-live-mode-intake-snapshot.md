@@ -2,7 +2,7 @@
 
 - **Status:** proposed and parked — requested by the project owner on 2026-09-19 and, the same day, deferred by the owner until the backtest and platform work is finished. Nothing in this record is built or scheduled; it is kept so the numbering has no hole and the reasoning is not lost.
 - **Milestone:** M13
-- **Extends the specification's scope** — flagged here rather than adopted silently (CLAUDE.md: where this project and the spec diverge, say so). The spec remains authoritative for the backtest.
+- **Extends the specification's scope** — flagged here rather than adopted silently (where this project and the spec diverge, say so). The spec remains authoritative for the backtest.
 
 ## Context
 

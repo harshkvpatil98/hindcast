@@ -220,4 +220,4 @@ call log writes one object per event and degrades rather than failing a run);
 region, failures are per check, the command exits 3). ruff, black, mypy strict
 and the offline suite are green; `make infra-check` runs the Terraform gates
 under the pinned 1.16.3 in Docker. Measured values are in the M17 build-log
-entry in `CLAUDE.md`.
+entry in the changelog.

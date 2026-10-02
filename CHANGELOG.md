@@ -1,8 +1,8 @@
 # Changelog
 
 One entry per milestone, recording what shipped and what the acceptance numbers
-**actually were**. The full record, including every defect found and fixed
-along the way, is the build log in [`CLAUDE.md`](CLAUDE.md).
+**actually were**. The decisions behind them are in the
+[decision records](docs/adr/README.md).
 
 Versions track milestones rather than releases; nothing here is published to a
 package index.
@@ -225,8 +225,8 @@ since M3. Built and tested; the live AWS criteria are blocked.
 - **`claude_code`: a local provider on a Claude subscription**, keyed apart
   because the CLI cannot set `temperature` or `max_tokens`. Measured before it
   was trusted: 448 tokens of harness context per call, thinking on by default
-  (235 → 0 output tokens once disabled), and this repository's ~27k-token
-  `CLAUDE.md` one working directory away from every call — now refused
+  (235 → 0 output tokens once disabled), and a ~27k-token project instruction
+  file one working directory away from every call — now refused
   ([ADR-0031](docs/adr/0031-claude-code-cli-provider.md)).
 - **Parametric memorization, measured for the first time** (through
   `claude_code`, not the pinned configuration): 180/180 parsed, median

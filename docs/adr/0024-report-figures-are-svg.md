@@ -17,7 +17,7 @@ figures/
 The pinned stack (§2.3) is Python 3.12, LangGraph, PostgreSQL + pgvector,
 bge-small, two Claude models, Langfuse, DuckDB + Parquet, Typer + Rich, uv +
 Docker Compose, pytest + hypothesis. There is no plotting library in it, and
-`pyproject.toml` declares none. §3 of CLAUDE.md is explicit: *"If you believe a
+`pyproject.toml` declares none. The build contract's pinned-stack section is explicit: *"If you believe a
 substitution is warranted, write an ADR in `docs/adr/` and ask. Do not swap
 silently."*
 

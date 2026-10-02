@@ -31,7 +31,7 @@
 #   TF_VAR_REPLICA_REGION, TF_VAR_INFRASTRUCTURE_ALLOWANCE_USD, TF_VAR_GUARDDUTY_MIN_SEVERITY
 #                              the root's required inputs -- decisions, so they
 #                              are set where a person can read them, not
-#                              defaulted here (CLAUDE.md invariant 1, applied
+#                              defaulted here (invariant 1, applied
 #                              to spend, region and thresholds)
 
 name: infra-plan

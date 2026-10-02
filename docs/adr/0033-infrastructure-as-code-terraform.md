@@ -1,6 +1,6 @@
 # ADR-0033 — Infrastructure as code: Terraform, pinned, gated offline
 
-- **Status:** accepted — Terraform chosen by the project owner, 2026-09-18 (CLAUDE.md §3: an addition to the stack, recorded here)
+- **Status:** accepted — Terraform chosen by the project owner, 2026-09-18 (an addition to the pinned stack, recorded here)
 - **Milestone:** M11
 - **Records a stack addition and how it is kept honest without an AWS account**
 
