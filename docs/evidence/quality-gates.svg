@@ -1,9 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="646" height="317" viewBox="0 0 646 317" role="img" aria-label="Quality gates - tests, types, replay, CI">
-<rect width="646" height="317" rx="10" fill="#0d1117"/>
-<rect width="646" height="34" rx="10" fill="#161b22"/>
-<rect y="24" width="646" height="10" fill="#161b22"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="826" height="374" viewBox="0 0 826 374" role="img" aria-label="Quality gates - tests, types, replay, CI">
+<rect width="826" height="374" rx="10" fill="#0d1117"/>
+<rect width="826" height="34" rx="10" fill="#161b22"/>
+<rect y="24" width="826" height="10" fill="#161b22"/>
 <circle cx="20" cy="17" r="5.5" fill="#ff5f56"/><circle cx="38" cy="17" r="5.5" fill="#ffbd2e"/><circle cx="56" cy="17" r="5.5" fill="#27c93f"/>
-<text x="323.0" y="22" text-anchor="middle" fill="#8b949e" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5">Quality gates - tests, types, replay, CI</text>
+<text x="413.0" y="22" text-anchor="middle" fill="#8b949e" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5">Quality gates - tests, types, replay, CI</text>
 <g font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace" font-size="13" fill="#c9d1d9" xml:space="preserve">
 <text x="18" y="56" xml:space="preserve" style="white-space:pre"><tspan fill="#79c0ff">$ make ci</tspan>                                         <tspan fill="#8b949e"># main @ f4458da, 2026-10-02</tspan></text>
 <text x="18" y="75" xml:space="preserve" style="white-space:pre">ruff          <tspan fill="#3fb950">All checks passed</tspan></text>
@@ -11,11 +11,14 @@
 <text x="18" y="113" xml:space="preserve" style="white-space:pre">mypy strict   <tspan fill="#3fb950">no issues in 124 source files</tspan></text>
 <text x="18" y="132" xml:space="preserve" style="white-space:pre">pytest        <tspan fill="#3fb950">2,533 passed</tspan>, 2 skipped   <tspan fill="#8b949e">(210 more need live services)</tspan></text>
 <text x="18" y="151" xml:space="preserve" style="white-space:pre"></text>
-<text x="18" y="170" xml:space="preserve" style="white-space:pre"><tspan fill="#79c0ff">$ cascade trace replay --runs 25 --policy heuristic</tspan></text>
-<text x="18" y="189" xml:space="preserve" style="white-space:pre">replay        <tspan fill="#3fb950">25/25 runs byte-identical</tspan> across fresh processes, 0 diverged</text>
+<text x="18" y="170" xml:space="preserve" style="white-space:pre"><tspan fill="#79c0ff">$ make test-all</tspan>                                   <tspan fill="#8b949e"># + integration and leakage, live Postgres + corpus</tspan></text>
+<text x="18" y="189" xml:space="preserve" style="white-space:pre">pytest        <tspan fill="#3fb950">2,744 passed</tspan>, 1 skipped</text>
 <text x="18" y="208" xml:space="preserve" style="white-space:pre"></text>
-<text x="18" y="227" xml:space="preserve" style="white-space:pre"><tspan fill="#79c0ff">$ gh run list --branch main</tspan></text>
-<text x="18" y="246" xml:space="preserve" style="white-space:pre">ci            <tspan fill="#3fb950">success</tspan>   lint / types / offline tests</text>
-<text x="18" y="265" xml:space="preserve" style="white-space:pre">ci            <tspan fill="#3fb950">success</tspan>   invariants</text>
-<text x="18" y="284" xml:space="preserve" style="white-space:pre">ci            <tspan fill="#3fb950">success</tspan>   terraform / offline tests / tflint / checkov</text>
+<text x="18" y="227" xml:space="preserve" style="white-space:pre"><tspan fill="#79c0ff">$ cascade trace replay --runs 25 --policy heuristic</tspan></text>
+<text x="18" y="246" xml:space="preserve" style="white-space:pre">replay        <tspan fill="#3fb950">25/25 runs byte-identical</tspan> across fresh processes, 0 diverged</text>
+<text x="18" y="265" xml:space="preserve" style="white-space:pre"></text>
+<text x="18" y="284" xml:space="preserve" style="white-space:pre"><tspan fill="#79c0ff">$ gh run list --branch main</tspan></text>
+<text x="18" y="303" xml:space="preserve" style="white-space:pre">ci            <tspan fill="#3fb950">success</tspan>   lint / types / offline tests</text>
+<text x="18" y="322" xml:space="preserve" style="white-space:pre">ci            <tspan fill="#3fb950">success</tspan>   invariants</text>
+<text x="18" y="341" xml:space="preserve" style="white-space:pre">ci            <tspan fill="#3fb950">success</tspan>   terraform / offline tests / tflint / checkov</text>
 </g></svg>

@@ -4,6 +4,9 @@ black         259 files unchanged
 mypy strict   no issues in 124 source files
 pytest        2,533 passed, 2 skipped   (210 more need live services)
 
+$ make test-all                                   # + integration and leakage, live Postgres + corpus
+pytest        2,744 passed, 1 skipped
+
 $ cascade trace replay --runs 25 --policy heuristic
 replay        25/25 runs byte-identical across fresh processes, 0 diverged
 

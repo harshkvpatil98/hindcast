@@ -2606,7 +2606,9 @@ banner). The front-page metrics were re-measured that day: 2,533 offline
 tests; 131 and 62 Terraform tests; Checkov 1,027 passed, 0 failed; 21 managed
 resources in state and no drift; the smoke test's 3 rows and 953 bytes; 25 of
 25 replays; and, from the database, 360 study runs with 66,231 model calls and
-a development-partition Brier of 0.219709. The front page still states that
+a development-partition Brier of 0.219709. `make test-all` against the live
+database and the rebuilt corpus: **2,744 passed, 1 skipped, 0 failed** in
+22 min 41 s, the leakage probes included. The front page still states that
 inference runs through the local CLI, that the lake holds synthetic events
 only, and that the production tiers are in the Terraform and not deployed.
 

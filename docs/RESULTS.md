@@ -26,6 +26,7 @@ measured at the milestone shown and are recorded in the [build log](../CLAUDE.md
 | Quantity | Measured | When |
 |---|---|---|
 | Offline test suite | **2,533 passed**, 2 skipped with the standard install, which is what CI runs (2,534 and 1 once the embedding extra is installed); ruff, black and mypy strict clean over 124 modules | 2026-10-02 |
+| Full suite, with integration, leakage and property tests against the live database and the 2M-chunk corpus | **2,744 passed**, 1 skipped, 0 failed, in 22 min 41 s | 2026-10-02 |
 | Terraform tests, mock providers | **131** platform, **62** sandbox; fmt clean; 3 roots valid; TFLint clean | 2026-10-02 |
 | Checkov | **1,027 passed, 0 failed**, 73 skipped, each skip justified in place | 2026-10-02 |
 | CI on `main` | All three jobs green | 2026-10-02 |
@@ -38,7 +39,7 @@ measured at the milestone shown and are recorded in the [build log](../CLAUDE.md
 |---|---|---|
 | Backtest scenarios | **180**, YES rate 0.5000, no domain above 25%; sealed and re-hashed before any label is read. 15 are exchange placeholder legs, excluded and counted, so 165 are scored: 40 development, 125 test, declared before any forecast existed | 2026-10-02 (registry); M14 (split) |
 | Evidence corpus | **1,998,127** chunks across **317,780** documents; no null or future dates; 100% embedded | 2026-10-02 |
-| Time lock | **0 of 500** planted post-cutoff documents retrieved across all 180 cutoffs, through the vector, keyword and rerank paths | M3, M14, M15 |
+| Time lock | **0 of 500** planted post-cutoff documents retrieved across all 180 cutoffs, through the vector, keyword and rerank paths | M3, M14, M15; the leakage suite passed again on 2026-10-02 |
 | Retrieval quality | recall@20 **0.9675** against exhaustive search (criterion above 0.92, met) | M8 |
 | Retrieval latency | p95 **90.92 ms** against a 15 ms criterion written for per-step retrieval; retrieval now runs once per scenario and actor, so the study's total retrieval time is minutes. The criterion is reported as missed | M8 |
 | Compiled causal graphs | **155 of 165** scored scenarios; mean 12.34 actors, 7.46 factors; every stored graph re-hashes and re-validates | M14 |

@@ -108,10 +108,13 @@ No bucket carries Object Lock in this profile.
 
 ![Quality gates](quality-gates.svg)
 
-`make ci`, `cascade trace replay`, `gh run list` — [text](quality-gates.txt)
+`make ci`, `make test-all`, `cascade trace replay`, `gh run list` — [text](quality-gates.txt)
 
-ruff, black and mypy strict are clean; 2,533 tests pass; 25 of 25 stored
-runs replay byte-identically; all three CI jobs are green on `main`.
+ruff, black and mypy strict are clean; 2,533 tests pass offline. With the
+integration, leakage and property tests run against the live database and
+the 2M-chunk corpus, 2,744 pass and none fail: that run includes the probes
+that plant post-cutoff documents and assert none is retrieved. 25 of 25
+stored runs replay byte-identically, and all three CI jobs are green on `main`.
 
 ## 7. Infrastructure and security gates
 
@@ -154,6 +157,7 @@ region. `cascade aws check` resolves all of it without invoking a model.
 
 ```bash
 make ci                                               # 6
+make test-all                                         # 6  (needs `make up`, the corpus and the embedding extra; about 23 minutes)
 make infra-check                                      # 7  (re-initialises the Terraform roots without a backend)
 cascade trace replay --runs 25 --policy heuristic     # 8
 cascade trace explain                                 # 8
