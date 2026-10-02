@@ -5096,6 +5096,65 @@ def aws_check(config: OverlayOpt = None) -> None:
         _fail("an AWS check failed; see the table above", EXIT_PRECONDITION)
 
 
+@aws_app.command("smoke-test")
+def aws_smoke_test(
+    config: OverlayOpt = None,
+    name: Annotated[
+        str,
+        typer.Option("--name", help="The platform root's `name`: every lake name derives from it."),
+    ] = "cascade",
+    record: Annotated[
+        str | None,
+        typer.Option("--record", help="Also write the report, request ids included, as JSON."),
+    ] = None,
+) -> None:
+    """Send three synthetic events round the deployed event lake. Not the event export.
+
+    The writer role puts one small Parquet file under `config_id=SMOKE` and is
+    then refused a delete; the operator registers the partition; the analyst
+    role reads the rows back through the Athena workgroup; and the rows are
+    compared with what was written. It proves the S3, KMS, Glue, Athena and IAM
+    wiring of `modules/eventlake` (ADR-0054). It moves no real event: nothing
+    exports the event log to the lake yet. Costs one tiny object and one Athena
+    query. Exits 3 unless the round trip completes with equal rows.
+    """
+    from cascade.trace.lake import run_smoke_test
+
+    settings = _settings(config)
+    report = run_smoke_test(settings, name=name)
+
+    table = Table(title=f"Event lake smoke test ({report.region or 'no region configured'})")
+    table.add_column("Step", style="cyan")
+    table.add_column("Result", overflow="fold")
+    table.add_column("Request id", overflow="fold")
+    table.add_column("", width=3)
+    for step in report.steps:
+        table.add_row(
+            step.name,
+            step.detail,
+            step.request_id or "",
+            "[green]OK[/green]" if step.ok else "[red]NO[/red]",
+        )
+    console.print(table)
+    if report.rows:
+        rows = Table(title="Rows Athena returned (synthetic)")
+        for column in ("run_id", "step", "seq", "actor_id", "action", "cache_hit", "tokens_in"):
+            rows.add_column(column, overflow="fold")
+        rows.add_column("coercion", overflow="fold")
+        for row in report.rows:
+            rows.add_row(*["" if value is None else value for value in row])
+        console.print(rows)
+    if record:
+        target = Path(record)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        payload = report.model_dump(mode="json") | {"ok": report.ok}
+        target.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        console.print(f"report written to {target}")
+    if not report.ok:
+        _fail("the event lake smoke test did not complete; see the table above", EXIT_PRECONDITION)
+    console.print("[green]round trip complete[/green]: synthetic events only, not the event export")
+
+
 # ---------------------------------------------------------------------------
 # report: the Appendix D artifact (M7)
 # ---------------------------------------------------------------------------

@@ -289,9 +289,17 @@ data "aws_iam_policy_document" "analyst" {
   }
   # Glue authorises a table read against the catalog, the database and the
   # table together, so all three are named -- and nothing else in the catalog.
+  #
+  # GetPartition, singular, is what Athena calls for a query that filters on
+  # the partition key, and config_id is the partition every analysis here
+  # filters on. Without it this role could scan the whole table and could not
+  # read one cell. Found by `cascade aws smoke-test` against the deployed lake
+  # -- the first query the role ever ran -- and confirmed in CloudTrail, which
+  # recorded BatchGetTable allowed and GetPartition denied. No offline gate
+  # can see which Glue calls Athena makes on a caller's behalf.
   statement {
     sid     = "ReadThisTableOnly"
-    actions = ["glue:GetDatabase", "glue:GetTable", "glue:GetPartitions"]
+    actions = ["glue:GetDatabase", "glue:GetTable", "glue:GetPartition", "glue:GetPartitions"]
     resources = [
       "${local.glue_arn}:catalog",
       "${local.glue_arn}:database/${aws_glue_catalog_database.this.name}",

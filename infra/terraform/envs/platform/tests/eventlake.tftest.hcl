@@ -199,6 +199,34 @@ run "no_statement_in_either_role_is_granted_on_everything" {
   }
 }
 
+run "the_analyst_can_read_one_partition_and_change_nothing" {
+  command = apply
+  module {
+    source = "../../modules/eventlake"
+  }
+
+  assert {
+    condition = toset(flatten([
+      for s in data.aws_iam_policy_document.analyst.statement : s.actions if s.sid == "ReadThisTableOnly"
+    ])) == toset(["glue:GetDatabase", "glue:GetTable", "glue:GetPartition", "glue:GetPartitions"])
+    error_message = "A query that filters on config_id needs glue:GetPartition, singular: without it Athena refuses the query (found live, by `cascade aws smoke-test`)."
+  }
+  assert {
+    condition = length([
+      for a in flatten([for s in data.aws_iam_policy_document.analyst.statement : s.actions]) : a
+      if startswith(a, "glue:") && !startswith(a, "glue:Get")
+    ]) == 0
+    error_message = "The analyst reads the catalog and changes nothing in it."
+  }
+  assert {
+    condition = length([
+      for a in flatten([for s in data.aws_iam_policy_document.analyst.statement : s.actions]) : a
+      if contains(["s3:DeleteObject", "s3:DeleteObjectVersion", "athena:CreateWorkGroup", "athena:UpdateWorkGroup"], a)
+    ]) == 0
+    error_message = "The analyst can delete no event and cannot change the workgroup it must query through."
+  }
+}
+
 run "queries_cannot_escape_the_workgroup_settings" {
   command = plan
   module {

@@ -212,6 +212,7 @@ cascade eval significance  # paired bootstrap + Holm-Bonferroni (§10.4)
 cascade eval prompt-audit  # §1.3's before/after Brier for a prompt revision
 cascade eval equivalence --reference anthropic --candidate bedrock  # ADR-0029's condition; exits 3 on divergence
 cascade aws check          # identity + the configured Bedrock guardrail and reranker, read without spending; exits 3 on a failure (ADR-0053)
+cascade aws smoke-test     # three synthetic events round the deployed lake -- S3, Glue, Athena, as the lake's own roles; exits 3 unless the rows come back equal. Not the event export (ADR-0054)
 cascade eval guardrails    # ADR-0050's post-hoc audit over stored graphs; exits 3 on a confound *or* an incomplete pass
 cascade eval split         # the declared dev/test split and its exclusions; exits 3 if it is not the pinned one (ADR-0038)
 cascade eval tune-guard --scenario ID   # refuse any set touching test, an excluded or an undeclared scenario

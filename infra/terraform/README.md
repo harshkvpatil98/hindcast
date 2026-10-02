@@ -172,9 +172,25 @@ the history somebody consults, both bill on activity, and Config's bucket is
 the one a destroy cannot empty. Turn either on with its switch when the
 account is operated rather than demonstrated.
 
-Two things to know before relying on it. **The lake is deployed empty**: no
-code here exports the event log to Parquet, so Athena has a table and no rows
-until events are written under `events/config_id=<cell>/`. And
+**Prove it works, after an apply:**
+```bash
+uv sync --extra dev --extra kernel --extra aws --extra analytics   # pyarrow writes the Parquet
+AWS_PROFILE=<profile> cascade aws smoke-test --record .logs/aws-smoke.json
+```
+Three events that say they are synthetic go round the lake: the **writer
+role** puts one small Parquet file under `config_id=SMOKE` and is then
+refused a delete -- the refusal is required, because without the lock that
+Deny is the lake's one append-only control; the **operator** registers the
+partition; the **analyst role** reads the rows back through the workgroup;
+and the rows are compared with what was written. Every step prints the
+request id AWS gave it. It costs one object of a few kilobytes and one
+Athena query.
+
+Two things to know before relying on it. **The smoke test is not the event
+export**: no code here moves the real event log from Postgres to the lake,
+so apart from those three rows Athena has a table and nothing in it. A real
+export also needs an identity that may register partitions, which neither
+lake role can. And
 **`terraform test` reads the local `terraform.tfvars`**, which is why every
 test file pins the switches -- and why `make infra-check`, which
 re-initialises each root with `-backend=false`, is run on a copy of the tree
