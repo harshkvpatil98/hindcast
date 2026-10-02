@@ -20,3 +20,12 @@ output "alerts_topic_arn" {
 output "topic_policy_source_document_count" {
   value = length(data.aws_iam_policy_document.alerts.source_policy_documents)
 }
+
+# Read from the resources: null means this module made none, never "unnamed".
+output "budget_name" {
+  value = one(aws_budgets_budget.study[*].name)
+}
+
+output "anomaly_monitor_arn" {
+  value = one(aws_ce_anomaly_monitor.services[*].arn)
+}

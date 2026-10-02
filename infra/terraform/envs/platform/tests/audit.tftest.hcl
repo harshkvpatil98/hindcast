@@ -138,6 +138,8 @@ variables {
   kms_key_arn            = "arn:aws:kms:us-east-1:123456789012:key/mock"
   alerts_topic_arn       = "arn:aws:sns:us-east-1:123456789012:t-cost-alerts"
   guardduty_min_severity = 7
+  # Pinned, so a local terraform.tfvars cannot change what is tested.
+  create_trail = true
 }
 
 run "the_trail_covers_every_region_and_proves_its_own_integrity" {
@@ -147,27 +149,27 @@ run "the_trail_covers_every_region_and_proves_its_own_integrity" {
   }
 
   assert {
-    condition     = aws_cloudtrail.this.is_multi_region_trail
+    condition     = aws_cloudtrail.this[0].is_multi_region_trail
     error_message = "One region's trail is blind to every other region, including the ones nobody chose."
   }
   assert {
-    condition     = aws_cloudtrail.this.include_global_service_events
+    condition     = aws_cloudtrail.this[0].include_global_service_events
     error_message = "Without global-service events the trail has no IAM and no STS: not who became whom."
   }
   assert {
-    condition     = aws_cloudtrail.this.enable_log_file_validation
+    condition     = aws_cloudtrail.this[0].enable_log_file_validation
     error_message = "Log-file validation must be on, or an edited log reads the same as an honest one."
   }
   assert {
-    condition     = aws_cloudtrail.this.enable_logging
+    condition     = aws_cloudtrail.this[0].enable_logging
     error_message = "A trail that exists and is not logging is the state the SCP forbids reaching."
   }
   assert {
-    condition     = aws_cloudtrail.this.kms_key_id == var.kms_key_arn
+    condition     = aws_cloudtrail.this[0].kms_key_id == var.kms_key_arn
     error_message = "Log files must be encrypted with the CMK."
   }
   assert {
-    condition     = aws_cloudtrail.this.s3_bucket_name == "t-audit-trail-123456789012-us-east-1"
+    condition     = aws_cloudtrail.this[0].s3_bucket_name == "t-audit-trail-123456789012-us-east-1"
     error_message = "The trail must deliver to the locked bucket."
   }
 }
@@ -180,21 +182,21 @@ run "management_events_are_always_recorded_and_no_callers_bucket_is_assumed" {
 
   assert {
     condition = length([
-      for s in aws_cloudtrail.this.advanced_event_selector : s
+      for s in aws_cloudtrail.this[0].advanced_event_selector : s
       if length([for f in s.field_selector : f if f.field == "eventCategory" && f.equals == tolist(["Management"])]) == 1 && length(s.field_selector) == 1
     ]) == 1
     error_message = "Management events must be recorded whole: one selector, with no further filter narrowing it."
   }
   assert {
     condition = flatten([
-      for s in aws_cloudtrail.this.advanced_event_selector :
+      for s in aws_cloudtrail.this[0].advanced_event_selector :
       [for f in s.field_selector : f.starts_with if f.field == "resources.ARN"]
     ]) == ["arn:aws:s3:::t-audit-config-123456789012-us-east-1/"]
     error_message = "With no buckets named, the only data events are the module's own Config bucket -- which has no lock, so deletions from it must be on the locked record."
   }
   assert {
     condition = length([
-      for s in aws_cloudtrail.this.advanced_event_selector : s
+      for s in aws_cloudtrail.this[0].advanced_event_selector : s
       if length([for f in s.field_selector : f if f.field == "readOnly"]) > 0
     ]) == 0
     error_message = "Reads and writes both: a readOnly filter would drop half the record."
@@ -212,21 +214,21 @@ run "data_events_cover_the_named_buckets_the_config_bucket_and_nothing_else" {
 
   assert {
     condition = flatten([
-      for s in aws_cloudtrail.this.advanced_event_selector :
+      for s in aws_cloudtrail.this[0].advanced_event_selector :
       [for f in s.field_selector : f.starts_with if f.field == "resources.ARN"]
     ]) == ["arn:aws:s3:::t-events-x/", "arn:aws:s3:::t-recovery-x/", "arn:aws:s3:::t-audit-config-123456789012-us-east-1/"]
     error_message = "Data events must cover the named buckets, the Config bucket, and nothing else; the trailing slash keeps a prefix from selecting a longer-named bucket."
   }
   assert {
     condition = flatten([
-      for s in aws_cloudtrail.this.advanced_event_selector :
+      for s in aws_cloudtrail.this[0].advanced_event_selector :
       [for f in s.field_selector : f.equals if f.field == "resources.type"]
     ]) == ["AWS::S3::Object"]
     error_message = "The data events are S3 object events."
   }
   assert {
     condition = sort(flatten([
-      for s in aws_cloudtrail.this.advanced_event_selector :
+      for s in aws_cloudtrail.this[0].advanced_event_selector :
       [for f in s.field_selector : f.equals if f.field == "eventCategory"]
     ])) == tolist(["Data", "Management"])
     error_message = "Naming buckets must add data events, not replace the management events."
@@ -244,35 +246,35 @@ run "the_log_bucket_is_locked_versioned_encrypted_and_private" {
   }
 
   assert {
-    condition     = aws_s3_bucket.trail.object_lock_enabled
+    condition     = aws_s3_bucket.trail[0].object_lock_enabled
     error_message = "The trail's bucket must have Object Lock: validation detects tampering, only the lock prevents it."
   }
   assert {
-    condition     = one(one(aws_s3_bucket_object_lock_configuration.trail.rule).default_retention).mode == "GOVERNANCE"
+    condition     = one(one(aws_s3_bucket_object_lock_configuration.trail[0].rule).default_retention).mode == "GOVERNANCE"
     error_message = "GOVERNANCE by default; COMPLIANCE cannot be undone by anyone."
   }
   assert {
-    condition     = one(one(aws_s3_bucket_object_lock_configuration.trail.rule).default_retention).days == 365
+    condition     = one(one(aws_s3_bucket_object_lock_configuration.trail[0].rule).default_retention).days == 365
     error_message = "Every log file must get a default retention."
   }
   assert {
-    condition     = one(aws_s3_bucket_versioning.trail.versioning_configuration).status == "Enabled"
+    condition     = one(aws_s3_bucket_versioning.trail[0].versioning_configuration).status == "Enabled"
     error_message = "Object Lock requires versioning."
   }
   assert {
-    condition     = one(one(aws_s3_bucket_server_side_encryption_configuration.trail.rule).apply_server_side_encryption_by_default).kms_master_key_id == var.kms_key_arn
+    condition     = one(one(aws_s3_bucket_server_side_encryption_configuration.trail[0].rule).apply_server_side_encryption_by_default).kms_master_key_id == var.kms_key_arn
     error_message = "The log bucket must default to the CMK."
   }
   assert {
-    condition     = one(aws_s3_bucket_ownership_controls.trail.rule).object_ownership == "BucketOwnerEnforced"
+    condition     = one(aws_s3_bucket_ownership_controls.trail[0].rule).object_ownership == "BucketOwnerEnforced"
     error_message = "ACLs must be disabled on the log bucket."
   }
   assert {
     condition = alltrue([
-      aws_s3_bucket_public_access_block.trail.block_public_acls,
-      aws_s3_bucket_public_access_block.trail.block_public_policy,
-      aws_s3_bucket_public_access_block.trail.ignore_public_acls,
-      aws_s3_bucket_public_access_block.trail.restrict_public_buckets,
+      aws_s3_bucket_public_access_block.trail[0].block_public_acls,
+      aws_s3_bucket_public_access_block.trail[0].block_public_policy,
+      aws_s3_bucket_public_access_block.trail[0].ignore_public_acls,
+      aws_s3_bucket_public_access_block.trail[0].restrict_public_buckets,
     ])
     error_message = "Every public-access block must be on."
   }
@@ -289,11 +291,11 @@ run "retention_is_the_callers_to_set" {
   }
 
   assert {
-    condition     = one(one(aws_s3_bucket_object_lock_configuration.trail.rule).default_retention).days == 30
+    condition     = one(one(aws_s3_bucket_object_lock_configuration.trail[0].rule).default_retention).days == 30
     error_message = "retention_days must reach the lock."
   }
   assert {
-    condition     = aws_cloudwatch_log_group.trail.retention_in_days == 90
+    condition     = aws_cloudwatch_log_group.trail[0].retention_in_days == 90
     error_message = "log_retention_days must reach the log group."
   }
 }
@@ -325,7 +327,7 @@ run "only_this_trail_can_write_to_the_log_bucket" {
     error_message = "Every allow to cloudtrail.amazonaws.com must carry aws:SourceArn for this trail, or any account's trail can write here."
   }
   assert {
-    condition     = aws_cloudtrail.this.name == "t-audit"
+    condition     = aws_cloudtrail.this[0].name == "t-audit"
     error_message = "The ARN the bucket policy trusts must be the ARN of the trail this module creates."
   }
   assert {
@@ -378,19 +380,19 @@ run "the_trail_also_lands_in_an_encrypted_log_group" {
   }
 
   assert {
-    condition     = aws_cloudtrail.this.cloud_watch_logs_group_arn == "${aws_cloudwatch_log_group.trail.arn}:*"
+    condition     = aws_cloudtrail.this[0].cloud_watch_logs_group_arn == "${aws_cloudwatch_log_group.trail[0].arn}:*"
     error_message = "The trail must deliver to its log group."
   }
   assert {
-    condition     = aws_cloudtrail.this.cloud_watch_logs_role_arn == aws_iam_role.trail_logs.arn
+    condition     = aws_cloudtrail.this[0].cloud_watch_logs_role_arn == aws_iam_role.trail_logs[0].arn
     error_message = "The trail must deliver as its own role."
   }
   assert {
-    condition     = aws_cloudwatch_log_group.trail.kms_key_id == var.kms_key_arn
+    condition     = aws_cloudwatch_log_group.trail[0].kms_key_id == var.kms_key_arn
     error_message = "The log group must be encrypted with the CMK."
   }
   assert {
-    condition     = aws_cloudwatch_log_group.trail.retention_in_days == 365
+    condition     = aws_cloudwatch_log_group.trail[0].retention_in_days == 365
     error_message = "A year of searchable events by default."
   }
   assert {
@@ -538,7 +540,7 @@ run "the_key_policy_the_caller_must_carry_is_scoped_to_this_trail_and_this_group
     error_message = "The Logs grant must be the regional principal, pinned to this log group."
   }
   assert {
-    condition     = aws_cloudwatch_log_group.trail.name == "/cascade/t/cloudtrail"
+    condition     = aws_cloudwatch_log_group.trail[0].name == "/cascade/t/cloudtrail"
     error_message = "The group the key policy trusts must be the group this module creates."
   }
   assert {
@@ -751,4 +753,53 @@ run "a_topic_that_is_not_a_topic_is_refused" {
     alerts_topic_arn = "t-cost-alerts"
   }
   expect_failures = [var.alerts_topic_arn]
+}
+
+# --- An account whose trail was made outside Terraform ----------------------------------------
+
+run "an_account_with_its_own_trail_gets_no_second_one" {
+  command = apply
+  module {
+    source = "../../modules/audit"
+  }
+  variables {
+    create_trail = false
+  }
+
+  assert {
+    condition     = length(aws_cloudtrail.this) == 0 && length(aws_s3_bucket.trail) == 0 && length(aws_s3_bucket_policy.trail) == 0 && length(aws_cloudwatch_log_group.trail) == 0 && length(aws_iam_role.trail_logs) == 0 && length(aws_iam_role_policy.trail_logs) == 0
+    error_message = "With create_trail off nothing of the trail is made: no trail, no bucket, no log group, no role."
+  }
+  assert {
+    condition     = output.trail_arn == null && output.log_bucket == null && !output.controls.trail_created && output.controls.multi_region == null
+    error_message = "The outputs say 'not ours' with nulls, never with the values of a trail that does not exist."
+  }
+  assert {
+    condition     = length(output.controls.data_event_prefixes) == 0 && length(output.controls.trail_bucket_deny_sids) == 0 && length(output.controls.cloudtrail_allow_source_arns) == 0
+    error_message = "No trail of this module's records data events, and the output must not claim a bucket policy that was never attached."
+  }
+  assert {
+    condition     = length(output.controls.key_policy_statement_ids) == 0
+    error_message = "A key grant to CloudTrail for a trail name nobody created is a grant to whoever creates it."
+  }
+  assert {
+    condition     = output.controls.guardduty_enabled && output.controls.config_recording && output.controls.config_records_all_types && output.config_bucket == "t-audit-config-123456789012-us-east-1"
+    error_message = "GuardDuty and Config do not go with the trail."
+  }
+  assert {
+    condition     = output.controls.buckets_private
+    error_message = "The Config bucket stays private on its own."
+  }
+}
+
+run "with_the_trail_on_the_key_policy_carries_its_three_statements" {
+  command = apply
+  module {
+    source = "../../modules/audit"
+  }
+
+  assert {
+    condition     = output.controls.trail_created && toset(output.controls.key_policy_statement_ids) == toset(["CloudTrailEncryptsTheTrail", "CloudTrailDescribesTheKey", "CloudWatchLogsEncryptsTheTrailGroup"])
+    error_message = "The default is the trail, with the three key statements it needs."
+  }
 }

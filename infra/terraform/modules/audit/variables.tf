@@ -84,3 +84,16 @@ variable "guardduty_min_severity" {
     error_message = "guardduty_min_severity must be between 1 (every finding) and 10 (only the most critical)."
   }
 }
+
+variable "create_trail" {
+  description = <<-EOT
+    Create the CloudTrail trail with its locked bucket, log group and role.
+    False where the account already has a multi-region trail made outside
+    Terraform: a second one delivers a second, billed copy of every management
+    event. With it off this module records NO S3 data events, so the buckets
+    in `data_event_bucket_arns` -- and this module's own Config bucket -- have
+    no access record unless the existing trail is given the selectors.
+  EOT
+  type        = bool
+  default     = true
+}

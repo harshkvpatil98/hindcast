@@ -130,6 +130,10 @@ variables {
   infrastructure_allowance_usd = 50
   guardduty_min_severity       = 7
   inventory_schedule           = "Weekly"
+  # Pinned, so a local terraform.tfvars cannot change what is tested.
+  create_audit_trail            = true
+  create_budget                 = true
+  create_cost_anomaly_detection = true
   # Shared by the root and the module.
   name                       = "t"
   report_lock_retention_days = 365

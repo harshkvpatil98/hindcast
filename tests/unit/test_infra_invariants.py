@@ -170,6 +170,37 @@ def test_the_way_out_and_the_model_are_opt_in_and_off_by_default(opt_in: str) ->
         ), f"module {module!r} must exist only when var.{opt_in} is given"
 
 
+# Switches for account-level services an account may already carry: a trail,
+# a budget, the one services anomaly monitor, the SCPs. Each exists so an
+# account that made one by hand does not get a second, and each must default
+# to creating -- a fresh account gets the whole platform without asking. The
+# Terraform tests pin these on, so that a local terraform.tfvars cannot change
+# what they test; that pin also hides the default from them. Found by mutation:
+# flipping a default to false passed every `terraform test`.
+CREATING_BY_DEFAULT = [
+    ("modules/audit/variables.tf", "create_trail"),
+    ("modules/governance/variables.tf", "create_budget"),
+    ("modules/governance/variables.tf", "create_anomaly_detection"),
+    ("modules/guardrails/variables.tf", "create_service_control_policies"),
+    ("envs/platform/main.tf", "create_audit_trail"),
+    ("envs/platform/main.tf", "create_budget"),
+    ("envs/platform/main.tf", "create_cost_anomaly_detection"),
+    ("envs/platform/main.tf", "create_service_control_policies"),
+]
+
+
+@pytest.mark.parametrize(("source", "switch"), CREATING_BY_DEFAULT)
+def test_a_switch_for_an_existing_account_service_defaults_to_creating(
+    source: str, switch: str
+) -> None:
+    """Leaving an account-level service to what already exists is asked for, never assumed."""
+    text = (TERRAFORM / source).read_text(encoding="utf-8")
+    body = _block_body(text, rf'variable\s+"{switch}"\s*\{{')
+    assert re.search(
+        r"^  default\s*=\s*true\s*$", body, flags=re.MULTILINE
+    ), f"{source}: variable {switch!r} must default to true"
+
+
 def test_the_region_is_never_defaulted() -> None:
     """ADR-0028: routing is explicit. Invariant 1's rule, applied to where spend lands."""
     offenders = []

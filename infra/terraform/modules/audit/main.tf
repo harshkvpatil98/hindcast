@@ -29,6 +29,11 @@
 # the key -- so feeding it back into the key's own policy is not a cycle.
 # AWS Config needs no statement: it reaches the key through its role, and the
 # account-root statement already delegates that to IAM.
+#
+# `create_trail = false` leaves the trail, its bucket, its log group and its
+# role out -- for an account whose trail was made outside Terraform -- and
+# the three statements with them. GuardDuty and Config are unaffected. What
+# goes with the trail is the data-event record: see the variable.
 
 data "aws_caller_identity" "current" {}
 data "aws_partition" "current" {}
@@ -61,12 +66,15 @@ resource "aws_s3_bucket" "trail" {
   #checkov:skip=CKV_AWS_144:The DR runbook replicates tier 0 only; replicating the audit record is a decision for docs/architecture/dr-runbook.md, not a default.
   #checkov:skip=CKV2_AWS_62:Nothing consumes object events from the trail's bucket; the searchable copy is the log group.
   #checkov:skip=CKV2_AWS_61:No lifecycle rule on purpose: objects here are under Object Lock, and an expiry rule is a standing attempt to delete them.
+  count               = var.create_trail ? 1 : 0
   bucket              = local.trail_bucket
   object_lock_enabled = true
 }
 
 resource "aws_s3_bucket_versioning" "trail" {
-  bucket = aws_s3_bucket.trail.id
+  count = var.create_trail ? 1 : 0
+
+  bucket = aws_s3_bucket.trail[0].id
   versioning_configuration {
     status = "Enabled"
   }
@@ -78,7 +86,9 @@ resource "aws_s3_bucket_versioning" "trail" {
 # sandbox account must be able to be torn down by someone explicitly permitted
 # to; lifting it is itself a call this trail records.
 resource "aws_s3_bucket_object_lock_configuration" "trail" {
-  bucket = aws_s3_bucket.trail.id
+  count = var.create_trail ? 1 : 0
+
+  bucket = aws_s3_bucket.trail[0].id
   rule {
     default_retention {
       mode = "GOVERNANCE"
@@ -89,14 +99,18 @@ resource "aws_s3_bucket_object_lock_configuration" "trail" {
 }
 
 resource "aws_s3_bucket_ownership_controls" "trail" {
-  bucket = aws_s3_bucket.trail.id
+  count = var.create_trail ? 1 : 0
+
+  bucket = aws_s3_bucket.trail[0].id
   rule {
     object_ownership = "BucketOwnerEnforced"
   }
 }
 
 resource "aws_s3_bucket_public_access_block" "trail" {
-  bucket                  = aws_s3_bucket.trail.id
+  count = var.create_trail ? 1 : 0
+
+  bucket                  = aws_s3_bucket.trail[0].id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -104,7 +118,9 @@ resource "aws_s3_bucket_public_access_block" "trail" {
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "trail" {
-  bucket = aws_s3_bucket.trail.id
+  count = var.create_trail ? 1 : 0
+
+  bucket = aws_s3_bucket.trail[0].id
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm     = "aws:kms"
@@ -178,7 +194,9 @@ data "aws_iam_policy_document" "trail_bucket" {
 }
 
 resource "aws_s3_bucket_policy" "trail" {
-  bucket = aws_s3_bucket.trail.id
+  count = var.create_trail ? 1 : 0
+
+  bucket = aws_s3_bucket.trail[0].id
   policy = data.aws_iam_policy_document.trail_bucket.json
 
   # S3 refuses a policy written while the public-access block is still being
@@ -189,6 +207,8 @@ resource "aws_s3_bucket_policy" "trail" {
 # --- The searchable copy: CloudWatch Logs ----------------------------------------------
 
 resource "aws_cloudwatch_log_group" "trail" {
+  count = var.create_trail ? 1 : 0
+
   name              = local.log_group_name
   retention_in_days = var.log_retention_days
   kms_key_id        = var.kms_key_arn
@@ -205,6 +225,8 @@ data "aws_iam_policy_document" "trail_logs_assume" {
 }
 
 resource "aws_iam_role" "trail_logs" {
+  count = var.create_trail ? 1 : 0
+
   name               = "${var.name}-audit-trail-logs"
   description        = "CloudTrail: write this trail's events to its log group, nothing else"
   assume_role_policy = data.aws_iam_policy_document.trail_logs_assume.json
@@ -221,8 +243,10 @@ data "aws_iam_policy_document" "trail_logs" {
 }
 
 resource "aws_iam_role_policy" "trail_logs" {
+  count = var.create_trail ? 1 : 0
+
   name   = "write-trail-events"
-  role   = aws_iam_role.trail_logs.id
+  role   = aws_iam_role.trail_logs[0].id
   policy = data.aws_iam_policy_document.trail_logs.json
 }
 
@@ -230,8 +254,9 @@ resource "aws_iam_role_policy" "trail_logs" {
 
 resource "aws_cloudtrail" "this" {
   #checkov:skip=CKV_AWS_252:An SNS notice per delivered log file has no consumer here; alerting reads the log group, and a topic nobody subscribes to is one more thing to secure.
+  count          = var.create_trail ? 1 : 0
   name           = local.trail_name
-  s3_bucket_name = aws_s3_bucket.trail.bucket
+  s3_bucket_name = aws_s3_bucket.trail[0].bucket
   kms_key_id     = var.kms_key_arn
 
   # Every region, including the ones guardrails denies: a region nobody chose
@@ -245,8 +270,8 @@ resource "aws_cloudtrail" "this" {
   # edited, or removed, reads the same as one that never existed.
   enable_log_file_validation = true
 
-  cloud_watch_logs_group_arn = "${aws_cloudwatch_log_group.trail.arn}:*"
-  cloud_watch_logs_role_arn  = aws_iam_role.trail_logs.arn
+  cloud_watch_logs_group_arn = "${aws_cloudwatch_log_group.trail[0].arn}:*"
+  cloud_watch_logs_role_arn  = aws_iam_role.trail_logs[0].arn
 
   advanced_event_selector {
     name = "Management events, reads and writes"
@@ -605,55 +630,64 @@ data "aws_iam_policy_document" "required_topic_policy" {
 # --- What the caller's key policy must carry ------------------------------------------------
 
 data "aws_iam_policy_document" "required_key_policy" {
-  statement {
-    sid       = "CloudTrailEncryptsTheTrail"
-    actions   = ["kms:GenerateDataKey*"]
-    resources = ["*"]
-    principals {
-      type        = "Service"
-      identifiers = ["cloudtrail.amazonaws.com"]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "aws:SourceArn"
-      values   = [local.trail_arn]
-    }
-    condition {
-      test     = "StringLike"
-      variable = "kms:EncryptionContext:aws:cloudtrail:arn"
-      values   = ["arn:${local.partition}:cloudtrail:*:${local.account}:trail/*"]
+  dynamic "statement" {
+    for_each = var.create_trail ? [1] : []
+    content {
+      sid       = "CloudTrailEncryptsTheTrail"
+      actions   = ["kms:GenerateDataKey*"]
+      resources = ["*"]
+      principals {
+        type        = "Service"
+        identifiers = ["cloudtrail.amazonaws.com"]
+      }
+      condition {
+        test     = "StringEquals"
+        variable = "aws:SourceArn"
+        values   = [local.trail_arn]
+      }
+      condition {
+        test     = "StringLike"
+        variable = "kms:EncryptionContext:aws:cloudtrail:arn"
+        values   = ["arn:${local.partition}:cloudtrail:*:${local.account}:trail/*"]
+      }
     }
   }
 
-  statement {
-    sid       = "CloudTrailDescribesTheKey"
-    actions   = ["kms:DescribeKey"]
-    resources = ["*"]
-    principals {
-      type        = "Service"
-      identifiers = ["cloudtrail.amazonaws.com"]
-    }
-    condition {
-      test     = "StringEquals"
-      variable = "aws:SourceArn"
-      values   = [local.trail_arn]
+  dynamic "statement" {
+    for_each = var.create_trail ? [1] : []
+    content {
+      sid       = "CloudTrailDescribesTheKey"
+      actions   = ["kms:DescribeKey"]
+      resources = ["*"]
+      principals {
+        type        = "Service"
+        identifiers = ["cloudtrail.amazonaws.com"]
+      }
+      condition {
+        test     = "StringEquals"
+        variable = "aws:SourceArn"
+        values   = [local.trail_arn]
+      }
     }
   }
 
   # The Logs principal is regional, and the encryption context pins the grant
   # to this one log group rather than to every group in the account.
-  statement {
-    sid       = "CloudWatchLogsEncryptsTheTrailGroup"
-    actions   = ["kms:Encrypt*", "kms:Decrypt*", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:Describe*"]
-    resources = ["*"]
-    principals {
-      type        = "Service"
-      identifiers = ["logs.${local.region}.amazonaws.com"]
-    }
-    condition {
-      test     = "ArnEquals"
-      variable = "kms:EncryptionContext:aws:logs:arn"
-      values   = [local.log_group_arn]
+  dynamic "statement" {
+    for_each = var.create_trail ? [1] : []
+    content {
+      sid       = "CloudWatchLogsEncryptsTheTrailGroup"
+      actions   = ["kms:Encrypt*", "kms:Decrypt*", "kms:ReEncrypt*", "kms:GenerateDataKey*", "kms:Describe*"]
+      resources = ["*"]
+      principals {
+        type        = "Service"
+        identifiers = ["logs.${local.region}.amazonaws.com"]
+      }
+      condition {
+        test     = "ArnEquals"
+        variable = "kms:EncryptionContext:aws:logs:arn"
+        values   = [local.log_group_arn]
+      }
     }
   }
 }

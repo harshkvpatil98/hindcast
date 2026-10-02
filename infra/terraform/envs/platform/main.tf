@@ -74,6 +74,35 @@ variable "create_service_control_policies" {
   default     = true
 }
 
+variable "create_audit_trail" {
+  description = <<-EOT
+    Create this root's CloudTrail trail (modules/audit). False in an account
+    that already has a multi-region trail made outside Terraform, where a
+    second would bill a second copy of every management event. The S3
+    data-event record of the lake, recovery, reports and Config buckets goes
+    with it: the existing trail has to be given those selectors by hand.
+  EOT
+  type        = bool
+  default     = true
+}
+
+variable "create_budget" {
+  description = "Create the account budget (modules/governance). False where a budget made outside Terraform is to stay the only one."
+  type        = bool
+  default     = true
+}
+
+variable "create_cost_anomaly_detection" {
+  description = <<-EOT
+    Create the per-service cost anomaly monitor and its subscription
+    (modules/governance). An account gets one AWS-services monitor, and Cost
+    Explorer makes it ("Default-Services-Monitor") when first enabled: false
+    there, or the apply is refused.
+  EOT
+  type        = bool
+  default     = true
+}
+
 variable "model_guardrail" {
   description = <<-EOT
     The Bedrock guardrail `cascade eval guardrails` measures the compiled
@@ -299,6 +328,8 @@ module "governance" {
   infrastructure_allowance_usd = var.infrastructure_allowance_usd
   kms_key_arn                  = aws_kms_key.platform.arn
   alert_emails                 = var.alert_emails
+  create_budget                = var.create_budget
+  create_anomaly_detection     = var.create_cost_anomaly_detection
   # The sandbox's rules and alarms, and the audit module's findings rule: an
   # SNS topic has one policy, and each thing that publishes must be admitted
   # by it -- by ARN -- or is dropped with no error.
@@ -343,6 +374,7 @@ module "reports" {
 module "audit" {
   source        = "../../modules/audit"
   name          = var.name
+  create_trail  = var.create_audit_trail
   bucket_suffix = "${local.account}-${var.region}"
   kms_key_arn   = aws_kms_key.platform.arn
   # Findings above the threshold go where the budget alerts go: one topic, one
@@ -386,6 +418,21 @@ output "guardrail_environment" {
   value = module.guardrails.guardrail == null ? null : {
     CASCADE_GUARDRAIL_ID      = module.guardrails.guardrail.id
     CASCADE_GUARDRAIL_VERSION = module.guardrails.guardrail.version
+  }
+}
+
+# What this root made of the three account-level services an account may
+# already carry. A null or a false here is "left to what exists", by a flag.
+output "account_level_services" {
+  description = "Which of the trail, the budget and the anomaly monitor this root created."
+  value = {
+    audit_trail_arn      = module.audit.trail_arn
+    budget_name          = module.governance.budget_name
+    anomaly_monitor_arn  = module.governance.anomaly_monitor_arn
+    guardduty_detector   = module.audit.detector_id
+    config_bucket        = module.audit.config_bucket
+    s3_data_events_kept  = module.audit.controls.trail_created
+    service_control_scps = var.create_service_control_policies
   }
 }
 

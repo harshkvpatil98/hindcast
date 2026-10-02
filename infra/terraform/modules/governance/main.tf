@@ -66,6 +66,8 @@ resource "aws_sns_topic_subscription" "email" {
 # budget would silently exclude the largest line item.
 
 resource "aws_budgets_budget" "study" {
+  count = var.create_budget ? 1 : 0
+
   name         = "${var.name}-study"
   budget_type  = "COST"
   limit_amount = format("%.2f", local.monthly_limit)
@@ -96,15 +98,19 @@ resource "aws_budgets_budget" "study" {
 # --- Anomaly detection ---------------------------------------------------------------
 
 resource "aws_ce_anomaly_monitor" "services" {
+  count = var.create_anomaly_detection ? 1 : 0
+
   name              = "${var.name}-services"
   monitor_type      = "DIMENSIONAL"
   monitor_dimension = "SERVICE"
 }
 
 resource "aws_ce_anomaly_subscription" "alerts" {
+  count = var.create_anomaly_detection ? 1 : 0
+
   name             = "${var.name}-anomalies"
   frequency        = "IMMEDIATE"
-  monitor_arn_list = [aws_ce_anomaly_monitor.services.arn]
+  monitor_arn_list = [aws_ce_anomaly_monitor.services[0].arn]
 
   subscriber {
     type    = "SNS"

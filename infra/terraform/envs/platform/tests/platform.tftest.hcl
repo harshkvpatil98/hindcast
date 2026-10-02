@@ -125,6 +125,10 @@ variables {
   guardduty_min_severity       = 7
   report_lock_retention_days   = 365
   inventory_schedule           = "Weekly"
+  # Pinned, so a local terraform.tfvars cannot change what is tested.
+  create_audit_trail            = true
+  create_budget                 = true
+  create_cost_anomaly_detection = true
 }
 
 run "the_platform_composes" {
@@ -180,5 +184,41 @@ run "the_recovery_output_is_what_the_sandbox_takes" {
   assert {
     condition     = endswith(output.recovery_source_cache_prefix, "/source-cache/")
     error_message = "The platform must say where the source cache goes."
+  }
+}
+
+# --- An account that already has a trail, a budget and the services monitor ----------
+
+# The defaults themselves are asserted statically (test_infra_invariants.py):
+# this file pins the switches on, so it cannot see them.
+run "with_the_switches_on_the_root_makes_the_trail_the_budget_and_the_monitor" {
+  command = apply
+
+  assert {
+    condition     = output.account_level_services.s3_data_events_kept && output.account_level_services.audit_trail_arn != null && output.account_level_services.budget_name == "cascade-study" && output.account_level_services.anomaly_monitor_arn != null
+    error_message = "With the switches on the root makes all three, and reports each."
+  }
+}
+
+run "an_account_with_its_own_trail_budget_and_monitor_keeps_them" {
+  command = apply
+  variables {
+    create_audit_trail              = false
+    create_budget                   = false
+    create_cost_anomaly_detection   = false
+    create_service_control_policies = false
+  }
+
+  assert {
+    condition     = output.account_level_services.audit_trail_arn == null && output.account_level_services.budget_name == null && output.account_level_services.anomaly_monitor_arn == null && !output.account_level_services.s3_data_events_kept && !output.account_level_services.service_control_scps
+    error_message = "Each switch reaches its module: nothing the account already carries is made a second time."
+  }
+  assert {
+    condition     = output.account_level_services.guardduty_detector != null && output.account_level_services.config_bucket != null
+    error_message = "GuardDuty and Config are still this root's."
+  }
+  assert {
+    condition     = module.audit.controls.findings_target_arn == module.governance.alerts_topic_arn && module.governance.topic_policy_source_document_count == 2
+    error_message = "Findings still reach the one alerts topic, and the topic still admits them."
   }
 }

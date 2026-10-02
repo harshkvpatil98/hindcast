@@ -48,3 +48,25 @@ variable "anomaly_threshold_usd" {
   type        = number
   default     = 10
 }
+
+variable "create_budget" {
+  description = <<-EOT
+    Create the account budget. False only where the account already carries a
+    budget made outside Terraform that is to stay the one budget: a second is
+    legal, and is a second set of alerts against a different limit.
+  EOT
+  type        = bool
+  default     = true
+}
+
+variable "create_anomaly_detection" {
+  description = <<-EOT
+    Create the per-service cost anomaly monitor and its subscription. Cost
+    Anomaly Detection allows one AWS-services monitor per account, and makes
+    one itself ("Default-Services-Monitor") when Cost Explorer is first
+    enabled. Where that exists CreateAnomalyMonitor is refused at apply, which
+    no plan and no mock-provider test can see. False there.
+  EOT
+  type        = bool
+  default     = true
+}

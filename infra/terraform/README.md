@@ -48,7 +48,7 @@ to go first and the trail records that it did (ADR-0046).
 | | Status |
 |---|---|
 | Configuration valid against provider schemas (AWS 6.65.0) | **verified offline** |
-| Security properties (encryption, TLS, IAM auth, nothing public, pgvector pinned, fixed capacity, secrets never in plain env) | **verified offline** — 62 `terraform test` runs in `envs/sandbox`, 112 in `envs/platform`, against mock providers under the pinned Terraform 1.16.3 in Docker (M17 was the first time the guardrail runs executed; three needed `apply` rather than `plan`) |
+| Security properties (encryption, TLS, IAM auth, nothing public, pgvector pinned, fixed capacity, secrets never in plain env) | **verified offline** — 62 `terraform test` runs in `envs/sandbox`, 118 in `envs/platform`, against mock providers under the pinned Terraform 1.16.3 in Docker (M17 was the first time the guardrail runs executed; three needed `apply` rather than `plan`) |
 | The isolated tier never routes out, even with the egress tier on; only `CorpusBuild` and (without PrivateLink) the three model-calling states leave; the study grant is three routes in one workspace; the cache is encrypted and copied add-only; findings are admitted by ARN | **verified offline** — `terraform test`, and each broken on purpose once (ADR-0042) |
 | A study report is private, versioned and locked; the task that writes one cannot read one back; the restore role cannot write the archive it restores from; the archivist's key must name its seal | **verified offline** — `terraform test`, and each broken on purpose once (ADR-0046) |
 | The pgvector gate rejects an engine that is too old | **verified offline** — the test expects 16.6 to fail |
@@ -120,8 +120,19 @@ aws ce get-anomaly-monitors
 aws cloudtrail describe-trails --region us-west-2
 aws budgets describe-budgets --account-id "$(aws sts get-caller-identity --query Account --output text)"
 ```
-An existing one is imported (`terraform import`) or the plan is not applied;
-nothing here deletes what it did not create.
+Three of the five have a switch in `terraform.tfvars`, each true by default
+and each leaving what the account already has exactly as it is:
+
+| the account already has | set | what goes with it |
+|---|---|---|
+| a multi-region trail | `create_audit_trail = false` | this root's locked trail bucket, log group and **S3 data events** on the lake, recovery, reports and Config buckets: give the existing trail those selectors, or they have no access record |
+| a budget that is to stay the only one | `create_budget = false` | the limit derived from `configs/base.yaml` is still an output (`monthly_limit_usd`), just not enforced by a budget |
+| an AWS-services anomaly monitor (`Default-Services-Monitor`) | `create_cost_anomaly_detection = false` | the subscription that sends anomalies to the alerts topic |
+
+A GuardDuty detector or a Config recorder that already exists has no switch:
+it is imported (`terraform import`) or the plan is not applied. Nothing here
+deletes or changes what it did not create. `terraform output
+account_level_services` says which of them this root made.
 
 **2. Configure the sandbox**
 ```bash

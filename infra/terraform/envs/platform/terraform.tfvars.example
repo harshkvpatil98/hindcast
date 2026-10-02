@@ -24,6 +24,14 @@ alert_emails       = ["you@example.com"]
 create_service_control_policies = false
 # guardrail_target_ids = ["ou-xxxx-xxxxxxxx"]   # when there is an organization
 
+# --- What the account already has ------------------------------------------------
+# Each defaults to true (create). Check first, read-only (README.md), and set
+# false for what exists, so nothing made by hand gets a second copy:
+#   aws cloudtrail describe-trails / aws budgets describe-budgets / aws ce get-anomaly-monitors
+# create_audit_trail            = false   # a multi-region trail exists; costs the S3 data-event record
+# create_budget                 = false   # an existing budget stays the only one
+# create_cost_anomaly_detection = false   # Default-Services-Monitor exists: one per account
+
 # --- The Bedrock guardrail (ADR-0050) --------------------------------------------
 # What `cascade eval guardrails` measures the compiled graphs against -- never
 # a filter in the compile path.
