@@ -83,12 +83,6 @@ class DecisionEvent(_Frozen):
     def canonical(self) -> dict[str, Any]:
         """Sorted, primitive projection -- the unit the M8 replay hash is over.
 
-<<<<<<< HEAD
-        ``latency_ms`` is deliberately **excluded**: it is wall-clock, it
-        differs between a recorded run and its replay by construction, and
-        including it would make the byte-identical criterion unachievable for
-        a reason that has nothing to do with determinism.
-=======
         ``latency_ms`` and ``cache_hit`` are deliberately **excluded**: both
         differ between a recorded run and its replay by construction, and
         including either would make the byte-identical criterion unachievable
@@ -115,7 +109,6 @@ class DecisionEvent(_Frozen):
 
         ``tokens_in`` and ``tokens_out`` stay in: on replay they are read from
         the recording, so they reproduce exactly.
->>>>>>> source-clean/main
         """
         return {
             "step": self.step,
@@ -125,10 +118,6 @@ class DecisionEvent(_Frozen):
             "action": self.action,
             "caused_by": [ref.as_json() for ref in self.caused_by],
             "factor_delta": {key: self.factor_delta[key] for key in sorted(self.factor_delta)},
-<<<<<<< HEAD
-            "cache_hit": self.cache_hit,
-=======
->>>>>>> source-clean/main
             "tokens_in": self.tokens_in,
             "tokens_out": self.tokens_out,
             "coercion": self.coercion,

@@ -279,11 +279,7 @@ def test_secrets_do_not_leak_through_repr_or_dump(monkeypatch: pytest.MonkeyPatc
 def test_database_url_carries_the_role_password(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("CASCADE_DB_SIM_PASSWORD", "simsecret")
     url = Settings().database_url("sim")
-<<<<<<< HEAD
-    assert url == "postgresql://cascade_sim:simsecret@localhost:5433/cascade"
-=======
     assert url == "postgresql://cascade_sim:simsecret@localhost:5433/cascade?sslmode=prefer"
->>>>>>> source-clean/main
 
 
 def test_database_port_is_not_the_default_5432() -> None:
@@ -353,8 +349,6 @@ def test_overlay_deep_merges_rather_than_replacing() -> None:
 def test_missing_overlay_raises() -> None:
     with pytest.raises(FileNotFoundError, match="ablation overlay not found"):
         load_settings("C99")
-<<<<<<< HEAD
-=======
 
 
 # ---------------------------------------------------------------------------
@@ -471,4 +465,3 @@ def test_the_call_log_path_is_only_derived_when_configured() -> None:
         }
     )
     assert configured.call_log_path() == repo_root() / ".logs" / "x.jsonl"
->>>>>>> source-clean/main

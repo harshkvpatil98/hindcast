@@ -19,8 +19,6 @@ rule is that the bisect names the first divergent field, so a mismatch is
 localised to a step by comparing the stored per-step ``state_hash`` sequence
 against the replayed one, and the first index that differs is reported with
 both values.
-<<<<<<< HEAD
-=======
 
 *What the replay is compared against* is the stored **events**, not the
 stored digest. ``runs.event_log_hash`` is a derived column written when the
@@ -38,7 +36,6 @@ keeps them apart: a run whose model recordings are not on this machine cannot
 be replayed here (the child exits with the cache-miss code and the outcome is
 *unreplayable*), and a child that died for a harness reason has *failed*.
 Both are "unverified", which is the honest word for them.
->>>>>>> source-clean/main
 """
 
 from __future__ import annotations
@@ -49,16 +46,6 @@ import sys
 from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-<<<<<<< HEAD
-from typing import Any, Literal
-
-from cascade.config import Settings
-
-__all__ = [
-    "ReplayOutcome",
-    "ReplayReport",
-    "load_replay_targets",
-=======
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
@@ -75,7 +62,6 @@ __all__ = [
     "apply_rehash",
     "load_replay_targets",
     "plan_rehash",
->>>>>>> source-clean/main
     "replay_in_process",
     "verify_replays",
 ]
@@ -90,9 +76,6 @@ CHILD_HASH_SEED = "12345"
 
 @dataclass(frozen=True, slots=True)
 class ReplayTarget:
-<<<<<<< HEAD
-    """One stored run, and the hash it must reproduce."""
-=======
     """One stored run, and the hash it must reproduce.
 
     ``event_log_hash`` is the stored events and step records hashed under the
@@ -101,7 +84,6 @@ class ReplayTarget:
     predates a change to the hash domain and ``cascade trace rehash`` refreshes
     it. ``None`` only for targets built by hand without a stored digest.
     """
->>>>>>> source-clean/main
 
     run_id: str
     scenario_id: str
@@ -112,8 +94,6 @@ class ReplayTarget:
     state_hashes: tuple[str, ...]
     outcome_score: float
     decisions: int
-<<<<<<< HEAD
-=======
     stored_digest: str | None = None
 
     @property
@@ -123,7 +103,6 @@ class ReplayTarget:
 
 
 ReplayKind = Literal["reproduced", "unreplayable", "failed", "diverged"]
->>>>>>> source-clean/main
 
 
 @dataclass(frozen=True, slots=True)
@@ -137,22 +116,17 @@ class ReplayOutcome:
     expected_state_hash: str | None = None
     actual_state_hash: str | None = None
     error: str | None = None
-<<<<<<< HEAD
-=======
     # The child could not replay this run *here*: a model recording it needs
     # is not in this machine's cache. Says nothing about determinism.
     unreplayable: bool = False
     # The run's cached digest predates the current hash domain (see the module
     # docstring). Reported, never counted against the replay.
     digest_stale: bool = False
->>>>>>> source-clean/main
 
     @property
     def matched(self) -> bool:
         return self.error is None and self.actual_hash == self.expected_hash
 
-<<<<<<< HEAD
-=======
     @property
     def kind(self) -> ReplayKind:
         """One of four words, because three kinds of "not a pass" differ in remedy.
@@ -169,7 +143,6 @@ class ReplayOutcome:
             return "failed"
         return "diverged"
 
->>>>>>> source-clean/main
 
 @dataclass
 class ReplayReport:
@@ -188,11 +161,6 @@ class ReplayReport:
 
     @property
     def diverged(self) -> tuple[ReplayOutcome, ...]:
-<<<<<<< HEAD
-        return tuple(outcome for outcome in self.outcomes if not outcome.matched)
-
-    @property
-=======
         """Every outcome that is not a pass, in target order."""
         return tuple(outcome for outcome in self.outcomes if not outcome.matched)
 
@@ -214,7 +182,6 @@ class ReplayReport:
         return sum(1 for outcome in self.outcomes if outcome.digest_stale)
 
     @property
->>>>>>> source-clean/main
     def ok(self) -> bool:
         return bool(self.outcomes) and not self.diverged
 
@@ -226,11 +193,6 @@ def _connect(settings: Settings, role: Role) -> Any:
 
 
 def load_replay_targets(
-<<<<<<< HEAD
-    settings: Settings, *, limit: int, config_id: str | None = None, role: Role = "eval"
-) -> tuple[ReplayTarget, ...]:
-    """The runs to replay, chosen deterministically.
-=======
     settings: Settings,
     *,
     limit: int,
@@ -240,16 +202,11 @@ def load_replay_targets(
     run_id: str | None = None,
 ) -> tuple[ReplayTarget, ...]:
     """The runs to replay, chosen deterministically, each with the hash it must reproduce.
->>>>>>> source-clean/main
 
     Ordered by ``run_id`` and taken from the front rather than sampled: the
     criterion is "25 runs replay identically", and a random 25 would make a
     failure depend on which 25 the command happened to draw. The same 25 every
     time is what makes a green result mean the same thing twice.
-<<<<<<< HEAD
-    """
-    clause = "WHERE config_id = %(config_id)s" if config_id else ""
-=======
 
     The hash to reproduce is computed from the stored events and step records
     under the current hash domain, through the same ``canonical()`` the kernel
@@ -273,47 +230,20 @@ def load_replay_targets(
         clauses.append("run_id = %(run_id)s")
         params["run_id"] = run_id
     where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
->>>>>>> source-clean/main
     with _connect(settings, role) as conn, conn.cursor() as cur:
         cur.execute(
             f"""
             SELECT run_id, scenario_id, config_id, replicate, policy,
                    event_log_hash, outcome_score, decisions
-<<<<<<< HEAD
-            FROM runs {clause}
-            ORDER BY run_id
-            LIMIT %(limit)s
-            """,  # noqa: S608 -- `clause` is a literal chosen above, not input
-            {"config_id": config_id, "limit": limit},
-=======
             FROM runs {where}
             ORDER BY run_id
             LIMIT %(limit)s
             """,  # noqa: S608 -- `where` is assembled from literals above, values are bound
             params,
->>>>>>> source-clean/main
         )
         rows = cur.fetchall()
 
         targets: list[ReplayTarget] = []
-<<<<<<< HEAD
-        for run_id, scenario_id, cfg, replicate, policy, log_hash, outcome, decisions in rows:
-            cur.execute(
-                "SELECT state_hash FROM run_steps WHERE run_id = %s ORDER BY step",
-                (run_id,),
-            )
-            targets.append(
-                ReplayTarget(
-                    run_id=str(run_id),
-                    scenario_id=str(scenario_id),
-                    config_id=str(cfg),
-                    replicate=int(replicate),
-                    policy=str(policy),
-                    event_log_hash=str(log_hash),
-                    state_hashes=tuple(str(row[0]) for row in cur.fetchall()),
-                    outcome_score=float(outcome),
-                    decisions=int(decisions),
-=======
         for row_id, scenario_id, cfg, replicate, row_policy, digest, outcome, decisions in rows:
             events, steps = _stored_log(cur, str(row_id))
             targets.append(
@@ -328,14 +258,11 @@ def load_replay_targets(
                     outcome_score=float(outcome),
                     decisions=int(decisions),
                     stored_digest=str(digest),
->>>>>>> source-clean/main
                 )
             )
     return tuple(targets)
 
 
-<<<<<<< HEAD
-=======
 def _stored_log(cur: Any, run_id: str) -> tuple[tuple[DecisionEvent, ...], tuple[StepRecord, ...]]:
     """One run's events and step records, as the kernel's own types, in key order.
 
@@ -420,7 +347,6 @@ def _stored_log(cur: Any, run_id: str) -> tuple[tuple[DecisionEvent, ...], tuple
     return events, steps
 
 
->>>>>>> source-clean/main
 def replay_in_process(settings: Settings, target: ReplayTarget) -> dict[str, Any]:
     """Re-simulate one run here and return its hashes. Writes nothing.
 
@@ -526,10 +452,6 @@ def _replay_in_subprocess(target: ReplayTarget, env_file: str | None = None) -> 
             expected_hash=target.event_log_hash,
             actual_hash=None,
             error=f"{type(exc).__name__}: {exc}",
-<<<<<<< HEAD
-        )
-
-=======
             digest_stale=target.digest_stale,
         )
 
@@ -549,17 +471,13 @@ def _replay_in_subprocess(target: ReplayTarget, env_file: str | None = None) -> 
             unreplayable=True,
             digest_stale=target.digest_stale,
         )
->>>>>>> source-clean/main
     if completed.returncode != 0:
         return ReplayOutcome(
             run_id=target.run_id,
             expected_hash=target.event_log_hash,
             actual_hash=None,
             error=(completed.stderr or completed.stdout).strip()[-400:] or "child exited non-zero",
-<<<<<<< HEAD
-=======
             digest_stale=target.digest_stale,
->>>>>>> source-clean/main
         )
     try:
         payload = json.loads(completed.stdout.strip().splitlines()[-1])
@@ -569,10 +487,7 @@ def _replay_in_subprocess(target: ReplayTarget, env_file: str | None = None) -> 
             expected_hash=target.event_log_hash,
             actual_hash=None,
             error=f"child produced no parseable result: {type(exc).__name__}: {exc}",
-<<<<<<< HEAD
-=======
             digest_stale=target.digest_stale,
->>>>>>> source-clean/main
         )
 
     actual_hash = str(payload["event_log_hash"])
@@ -581,10 +496,7 @@ def _replay_in_subprocess(target: ReplayTarget, env_file: str | None = None) -> 
             run_id=target.run_id,
             expected_hash=target.event_log_hash,
             actual_hash=actual_hash,
-<<<<<<< HEAD
-=======
             digest_stale=target.digest_stale,
->>>>>>> source-clean/main
         )
 
     # §8.4: the bisect names the first divergent field. Comparing the per-step
@@ -607,10 +519,7 @@ def _replay_in_subprocess(target: ReplayTarget, env_file: str | None = None) -> 
         first_divergent_step=first,
         expected_state_hash=expected_state,
         actual_state_hash=actual_state,
-<<<<<<< HEAD
-=======
         digest_stale=target.digest_stale,
->>>>>>> source-clean/main
     )
 
 
@@ -632,8 +541,6 @@ def verify_replays(
     with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
         outcomes = list(pool.map(lambda target: _replay_in_subprocess(target, env_file), targets))
     return ReplayReport(outcomes=outcomes, elapsed_s=time.perf_counter() - started)
-<<<<<<< HEAD
-=======
 
 
 # ---------------------------------------------------------------------------
@@ -734,4 +641,3 @@ def apply_rehash(settings: Settings, items: Sequence[RehashItem], *, archive: Pa
                 updated += int(cur.rowcount)
         conn.commit()
     return updated
->>>>>>> source-clean/main

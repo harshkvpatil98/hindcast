@@ -23,8 +23,6 @@ htmlcov/
 
 # macOS
 .DS_Store
-<<<<<<< HEAD
-=======
 
 # Terraform: providers, local state and machine-local config
 .terraform/
@@ -41,4 +39,3 @@ infra/terraform/**/terraform.tfvars
 /Context Files/
 .claude/
 .mcp.json
->>>>>>> source-clean/main

@@ -13,10 +13,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from cascade.eval.ablation import CELLS, grid_replicates, headline_comparisons
-<<<<<<< HEAD
-=======
 from cascade.eval.market import MARKET_CONFIG_ID, CoverageSummary
->>>>>>> source-clean/main
 from cascade.eval.report import StudyArtifact, write_report
 from cascade.eval.schema import (
     AblationCell,
@@ -92,8 +89,6 @@ class TestTheDeltasAreReadCorrectly:
         headline = (directory / "headline.md").read_text()
         assert "do not sum" in headline
 
-<<<<<<< HEAD
-=======
     def test_every_delta_is_printed_with_the_count_it_was_paired_on(self, tmp_path: Path) -> None:
         """One table holds deltas over different populations -- 90 for a capped
         cell, fewer for the market benchmark -- so each row says its own n."""
@@ -106,7 +101,6 @@ class TestTheDeltasAreReadCorrectly:
         )
         assert row.split("|")[4].strip() == "90"
 
->>>>>>> source-clean/main
     def test_every_comparison_carries_its_reading(self, tmp_path: Path) -> None:
         readings = {spec.name: spec.reading for spec in headline_comparisons()}
         artifact = _artifact(
@@ -196,11 +190,7 @@ class TestDispersionIsReportedHoweverItFell:
 
 class TestCellsAreMachineReadable:
     def test_design_and_executed_replicate_counts_are_both_recorded(self, tmp_path: Path) -> None:
-<<<<<<< HEAD
-        """CLAUDE.md Q1 turns on these being different numbers; the report
-=======
         """Open question Q1 turns on these being different numbers; the report
->>>>>>> source-clean/main
         carries both and never reconciles them silently."""
         cells = (
             AblationCell(
@@ -243,20 +233,13 @@ class TestCellsAreMachineReadable:
         assert payload["cells"][0]["metrics"] is None
 
     def test_the_baseline_table_lists_all_five_even_when_absent(self, tmp_path: Path) -> None:
-<<<<<<< HEAD
-=======
         """...and the market benchmark beside them, equally visible when absent:
         a report that dropped the row would hide that nobody fetched a price."""
->>>>>>> source-clean/main
         from cascade.eval.baselines import BASELINES
 
         baselines = tuple((spec.baseline_id, spec.name, spec.config_id, None) for spec in BASELINES)
         directory = write_report(_artifact(baselines=baselines), root=tmp_path)
         payload = json.loads((directory / "metrics.json").read_text())
-<<<<<<< HEAD
-        assert len(payload["baselines"]) == 5
-        assert all(row["metrics"] is None for row in payload["baselines"])
-=======
         in_spec = {spec.baseline_id for spec in BASELINES if spec.in_spec}
         assert len([row for row in payload["baselines"] if row["baseline_id"] in in_spec]) == 5
         assert "market" in {row["baseline_id"] for row in payload["baselines"]}
@@ -471,4 +454,3 @@ class TestTheDeltasNameWhatTheyAreAgainst:
             write_report(_artifact(baselines=baselines), root=tmp_path) / "headline.md"
         ).read_text()
         assert "`none` means no decider of this study's produced the number" in headline
->>>>>>> source-clean/main

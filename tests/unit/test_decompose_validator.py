@@ -354,8 +354,6 @@ def test_utility_terms_do_not_confer_reachability() -> None:
     violation = next(v for v in report.violations if v.rule == "reachability")  # type: ignore[attr-defined]
     assert "actor_9" in violation.subjects
     assert UtilityTerm(factor_id="factor_0", weight=0.5) in watcher.utility_terms
-<<<<<<< HEAD
-=======
 
 
 def _graph_with_inbound(weights: list[float]) -> CausalGraph:
@@ -398,4 +396,3 @@ def test_the_cap_still_refuses_a_graph_that_is_genuinely_over() -> None:
         _graph_with_inbound([1.0, 1.0, 1.0, 0.5]), outcome_text=OUTCOME_TEXT, embed=fake_embed()
     )
     assert "edge_sanity" in rules_fired(report)
->>>>>>> source-clean/main

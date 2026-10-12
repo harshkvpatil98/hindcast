@@ -26,10 +26,7 @@ from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Any, Literal
-<<<<<<< HEAD
-=======
 from urllib.parse import quote
->>>>>>> source-clean/main
 
 import yaml
 from pydantic import (
@@ -48,13 +45,6 @@ from pydantic_settings import (
 )
 
 __all__ = [
-<<<<<<< HEAD
-    "LLMMode",
-    "Settings",
-    "child_environment",
-    "env_file_path",
-    "load_settings",
-=======
     "ENV_ALIASES",
     "PROVIDER_ALIASES",
     "PROVIDER_NAMES",
@@ -67,7 +57,6 @@ __all__ = [
     "load_settings",
     "normalise_provider",
     "overlay_kind",
->>>>>>> source-clean/main
     "repo_root",
 ]
 
@@ -78,11 +67,6 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 _NON_FIELD_ENV_VARS = frozenset({"CASCADE_CONFIG", "CASCADE_ENV_FILE"})
 
 LLMMode = Literal["record", "replay", "live"]
-<<<<<<< HEAD
-Grounding = Literal["chronofence", "parametric_only"]
-CacheTTL = Literal["5m", "1h"]
-
-=======
 # Who serves the model (ADR-0028, ADR-0031, ADR-0053), by canonical name:
 #
 #   anthropic            the Anthropic API, with a key
@@ -154,7 +138,6 @@ def normalise_provider(value: Any) -> LLMProvider:
         )
     return canonical
 
->>>>>>> source-clean/main
 
 def repo_root() -> Path:
     """Return the repository root.
@@ -233,8 +216,6 @@ class MemoryConfig(_Model):
     summary_interval: int
 
 
-<<<<<<< HEAD
-=======
 class ToolsConfig(_Model):
     """What an agent may do besides choose an action (M15, ADR-0049).
 
@@ -296,7 +277,6 @@ class ToolsConfig(_Model):
         return self
 
 
->>>>>>> source-clean/main
 class KernelConfig(_Model):
     steps: int
     max_step_delta: float
@@ -307,10 +287,7 @@ class KernelConfig(_Model):
     evidence_chars: int
     activation: ActivationConfig
     memory: MemoryConfig
-<<<<<<< HEAD
-=======
     tools: ToolsConfig = Field(default_factory=ToolsConfig)
->>>>>>> source-clean/main
 
 
 class Channel(_Model):
@@ -325,8 +302,6 @@ class ApertureConfig(_Model):
     public: Channel
 
 
-<<<<<<< HEAD
-=======
 class RerankConfig(_Model):
     """Second-stage ranking over an already time-locked pool (ADR-0047).
 
@@ -358,7 +333,6 @@ class RerankConfig(_Model):
     price_per_1k_queries: str = "0.00"
 
 
->>>>>>> source-clean/main
 class RetrievalConfig(_Model):
     k_agent: int
     k_compiler: int
@@ -380,8 +354,6 @@ class RetrievalConfig(_Model):
     target_recall_at_k: float = Field(gt=0.0, le=1.0)
     poison_pill_count: int = Field(gt=0)
     signature_similarity_threshold: float = Field(gt=0.0, le=1.0)
-<<<<<<< HEAD
-=======
     # -- Hybrid retrieval (M14, migration 018) -------------------------------
     # `vector` is `chronofence_search`, unchanged. `hybrid` fuses its pool with
     # a time-locked keyword pool. The evidence an agent sees is part of its
@@ -432,7 +404,6 @@ class RetrievalConfig(_Model):
                 "before the caller's own k could"
             )
         return self
->>>>>>> source-clean/main
 
 
 class EnsembleConfig(_Model):
@@ -443,8 +414,6 @@ class EnsembleConfig(_Model):
     sigma_multimodal_threshold: float
 
 
-<<<<<<< HEAD
-=======
 class DossierConfig(_Model):
     """The per-scenario situation report (ADR-0037).
 
@@ -490,7 +459,6 @@ class EvalConfig(_Model):
     split_sha256: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
 
 
->>>>>>> source-clean/main
 class BudgetConfig(_Model):
     phase_ceiling_usd: dict[str, Money]
     abort_on_breach: bool
@@ -510,22 +478,17 @@ class FlagsConfig(_Model):
 
 class LLMConfig(_Model):
     mode: LLMMode
-<<<<<<< HEAD
-=======
     # Not part of the cache key (ADR-0029): the key carries the logical model,
     # and the provider only decides where the request is sent and how it is
     # billed. Normalised before validation, so `aws` and `claude_code` (the
     # M10-M16 spellings) resolve to the canonical names (ADR-0053).
     provider: Annotated[LLMProvider, BeforeValidator(normalise_provider)]
->>>>>>> source-clean/main
     cache_dir: str
     prompt_rev: str
     max_retries: int
     timeout_s: float
 
 
-<<<<<<< HEAD
-=======
 class ClaudePlatformAwsConfig(_Model):
     """Routing for Claude Platform on AWS (ADR-0028), the ``claude_platform_aws`` provider.
 
@@ -625,7 +588,6 @@ class ProvidersConfig(_Model):
 SSLMode = Literal["disable", "allow", "prefer", "require", "verify-ca", "verify-full"]
 
 
->>>>>>> source-clean/main
 class DatabaseConfig(_Model):
     host: str
     port: int
@@ -633,8 +595,6 @@ class DatabaseConfig(_Model):
     admin_user: str
     sim_user: str
     eval_user: str
-<<<<<<< HEAD
-=======
     # Always written into the connection URL, even when it equals libpq's own
     # default: an explicit parameter outranks an ambient PGSSLMODE, so the
     # shell cannot weaken a deployment that asked for verify-full (ADR-0034).
@@ -671,7 +631,6 @@ class DatabaseConfig(_Model):
                     "to whoever answers"
                 )
         return self
->>>>>>> source-clean/main
 
 
 class LangfuseConfig(_Model):
@@ -704,8 +663,6 @@ class LedgerConfig(_Model):
     metaculus_page_size: int
 
 
-<<<<<<< HEAD
-=======
 class MarketBaselineConfig(_Model):
     """The market-at-cutoff benchmark (M14). Reasons are in ``configs/base.yaml``.
 
@@ -732,13 +689,10 @@ class MarketBaselineConfig(_Model):
         return self
 
 
->>>>>>> source-clean/main
 class CorpusConfig(_Model):
     """Evidence-corpus ingest settings (spec §3.2)."""
 
     target_chunks: int
-<<<<<<< HEAD
-=======
     # `target_chunks` is a floor that `corpus verify` asserts; nothing ever made
     # it a stopping rule, so an unbounded build walks every generated unit --
     # measured at M10: ~1,460 CC-NEWS files, ~140 GB, against 27 GB of free
@@ -774,7 +728,6 @@ class CorpusConfig(_Model):
             )
         return self
 
->>>>>>> source-clean/main
     # SEC EDGAR requires a contact address in the User-Agent; see
     # cascade/corpus/fetch.py. Put a real address here before a long ingest.
     contact: str
@@ -790,20 +743,14 @@ class CorpusConfig(_Model):
     enabled_sources: tuple[str, ...]
     gdelt_max_records: int
     fetch_workers: int
-<<<<<<< HEAD
-=======
     # Threads chunking a write batch, one batch ahead of the embedding call.
     # 1 is the serial loop with no thread in it. Any value stores the same
     # bytes -- it moves *when* a document is chunked, never what comes out.
     chunk_workers: int = Field(ge=1)
->>>>>>> source-clean/main
     ccnews_max_files: int
     ccnews_max_records_per_file: int
     coverage_lookback_months: int
     coverage_min_chunks: int
-<<<<<<< HEAD
-    wikipedia_max_articles_per_scenario: int
-=======
     # Snapshot passes planned per scenario. Depth 1 is the articles the
     # scenario's own text names; each further depth is the next window of
     # links from their as-of leads. Depth is in the unit key, so raising this
@@ -812,7 +759,6 @@ class CorpusConfig(_Model):
     # a setting would change what a `done` key had covered.
     wikipedia_depth: int = Field(ge=1, le=99)
     wikipedia_requests_per_second: float = Field(gt=0, le=5.0)
->>>>>>> source-clean/main
 
 
 class PathsConfig(_Model):
@@ -843,8 +789,6 @@ class _YamlSource(PydanticBaseSettingsSource):
         return loaded
 
 
-<<<<<<< HEAD
-=======
 class _AliasEnvSource(PydanticBaseSettingsSource):
     """Feed :data:`ENV_ALIASES` into their nested fields (ADR-0053).
 
@@ -885,7 +829,6 @@ class _AliasEnvSource(PydanticBaseSettingsSource):
         return out
 
 
->>>>>>> source-clean/main
 class Settings(BaseSettings):
     """Root configuration object. Constructed once, passed explicitly thereafter."""
 
@@ -905,12 +848,6 @@ class Settings(BaseSettings):
     aperture: ApertureConfig
     retrieval: RetrievalConfig
     ensemble: EnsembleConfig
-<<<<<<< HEAD
-    budget: BudgetConfig
-    flags: FlagsConfig
-    llm: LLMConfig
-    ledger: LedgerConfig
-=======
     eval: EvalConfig
     budget: BudgetConfig
     flags: FlagsConfig
@@ -920,7 +857,6 @@ class Settings(BaseSettings):
     observability: ObservabilityConfig = Field(default_factory=ObservabilityConfig)
     ledger: LedgerConfig
     market_baseline: MarketBaselineConfig
->>>>>>> source-clean/main
     corpus: CorpusConfig
     database: DatabaseConfig
     langfuse: LangfuseConfig
@@ -939,8 +875,6 @@ class Settings(BaseSettings):
     langfuse_secret_key: SecretStr | None = Field(default=None)
 
     @model_validator(mode="after")
-<<<<<<< HEAD
-=======
     def _dossier_needs_its_prompt_revision(self) -> Settings:
         """Refuse to run reported prompts under an unreported prompt revision.
 
@@ -960,7 +894,6 @@ class Settings(BaseSettings):
         return self
 
     @model_validator(mode="after")
->>>>>>> source-clean/main
     def _reject_unrecognised_overrides(self) -> Settings:
         """Fail on a ``CASCADE_``-prefixed variable that binds to nothing.
 
@@ -983,10 +916,7 @@ class Settings(BaseSettings):
             for name in os.environ
             if name.startswith("CASCADE_")
             and name not in _NON_FIELD_ENV_VARS
-<<<<<<< HEAD
-=======
             and name not in ENV_ALIASES
->>>>>>> source-clean/main
             and name[len("CASCADE_") :].split("__", 1)[0] not in known
         )
         if offenders:
@@ -1032,12 +962,9 @@ class Settings(BaseSettings):
                 # a CASCADE_-prefixed name.
                 dotenv_filtering="only_existing",
             ),
-<<<<<<< HEAD
-=======
             # Below both CASCADE_ sources, above the YAML: a plain alias never
             # outranks the nested spelling of the same field (ADR-0053).
             _AliasEnvSource(settings_cls, env_path),
->>>>>>> source-clean/main
             _YamlSource(settings_cls, yaml_path),
         )
 
@@ -1061,8 +988,6 @@ class Settings(BaseSettings):
     def curated_path(self) -> Path:
         return self._resolve(self.ledger.curated_dir)
 
-<<<<<<< HEAD
-=======
     def call_log_path(self) -> Path:
         """Where the structured call log is appended (``observability.call_log``).
 
@@ -1074,15 +999,10 @@ class Settings(BaseSettings):
             raise ValueError("observability.call_log is not set; there is no call log to write")
         return self._resolve(self.observability.call_log)
 
->>>>>>> source-clean/main
     def _resolve(self, raw: str) -> Path:
         candidate = Path(raw)
         return candidate if candidate.is_absolute() else REPO_ROOT / candidate
 
-<<<<<<< HEAD
-    def price_for(self, model: str) -> PricingEntry:
-        """Return the price table entry for ``model``.
-=======
     def pricing_table(self) -> dict[str, PricingEntry]:
         """The price table of the active provider (ADR-0028).
 
@@ -1107,20 +1027,10 @@ class Settings(BaseSettings):
 
     def price_for(self, model: str) -> PricingEntry:
         """Return the active provider's price table entry for ``model``.
->>>>>>> source-clean/main
 
         Raises rather than defaulting: an unpriced model silently costing $0
         would corrupt the cost ledger, which blocks the report at M8.
         """
-<<<<<<< HEAD
-        try:
-            return self.pricing[model]
-        except KeyError:
-            known = ", ".join(sorted(self.pricing))
-            raise KeyError(
-                f"no pricing entry for model {model!r}; known models: {known}. "
-                "Add it to configs/base.yaml -- an unpriced model breaks the cost ledger."
-=======
         table = self.pricing_table()
         try:
             return table[model]
@@ -1135,7 +1045,6 @@ class Settings(BaseSettings):
                 f"no pricing entry for model {model!r} under provider "
                 f"{self.llm.provider!r}; known models: {known}. Add it to {section} "
                 "in configs/base.yaml -- an unpriced model breaks the cost ledger."
->>>>>>> source-clean/main
             ) from None
 
     def phase_ceiling(self, phase: str) -> Decimal:
@@ -1147,26 +1056,6 @@ class Settings(BaseSettings):
                 f"no budget ceiling configured for phase {phase!r}; known phases: {known}"
             ) from None
 
-<<<<<<< HEAD
-    def database_url(self, role: Literal["admin", "sim", "eval"]) -> str:
-        """Build a libpq URL for one of the three roles.
-
-        Kept here rather than in the DB layer so credentials never need an
-        environment read outside this module.
-        """
-        user, password = {
-            "admin": (self.database.admin_user, self.db_admin_password),
-            "sim": (self.database.sim_user, self.db_sim_password),
-            "eval": (self.database.eval_user, self.db_eval_password),
-        }[role]
-        secret = password.get_secret_value() if password else ""
-        return (
-            f"postgresql://{user}:{secret}@{self.database.host}:"
-            f"{self.database.port}/{self.database.name}"
-        )
-
-
-=======
     def _database_user(self, role: Literal["admin", "sim", "eval"]) -> str:
         return {
             "admin": self.database.admin_user,
@@ -1262,7 +1151,6 @@ def overlay_kind(overlay: str) -> str | None:
     return None
 
 
->>>>>>> source-clean/main
 @lru_cache(maxsize=8)
 def _cached_settings(overlay: str | None) -> Settings:
     # Zero-argument construction is correct: the YAML settings source supplies
@@ -1271,11 +1159,6 @@ def _cached_settings(overlay: str | None) -> Settings:
     base = Settings()
     if overlay is None:
         return base
-<<<<<<< HEAD
-    overlay_path = REPO_ROOT / "configs" / "ablations" / f"{overlay}.yaml"
-    if not overlay_path.is_file():
-        raise FileNotFoundError(f"ablation overlay not found: {overlay_path}")
-=======
     # Appendix C's twelve cells live in `ablations/` and a test asserts there are
     # exactly twelve files there. Supplementary cells are declared beside them
     # rather than among them, so adding one cannot be mistaken for a thirteenth
@@ -1289,7 +1172,6 @@ def _cached_settings(overlay: str | None) -> Settings:
             + ", configs/".join(OVERLAY_DIRECTORIES)
             + ")"
         )
->>>>>>> source-clean/main
     with overlay_path.open("r", encoding="utf-8") as handle:
         patch = yaml.safe_load(handle) or {}
     merged = _deep_merge(base.model_dump(mode="python"), patch)
@@ -1341,12 +1223,6 @@ def child_environment(**overrides: str) -> dict[str, str]:
     return env
 
 
-<<<<<<< HEAD
-def load_settings(overlay: str | None = None) -> Settings:
-    """Load configuration, optionally overlaid with an ablation cell.
-
-    ``overlay`` names a file in ``configs/ablations/`` without its extension.
-=======
 # Variables that attach a process to a running Claude Code session. A child CLI
 # that inherited them would try to report into *this* session rather than run
 # as an independent headless call.
@@ -1382,7 +1258,6 @@ def load_settings(overlay: str | None = None) -> Settings:
 
     ``overlay`` names a file in one of :data:`OVERLAY_DIRECTORIES` under
     ``configs/``, without its extension.
->>>>>>> source-clean/main
     Results are cached so repeated calls in one process return an identical
     object -- config is immutable within a run by construction.
     """

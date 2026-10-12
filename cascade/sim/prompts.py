@@ -39,10 +39,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from cascade.aperture.projection import Observation
-<<<<<<< HEAD
-=======
 from cascade.quoting import EVIDENCE_RULE, quote_documents
->>>>>>> source-clean/main
 from cascade.sim.actions import (
     RATIONALE_MAX_CHARS,
     Ally,
@@ -60,10 +57,6 @@ from cascade.sim.arbiter import (
     ESCALATE_GAIN,
     WAIT_REFUND,
 )
-<<<<<<< HEAD
-
-__all__ = ["ACTION_TOOL", "ACTION_TOOL_NAME", "RULES", "persona_block", "turn_message"]
-=======
 from cascade.sim.tools import LOOKUP_EVIDENCE, RECALL
 
 __all__ = [
@@ -74,7 +67,6 @@ __all__ = [
     "tool_rules",
     "turn_message",
 ]
->>>>>>> source-clean/main
 
 ACTION_TOOL_NAME = "emit_action"
 
@@ -112,13 +104,10 @@ You are one party in a multi-party situation that is being simulated forward, \
 one step at a time, to a horizon. You are not a forecaster and you are not an \
 assistant. You act in your own interest, given what you can see.
 
-<<<<<<< HEAD
-=======
 # Quoted documents
 
 {EVIDENCE_RULE}
 
->>>>>>> source-clean/main
 # The world
 
 The situation is described by a small set of *factors*, each a number in \
@@ -214,8 +203,6 @@ view is poor, that is part of your situation.\
 """
 
 
-<<<<<<< HEAD
-=======
 def tool_rules(*, max_turns: int, k: int, allow: Sequence[str]) -> str:
     """The extra system block the tool arm carries, and only that arm (ADR-0049).
 
@@ -268,7 +255,6 @@ no argument through which you could ask for one.\
     return "\n\n".join(blocks)
 
 
->>>>>>> source-clean/main
 class ActorBrief(BaseModel):
     """The static, per-(scenario, actor) half of the prompt."""
 
@@ -287,13 +273,10 @@ class ActorBrief(BaseModel):
     question_context: str
     evidence: tuple[tuple[str, str, str], ...]
     """(published_iso, source, excerpt) -- pre-cutoff, retrieved once per run."""
-<<<<<<< HEAD
-=======
     situation: str = ""
     """The rendered scenario dossier (ADR-0037), shared by every actor in the
     scenario. Empty with the dossier off, and the block it would occupy is then
     omitted entirely, so the prefix is byte-identical to the pre-dossier one."""
->>>>>>> source-clean/main
     grounded: bool = True
     """False under Appendix C's `grounding: parametric_only`. Distinguishes
     "retrieval ran and found nothing admissible" from "retrieval was switched
@@ -312,29 +295,14 @@ def persona_block(brief: ActorBrief, *, evidence_chars: int) -> str:
     utility = ", ".join(f"{factor} {weight:+.2f}" for factor, weight in brief.utility)
     levers = ", ".join(f"{factor} (leverage {weight:.2f})" for factor, weight in brief.levers)
     constraints = "\n".join(f"- {item}" for item in brief.constraints) or "- none stated"
-<<<<<<< HEAD
-    if brief.evidence:
-        evidence = "\n\n".join(
-            f"[{published}] {source}\n{excerpt[:evidence_chars]}"
-            for published, source, excerpt in brief.evidence
-        )
-    elif brief.grounded:
-        evidence = "(no admissible evidence was found before the cutoff)"
-    else:
-        evidence = (
-=======
     if brief.grounded:
         empty = "(no admissible evidence was found before the cutoff)"
     else:
         empty = (
->>>>>>> source-clean/main
             "(evidence retrieval is disabled in this configuration; reason from "
             "what you already know, and treat the absence of documents as a "
             "property of this exercise rather than as a fact about the world)"
         )
-<<<<<<< HEAD
-    counterparties = ", ".join(brief.counterparties) or "(none reachable)"
-=======
     evidence = quote_documents(brief.evidence, excerpt_chars=evidence_chars, empty=empty)
     counterparties = ", ".join(brief.counterparties) or "(none reachable)"
     report = (
@@ -344,7 +312,6 @@ def persona_block(brief: ActorBrief, *, evidence_chars: int) -> str:
         if brief.situation
         else ""
     )
->>>>>>> source-clean/main
     return f"""\
 # You
 
@@ -365,11 +332,7 @@ Constraints you operate under:
 
 The simulation runs {brief.horizon} steps.
 
-<<<<<<< HEAD
-# What was known before the cutoff
-=======
 {report}# What was known before the cutoff
->>>>>>> source-clean/main
 
 Everything below was published before the situation's cutoff date. It is the \
 only outside information you have, it does not update as the simulation runs, \
@@ -436,10 +399,7 @@ def brief_from(
     question_context: str,
     evidence: Sequence[tuple[str, str, str]],
     grounded: bool = True,
-<<<<<<< HEAD
-=======
     situation: str = "",
->>>>>>> source-clean/main
 ) -> ActorBrief:
     """Assemble one actor's brief from the compiled graph and its evidence."""
     return ActorBrief(
@@ -457,9 +417,6 @@ def brief_from(
         horizon=horizon,
         question_context=question_context,
         evidence=tuple(evidence),
-<<<<<<< HEAD
-=======
         situation=situation,
->>>>>>> source-clean/main
         grounded=grounded,
     )

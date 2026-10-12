@@ -10,14 +10,11 @@ follow from that:
 * The key covers exactly what changes the response. ``cache_control`` markers
   do not (ADR-0007), so they are stripped before hashing and prompt-cache
   tuning stays a pure cost change.
-<<<<<<< HEAD
-=======
 * A provider that cannot honour the whole key domain records under a
   namespace of its own (ADR-0031). The Claude Code CLI cannot set
   ``temperature`` or ``max_tokens``; without a namespace its responses would
   sit under keys claiming values the model never received, and would be served
   as API recordings the moment the provider was switched.
->>>>>>> source-clean/main
 """
 
 from __future__ import annotations
@@ -35,18 +32,6 @@ from cascade.llm.types import CachedCall, LLMRequest
 # Re-exported: the cache key is defined in terms of this serialisation, so a
 # reader of this module should not have to go looking for it. There is exactly
 # one definition, in cascade/canonical.py.
-<<<<<<< HEAD
-__all__ = ["CacheStats", "CallCache", "cache_key", "canonical_json"]
-
-
-def cache_key(request: LLMRequest) -> str:
-    """Return the spec §8.3 content address for ``request``.
-
-    Preserves the invariant that the key domain is exactly the fields that
-    determine the response -- see ``LLMRequest.cache_domain``.
-    """
-    return hashlib.sha256(canonical_json(request.cache_domain()).encode("utf-8")).hexdigest()
-=======
 __all__ = ["CacheStats", "CallCache", "cache_domain", "cache_key", "canonical_json"]
 
 # The key under which a namespace enters the domain. Chosen so it cannot
@@ -76,7 +61,6 @@ def cache_key(request: LLMRequest, *, namespace: str | None = None) -> str:
     """
     domain = cache_domain(request, namespace=namespace)
     return hashlib.sha256(canonical_json(domain).encode("utf-8")).hexdigest()
->>>>>>> source-clean/main
 
 
 @dataclass

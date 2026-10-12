@@ -37,12 +37,6 @@ import random
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
-<<<<<<< HEAD
-
-from cascade.ledger.schema import Scenario
-
-__all__ = ["BenchQuery", "build_queries", "query_templates"]
-=======
 from typing import Literal, Protocol
 
 from cascade.ledger.schema import Scenario
@@ -62,7 +56,6 @@ __all__ = [
 ]
 
 QueryKind = Literal["compiler", "agent", "baseline"]
->>>>>>> source-clean/main
 
 
 @dataclass(frozen=True)
@@ -180,8 +173,6 @@ def build_queries(
         )
 
     return tuple(out)
-<<<<<<< HEAD
-=======
 
 
 # ---------------------------------------------------------------------------
@@ -345,4 +336,3 @@ def relevance_queries(
                 )
             )
     return tuple(out)
->>>>>>> source-clean/main

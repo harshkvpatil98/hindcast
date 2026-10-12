@@ -1,29 +1,11 @@
-<<<<<<< HEAD
-"""Reconciling the local cost ledger against Langfuse (spec §12.4; M8).
-=======
 """Reconciling the local cost ledger against every other record of the same
 spend (spec §12.4; M8, extended at M15).
->>>>>>> source-clean/main
 
 §12.4 makes this a gate, not a dashboard: "Token counts and cost are written to
 the runs table on completion of each run and reconciled against the Langfuse
 total at the end of each phase. A discrepancy above 2% is a bug in the meter
 and blocks the report."
 
-<<<<<<< HEAD
-Two independent records of the same spend exist by construction. The **meter**
-prices every call from the pinned per-token table (`llm/meter.py`) in exact
-`Decimal`, and the per-run total is written to `runs.cost_usd`. The **tracer**
-emits one Langfuse generation per call carrying the same cost. They are
-produced by different code from the same event, which is what makes agreement
-evidence rather than tautology -- and why the reconciliation is worth running.
-
-The comparison is deliberately asymmetric about failure. A Langfuse that is
-unreachable is **not** a reconciliation failure: `tracing.py` is allowed to
-degrade to a no-op because observability must never fail a run, so a missing
-remote total is reported as *unreconciled*, which is a different verdict from
-*disagreeing*. Only a measured difference above the threshold fails.
-=======
 **Independence is a property of who wrote the record, not of how many records
 there are.** The **meter** prices every call from the pinned per-token table
 (`llm/meter.py`) in exact `Decimal` and writes the per-run total to
@@ -64,30 +46,18 @@ meter. So the slice is a value (:class:`Scope`), it is carried on every reading
 as the slice that reading actually covers, and :func:`at_scope` refuses a
 reading that covers something else. A source that cannot honour the scope
 cannot silently answer a wider question.
->>>>>>> source-clean/main
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-<<<<<<< HEAD
-=======
 from datetime import UTC, datetime, timedelta
->>>>>>> source-clean/main
 from decimal import Decimal
 from typing import Any, Literal
 
 from cascade.config import Settings
 
 __all__ = [
-<<<<<<< HEAD
-    "RECONCILE_TOLERANCE",
-    "LedgerReconciliation",
-    "PhaseSpend",
-    "local_spend",
-    "reconcile",
-    "remote_spend",
-=======
     "LANGFUSE_SOURCE",
     "LOCAL_SOURCE",
     "RECONCILE_TOLERANCE",
@@ -111,13 +81,10 @@ __all__ = [
     "reconcile",
     "remote_spend",
     "runs_filter",
->>>>>>> source-clean/main
 ]
 
 Role = Literal["admin", "sim", "eval"]
 
-<<<<<<< HEAD
-=======
 #: What quantity a source's record actually measures. A record that carries
 #: token counts and no price cannot be compared in dollars without pricing it
 #: from the meter's own table, which would compare the price table with itself
@@ -133,20 +100,10 @@ ReadingStatus = Literal["read", "unreachable", "not configured"]
 LOCAL_SOURCE = "runs ledger"
 LANGFUSE_SOURCE = "langfuse"
 
->>>>>>> source-clean/main
 # §12.4's threshold, stated once. "A discrepancy above 2% is a bug in the
 # meter", so this is a criterion rather than a tuning knob.
 RECONCILE_TOLERANCE = Decimal("0.02")
 
-<<<<<<< HEAD
-
-@dataclass(frozen=True, slots=True)
-class PhaseSpend:
-    """What one source says a phase cost."""
-
-    source: str
-    total_usd: Decimal
-=======
 _EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
 _MILLISECOND = timedelta(milliseconds=1)
 
@@ -307,26 +264,11 @@ class PhaseSpend:
 
     source: str
     total_usd: Decimal | None
->>>>>>> source-clean/main
     calls: int
     input_tokens: int
     output_tokens: int
     detail: str = ""
 
-<<<<<<< HEAD
-
-@dataclass(frozen=True, slots=True)
-class LedgerReconciliation:
-    """The §12.4 gate, measured."""
-
-    local: PhaseSpend
-    remote: PhaseSpend | None
-    tolerance: Decimal = RECONCILE_TOLERANCE
-
-    @property
-    def vacuous(self) -> bool:
-        """True when there is no spend on either side to reconcile.
-=======
     @property
     def total_tokens(self) -> int:
         """Both directions summed, which is what a token-basis source compares."""
@@ -470,57 +412,12 @@ class SourceComparison:
     @property
     def vacuous(self) -> bool:
         """True when the two records were read and neither holds anything.
->>>>>>> source-clean/main
 
         Zero against zero agrees to 0.0000%, and reporting that as reconciled
         is a guard that cannot fail: a study run entirely in replay, or under a
         stand-in decider, books nothing on either side and would pass §12.4's
         gate without either record having been tested against the other.
         """
-<<<<<<< HEAD
-        if self.remote is None:
-            return False
-        return (
-            self.local.total_usd == 0
-            and self.remote.total_usd == 0
-            and self.local.calls == 0
-            and self.remote.calls == 0
-        )
-
-    @property
-    def reconciled(self) -> bool:
-        """True only when both totals exist, are non-trivial, and agree.
-
-        A missing remote total reads as *not reconciled* rather than as
-        reconciled-by-default: §12.4 blocks the report on a discrepancy, and
-        "we could not check" is not "we checked". A vacuous comparison reads
-        the same way, for the same reason.
-        """
-        return self.remote is not None and not self.vacuous and self.within_tolerance
-
-    @property
-    def difference_usd(self) -> Decimal | None:
-        if self.remote is None:
-            return None
-        return self.local.total_usd - self.remote.total_usd
-
-    @property
-    def relative_difference(self) -> Decimal | None:
-        """``|local - remote| / max(local, remote)``, or ``None``.
-
-        Divided by the larger of the two rather than by one of them, so the
-        figure does not depend on which side is called the reference -- and so
-        a remote total of zero against a non-zero local one reads as 100%
-        rather than as a division by zero.
-        """
-        if self.remote is None:
-            return None
-        base = max(self.local.total_usd, self.remote.total_usd)
-        if base == 0:
-            return Decimal(0)
-        difference = self.local.total_usd - self.remote.total_usd
-        return abs(difference) / base
-=======
         spend = self.reading.spend
         if spend is None:
             return False
@@ -558,15 +455,12 @@ class SourceComparison:
         if base == 0:
             return Decimal(0)
         return abs(local_quantity - source_quantity) / base
->>>>>>> source-clean/main
 
     @property
     def within_tolerance(self) -> bool:
         relative = self.relative_difference
         return relative is not None and relative <= self.tolerance
 
-<<<<<<< HEAD
-=======
     @property
     def agrees(self) -> bool:
         """Read, non-trivial, and inside §12.4's threshold."""
@@ -761,7 +655,6 @@ class LedgerReconciliation:
         )
         return f"reconciled against {', '.join(self.compared)}{verified}{aside}"
 
->>>>>>> source-clean/main
 
 def _connect(settings: Settings, role: Role) -> Any:
     import psycopg
@@ -769,12 +662,6 @@ def _connect(settings: Settings, role: Role) -> Any:
     return psycopg.connect(settings.database_url(role), connect_timeout=30)
 
 
-<<<<<<< HEAD
-def local_spend(
-    settings: Settings, *, config_id: str | None = None, role: Role = "eval"
-) -> PhaseSpend:
-    """What the meter booked, summed from the run ledger.
-=======
 @dataclass(frozen=True, slots=True)
 class RunsFilter:
     """How one :class:`Scope` reads against the `runs` table.
@@ -836,32 +723,11 @@ def runs_filter(scope: Scope) -> RunsFilter:
 
 def local_spend(settings: Settings, *, scope: Scope = Scope(), role: Role = "eval") -> PhaseSpend:
     """What the meter booked over one slice, summed from the run ledger.
->>>>>>> source-clean/main
 
     ``runs`` is the ledger §12.4 names: one row per completed run carrying the
     cost the meter priced for it. Summing it rather than re-pricing keeps this
     a *reconciliation* -- re-pricing here would compare the price table with
     itself and agree by construction.
-<<<<<<< HEAD
-    """
-    clause = "WHERE config_id = %(config_id)s" if config_id else ""
-    with _connect(settings, role) as conn, conn.cursor() as cur:
-        cur.execute(
-            f"""
-            SELECT COALESCE(sum(cost_usd), 0)::text,
-                   COALESCE(sum(llm_calls), 0),
-                   COALESCE(sum(tokens_in), 0),
-                   COALESCE(sum(tokens_out), 0),
-                   count(*)
-            FROM runs {clause}
-            """,  # noqa: S608 -- `clause` is a literal chosen above, not input
-            {"config_id": config_id},
-        )
-        row = cur.fetchone()
-    total, calls, tokens_in, tokens_out, runs = row if row else ("0", 0, 0, 0, 0)
-    return PhaseSpend(
-        source="runs ledger",
-=======
 
     A run is in the window when ``completed_at`` is, because that is the
     instant the row -- and with it the whole run's cost -- entered the ledger;
@@ -888,24 +754,10 @@ def local_spend(settings: Settings, *, scope: Scope = Scope(), role: Role = "eva
     total, calls, tokens_in, tokens_out, runs, straddling = row if row else ("0", 0, 0, 0, 0, 0)
     return PhaseSpend(
         source=LOCAL_SOURCE,
->>>>>>> source-clean/main
         total_usd=Decimal(str(total)),
         calls=int(calls),
         input_tokens=int(tokens_in),
         output_tokens=int(tokens_out),
-<<<<<<< HEAD
-        detail=f"{int(runs):,} run(s)" + (f", config {config_id}" if config_id else ""),
-    )
-
-
-def remote_spend(settings: Settings, *, timeout_s: float = 30.0) -> PhaseSpend | None:
-    """What Langfuse recorded, or ``None`` when it cannot be asked.
-
-    ``None`` is returned for an unreachable or unconfigured Langfuse rather
-    than a zero total. A zero would compare as a 100% discrepancy and fail the
-    gate for an observability outage, which inverts the rule that observability
-    must never fail a run (`tracing.py`).
-=======
         detail=local_detail(runs=int(runs), straddling=int(straddling), scope=scope),
     )
 
@@ -943,18 +795,10 @@ def langfuse_reading(
     zero would compare as a 100% discrepancy and fail the gate for an
     observability outage, which inverts the rule that observability must never
     fail a run (`tracing.py`).
->>>>>>> source-clean/main
 
     Reads the daily metrics endpoint, which Langfuse v2 (ADR-0006) serves as an
     aggregate rather than requiring a walk over every observation -- 4.2M
     generations is not something to paginate for a total.
-<<<<<<< HEAD
-    """
-    if not settings.langfuse.enabled:
-        return None
-    if settings.langfuse_public_key is None or settings.langfuse_secret_key is None:
-        return None
-=======
 
     The window is applied through that endpoint's own ``fromTimestamp`` /
     ``toTimestamp`` parameters, read off the pinned SDK (langfuse 2.60.10,
@@ -995,7 +839,6 @@ def langfuse_reading(
             "not configured",
             "CASCADE_LANGFUSE_PUBLIC_KEY / CASCADE_LANGFUSE_SECRET_KEY are not both set",
         )
->>>>>>> source-clean/main
 
     import httpx
 
@@ -1004,26 +847,16 @@ def langfuse_reading(
         settings.langfuse_secret_key.get_secret_value(),
     )
     url = f"{settings.langfuse.host.rstrip('/')}/api/public/metrics/daily"
-<<<<<<< HEAD
-=======
     window: dict[str, str] = {}
     if scope.since is not None:
         window["fromTimestamp"] = iso(scope.since)
     if scope.until is not None:
         window["toTimestamp"] = iso(scope.until)
 
->>>>>>> source-clean/main
     total = Decimal(0)
     calls = tokens_in = tokens_out = 0
     page = 1
     try:
-<<<<<<< HEAD
-        with httpx.Client(timeout=timeout_s) as client:
-            while True:
-                response = client.get(url, auth=auth, params={"page": page, "limit": 100})
-                if response.status_code != 200:
-                    return None
-=======
         with httpx.Client(timeout=timeout_s, transport=transport) as client:
             while True:
                 response = client.get(url, auth=auth, params={"page": page, "limit": 100, **window})
@@ -1032,7 +865,6 @@ def langfuse_reading(
                         "unreachable",
                         f"{settings.langfuse.host} answered HTTP {response.status_code}",
                     )
->>>>>>> source-clean/main
                 payload = response.json()
                 rows = payload.get("data") or []
                 for day in rows:
@@ -1045,21 +877,6 @@ def langfuse_reading(
                 if page >= int(meta.get("totalPages") or 1) or not rows:
                     break
                 page += 1
-<<<<<<< HEAD
-    except Exception:  # noqa: BLE001 -- an unreachable Langfuse is not a discrepancy
-        return None
-
-    return PhaseSpend(
-        source="langfuse",
-        total_usd=total,
-        calls=calls,
-        input_tokens=tokens_in,
-        output_tokens=tokens_out,
-        detail=f"{page} page(s) of daily metrics",
-    )
-
-
-=======
     except Exception as exc:  # noqa: BLE001 -- an unreachable Langfuse is not a discrepancy
         return unread("unreachable", f"{type(exc).__name__}: {exc}")
 
@@ -1128,20 +945,10 @@ def readings(
     return tuple(sorted((at_scope(reading, scope) for reading in found), key=lambda r: r.name))
 
 
->>>>>>> source-clean/main
 def reconcile(
     settings: Settings,
     *,
     config_id: str | None = None,
-<<<<<<< HEAD
-    tolerance: Decimal = RECONCILE_TOLERANCE,
-) -> LedgerReconciliation:
-    """Compare the two records of the same spend (§12.4)."""
-    return LedgerReconciliation(
-        local=local_spend(settings, config_id=config_id),
-        remote=remote_spend(settings),
-        tolerance=tolerance,
-=======
     since: datetime | None = None,
     until: datetime | None = None,
     tolerance: Decimal = RECONCILE_TOLERANCE,
@@ -1171,5 +978,4 @@ def reconcile(
         ),
         tolerance=tolerance,
         scope=scope,
->>>>>>> source-clean/main
     )

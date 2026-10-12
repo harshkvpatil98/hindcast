@@ -165,20 +165,12 @@ def test_edgar_extracts_the_primary_document() -> None:
 def test_wikipedia_snapshot_requires_an_aware_anchor() -> None:
     """A naive anchor cannot be compared to a revision timestamp."""
     with pytest.raises(ValueError, match="timezone-aware"):
-<<<<<<< HEAD
-        wikipedia.SnapshotRequest("Brexit", datetime(2016, 4, 15))
-=======
         wikipedia.SnapshotUnit(as_of=datetime(2016, 4, 15), titles=("Brexit",))
->>>>>>> source-clean/main
 
 
 def test_wikipedia_snapshot_keeps_its_anchor() -> None:
     anchor = datetime(2016, 4, 15, tzinfo=UTC)
-<<<<<<< HEAD
-    assert wikipedia.SnapshotRequest("Brexit", anchor).as_of == anchor
-=======
     assert wikipedia.SnapshotUnit(as_of=anchor, titles=("Brexit",)).as_of == anchor
->>>>>>> source-clean/main
 
 
 # ---------------------------------------------------------------------------
@@ -591,8 +583,6 @@ def test_gdelt_units_are_not_clamped_when_the_request_starts_later() -> None:
 def test_gdelt_coverage_floor_is_the_measured_one() -> None:
     """2016-12 was refused and 2020-06 served; the documented start is 2017-01-01."""
     assert gdelt.COVERAGE_START_YEAR == 2017
-<<<<<<< HEAD
-=======
 
 
 def test_the_warc_date_is_read_from_the_record_header() -> None:
@@ -643,4 +633,3 @@ def test_a_warc_response_carries_its_fetch_time_into_the_document() -> None:
     [document] = list(ccnews.load_warc(fetcher, path="crawl-data/x.warc.gz", max_records=5))
     assert document.published_at == datetime(2025, 8, 23, 18, 31, tzinfo=UTC)
     assert document.crawled_at == datetime(2026, 4, 9, 2, 0, tzinfo=UTC)
->>>>>>> source-clean/main

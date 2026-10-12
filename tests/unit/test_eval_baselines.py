@@ -45,16 +45,12 @@ def _scenario(scenario_id: str = "s1") -> Scenario:
 
 class TestTheFiveAreAllPresent:
     def test_there_are_exactly_five(self) -> None:
-<<<<<<< HEAD
-        assert len(BASELINES) == 5
-=======
         """§10.2's list stays checkable as a list; a benchmark added beyond it
         is marked as such rather than quietly making it six."""
         assert len([spec for spec in BASELINES if spec.in_spec]) == 5
 
     def test_the_one_beyond_the_spec_is_the_market(self) -> None:
         assert [spec.baseline_id for spec in BASELINES if not spec.in_spec] == ["market"]
->>>>>>> source-clean/main
 
     def test_two_of_them_are_grid_cells_and_are_not_re_run(self) -> None:
         """Running them twice would put two differently-seeded copies of one
@@ -156,22 +152,14 @@ class TestSampleRequests:
 
     def test_the_sample_index_never_reaches_the_wire(self) -> None:
         """It is a cache-domain field, not an API parameter."""
-<<<<<<< HEAD
-        from cascade.llm.client import _batch_params
-=======
         from cascade.llm.client import _messages_params as _batch_params
->>>>>>> source-clean/main
 
         settings = load_settings(None)
         item = sample_requests(
             settings, _scenario(), [], samples=2, temperature=0.5, config_id="B3"
         )[1]
         assert item.request.sample_index == 1
-<<<<<<< HEAD
-        assert "sample_index" not in _batch_params(item.request)
-=======
         assert "sample_index" not in _batch_params(item.request, model=item.request.model)
->>>>>>> source-clean/main
 
 
 class TestCollapse:

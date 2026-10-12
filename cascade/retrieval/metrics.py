@@ -17,8 +17,6 @@ three significant figures and an unstated definition is not reproducible:
   all have no ground truth to recall and are counted separately rather than
   scored as 1.0 -- scoring them as perfect would let an empty corpus report
   perfect recall, which is precisely backwards.
-<<<<<<< HEAD
-=======
 
 **Outcome-blind relevance (M14).** Recall says how well the index approximates
 exact vector search; it cannot say whether vector search was finding the right
@@ -38,23 +36,10 @@ These are properties the hybrid path was *built* to move -- the keyword pool
 matches names, fusion ranks recency, the diversity pass spreads documents. So
 they verify the mechanisms work on the real corpus and at what cost in
 distance; they are not independent evidence that forecasts improve.
->>>>>>> source-clean/main
 """
 
 from __future__ import annotations
 
-<<<<<<< HEAD
-from collections.abc import Iterable, Sequence
-from dataclasses import dataclass
-
-from cascade.retrieval.schema import LatencySummary
-
-__all__ = [
-    "RecallSummary",
-    "histogram",
-    "percentile",
-    "recall_at_k",
-=======
 import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
@@ -73,7 +58,6 @@ __all__ = [
     "percentile",
     "recall_at_k",
     "score_retrieval",
->>>>>>> source-clean/main
     "summarise_latency",
 ]
 
@@ -234,8 +218,6 @@ def recall_at_k(pairs: Iterable[tuple[Sequence[str], Sequence[str]]], *, k: int)
         minimum=min(scores) if scores else 0.0,
         perfect=perfect,
     )
-<<<<<<< HEAD
-=======
 
 
 # ---------------------------------------------------------------------------
@@ -406,4 +388,3 @@ def generic_names(
 def informative(names: Sequence[str], generic: frozenset[str]) -> tuple[str, ...]:
     """``names`` without the generic ones, order kept."""
     return tuple(name for name in names if _normalise(name) and _normalise(name) not in generic)
->>>>>>> source-clean/main

@@ -22,8 +22,6 @@ Nothing here can cause a leak. A missing index makes retrieval *slower* -- at
 worst an exact sequential scan over the pruned partitions -- never wider. The
 time predicate lives in ``chronofence_search`` and does not depend on any
 index existing.
-<<<<<<< HEAD
-=======
 
 **The full-text index (M14, migration 018)** follows the same lifecycle for the
 same reasons, and one more. The hybrid keyword pool matches on
@@ -40,7 +38,6 @@ Unlike a missing HNSW index, a missing full-text index is not merely slow: the
 keyword predicate degrades to parsing every pre-cutoff body per query, which
 is minutes. So `retrieval verify` fails on it whenever ``retrieval.mode`` is
 ``hybrid``, and `bench --relevance` refuses to start without it.
->>>>>>> source-clean/main
 """
 
 from __future__ import annotations
@@ -49,21 +46,6 @@ import time
 from typing import Any
 
 from cascade.config import Settings
-<<<<<<< HEAD
-from cascade.retrieval.schema import IndexPlan, IndexReport, PartitionIndex
-
-__all__ = [
-    "PGVECTOR_MAX_EF_CONSTRUCTION",
-    "PGVECTOR_MAX_M",
-    "apply_plans",
-    "drop_legacy_ivfflat",
-    "index_name_for",
-    "measure",
-    "plan_all",
-    "plan_partition",
-]
-
-=======
 from cascade.retrieval.schema import (
     FtsIndexPlan,
     FtsIndexReport,
@@ -96,7 +78,6 @@ __all__ = [
 # `default_text_search_config`, is therefore only STABLE, and cannot be indexed.
 FTS_EXPRESSION = "to_tsvector('english', body)"
 
->>>>>>> source-clean/main
 # pgvector's own ceilings for the two HNSW build parameters.
 PGVECTOR_MAX_M = 100
 PGVECTOR_MAX_EF_CONSTRUCTION = 1000
@@ -117,8 +98,6 @@ def index_name_for(partition: str) -> str:
     return f"{partition}_embedding_hnsw_idx"
 
 
-<<<<<<< HEAD
-=======
 def fts_index_name_for(partition: str) -> str:
     """Deterministic name for a partition's full-text index.
 
@@ -130,7 +109,6 @@ def fts_index_name_for(partition: str) -> str:
     return f"{partition}_body_fts_idx"
 
 
->>>>>>> source-clean/main
 def _validate(m: int, ef_construction: int) -> None:
     """Reject build parameters pgvector itself would refuse.
 
@@ -234,8 +212,6 @@ def plan_all(
     )
 
 
-<<<<<<< HEAD
-=======
 def plan_fts_partition(partition: PartitionIndex) -> FtsIndexPlan:
     """Decide what one partition's full-text index needs. Pure.
 
@@ -280,7 +256,6 @@ def plan_fts(partitions: list[PartitionIndex]) -> tuple[FtsIndexPlan, ...]:
     return tuple(plan_fts_partition(partition) for partition in ordered)
 
 
->>>>>>> source-clean/main
 def _connect(settings: Settings) -> Any:
     import psycopg
 
@@ -295,17 +270,6 @@ def measure(settings: Settings) -> list[PartitionIndex]:
     the *skip-empty* decision still turns on it -- and skipping a partition
     that merely looks empty is how a partition ends up permanently unindexed.
     """
-<<<<<<< HEAD
-    with _connect(settings) as conn, conn.cursor() as cur:
-        cur.execute(
-            "SELECT partition, index_name, m, ef_construction "
-            "FROM chronofence_partitions ORDER BY partition"
-        )
-        rows = cur.fetchall()
-
-        out: list[PartitionIndex] = []
-        for partition, index_name, m, ef_construction in rows:
-=======
     import psycopg
 
     with _connect(settings) as conn, conn.cursor() as cur:
@@ -326,7 +290,6 @@ def measure(settings: Settings) -> list[PartitionIndex]:
 
         out: list[PartitionIndex] = []
         for partition, index_name, m, ef_construction, fts_index_name in rows:
->>>>>>> source-clean/main
             # Partition names come from pg_class, not from user input; quoted
             # with an identifier quote regardless, because building DDL by
             # interpolation is a habit that has to be uniform to be safe.
@@ -339,10 +302,7 @@ def measure(settings: Settings) -> list[PartitionIndex]:
                     index_name=str(index_name) if index_name is not None else None,
                     m=int(m) if m is not None else None,
                     ef_construction=int(ef_construction) if ef_construction is not None else None,
-<<<<<<< HEAD
-=======
                     fts_index_name=str(fts_index_name) if fts_index_name is not None else None,
->>>>>>> source-clean/main
                 )
             )
     return out
@@ -414,8 +374,6 @@ def apply_plans(
     )
 
 
-<<<<<<< HEAD
-=======
 def apply_fts_plans(
     settings: Settings, plans: tuple[FtsIndexPlan, ...], *, maintenance_work_mem: str = "900MB"
 ) -> FtsIndexReport:
@@ -473,7 +431,6 @@ def apply_fts_plans(
     )
 
 
->>>>>>> source-clean/main
 def drop_legacy_ivfflat(settings: Settings) -> tuple[str, ...]:
     """Remove IVFFlat indexes left on ``chunks`` partitions. Returns their names.
 

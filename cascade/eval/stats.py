@@ -32,10 +32,7 @@ from cascade.eval.schema import BootstrapInterval, Comparison
 
 __all__ = [
     "adjust_family",
-<<<<<<< HEAD
-=======
     "bootstrap_differences",
->>>>>>> source-clean/main
     "bootstrap_seed",
     "holm_bonferroni",
     "paired_bootstrap",
@@ -97,29 +94,14 @@ def paired_bootstrap(
     resolution and printing ``p = 0.0`` claims that it can.
     """
     pa, pb, y = _paired_arrays(a, b, outcomes)
-<<<<<<< HEAD
-    if b_resamples <= 0:
-        raise ValueError(f"b_resamples must be positive, got {b_resamples}")
-    n = y.size
-    point = float(np.mean((pa - y) ** 2) - np.mean((pb - y) ** 2))
-    if n == 1:
-        return BootstrapInterval(point=point, lo=point, hi=point, b=b_resamples, p_value=1.0)
-
-    rng = np.random.Generator(np.random.PCG64(seed))
-=======
     # The point is computed as a difference of Briers, not as the mean of the
     # per-scenario differences: the two are equal in exact arithmetic and can
     # differ in the last bit in floating point, and this is a committed figure.
     point = float(np.mean((pa - y) ** 2) - np.mean((pb - y) ** 2))
->>>>>>> source-clean/main
     # Per-scenario squared-error difference. The Brier difference is its mean,
     # so one draw of scenario indices resamples both configurations together --
     # which is the pairing, expressed as arithmetic rather than as a promise.
     per_scenario = (pa - y) ** 2 - (pb - y) ** 2
-<<<<<<< HEAD
-    draws = rng.integers(0, n, size=(b_resamples, n))
-    differences = per_scenario[draws].mean(axis=1)
-=======
     return bootstrap_differences(
         per_scenario, point=point, seed=seed, b_resamples=b_resamples, alpha=alpha
     )
@@ -152,7 +134,6 @@ def bootstrap_differences(
     rng = np.random.Generator(np.random.PCG64(seed))
     draws = rng.integers(0, n, size=(b_resamples, n))
     differences = diffs[draws].mean(axis=1)
->>>>>>> source-clean/main
 
     lo = float(np.quantile(differences, alpha / 2.0))
     hi = float(np.quantile(differences, 1.0 - alpha / 2.0))

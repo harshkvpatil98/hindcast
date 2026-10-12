@@ -1,13 +1,3 @@
-<<<<<<< HEAD
-"""The §12.4 cost-ledger gate (M8).
-
-Two independent records of the same spend -- the meter's, summed from `runs`,
-and Langfuse's -- must agree within 2%. The arithmetic is pure and is tested
-here; reading either side needs a service and lives in the integration suite.
-
-The case that matters most is the one that looks like a pass: zero against
-zero agrees perfectly, and a gate that accepts it is a gate that cannot fail.
-=======
 """The §12.4 cost-ledger gate, against N records of the same spend (M8, M15).
 
 The meter's run ledger must agree with every other record of what a phase cost.
@@ -32,24 +22,10 @@ The cases that matter are the ones that look like a pass:
   either way, and §12.4 reads a percentage above 2% as "a bug in the meter",
   which is the one cause it cannot be. So a reading carries the slice it
   actually covers and `at_scope` refuses one that covers something else.
->>>>>>> source-clean/main
 """
 
 from __future__ import annotations
 
-<<<<<<< HEAD
-from decimal import Decimal
-
-import pytest
-
-from cascade.trace.ledger import RECONCILE_TOLERANCE, LedgerReconciliation, PhaseSpend
-
-
-def spend(source: str, usd: str, calls: int = 100) -> PhaseSpend:
-    return PhaseSpend(
-        source=source,
-        total_usd=Decimal(usd),
-=======
 from datetime import UTC, datetime, timedelta, timezone
 from decimal import Decimal
 
@@ -88,22 +64,12 @@ def spend(source: str, usd: str | None, calls: int = 100) -> PhaseSpend:
     return PhaseSpend(
         source=source,
         total_usd=None if usd is None else Decimal(usd),
->>>>>>> source-clean/main
         calls=calls,
         input_tokens=calls * 450,
         output_tokens=calls * 45,
     )
 
 
-<<<<<<< HEAD
-def pair(local: str, remote: str | None, *, calls: int = 100) -> LedgerReconciliation:
-    return LedgerReconciliation(
-        local=spend("runs ledger", local, calls),
-        remote=None if remote is None else spend("langfuse", remote, calls),
-    )
-
-
-=======
 def tokens(source: str, *, calls: int, input_tokens: int, output_tokens: int) -> PhaseSpend:
     """A record that counts tokens and states no price, as AWS's logs do."""
     return PhaseSpend(
@@ -174,7 +140,6 @@ def pair(local: str | None, remote: str | None, *, calls: int = 100) -> LedgerRe
     return against(local_spend, reading(LANGFUSE_SOURCE, remote, calls=calls))
 
 
->>>>>>> source-clean/main
 class TestAgreement:
     def test_identical_totals_reconcile(self) -> None:
         assert pair("1.234567", "1.234567").reconciled
@@ -224,8 +189,6 @@ class TestVacuousComparison:
     def test_a_non_zero_total_is_never_vacuous(self) -> None:
         assert not pair("0.01", "0.01", calls=0).vacuous
 
-<<<<<<< HEAD
-=======
     def test_one_live_source_keeps_the_whole_thing_non_vacuous(self) -> None:
         """Vacuity is a claim about all of the evidence, not about one piece of
         it: a source with something in it means there was something to check."""
@@ -242,7 +205,6 @@ class TestVacuousComparison:
         )
         assert not result.vacuous
 
->>>>>>> source-clean/main
 
 class TestUnreachableLangfuse:
     def test_a_missing_remote_total_is_not_reconciled(self) -> None:
@@ -279,8 +241,6 @@ class TestArithmetic:
         result = pair("0.000001", "0.000001")
         assert result.difference_usd == Decimal("0")
         assert isinstance(result.local.total_usd, Decimal)
-<<<<<<< HEAD
-=======
 
 
 class TestWhichSourcesWereCompared:
@@ -1051,4 +1011,3 @@ class TestEveryReadingIsCheckedAgainstTheScopeAsked:
         assert [r.name for r in ledger_module.readings(settings)] == sorted(
             [AWS_SOURCE, LANGFUSE_SOURCE]
         )
->>>>>>> source-clean/main

@@ -16,8 +16,6 @@ Three modes, and the difference between them is the whole point:
 ``live``
     Bypasses the cache entirely. Used only by the M3 latency benchmark, where
     the thing being measured is the provider's own round trip.
-<<<<<<< HEAD
-=======
 
 Four providers can sit behind this door (ADR-0028, ADR-0031, ADR-0053), each
 a class in this module implementing :class:`~cascade.llm.providers.ModelProvider`:
@@ -37,24 +35,10 @@ is built -- so every call, whichever provider serves it, is cached, metered
 and traced the same way. :class:`LLMClient` owns that discipline and talks to
 the provider through the interface alone. What differs between the providers
 is described in :mod:`cascade.llm.providers`, which is pure.
->>>>>>> source-clean/main
 """
 
 from __future__ import annotations
 
-<<<<<<< HEAD
-import time
-from collections.abc import Iterator, Mapping, Sequence
-from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
-
-from cascade.canonical import canonical_json
-from cascade.config import Settings
-from cascade.llm.cache import CallCache, cache_key
-from cascade.llm.meter import CostMeter
-from cascade.llm.tracing import Tracer, null_tracer
-from cascade.llm.types import (
-=======
 import math
 import subprocess
 import tempfile
@@ -84,7 +68,6 @@ from cascade.llm.providers import (
 from cascade.llm.tracing import Tracer, null_tracer
 from cascade.llm.types import (
     SOURCE,
->>>>>>> source-clean/main
     BatchFailed,
     BatchItem,
     CachedCall,
@@ -93,27 +76,18 @@ from cascade.llm.types import (
     LLMRequest,
     LLMResult,
     PromptTooShortToCache,
-<<<<<<< HEAD
-    Usage,
-)
-=======
     ProviderNotReady,
     ProviderResponse,
     ScreenResult,
     Usage,
 )
 from cascade.retrieval.rerank import LexicalReranker, RerankError, rerank_cache_key
->>>>>>> source-clean/main
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
     import httpx
 
 __all__ = [
     "BATCH_MAX_REQUESTS",
-<<<<<<< HEAD
-    "LLMClient",
-    "assert_cacheable_prefix",
-=======
     "RERANK_BILLING_KIND",
     "AnthropicApiProvider",
     "AwsAccessReport",
@@ -130,7 +104,6 @@ __all__ = [
     "assert_cacheable_prefix",
     "build_provider",
     "describe_aws_access",
->>>>>>> source-clean/main
     "estimate_tokens",
 ]
 
@@ -148,8 +121,6 @@ BATCH_MAX_BYTES = 256 * 1024 * 1024
 _CHARS_PER_TOKEN = 3.6
 
 
-<<<<<<< HEAD
-=======
 # API statuses worth retrying through the CLI: the provider's own transient
 # failures. 429 is deliberately absent -- under a subscription it usually means
 # the plan's usage limit, which retrying in a loop only extends.
@@ -240,7 +211,6 @@ def _run_cli(argv: Sequence[str], stdin: str, workdir: Path, timeout_s: float) -
     return CliCompleted(completed.returncode, completed.stdout, completed.stderr)
 
 
->>>>>>> source-clean/main
 def estimate_tokens(text: str) -> int:
     """Approximate the token count of ``text`` without a network round trip.
 
@@ -287,10 +257,7 @@ class LLMClient:
         cache: CallCache | None = None,
         tracer: Tracer | None = None,
         http_client: httpx.Client | None = None,
-<<<<<<< HEAD
-=======
         cli_runner: CliRunner | None = None,
->>>>>>> source-clean/main
     ) -> None:
         self._settings = settings
         self._phase = phase
@@ -298,10 +265,6 @@ class LLMClient:
         self.cache = cache if cache is not None else CallCache(settings.cache_path())
         self.meter = meter if meter is not None else CostMeter(settings, phase)
         self._tracer = tracer if tracer is not None else null_tracer()
-<<<<<<< HEAD
-        self._http_client = http_client
-        self._sdk: Any | None = None
-=======
         self._provider: LLMProvider = settings.llm.provider
         # The one object that reaches a provider, chosen by name (ADR-0053).
         # Everything above it -- cache, meter, tracer, replay -- is provider-
@@ -329,7 +292,6 @@ class LLMClient:
             )
             if problems:
                 raise ProviderNotReady(self._provider, problems)
->>>>>>> source-clean/main
 
     # -- properties ---------------------------------------------------------
 
@@ -338,8 +300,6 @@ class LLMClient:
         return self._mode
 
     @property
-<<<<<<< HEAD
-=======
     def provider(self) -> str:
         return self._provider
 
@@ -349,7 +309,6 @@ class LLMClient:
         return self._backend
 
     @property
->>>>>>> source-clean/main
     def constructed_sdk_client(self) -> bool:
         """Whether an SDK client has ever been built in this process.
 
@@ -357,11 +316,7 @@ class LLMClient:
         A transport that raises proves no call was *sent*; this proves none
         could have been, because no client exists to send one.
         """
-<<<<<<< HEAD
-        return self._sdk is not None
-=======
         return self._backend.constructed_sdk_client
->>>>>>> source-clean/main
 
     # -- the one door -------------------------------------------------------
 
@@ -389,11 +344,7 @@ class LLMClient:
                 "Use complete_batch() with a whole wave of requests instead."
             )
 
-<<<<<<< HEAD
-        key = cache_key(request)
-=======
         key = cache_key(request, namespace=self._namespace)
->>>>>>> source-clean/main
 
         if self._mode == "live":
             return self._call_api(request, key=key, batch=batch, trace_name=trace_name, store=False)
@@ -454,11 +405,7 @@ class LLMClient:
         by_key: dict[str, LLMRequest] = {}
 
         for item in sorted(items, key=lambda entry: entry.custom_id):
-<<<<<<< HEAD
-            key = cache_key(item.request)
-=======
             key = cache_key(item.request, namespace=self._namespace)
->>>>>>> source-clean/main
             recorded = self.cache.get(key)
             if recorded is not None:
                 results[item.custom_id] = self._from_recording(recorded, trace_name=trace_name)
@@ -476,8 +423,6 @@ class LLMClient:
         if not pending:
             return results
 
-<<<<<<< HEAD
-=======
         # Checked only once there is something to submit: a wave served
         # entirely from recordings costs nothing on any provider, so replaying
         # a batched study through Bedrock is fine. Submitting one is not --
@@ -510,7 +455,6 @@ class LLMClient:
                 ],
             )
 
->>>>>>> source-clean/main
         for chunk in _chunked(sorted(pending), BATCH_MAX_REQUESTS):
             served = self._run_batch(
                 {key: by_key[key] for key in chunk},
@@ -536,11 +480,6 @@ class LLMClient:
         timeout_s: float,
     ) -> dict[str, LLMResult]:
         """Submit one batch keyed by cache key, wait for it, and price the results."""
-<<<<<<< HEAD
-        client = self._client()
-        payload = [
-            {"custom_id": _batch_id(key), "params": _batch_params(requests[key])}
-=======
         batches = self._backend.batches()
         payload = [
             {
@@ -549,7 +488,6 @@ class LLMClient:
                     requests[key], model=render_model(self._settings, requests[key].model)
                 ),
             }
->>>>>>> source-clean/main
             for key in sorted(requests)
         ]
         size = len(canonical_json(payload).encode("utf-8"))
@@ -560,11 +498,7 @@ class LLMClient:
             )
 
         started = time.perf_counter()
-<<<<<<< HEAD
-        batch = client.messages.batches.create(requests=payload)
-=======
         batch = batches.create(requests=payload)
->>>>>>> source-clean/main
         batch_id = str(getattr(batch, "id", ""))
         status = str(getattr(batch, "processing_status", ""))
         while status != "ended":
@@ -574,11 +508,7 @@ class LLMClient:
                     "the provider's own SLA is 24h -- raise the timeout or cancel it"
                 )
             self._sleep(poll_interval_s)
-<<<<<<< HEAD
-            batch = client.messages.batches.retrieve(batch_id)
-=======
             batch = batches.retrieve(batch_id)
->>>>>>> source-clean/main
             status = str(getattr(batch, "processing_status", ""))
 
         out: dict[str, LLMResult] = {}
@@ -586,11 +516,7 @@ class LLMClient:
         elapsed_ms = (time.perf_counter() - started) * 1000.0
         by_batch_id = {_batch_id(key): key for key in sorted(requests)}
 
-<<<<<<< HEAD
-        for entry in client.messages.batches.results(batch_id):
-=======
         for entry in batches.results(batch_id):
->>>>>>> source-clean/main
             key = by_batch_id.get(str(getattr(entry, "custom_id", "")))
             if key is None:
                 continue
@@ -611,20 +537,11 @@ class LLMClient:
                 self.cache.put(
                     CachedCall(
                         key=key,
-<<<<<<< HEAD
-                        request_digest=requests[key].cache_domain(),
-=======
                         request_digest=cache_domain(requests[key], namespace=self._namespace),
->>>>>>> source-clean/main
                         raw_response=raw,
                         usage=usage,
                         latency_ms=elapsed_ms,
                         recorded_at=datetime.now(UTC).isoformat(),
-<<<<<<< HEAD
-                    )
-                )
-            cost = self.meter.record(model=result.model, usage=usage, batch=True)
-=======
                         provider_metadata={
                             "provider": self._provider,
                             "batch_id": batch_id,
@@ -636,7 +553,6 @@ class LLMClient:
             # response echoes: providers disagree on that string, and the price
             # of a call is a property of what was asked for.
             cost = self.meter.record(model=requests[key].model, usage=usage, batch=True)
->>>>>>> source-clean/main
             self._tracer.generation(
                 name=trace_name,
                 model=result.model,
@@ -644,11 +560,8 @@ class LLMClient:
                 cost_usd=cost,
                 cached=False,
                 latency_ms=elapsed_ms,
-<<<<<<< HEAD
-=======
                 provider=self._provider,
                 request_id=batch_id or None,
->>>>>>> source-clean/main
             )
             out[key] = result
 
@@ -669,19 +582,13 @@ class LLMClient:
         spend have to appear on the same dashboard, or the biggest cost lever
         in the study is invisible.
         """
-<<<<<<< HEAD
-=======
         metadata = recorded.provider_metadata or {}
->>>>>>> source-clean/main
         result = _result_from_payload(
             recorded.raw_response,
             usage=recorded.usage,
             latency_ms=recorded.latency_ms,
             served_from_cache=True,
-<<<<<<< HEAD
-=======
             request_id=_optional_str(metadata.get("request_id")),
->>>>>>> source-clean/main
         )
         self.meter.record_cache_hit(model=result.model, usage=result.usage)
         self._tracer.generation(
@@ -691,47 +598,12 @@ class LLMClient:
             cost_usd=None,
             cached=True,
             latency_ms=recorded.latency_ms,
-<<<<<<< HEAD
-=======
             provider=self._provider,
             request_id=result.request_id,
->>>>>>> source-clean/main
         )
         return result
 
     def _client(self) -> Any:
-<<<<<<< HEAD
-        """Construct the SDK client lazily, exactly once.
-
-        Lazy so that ``replay`` never builds one -- see
-        :attr:`constructed_sdk_client`.
-        """
-        if self._sdk is not None:
-            return self._sdk
-        import anthropic  # the single SDK import in the codebase (invariant 5)
-
-        api_key = self._settings.anthropic_api_key
-        # An *empty* variable is not an absent one. `CASCADE_ANTHROPIC_API_KEY=`
-        # in a .env file parses to SecretStr("") rather than None, so a bare
-        # `is None` check passes it through to the SDK, which rejects it with
-        # `TypeError: Could not resolve authentication method` -- an error that
-        # names neither the variable nor this project. Measured on a checkout
-        # whose .env carried the key with no value.
-        if api_key is None or not api_key.get_secret_value().strip():
-            raise LLMError(
-                f"CASCADE_ANTHROPIC_API_KEY is not set but llm.mode={self._mode!r} needs it. "
-                "Only replay runs without a key."
-            )
-        kwargs: dict[str, Any] = {
-            "api_key": api_key.get_secret_value(),
-            "max_retries": self._settings.llm.max_retries,
-            "timeout": self._settings.llm.timeout_s,
-        }
-        if self._http_client is not None:
-            kwargs["http_client"] = self._http_client
-        self._sdk = anthropic.Anthropic(**kwargs)
-        return self._sdk
-=======
         """The provider's SDK client, constructed lazily, exactly once.
 
         Lazy so that ``replay`` never builds one -- see
@@ -739,7 +611,6 @@ class LLMClient:
         callers that need the SDK object itself (the latency bench).
         """
         return self._backend.sdk_client()
->>>>>>> source-clean/main
 
     def _call_api(
         self,
@@ -751,33 +622,6 @@ class LLMClient:
         store: bool,
     ) -> LLMResult:
         """Send one request, price it, and persist it when recording."""
-<<<<<<< HEAD
-        client = self._client()
-        payload: dict[str, Any] = {
-            "model": request.model,
-            "messages": request.messages,
-            "max_tokens": request.max_tokens,
-            "temperature": request.temperature,
-        }
-        if request.system is not None:
-            payload["system"] = request.system
-        if request.tools:
-            payload["tools"] = request.tools
-        if request.tool_choice is not None:
-            payload["tool_choice"] = request.tool_choice
-
-        started = time.perf_counter()
-        message = client.messages.create(**payload)
-        latency_ms = (time.perf_counter() - started) * 1000.0
-
-        raw: dict[str, Any] = message.model_dump(mode="json")
-        usage = _usage_from_payload(raw)
-        result = _result_from_payload(
-            raw, usage=usage, latency_ms=latency_ms, served_from_cache=False
-        )
-
-        cost = self.meter.record(model=result.model, usage=usage, batch=batch)
-=======
         started = time.perf_counter()
         response = self._backend.complete(request)
         latency_ms = (time.perf_counter() - started) * 1000.0
@@ -793,7 +637,6 @@ class LLMClient:
         )
 
         cost = self.meter.record(model=request.model, usage=usage, batch=batch)
->>>>>>> source-clean/main
         self._tracer.generation(
             name=trace_name,
             model=result.model,
@@ -801,41 +644,29 @@ class LLMClient:
             cost_usd=cost,
             cached=False,
             latency_ms=latency_ms,
-<<<<<<< HEAD
-=======
             provider=self._provider,
             request_id=response.request_id,
->>>>>>> source-clean/main
         )
 
         if store:
             self.cache.put(
                 CachedCall(
                     key=key,
-<<<<<<< HEAD
-                    request_digest=request.cache_domain(),
-=======
                     request_digest=cache_domain(request, namespace=self._namespace),
->>>>>>> source-clean/main
                     raw_response=raw,
                     usage=usage,
                     latency_ms=latency_ms,
                     recorded_at=datetime.now(UTC).isoformat(),
-<<<<<<< HEAD
-=======
                     provider_metadata={
                         "provider": self._provider,
                         "request_id": response.request_id,
                         **{k: response.metadata[k] for k in sorted(response.metadata)},
                     },
->>>>>>> source-clean/main
                 )
             )
         return result
 
 
-<<<<<<< HEAD
-=======
 def _status_code(value: Any) -> int | None:
     """The CLI reports an API status as an int, a numeric string, or null."""
     if isinstance(value, bool):
@@ -847,7 +678,6 @@ def _status_code(value: Any) -> int | None:
     return None
 
 
->>>>>>> source-clean/main
 def _batch_id(key: str) -> str:
     """The provider-facing id for a request, derived from its cache key.
 
@@ -858,12 +688,6 @@ def _batch_id(key: str) -> str:
     return f"k{key[:56]}"
 
 
-<<<<<<< HEAD
-def _batch_params(request: LLMRequest) -> dict[str, Any]:
-    """Project a request onto the Batches API's per-item ``params`` object."""
-    params: dict[str, Any] = {
-        "model": request.model,
-=======
 def _optional_str(value: Any) -> str | None:
     return str(value) if isinstance(value, str) and value else None
 
@@ -905,7 +729,6 @@ def _messages_params(request: LLMRequest, *, model: str) -> dict[str, Any]:
     """
     params: dict[str, Any] = {
         "model": model,
->>>>>>> source-clean/main
         "messages": request.messages,
         "max_tokens": request.max_tokens,
         "temperature": request.temperature,
@@ -963,10 +786,7 @@ def _result_from_payload(
     usage: Usage,
     latency_ms: float,
     served_from_cache: bool,
-<<<<<<< HEAD
-=======
     request_id: str | None = None,
->>>>>>> source-clean/main
 ) -> LLMResult:
     """Project a stored response body onto the boundary type.
 
@@ -990,9 +810,6 @@ def _result_from_payload(
         latency_ms=latency_ms,
         served_from_cache=served_from_cache,
         tool_calls=tool_calls,
-<<<<<<< HEAD
-    )
-=======
         request_id=request_id,
     )
 
@@ -2072,4 +1889,3 @@ def describe_aws_access(settings: Settings, *, session: Any | None = None) -> Aw
             )
         )
     return AwsAccessReport(region=region, checks=tuple(checks))
->>>>>>> source-clean/main

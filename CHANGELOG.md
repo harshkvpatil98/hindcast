@@ -1,21 +1,14 @@
 # Changelog
 
 One entry per milestone, recording what shipped and what the acceptance numbers
-<<<<<<< HEAD
-**actually were**. The full record, including every defect found and fixed
-along the way, is the build log in [`CLAUDE.md`](CLAUDE.md).
-=======
 **actually were**. The decisions behind them are in the
 [decision records](docs/adr/README.md).
->>>>>>> source-clean/main
 
 Versions track milestones rather than releases; nothing here is published to a
 package index.
 
 ---
 
-<<<<<<< HEAD
-=======
 ## After M17 — A portfolio deployment profile
 
 The platform root planned 74 resources against the owner's account. The owner
@@ -272,7 +265,6 @@ met; the optional dashboard deferred.
 - **Deferred:** the read-only dashboard — optional in the spec, and there were
   no study numbers to put in it.
 
->>>>>>> source-clean/main
 ## M8 — Strata: determinism and provenance
 
 Replay verification, provenance chains, and the cost-ledger gate.

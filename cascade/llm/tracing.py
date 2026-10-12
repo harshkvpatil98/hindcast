@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-"""Langfuse wiring: trace per run, span per step, generation per LLM call.
-
-This module holds the **one sanctioned broad exception guard** in the codebase
-(CLAUDE.md §4). Observability must never fail a run: a 36,000-run phase that
-=======
 """Observability wiring: a trace per run, a span per step, a generation per call.
 
 Two sinks share one interface. :class:`LangfuseTracer` reports to the
@@ -16,44 +10,29 @@ instance in the loop. :class:`CompositeTracer` fans out to both.
 
 This module holds the **one sanctioned broad exception guard** in the codebase
 (the engineering standards). Observability must never fail a run: a 36,000-run phase that
->>>>>>> source-clean/main
 dies because a telemetry sidecar restarted has cost real money for nothing.
 Every guard here is annotated, narrow in scope, and covered by a test that
 asserts the tracer degrades to a no-op rather than propagating.
 
-<<<<<<< HEAD
-The rule that makes this safe is that nothing downstream reads back from
-Langfuse during a run. The cost ledger is authoritative and lives in Postgres;
-=======
 The rule that makes this safe is that nothing downstream reads back from a
 tracer during a run. The cost ledger is authoritative and lives in Postgres;
->>>>>>> source-clean/main
 Langfuse is reconciled *against* it at M8, so a dropped span costs a
 reconciliation warning, never a wrong number.
 """
 
 from __future__ import annotations
 
-<<<<<<< HEAD
-from collections.abc import Iterator
-from contextlib import contextmanager
-from decimal import Decimal
-=======
 import json
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
->>>>>>> source-clean/main
 from typing import Any
 
 from cascade.config import Settings
 from cascade.llm.types import Usage
 
-<<<<<<< HEAD
-__all__ = ["LangfuseTracer", "NullTracer", "Tracer", "build_tracer", "null_tracer"]
-=======
 __all__ = [
     "CallLogTracer",
     "CompositeTracer",
@@ -63,7 +42,6 @@ __all__ = [
     "build_tracer",
     "null_tracer",
 ]
->>>>>>> source-clean/main
 
 
 class Tracer:
@@ -97,23 +75,16 @@ class Tracer:
         cost_usd: Decimal | None,
         cached: bool,
         latency_ms: float,
-<<<<<<< HEAD
-=======
         provider: str | None = None,
         request_id: str | None = None,
->>>>>>> source-clean/main
     ) -> None:
         """Log one model call.
 
         Cache hits arrive here with ``cost_usd=None`` and ``cached=True`` and
         are logged as zero-cost generations, so hit rate and spend appear on
-<<<<<<< HEAD
-        the same dashboard (spec §12.2).
-=======
         the same dashboard (spec §12.2). ``provider`` and ``request_id`` are
         the provider's identity for the call (ADR-0053); both are optional so
         every existing caller keeps its signature.
->>>>>>> source-clean/main
         """
 
     def flush(self) -> None:
@@ -182,11 +153,8 @@ class LangfuseTracer(Tracer):
         cost_usd: Decimal | None,
         cached: bool,
         latency_ms: float,
-<<<<<<< HEAD
-=======
         provider: str | None = None,
         request_id: str | None = None,
->>>>>>> source-clean/main
     ) -> None:
         parent = self._span or self._trace or self._client
         try:
@@ -207,11 +175,8 @@ class LangfuseTracer(Tracer):
                     "latency_ms": latency_ms,
                     "cache_read_input_tokens": usage.cache_read_input_tokens,
                     "cache_creation_input_tokens": usage.cache_creation_input_tokens,
-<<<<<<< HEAD
-=======
                     "provider": provider,
                     "request_id": request_id,
->>>>>>> source-clean/main
                 },
             )
         except Exception as exc:  # noqa: BLE001 -- sanctioned: see module docstring
@@ -224,10 +189,6 @@ class LangfuseTracer(Tracer):
             self.degraded_reason = f"flush failed: {type(exc).__name__}"
 
 
-<<<<<<< HEAD
-def build_tracer(settings: Settings) -> Tracer:
-    """Return a live tracer when Langfuse is configured, a no-op otherwise.
-=======
 class CallLogTracer(Tracer):
     """One JSON object per call, appended to a local file (ADR-0053).
 
@@ -376,30 +337,10 @@ class CompositeTracer(Tracer):
 
 def build_tracer(settings: Settings) -> Tracer:
     """Return the configured tracers, or a no-op that says why it is one.
->>>>>>> source-clean/main
 
     Preserves the invariant that observability is optional at runtime and
     mandatory in configuration: a missing key degrades to a no-op with a
     stated reason, so ``doctor`` can report it, rather than silently
-<<<<<<< HEAD
-    pretending tracing is on.
-    """
-    if not settings.langfuse.enabled:
-        return NullTracer("disabled in config")
-    if settings.langfuse_public_key is None or settings.langfuse_secret_key is None:
-        return NullTracer("langfuse keys not set in the environment")
-    try:
-        from langfuse import Langfuse  # optional dependency, probed rather than required
-
-        client = Langfuse(
-            public_key=settings.langfuse_public_key.get_secret_value(),
-            secret_key=settings.langfuse_secret_key.get_secret_value(),
-            host=settings.langfuse.host,
-        )
-    except Exception as exc:  # noqa: BLE001 -- sanctioned: telemetry never fails a run
-        return NullTracer(f"langfuse unavailable: {type(exc).__name__}: {exc}"[:160])
-    return LangfuseTracer(client)
-=======
     pretending tracing is on. The call log (``observability.call_log``) is
     independent of Langfuse: either, both or neither.
     """
@@ -432,4 +373,3 @@ def build_tracer(settings: Settings) -> Tracer:
     if len(sinks) == 1:
         return sinks[0]
     return CompositeTracer(sinks)
->>>>>>> source-clean/main

@@ -13,12 +13,6 @@ happens once the numbers are already out.
 
 from __future__ import annotations
 
-<<<<<<< HEAD
-from dataclasses import dataclass
-from typing import Any, Literal
-
-from cascade.config import Settings
-=======
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import timedelta
@@ -26,7 +20,6 @@ from typing import Any, Literal
 
 from cascade.config import Settings
 from cascade.eval.market import MARKET_CONFIG_ID, MarketPrice, is_stale, scored_market_forecasts
->>>>>>> source-clean/main
 from cascade.eval.schema import ScoredForecast
 
 __all__ = [
@@ -35,11 +28,6 @@ __all__ = [
     "assert_frozen_split",
     "available_configs",
     "config_policies",
-<<<<<<< HEAD
-    "prompt_revision_audit",
-    "record_prompt_revision_brier",
-    "scored_forecasts",
-=======
     "evidence_counts",
     "forecast_scenarios",
     "load_market_prices",
@@ -48,7 +36,6 @@ __all__ = [
     "scored_forecasts",
     "scored_market_baseline",
     "write_market_prices",
->>>>>>> source-clean/main
     "write_study_report",
 ]
 
@@ -145,9 +132,6 @@ def scored_forecasts(
     over 174 scenarios reported as if it were over 180 is the kind of drift
     nothing downstream can detect. The count travels with every metric so the
     reader can see it.
-<<<<<<< HEAD
-    """
-=======
 
     The market benchmark is the one configuration that does not live in
     ``forecasts`` -- ``cascade_sim`` can read that table and must not read a
@@ -158,7 +142,6 @@ def scored_forecasts(
     """
     if config_id == MARKET_CONFIG_ID:
         return scored_market_baseline(settings, role=role)
->>>>>>> source-clean/main
     with _connect(settings, role) as conn, conn.cursor() as cur:
         cur.execute(
             """
@@ -202,10 +185,6 @@ def _policy_literal(value: str) -> Literal["agent", "heuristic", "mixed", "none"
     raise ValueError(f"unknown forecast policy {value!r}; expected agent, heuristic, mixed or none")
 
 
-<<<<<<< HEAD
-def available_configs(settings: Settings, *, role: Role = "eval") -> tuple[tuple[str, int], ...]:
-    """Every config with stored forecasts, and how many. Sorted (invariant 7)."""
-=======
 def evidence_counts(settings: Settings, *, window_days: int, role: Role = "eval") -> dict[str, int]:
     """Chunks published in the final ``window_days`` before each scenario's cutoff.
 
@@ -278,14 +257,10 @@ def available_configs(settings: Settings, *, role: Role = "eval") -> tuple[tuple
     many scenarios it can be scored on. It is absent when there are none, like
     any other configuration with nothing stored.
     """
->>>>>>> source-clean/main
     with _connect(settings, role) as conn, conn.cursor() as cur:
         cur.execute(
             "SELECT config_id, count(*) FROM forecasts GROUP BY config_id ORDER BY config_id"
         )
-<<<<<<< HEAD
-        return tuple((str(row[0]), int(row[1])) for row in cur.fetchall())
-=======
         stored = {str(row[0]): int(row[1]) for row in cur.fetchall()}
     bound = _max_staleness(settings)
     usable = sum(
@@ -296,7 +271,6 @@ def available_configs(settings: Settings, *, role: Role = "eval") -> tuple[tuple
     if usable:
         stored[MARKET_CONFIG_ID] = usable
     return tuple(sorted(stored.items()))
->>>>>>> source-clean/main
 
 
 def config_policies(settings: Settings, *, role: Role = "eval") -> dict[str, tuple[str, ...]]:
@@ -394,8 +368,6 @@ def record_prompt_revision_brier(
         updated = cur.rowcount
         conn.commit()
     return int(updated)
-<<<<<<< HEAD
-=======
 
 
 # ---------------------------------------------------------------------------
@@ -536,4 +508,3 @@ def scored_market_baseline(
         (_market_price(row), 1 if int(row[9]) == 1 else 0, str(row[10])) for row in rows
     ]
     return scored_market_forecasts(labelled, max_staleness=_max_staleness(settings))
->>>>>>> source-clean/main

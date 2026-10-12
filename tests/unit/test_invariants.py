@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-"""Static enforcement of invariants 1, 5 and 7 (CLAUDE.md §2).
-=======
 """Static enforcement of invariants 1, 5 and 7.
->>>>>>> source-clean/main
 
 These three are checkable without running the system, which means they can be
 checked over code that does not exist yet. That is the point: they are the
@@ -182,8 +178,6 @@ def test_only_one_module_imports_the_provider_sdk() -> None:
     )
 
 
-<<<<<<< HEAD
-=======
 # AWS services that serve or screen a model. A boto3 client for one of these
 # is a model-adjacent egress and belongs behind the one door, exactly as the
 # Anthropic SDK does. Observability and database services are not here on
@@ -264,7 +258,6 @@ def test_the_model_service_check_is_not_vacuous() -> None:
     assert _model_service_clients(benign) == []
 
 
->>>>>>> source-clean/main
 def test_the_sole_call_site_actually_imports_the_sdk() -> None:
     """Guard the guard: a client that stopped importing the SDK would pass above."""
     assert _imports_provider_sdk(parse(SOLE_LLM_CALL_SITE)), (
@@ -382,14 +375,11 @@ PURE_MODULES = (
     PACKAGE_ROOT / "sim" / "dynamics.py",
     PACKAGE_ROOT / "decompose" / "validator.py",
     PACKAGE_ROOT / "retrieval" / "metrics.py",
-<<<<<<< HEAD
-=======
     # M14: what ranks the hybrid candidates, and what chooses the keyword
     # terms. Both decide which evidence an agent sees, so both must be a
     # function of their arguments or a replayed run retrieves differently.
     PACKAGE_ROOT / "retrieval" / "fusion.py",
     PACKAGE_ROOT / "retrieval" / "keywords.py",
->>>>>>> source-clean/main
 )
 
 # Roots that can only be there to do something impure.

@@ -16,15 +16,10 @@ must not drift.
 from __future__ import annotations
 
 import hashlib
-<<<<<<< HEAD
-from collections.abc import Sequence
-
-=======
 from collections.abc import Collection, Mapping, Sequence
 from typing import Literal
 
 from cascade.eval.ablation import ComparisonSpec, comparison_family
->>>>>>> source-clean/main
 from cascade.eval.metrics import (
     CALIBRATION_BINS,
     auc,
@@ -39,26 +34,13 @@ from cascade.eval.metrics import (
 )
 from cascade.eval.schema import (
     CalibrationReport,
-<<<<<<< HEAD
-=======
     Comparison,
     ComparisonFamily,
->>>>>>> source-clean/main
     DispersionFinding,
     DomainMetrics,
     MetricSet,
     ScoredForecast,
 )
-<<<<<<< HEAD
-from cascade.eval.stats import pearson, permutation_p, spearman
-
-__all__ = [
-    "calibration_of",
-    "dispersion_finding",
-    "domains_of",
-    "metrics_for",
-    "recalibrated_brier",
-=======
 from cascade.eval.split import Partition, SplitDeclaration, require_dev_only, select
 from cascade.eval.stats import (
     adjust_family,
@@ -83,7 +65,6 @@ __all__ = [
     "recalibrated_brier",
     "recalibration_half",
     "significance_families",
->>>>>>> source-clean/main
     "split_halves",
 ]
 
@@ -92,8 +73,6 @@ def _columns(scored: Sequence[ScoredForecast]) -> tuple[list[float], list[int]]:
     return [item.p_hat for item in scored], [item.outcome for item in scored]
 
 
-<<<<<<< HEAD
-=======
 def recalibration_half(scenario_id: str, *, salt: str) -> Literal["fit", "held"]:
     """Which recalibration half one scenario falls in. A function of its id.
 
@@ -110,7 +89,6 @@ def recalibration_half(scenario_id: str, *, salt: str) -> Literal["fit", "held"]
     return "fit" if digest[0] & 1 else "held"
 
 
->>>>>>> source-clean/main
 def split_halves(
     scored: Sequence[ScoredForecast], *, salt: str
 ) -> tuple[tuple[ScoredForecast, ...], tuple[ScoredForecast, ...]]:
@@ -129,14 +107,7 @@ def split_halves(
     fit: list[ScoredForecast] = []
     held: list[ScoredForecast] = []
     for item in sorted(scored, key=lambda value: value.scenario_id):
-<<<<<<< HEAD
-        digest = hashlib.blake2b(
-            item.scenario_id.encode("utf-8"), digest_size=8, key=salt.encode("utf-8")
-        ).digest()
-        (fit if digest[0] & 1 else held).append(item)
-=======
         (fit if recalibration_half(item.scenario_id, salt=salt) == "fit" else held).append(item)
->>>>>>> source-clean/main
     return tuple(fit), tuple(held)
 
 
@@ -220,10 +191,7 @@ def metrics_for(
         bss_vs_direct=(
             brier_skill_score(score, direct_brier) if direct_brier not in (None, 0.0) else None
         ),
-<<<<<<< HEAD
-=======
         climatology_brier=climatology_brier,
->>>>>>> source-clean/main
         brier_recalibrated=(recalibrated_brier(scored, salt=salt) if salt else None),
     )
 
@@ -280,8 +248,6 @@ def dispersion_finding(
         brier_unflagged=subset_brier(unflagged),
         sigma_threshold=sigma_threshold,
     )
-<<<<<<< HEAD
-=======
 
 
 def climatology_reference(scored: Sequence[ScoredForecast], *, base_rate: float) -> float:
@@ -525,4 +491,3 @@ def significance_families(
             )
         )
     return tuple(out)
->>>>>>> source-clean/main

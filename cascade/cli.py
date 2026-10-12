@@ -7,41 +7,23 @@ CI-checkable.
 
 from __future__ import annotations
 
-<<<<<<< HEAD
-=======
 import atexit
->>>>>>> source-clean/main
 import json
 import shutil
 import subprocess
 import sys
-<<<<<<< HEAD
-from collections.abc import Iterator, Sequence
-from contextlib import contextmanager
-from decimal import Decimal
-from importlib import metadata
-from pathlib import Path
-from typing import TYPE_CHECKING, Annotated, Any, NoReturn
-=======
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import ExitStack, contextmanager
 from decimal import Decimal
 from importlib import metadata
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated, Any, Literal, NoReturn
->>>>>>> source-clean/main
 
 import typer
 from rich.console import Console
 from rich.table import Table
 
 from cascade.config import Settings, env_file_path, load_settings, repo_root
-<<<<<<< HEAD
-from cascade.llm.types import BudgetExceeded, CacheMiss, PromptTooShortToCache
-
-if TYPE_CHECKING:  # pragma: no cover -- types only, never imported at startup
-    from cascade.eval.schema import MetricSet, ScoredForecast
-=======
 from cascade.eval.split import SplitError
 from cascade.llm.types import BudgetExceeded, CacheMiss, PromptTooShortToCache, ProviderNotReady
 
@@ -50,7 +32,6 @@ if TYPE_CHECKING:  # pragma: no cover -- types only, never imported at startup
     from cascade.eval.market import CoverageSummary
     from cascade.eval.schema import MetricSet, ScoredForecast
     from cascade.eval.split import Partition, SplitDeclaration
->>>>>>> source-clean/main
     from cascade.eval.store import FrozenSplit
 
 from cascade.trace.replay import CHILD_HASH_SEED
@@ -110,14 +91,11 @@ trace_app = typer.Typer(
     no_args_is_help=True,
 )
 app.add_typer(trace_app, name="trace")
-<<<<<<< HEAD
-=======
 aws_app = typer.Typer(
     help="The AWS surfaces: identity, Bedrock Rerank and Guardrails, read without spending.",
     no_args_is_help=True,
 )
 app.add_typer(aws_app, name="aws")
->>>>>>> source-clean/main
 
 console = Console()
 err_console = Console(stderr=True)
@@ -155,8 +133,6 @@ def _dep_version(dist: str) -> str | None:
         return None
 
 
-<<<<<<< HEAD
-=======
 def _provider_rows(table: Table, settings: Settings) -> bool:
     """Describe the active model provider and the AWS surfaces; fail only where it would spend.
 
@@ -275,7 +251,6 @@ def _provider_rows(table: Table, settings: Settings) -> bool:
     return healthy
 
 
->>>>>>> source-clean/main
 def _tool_version(binary: str, args: list[str]) -> str | None:
     path = shutil.which(binary)
     if path is None:
@@ -391,10 +366,7 @@ def doctor(
         "compiler model", settings.models.compiler, settings.models.compiler, "[green]OK[/green]"
     )
     table.add_row("llm mode", "record|replay|live", settings.llm.mode, "[green]OK[/green]")
-<<<<<<< HEAD
-=======
     ok &= _provider_rows(table, settings)
->>>>>>> source-clean/main
 
     if not offline:
         pg_ok, pg_msg = _postgres_status(settings)
@@ -482,8 +454,6 @@ def db_migrate(
         console.print(f"[green]applied[/green] {migration.name}")
 
 
-<<<<<<< HEAD
-=======
 @db_app.command("enable-iam")
 def db_enable_iam(config: OverlayOpt = None) -> None:
     """Switch the two application roles to IAM authentication (ADR-0034).
@@ -519,7 +489,6 @@ def db_enable_iam(config: OverlayOpt = None) -> None:
     )
 
 
->>>>>>> source-clean/main
 @db_app.command("status")
 def db_status(config: OverlayOpt = None) -> None:
     """Show which migrations are applied and which are pending."""
@@ -648,8 +617,6 @@ def corpus_build(
     stats = corpus_stats(settings)
     _print_corpus_stats(stats, settings.corpus.target_chunks)
 
-<<<<<<< HEAD
-=======
     if report.stopped == "ceiling":
         console.print(
             f"[green]stopped at the work ceiling[/green]: {report.stop_detail}. Judge the corpus "
@@ -664,7 +631,6 @@ def corpus_build(
             EXIT_PRECONDITION,
         )
 
->>>>>>> source-clean/main
 
 @corpus_app.command("status")
 def corpus_status(config: OverlayOpt = None) -> None:
@@ -675,8 +641,6 @@ def corpus_status(config: OverlayOpt = None) -> None:
     _print_corpus_stats(corpus_stats(settings), settings.corpus.target_chunks)
 
 
-<<<<<<< HEAD
-=======
 @corpus_app.command("redate")
 def corpus_redate(
     config: OverlayOpt = None,
@@ -726,7 +690,6 @@ def corpus_redate(
         )
 
 
->>>>>>> source-clean/main
 @corpus_app.command("coverage")
 def corpus_coverage(
     config: OverlayOpt = None,
@@ -1016,8 +979,6 @@ def ledger_seal(config: OverlayOpt = None) -> None:
     )
 
 
-<<<<<<< HEAD
-=======
 def _outside_repository(path: Path, *, what: str) -> Path:
     """Resolve ``path`` and refuse it if it lies inside the repository.
 
@@ -1145,7 +1106,6 @@ def ledger_restore(
     )
 
 
->>>>>>> source-clean/main
 @ledger_app.command("verify")
 def ledger_verify(config: OverlayOpt = None) -> None:
     """Assert the loaded registry still hashes to the sealed manifest.
@@ -1231,8 +1191,6 @@ def _print_index_report(report: Any) -> None:
     )
 
 
-<<<<<<< HEAD
-=======
 def _print_fts_report(report: Any) -> None:
     """Print what the full-text index pass did, per partition."""
     table = Table(title="Full-text (GIN) index pass")
@@ -1258,7 +1216,6 @@ def _print_fts_report(report: Any) -> None:
     )
 
 
->>>>>>> source-clean/main
 @retrieval_app.command("index")
 def retrieval_index(
     config: OverlayOpt = None,
@@ -1270,11 +1227,6 @@ def retrieval_index(
         bool,
         typer.Option("--drop-legacy", help="Drop IVFFlat indexes after the HNSW pass."),
     ] = False,
-<<<<<<< HEAD
-) -> None:
-    """Create one HNSW index per non-empty chunks partition (ADR-0012, ADR-0026).
-
-=======
     fts: Annotated[
         bool | None,
         typer.Option(
@@ -1292,7 +1244,6 @@ def retrieval_index(
     operator re-running the HNSW pass should not start it by accident. It
     blocks writes to each partition while it builds: run it after ingest.
 
->>>>>>> source-clean/main
     Idempotent, and -- unlike the IVFFlat pass this replaces -- a partition
     that has merely grown needs nothing. HNSW has no row-dependent build
     parameter, so a rebuild fires only when `hnsw_m` or `hnsw_ef_construction`
@@ -1302,13 +1253,6 @@ def retrieval_index(
     It runs last on purpose: dropping first would leave the corpus unindexed
     for the length of the build.
     """
-<<<<<<< HEAD
-    from cascade.retrieval.index import apply_plans, drop_legacy_ivfflat, measure, plan_all
-    from cascade.retrieval.schema import IndexReport
-
-    settings = _settings(config)
-    retrieval = settings.retrieval
-=======
     from cascade.retrieval.index import (
         apply_fts_plans,
         apply_plans,
@@ -1322,7 +1266,6 @@ def retrieval_index(
     settings = _settings(config)
     retrieval = settings.retrieval
     build_fts = fts if fts is not None else retrieval.mode == "hybrid"
->>>>>>> source-clean/main
 
     partitions = measure(settings)
     plans = plan_all(
@@ -1330,10 +1273,6 @@ def retrieval_index(
         m=retrieval.hnsw_m,
         ef_construction=retrieval.hnsw_ef_construction,
     )
-<<<<<<< HEAD
-
-    if dry_run:
-=======
     fts_plans = plan_fts(partitions) if build_fts else ()
 
     if dry_run:
@@ -1347,7 +1286,6 @@ def retrieval_index(
                     elapsed_s=0.0,
                 )
             )
->>>>>>> source-clean/main
         _print_index_report(
             IndexReport(
                 plans=plans,
@@ -1362,11 +1300,8 @@ def retrieval_index(
         return
 
     _print_index_report(apply_plans(settings, plans))
-<<<<<<< HEAD
-=======
     if build_fts:
         _print_fts_report(apply_fts_plans(settings, fts_plans))
->>>>>>> source-clean/main
     if drop_legacy:
         dropped = drop_legacy_ivfflat(settings)
         console.print(
@@ -1440,8 +1375,6 @@ def _print_bench_result(result: Any, settings: Settings) -> None:
     console.print(f"bench wall time: {result.elapsed_s:.1f}s")
 
 
-<<<<<<< HEAD
-=======
 def _print_relevance_report(report: Any, settings: Settings) -> None:
     """Print the vector-against-hybrid comparison. Measured, never targeted."""
 
@@ -1520,7 +1453,6 @@ def _print_relevance_report(report: Any, settings: Settings) -> None:
     console.print(f"bench wall time: {report.elapsed_s:.1f}s")
 
 
->>>>>>> source-clean/main
 @retrieval_app.command("bench")
 def retrieval_bench(
     config: OverlayOpt = None,
@@ -1528,8 +1460,6 @@ def retrieval_bench(
         int | None,
         typer.Option("--queries", help="Override the configured query count."),
     ] = None,
-<<<<<<< HEAD
-=======
     relevance: Annotated[
         bool,
         typer.Option(
@@ -1550,18 +1480,11 @@ def retrieval_bench(
             "or 'rerank' (the configured mode, reranking off vs on).",
         ),
     ] = "hybrid",
->>>>>>> source-clean/main
 ) -> None:
     """Benchmark time-locked retrieval: p50/p95/p99 and recall@k (M3).
 
     Exits 3 when a measured value misses its acceptance criterion, so a
     regression cannot pass as success in CI.
-<<<<<<< HEAD
-    """
-    from cascade.retrieval.bench import run_bench
-
-    settings = _settings(config)
-=======
 
     `--relevance` is a different measurement (M14): both retrieval modes over
     the compiler's, the agents' and the baselines' real queries, scored on
@@ -1595,7 +1518,6 @@ def retrieval_bench(
             _fail("; ".join(exc.reasons), EXIT_PRECONDITION)
         _print_relevance_report(report, settings)
         return
->>>>>>> source-clean/main
     result = run_bench(settings, count=queries)
     _print_bench_result(result, settings)
 
@@ -1614,10 +1536,7 @@ def retrieval_verify(config: OverlayOpt = None) -> None:
     correctly sized index, and `cascade_sim` cannot reach the corpus except
     through `chronofence_search`. Exits 3 on any violation.
     """
-<<<<<<< HEAD
-=======
     from cascade.retrieval.bench import hybrid_readiness
->>>>>>> source-clean/main
     from cascade.retrieval.index import measure, plan_all
     from cascade.retrieval.search import Chronofence
 
@@ -1627,11 +1546,8 @@ def retrieval_verify(config: OverlayOpt = None) -> None:
 
     with Chronofence(settings, role="admin") as fence:
         deployed = fence.ef_search()
-<<<<<<< HEAD
-=======
         hybrid_deployed = fence.hybrid_deployed()
         hybrid_ef = fence.ef_search("chronofence_search_hybrid") if hybrid_deployed else None
->>>>>>> source-clean/main
     if deployed != retrieval.hnsw_ef_search:
         failures.append(
             f"chronofence_search pins hnsw.ef_search={deployed} but config says "
@@ -1661,8 +1577,6 @@ def retrieval_verify(config: OverlayOpt = None) -> None:
     row("non-empty partitions", str(non_empty), True)
     row("correctly sized indexes", f"{indexed}/{non_empty}", not stale)
 
-<<<<<<< HEAD
-=======
     # The hybrid path is a precondition only of the mode that uses it. Under
     # `vector` its state is printed and cannot fail the command: an unbuilt
     # optional index is not drift.
@@ -1686,13 +1600,10 @@ def retrieval_verify(config: OverlayOpt = None) -> None:
         with_fts == non_empty or not hybrid_required,
     )
 
->>>>>>> source-clean/main
     leak_ok, leak_detail = _sim_role_is_fenced(settings)
     row("cascade_sim fenced from chunks", leak_detail, leak_ok)
     console.print(table)
 
-<<<<<<< HEAD
-=======
     if hybrid_required:
         failures.extend(hybrid_reasons)
     elif hybrid_reasons:
@@ -1701,7 +1612,6 @@ def retrieval_verify(config: OverlayOpt = None) -> None:
             "vector): " + "; ".join(hybrid_reasons) + "[/dim]"
         )
 
->>>>>>> source-clean/main
     if stale:
         failures.append(
             f"{len(stale)} partition(s) need an index pass: "
@@ -1742,20 +1652,8 @@ def retrieval_memorization(
 
     # Checked here rather than left to the SDK: a probe that dies twenty
     # scenarios in has already spent money, and the operator needs to know
-<<<<<<< HEAD
-    # which variable to set before it starts, not after.
-    key = settings.anthropic_api_key
-    if settings.llm.mode != "replay" and (key is None or not key.get_secret_value().strip()):
-        _fail(
-            f"llm.mode={settings.llm.mode!r} needs CASCADE_ANTHROPIC_API_KEY, which is "
-            "unset or empty. Set it in .env, or run against a recorded cache with "
-            "CASCADE_LLM__MODE=replay",
-            EXIT_PRECONDITION,
-        )
-=======
     # what to configure before it starts, not after.
     _require_provider_ready(settings)
->>>>>>> source-clean/main
 
     records = load_records(settings, role="eval")
     if not records:
@@ -1828,9 +1726,6 @@ def _sim_role_is_fenced(settings: Settings) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 
-<<<<<<< HEAD
-def _lathe(settings: Settings) -> Any:
-=======
 def _scorable(scenarios: Sequence[Any], *, what: str) -> list[Any]:
     """Drop the scenarios declared unscoreable (ADR-0043), saying how many.
 
@@ -1923,7 +1818,6 @@ def _chronofence_hits(settings: Settings) -> tuple[Any, Any]:
 def _lathe(
     settings: Settings, situations: Mapping[str, tuple[str, str | None]] | None = None
 ) -> Any:
->>>>>>> source-clean/main
     """Wire the compiler to the real model, embedder and corpus.
 
     Retrieval goes through Chronofence as `eval` rather than `sim`: compilation
@@ -1945,10 +1839,6 @@ def _lathe(
     fence.__enter__()
 
     def retrieve(question: str, as_of: Any, k: int) -> list[tuple[str, str, str]]:
-<<<<<<< HEAD
-        vector = embedder.encode([question])[0]
-        result = fence.search(vector, as_of=as_of, k=k)
-=======
         from cascade.retrieval.queries import compiler_evidence_query
 
         query = compiler_evidence_query(question)
@@ -1956,7 +1846,6 @@ def _lathe(
         result = fence.retrieve(
             vector, text=query.keyword_text, entities=query.entities, as_of=as_of, k=k
         )
->>>>>>> source-clean/main
         return [
             (chunk.published_at.isoformat(), chunk.source, chunk.body) for chunk in result.chunks
         ]
@@ -1966,29 +1855,11 @@ def _lathe(
         client=LLMClient(settings, phase="compile"),
         embed=embedder.encode,
         retrieve=retrieve,
-<<<<<<< HEAD
-=======
         situations=dict(situations or {}),
->>>>>>> source-clean/main
     )
     return compiler, fence
 
 
-<<<<<<< HEAD
-def _require_api_key(settings: Settings) -> None:
-    """Fail before spending anything if the credential is absent.
-
-    Checked here rather than left to the SDK: a 180-scenario compile that dies
-    on scenario 20 has already spent real money, and the operator needs to know
-    which variable to set before it starts.
-    """
-    key = settings.anthropic_api_key
-    if settings.llm.mode != "replay" and (key is None or not key.get_secret_value().strip()):
-        _fail(
-            f"llm.mode={settings.llm.mode!r} needs CASCADE_ANTHROPIC_API_KEY, which is unset "
-            "or empty. Set it in .env, or replay a recorded compile with "
-            "CASCADE_LLM__MODE=replay",
-=======
 def _require_provider_ready(settings: Settings) -> None:
     """Fail before spending anything if the active provider cannot be used.
 
@@ -2010,7 +1881,6 @@ def _require_provider_ready(settings: Settings) -> None:
             f"llm.mode={settings.llm.mode!r} through provider {settings.llm.provider!r} "
             f"cannot start: {'; '.join(problems)}. Configure the provider, or replay a "
             "recorded phase with CASCADE_LLM__MODE=replay",
->>>>>>> source-clean/main
             EXIT_PRECONDITION,
         )
 
@@ -2085,8 +1955,6 @@ def _print_compile_stats(stats: Any, settings: Settings) -> None:
         console.print(histogram)
 
 
-<<<<<<< HEAD
-=======
 def _scorable_count(settings: Settings) -> int:
     """How many sealed scenarios a compile is expected to cover.
 
@@ -2115,7 +1983,6 @@ def _shard(value: str | None) -> tuple[int, int] | None:
     return int(left), int(right)
 
 
->>>>>>> source-clean/main
 @compile_app.command("build")
 def compile_build(
     config: OverlayOpt = None,
@@ -2126,21 +1993,16 @@ def compile_build(
         bool,
         typer.Option("--rebuild", help="Recompile scenarios that already have a graph."),
     ] = False,
-<<<<<<< HEAD
-=======
     shard: Annotated[
         str | None,
         typer.Option("--shard", help="Compile one part of the pending work, as `k/n`."),
     ] = None,
->>>>>>> source-clean/main
 ) -> None:
     """Compile scenarios into typed causal graphs (M4, spec §5).
 
     Resumable: scenarios already compiled are skipped unless --rebuild is
     given, so an interrupted run continues rather than paying for 180 scenarios
     again. Costs money in `record` mode; the `compile` phase ceiling applies.
-<<<<<<< HEAD
-=======
 
     ``--shard k/n`` takes every n-th pending scenario, counting from k, so
     several processes can compile at once without two of them paying for the
@@ -2148,7 +2010,6 @@ def compile_build(
     it is the same on every machine; each process still skips what is already
     stored, so a re-run after an interruption stays correct whatever shard it
     is given.
->>>>>>> source-clean/main
     """
     from cascade.decompose.store import (
         compile_stats,
@@ -2159,23 +2020,14 @@ def compile_build(
     from cascade.ledger.store import load_scenarios
 
     settings = _settings(config)
-<<<<<<< HEAD
-    _require_api_key(settings)
-=======
     # Checked before anything is loaded or spent: a bad shard is a typo in a
     # command that otherwise runs for hours.
     part = _shard(shard)
     _require_provider_ready(settings)
->>>>>>> source-clean/main
 
     scenarios = load_scenarios(settings, role="admin")
     if not scenarios:
         _fail("scenario registry is empty; run `cascade ledger build` first", EXIT_PRECONDITION)
-<<<<<<< HEAD
-
-    done = set() if rebuild else completed_scenarios(settings)
-    pending = [item for item in scenarios if item.scenario_id not in done]
-=======
     scenarios = tuple(_scorable(scenarios, what="compile"))
 
     done = set() if rebuild else completed_scenarios(settings)
@@ -2183,18 +2035,10 @@ def compile_build(
     stored = len(scenarios) - len(pending)
     if part is not None:
         pending = pending[part[0] :: part[1]]
->>>>>>> source-clean/main
     if limit is not None:
         pending = pending[:limit]
 
     console.print(
-<<<<<<< HEAD
-        f"compiling [bold]{len(pending)}[/bold] scenario(s); "
-        f"{len(scenarios) - len(pending)} already done"
-    )
-
-    compiler, fence = _lathe(settings)
-=======
         f"compiling [bold]{len(pending)}[/bold] scenario(s); {stored} already stored"
         + (f"; shard {shard}" if shard else "")
         + (
@@ -2206,7 +2050,6 @@ def compile_build(
 
     situations = _situations(settings, [item.scenario_id for item in pending], role="eval")
     compiler, fence = _lathe(settings, situations)
->>>>>>> source-clean/main
     compiled = failed = 0
     try:
         for index, scenario in enumerate(pending, start=1):
@@ -2231,8 +2074,6 @@ def compile_build(
         )
 
 
-<<<<<<< HEAD
-=======
 @compile_app.command("dossier")
 def compile_dossier(
     config: OverlayOpt = None,
@@ -2303,20 +2144,15 @@ def compile_dossier(
         console.print(f"  refused · {reason}: {count}")
 
 
->>>>>>> source-clean/main
 @compile_app.command("status")
 def compile_status(config: OverlayOpt = None) -> None:
     """Report measured graph statistics and the repair-retry histogram."""
     from cascade.decompose.store import compile_stats
 
     settings = _settings(config)
-<<<<<<< HEAD
-    _print_compile_stats(compile_stats(settings), settings)
-=======
     _print_compile_stats(
         compile_stats(settings, expected_scenarios=_scorable_count(settings)), settings
     )
->>>>>>> source-clean/main
 
 
 @compile_app.command("verify")
@@ -2328,10 +2164,7 @@ def compile_verify(config: OverlayOpt = None) -> None:
     violation, hash mismatch, or missing scenario.
     """
     from cascade.corpus.embed import Embedder
-<<<<<<< HEAD
-=======
     from cascade.decompose.dossier_store import verify_dossier_hashes
->>>>>>> source-clean/main
     from cascade.decompose.store import compile_stats, verify_hashes
     from cascade.decompose.validator import validate
     from cascade.ledger.store import load_scenarios
@@ -2339,8 +2172,6 @@ def compile_verify(config: OverlayOpt = None) -> None:
     settings = _settings(config)
     failures: list[str] = []
 
-<<<<<<< HEAD
-=======
     # A dossier is evidence the agents act on; an edited row is an edited
     # experiment, so it is held to the same hash check as a graph.
     failures.extend(
@@ -2349,7 +2180,6 @@ def compile_verify(config: OverlayOpt = None) -> None:
         for item in verify_dossier_hashes(settings)
     )
 
->>>>>>> source-clean/main
     mismatches = verify_hashes(settings)
     if mismatches:
         failures.append(
@@ -2358,11 +2188,7 @@ def compile_verify(config: OverlayOpt = None) -> None:
         )
 
     scenarios = {item.scenario_id: item for item in load_scenarios(settings, role="admin")}
-<<<<<<< HEAD
-    stats = compile_stats(settings)
-=======
     stats = compile_stats(settings, expected_scenarios=_scorable_count(settings))
->>>>>>> source-clean/main
 
     embedder = Embedder(
         model_name=settings.models.embedding, batch_size=settings.corpus.embed_batch_size
@@ -2486,9 +2312,6 @@ def compile_audit(
         console.print("[bold green]audit: mean meets the §5.4 threshold[/bold green]")
         return
 
-<<<<<<< HEAD
-    scenarios = {item.scenario_id: item for item in load_scenarios(settings, role="admin")}
-=======
     # The sample is drawn from the scenarios the study scores: a stand-in
     # excluded by ADR-0043 has no graph by design, and auditing the quality of
     # a decomposition nobody compiled is not a review, it is a missing file.
@@ -2496,7 +2319,6 @@ def compile_audit(
         item.scenario_id: item
         for item in _scorable(load_scenarios(settings, role="admin"), what="the audit sample")
     }
->>>>>>> source-clean/main
     if not scenarios:
         _fail("scenario registry is empty", EXIT_PRECONDITION)
 
@@ -2510,15 +2332,6 @@ def compile_audit(
             continue
         graphs.append((scenario_id, scenarios[scenario_id].question, graph))
 
-<<<<<<< HEAD
-    if missing:
-        _fail(
-            f"{len(missing)} sampled scenario(s) have no compiled graph: "
-            + ", ".join(missing[:5])
-            + " -- run `cascade compile build` first",
-            EXIT_PRECONDITION,
-        )
-=======
     if missing and not graphs:
         _fail(
             "no sampled scenario has a compiled graph -- run `cascade compile build` first",
@@ -2535,7 +2348,6 @@ def compile_audit(
             f"[yellow]{len(missing)} sampled scenario(s) have no graph[/yellow] and are "
             "recorded as hard failures, not reviewed: " + ", ".join(missing)
         )
->>>>>>> source-clean/main
 
     rubric_path, worksheet_path = write_worksheet(
         directory, graphs=graphs, salt=settings.study.salt
@@ -2615,8 +2427,6 @@ def _load_simulation(settings: Settings, scenario_id: str, *, policy: str) -> An
     return Loom(settings=settings, graph=graph, policies=policies, decider=decider), graph
 
 
-<<<<<<< HEAD
-=======
 def _baseline_evidence(settings: Settings, fence: Any, embedder: Any, scenario: Any) -> Any:
     """The single-model baselines' evidence, under the configured retrieval mode.
 
@@ -2637,7 +2447,6 @@ def _baseline_evidence(settings: Settings, fence: Any, embedder: Any, scenario: 
     )
 
 
->>>>>>> source-clean/main
 @contextmanager
 def _maybe_chronofence(settings: Settings, *, enabled: bool) -> Iterator[Any]:
     """Open a Chronofence, or yield ``None`` under `grounding: parametric_only`.
@@ -2655,8 +2464,6 @@ def _maybe_chronofence(settings: Settings, *, enabled: bool) -> Iterator[Any]:
         yield fence
 
 
-<<<<<<< HEAD
-=======
 def _tool_belt(
     settings: Settings,
     policy: Any,
@@ -2693,7 +2500,6 @@ def _tool_belt(
     )
 
 
->>>>>>> source-clean/main
 def _agent_policy(settings: Settings, pairs: Any) -> Any:
     """Build one model-backed decider covering every (scenario, actor) given.
 
@@ -2718,13 +2524,6 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
     """
     from cascade.aperture.policy import counterparties, derive_policies, levers_by_actor
     from cascade.llm.client import LLMClient
-<<<<<<< HEAD
-    from cascade.sim.agent import LLMAgents, prepare_actor
-    from cascade.sim.prompts import brief_from
-
-    _require_api_key(settings)
-    grounded = settings.flags.grounding == "chronofence"
-=======
     from cascade.retrieval.queries import agent_evidence_query
     from cascade.sim.agent import (
         LLMAgents,
@@ -2749,7 +2548,6 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
             "nothing. Turn one of the two off.",
             EXIT_PRECONDITION,
         )
->>>>>>> source-clean/main
     if grounded:
         from cascade.corpus.embed import Embedder
 
@@ -2760,10 +2558,6 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
     else:
         embedder = None
 
-<<<<<<< HEAD
-    prepared: dict[tuple[str, str], Any] = {}
-    with _maybe_chronofence(settings, enabled=grounded) as fence:
-=======
     situations = _situations(
         settings,
         [scenario.scenario_id for scenario, _ in pairs],
@@ -2779,7 +2573,6 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
     stack = ExitStack()
     try:
         fence = stack.enter_context(_maybe_chronofence(settings, enabled=grounded))
->>>>>>> source-clean/main
         for scenario, graph in pairs:
             policies = derive_policies(
                 graph, settings.aperture, asymmetry=settings.flags.information_asymmetry
@@ -2791,12 +2584,6 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
                 if fence is None or embedder is None:
                     evidence: tuple[tuple[str, str, str], ...] = ()
                 else:
-<<<<<<< HEAD
-                    query = f"{scenario.question} {actor.name} {actor.objective}"
-                    vector = embedder.encode([query])[0]
-                    found = fence.search(
-                        vector, as_of=scenario.cutoff_ts, k=settings.retrieval.k_agent
-=======
                     query = agent_evidence_query(scenario.question, actor.name, actor.objective)
                     vector = embedder.encode([query.text])[0]
                     found = fence.retrieve(
@@ -2805,7 +2592,6 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
                         entities=query.entities,
                         as_of=scenario.cutoff_ts,
                         k=settings.retrieval.k_agent,
->>>>>>> source-clean/main
                     )
                     evidence = tuple(
                         (chunk.published_at.isoformat(), chunk.source, chunk.body)
@@ -2823,10 +2609,6 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
                     question_context=context,
                     evidence=evidence,
                     grounded=grounded,
-<<<<<<< HEAD
-                )
-                prepared[(scenario.scenario_id, actor.id)] = prepare_actor(brief, settings)
-=======
                     situation=situations.get(scenario.scenario_id, ("", None))[0],
                 )
                 key = (scenario.scenario_id, actor.id)
@@ -2848,7 +2630,6 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
         # the success path below decides who owns it instead.
         stack.close()
         raise
->>>>>>> source-clean/main
 
     short = [key for key in sorted(prepared) if not prepared[key].cacheable]
     if short:
@@ -2858,11 +2639,6 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
             "unmarked: marking them would pay the write premium for a cache the provider "
             "silently declines (ADR-0001)."
         )
-<<<<<<< HEAD
-    return LLMAgents(
-        settings=settings, client=LLMClient(settings, phase="simulate"), prepared=prepared
-    )
-=======
     client = LLMClient(settings, phase="simulate")
     if tools is None:
         # ADR-0019's arm: every chunk it will ever see is already in a prefix,
@@ -2886,7 +2662,6 @@ def _agent_policy(settings: Settings, pairs: Any) -> Any:
     # release it earlier; it is idempotent, so both happening is harmless.
     atexit.register(decider.close)
     return decider
->>>>>>> source-clean/main
 
 
 def _leverage_of(graph: Any, actor_id: str) -> dict[str, float]:
@@ -3265,8 +3040,6 @@ def simulate_all(
     limit: Annotated[
         int | None, typer.Option("--limit", help="Use at most N scenarios (smoke runs).")
     ] = None,
-<<<<<<< HEAD
-=======
     only: Annotated[
         Path | None,
         typer.Option(
@@ -3276,7 +3049,6 @@ def simulate_all(
             "subset when the study is a subset.",
         ),
     ] = None,
->>>>>>> source-clean/main
 ) -> None:
     """Run the seeded ensemble across every compiled scenario (M6, PHASE 2).
 
@@ -3301,8 +3073,6 @@ def simulate_all(
             "no compiled graphs; run `cascade compile build` before simulating",
             EXIT_PRECONDITION,
         )
-<<<<<<< HEAD
-=======
     if only is not None:
         # A named set, because a prefix of sorted ids is not a sample. Ids sort
         # by source (`curated:` before `manifold:` before `polymarket:`), so
@@ -3323,7 +3093,6 @@ def simulate_all(
                 EXIT_PRECONDITION,
             )
         scenario_ids = [sid for sid in scenario_ids if sid in wanted]
->>>>>>> source-clean/main
     if limit is not None:
         scenario_ids = scenario_ids[:limit]
 
@@ -3559,57 +3328,6 @@ def _frozen_split(settings: Settings) -> FrozenSplit:
         _fail(str(exc), EXIT_PRECONDITION)
 
 
-<<<<<<< HEAD
-def _paired_direct_brier(
-    settings: Settings, scored: Sequence[ScoredForecast], config_id: str
-) -> float | None:
-    """The single-model baseline's Brier **on the scenarios this config scored**.
-
-    §10.2 makes the direct baseline the reference the headline skill score is
-    stated against. The headline runs all 180 scenarios, so for it the paired
-    and unpaired references coincide -- but a §10.3-capped cell runs 90, and
-    comparing its Brier over 90 scenarios against the baseline's over 180 would
-    be a skill score between two different populations, reported as if it were
-    one. Restricting the reference to the overlap makes the ratio mean what it
-    says.
-
-    ``None`` when the baseline has not been produced, or when the overlap is
-    empty -- both are "not measured", never zero.
-    """
-    from cascade.eval.baselines import DIRECT_CONFIG_ID
-    from cascade.eval.metrics import brier
-    from cascade.eval.store import scored_forecasts
-
-    if config_id == DIRECT_CONFIG_ID:
-        return None
-    reference = {
-        item.scenario_id: item for item in scored_forecasts(settings, config_id=DIRECT_CONFIG_ID)
-    }
-    shared = sorted({item.scenario_id for item in scored} & set(reference))
-    if not shared:
-        return None
-    return brier(
-        [reference[key].p_hat for key in shared], [reference[key].outcome for key in shared]
-    )
-
-
-def _metrics_for_config(
-    settings: Settings, config_id: str, split: FrozenSplit
-) -> tuple[MetricSet | None, tuple[ScoredForecast, ...]]:
-    """Score one configuration, or return ``(None, ())`` when it has none."""
-    from cascade.eval.score import metrics_for
-    from cascade.eval.store import scored_forecasts
-
-    scored = scored_forecasts(settings, config_id=config_id)
-    if not scored:
-        return None, ()
-    return (
-        metrics_for(
-            scored,
-            config_id=config_id,
-            climatology_brier=split.climatology_brier,
-            direct_brier=_paired_direct_brier(settings, scored, config_id),
-=======
 PartitionOpt = Annotated[
     str,
     typer.Option(
@@ -3742,15 +3460,12 @@ def _metrics_for_config(
             config_id=config_id,
             base_rate=split.base_rate,
             direct=reference,
->>>>>>> source-clean/main
             salt=split.study_salt,
         ),
         scored,
     )
 
 
-<<<<<<< HEAD
-=======
 def _print_partition(declaration: SplitDeclaration, partition: Partition) -> None:
     """Say which partition a number is from, every time one is printed."""
     console.print(
@@ -3770,7 +3485,6 @@ def _print_partition(declaration: SplitDeclaration, partition: Partition) -> Non
         )
 
 
->>>>>>> source-clean/main
 def _print_metrics(metrics: Any, *, title: str) -> None:
     table = Table(title=title)
     table.add_column("Metric", style="cyan")
@@ -3785,11 +3499,7 @@ def _print_metrics(metrics: Any, *, title: str) -> None:
     )
     table.add_row("base rate", f"{metrics.base_rate:.4f}", "of the scored subset")
     table.add_row("mean forecast", f"{metrics.mean_p_hat:.4f}", "")
-<<<<<<< HEAD
-    table.add_row("Brier", f"{metrics.brier:.6f}", "headline; lower is better")
-=======
     table.add_row("Brier", f"{metrics.brier:.6f}", "lower is better")
->>>>>>> source-clean/main
     table.add_row(
         "BSS vs climatology",
         (
@@ -3836,23 +3546,13 @@ def eval_score(
     config_id: Annotated[
         str | None, typer.Option("--config-id", help="Which stored config to score.")
     ] = None,
-<<<<<<< HEAD
-=======
     partition: PartitionOpt = "dev",
->>>>>>> source-clean/main
 ) -> None:
     """Score one configuration's stored forecasts against the sealed labels.
 
     Runs as `cascade_eval` and asserts the frozen split first (§1.3). Exits 3
     when the configuration has no forecasts -- a Brier over nothing is not a
     small number, it is not a number.
-<<<<<<< HEAD
-    """
-    settings = _settings(config)
-    split = _frozen_split(settings)
-    target = config_id or config or "C01"
-    metrics, scored = _metrics_for_config(settings, target, split)
-=======
 
     Measures on **dev by default**. This is the command a tuning loop calls,
     and the default of a command run fifty times a day must be the partition it
@@ -3871,30 +3571,21 @@ def eval_score(
     metrics, scored = _metrics_for_config(
         settings, target, split, declaration=declaration, partition=chosen
     )
->>>>>>> source-clean/main
     if metrics is None:
         from cascade.eval.store import available_configs
 
         stored = ", ".join(f"{name} ({count})" for name, count in available_configs(settings))
         _fail(
-<<<<<<< HEAD
-            f"no stored forecasts for config {target!r}; stored configs are: {stored or 'none'}",
-=======
             f"no stored forecasts for config {target!r} on the {chosen} partition; "
             f"stored configs are: {stored or 'none'}",
->>>>>>> source-clean/main
             EXIT_PRECONDITION,
         )
     console.print(
         f"frozen split [bold]{split.manifest_sha256[:16]}...[/bold] "
         f"({split.n_scenarios} scenarios, base rate {split.base_rate:.4f})"
     )
-<<<<<<< HEAD
-    _print_metrics(metrics, title=f"Metrics -- {target} (spec §10.1)")
-=======
     _print_partition(declaration, chosen)
     _print_metrics(metrics, title=f"Metrics -- {target} on {chosen} (spec §10.1)")
->>>>>>> source-clean/main
     _print_calibration(scored)
     _print_domains(scored)
 
@@ -3948,12 +3639,9 @@ def _print_domains(scored: Any) -> None:
 
 
 BASELINE_CHOICES = ("climatology", "direct", "self_consistency")
-<<<<<<< HEAD
-=======
 # Selectable, never in the default set: it asks two public APIs rather than a
 # model, and it writes `market_prices`, not `forecasts` (migration 017).
 MARKET_BASELINE_CHOICE = "market"
->>>>>>> source-clean/main
 
 
 @eval_app.command("baselines")
@@ -3963,14 +3651,10 @@ def eval_baselines(
         list[str] | None,
         typer.Option(
             "--baseline",
-<<<<<<< HEAD
-            help=f"Which to produce: {', '.join(BASELINE_CHOICES)}. Repeatable; default all.",
-=======
             help=(
                 f"Which to produce: {', '.join(BASELINE_CHOICES)}. Repeatable; default all "
                 f"three. `{MARKET_BASELINE_CHOICE}` is `cascade eval market-prices`, on request."
             ),
->>>>>>> source-clean/main
         ),
     ] = None,
     samples: Annotated[
@@ -4007,15 +3691,6 @@ def eval_baselines(
     settings = _settings(config)
     split = _frozen_split(settings)
     wanted = tuple(baseline) if baseline else BASELINE_CHOICES
-<<<<<<< HEAD
-    unknown = sorted(set(wanted) - set(BASELINE_CHOICES))
-    if unknown:
-        _fail(
-            f"unknown baseline(s) {unknown}; choose from {list(BASELINE_CHOICES)}",
-            EXIT_PRECONDITION,
-        )
-    scenarios = sorted(load_scenarios(settings, role="admin"), key=lambda s: s.scenario_id)
-=======
     unknown = sorted(set(wanted) - set(BASELINE_CHOICES) - {MARKET_BASELINE_CHOICE})
     if unknown:
         _fail(
@@ -4029,7 +3704,6 @@ def eval_baselines(
         sorted(load_scenarios(settings, role="admin"), key=lambda s: s.scenario_id),
         what="the baselines",
     )
->>>>>>> source-clean/main
     if limit is not None:
         scenarios = scenarios[:limit]
     if not scenarios:
@@ -4078,11 +3752,7 @@ def eval_baselines(
         return
 
     # 2 and 3. The single-model baselines, on the agents' own evidence.
-<<<<<<< HEAD
-    _require_api_key(settings)
-=======
     _require_provider_ready(settings)
->>>>>>> source-clean/main
     embedder = Embedder(
         model_name=settings.models.embedding, batch_size=settings.corpus.embed_batch_size
     )
@@ -4090,12 +3760,7 @@ def eval_baselines(
     retrieved: dict[str, tuple[tuple[str, str, str], ...]] = {}
     with Chronofence(settings, role="eval") as fence:
         for scenario in scenarios:
-<<<<<<< HEAD
-            vector = embedder.encode([f"{scenario.question} {scenario.resolution_criterion}"])[0]
-            found = fence.search(vector, as_of=scenario.cutoff_ts, k=settings.retrieval.k_agent)
-=======
             found = _baseline_evidence(settings, fence, embedder, scenario)
->>>>>>> source-clean/main
             retrieved[scenario.scenario_id] = tuple(
                 (chunk.published_at.isoformat(), chunk.source, chunk.body) for chunk in found.chunks
             )
@@ -4108,12 +3773,9 @@ def eval_baselines(
             config_id=baseline_config,
             samples=draws,
             temperature=temperature,
-<<<<<<< HEAD
-=======
             situations=_situations(
                 settings, [scenario.scenario_id for scenario in scenarios], role="eval"
             ),
->>>>>>> source-clean/main
         )
         for collapsed in run.collapsed:
             write_forecast(
@@ -4171,12 +3833,6 @@ def eval_estimate(
 
     settings = _settings(config)
     _frozen_split(settings)
-<<<<<<< HEAD
-    _require_api_key(settings)
-    draws = samples if samples is not None else settings.ensemble.replicates
-
-    scenarios = sorted(load_scenarios(settings, role="admin"), key=lambda item: item.scenario_id)
-=======
     _require_provider_ready(settings)
     draws = samples if samples is not None else settings.ensemble.replicates
 
@@ -4184,7 +3840,6 @@ def eval_estimate(
         sorted(load_scenarios(settings, role="admin"), key=lambda item: item.scenario_id),
         what="the estimate",
     )
->>>>>>> source-clean/main
     if not scenarios:
         _fail("scenario registry is empty; run `cascade ledger build`", EXIT_PRECONDITION)
     sample = scenarios[: max(1, units)]
@@ -4196,12 +3851,7 @@ def eval_estimate(
     retrieved: dict[str, tuple[tuple[str, str, str], ...]] = {}
     with Chronofence(settings, role="eval") as fence:
         for scenario in sample:
-<<<<<<< HEAD
-            vector = embedder.encode([f"{scenario.question} {scenario.resolution_criterion}"])[0]
-            found = fence.search(vector, as_of=scenario.cutoff_ts, k=settings.retrieval.k_agent)
-=======
             found = _baseline_evidence(settings, fence, embedder, scenario)
->>>>>>> source-clean/main
             retrieved[scenario.scenario_id] = tuple(
                 (chunk.published_at.isoformat(), chunk.source, chunk.body) for chunk in found.chunks
             )
@@ -4219,12 +3869,9 @@ def eval_estimate(
             samples=count,
             temperature=temperature,
             client=client,
-<<<<<<< HEAD
-=======
             situations=_situations(
                 settings, [scenario.scenario_id for scenario in sample], role="eval"
             ),
->>>>>>> source-clean/main
         )
 
     estimate = estimate_phase(
@@ -4257,8 +3904,6 @@ def eval_estimate(
     console.print("[bold green]projection is within the baseline ceiling[/bold green]")
 
 
-<<<<<<< HEAD
-=======
 @eval_app.command("market-prices")
 def eval_market_prices(
     config: OverlayOpt = None,
@@ -4387,7 +4032,6 @@ def _market_prices(
         )
 
 
->>>>>>> source-clean/main
 @eval_app.command("grid")
 def eval_grid(
     config: OverlayOpt = None,
@@ -4404,11 +4048,6 @@ def eval_grid(
         list[str] | None, typer.Option("--cell", help="Restrict to these cell ids. Repeatable.")
     ] = None,
     limit: Annotated[int | None, typer.Option("--limit")] = None,
-<<<<<<< HEAD
-) -> None:
-    """Execute Appendix C's 12-cell grid and collapse each cell (spec §10.3).
-
-=======
     supplementary: Annotated[
         bool,
         typer.Option(
@@ -4435,17 +4074,12 @@ def eval_grid(
     any cell to dev the same way, which is how the headline configuration gets
     dev forecasts to tune against before the study is run.
 
->>>>>>> source-clean/main
     Resumable in exactly the way the fan-out is: a run row exists only for a
     run that finished, so a re-run plans the difference. Cells are executed in
     id order, and each is collapsed as soon as it completes, so an interrupted
     grid leaves whole cells scoreable rather than a partial everything.
 
-<<<<<<< HEAD
-    `--replicate-policy` resolves CLAUDE.md's open question Q1 explicitly. The
-=======
     `--replicate-policy` resolves open question Q1 explicitly. The
->>>>>>> source-clean/main
     choice is printed here and written into the report; it is not inferred from
     a run count.
     """
@@ -4453,32 +4087,17 @@ def eval_grid(
     from cascade.ensemble.aggregate import collapse
     from cascade.ensemble.runner import EnsembleRunner
     from cascade.ensemble.store import collapse_inputs, write_forecast
-<<<<<<< HEAD
-    from cascade.eval.ablation import CELLS, cell_by_id, grid_replicates, grid_scenarios
-
-    base = _settings(config)
-    split = _frozen_split(base)
-=======
     from cascade.eval.ablation import grid_replicates
 
     base = _settings(config)
     split = _frozen_split(base)
     declaration = _declared_split(base, split)
->>>>>>> source-clean/main
     if replicate_policy not in {"budget_capped", "design"}:
         _fail(
             f"unknown replicate policy {replicate_policy!r}; expected "
             "'budget_capped' or 'design'",
             EXIT_PRECONDITION,
         )
-<<<<<<< HEAD
-    selected = [cell_by_id(cell_id) for cell_id in cells] if cells else list(CELLS)
-
-    from cascade.ledger.store import load_scenarios
-
-    registry = sorted(item.scenario_id for item in load_scenarios(base, role="admin"))
-    compiled = sorted(completed_scenarios(base))
-=======
     chosen = _partition(partition)
     if variants and chosen == "all":
         # `all` is the option's default, not a request: a variant has exactly
@@ -4506,7 +4125,6 @@ def eval_grid(
     compiled = sorted(
         scenario_id for scenario_id in completed_scenarios(base) if scenario_id not in excluded
     )
->>>>>>> source-clean/main
     if not registry:
         _fail("scenario registry is empty; run `cascade ledger build`", EXIT_PRECONDITION)
 
@@ -4540,18 +4158,6 @@ def eval_grid(
                 "no compiled graph",
             )
             continue
-<<<<<<< HEAD
-        scenario_ids = list(
-            grid_scenarios(
-                pool,
-                cell=cell,
-                salt=split.study_salt,
-                cap=base.ensemble.ablation_scenarios,
-            )
-        )
-        if limit is not None:
-            scenario_ids = scenario_ids[:limit]
-=======
         scenario_ids = _cell_scenarios(
             cell,
             pool,
@@ -4562,7 +4168,6 @@ def eval_grid(
             is_variant=cell.cell_id in tuning,
             limit=limit,
         )
->>>>>>> source-clean/main
 
         loom_for, on_complete, _ = _fanout_wiring(
             settings, policy=policy, scenario_ids=scenario_ids
@@ -4611,8 +4216,6 @@ def eval_grid(
     console.print(summary)
 
 
-<<<<<<< HEAD
-=======
 def _cell_scenarios(
     cell: CellSpec,
     pool: Sequence[str],
@@ -4724,7 +4327,6 @@ def _grid_cells(
     return chosen
 
 
->>>>>>> source-clean/main
 def _completed_for(settings: Settings) -> Any:
     """Bind one cell's settings into its resume lookup.
 
@@ -4747,8 +4349,6 @@ def eval_significance(
     headline: Annotated[
         str, typer.Option("--headline", help="Configuration every other cell is compared against.")
     ] = "C01",
-<<<<<<< HEAD
-=======
     partition: PartitionOpt = "dev",
     versus: Annotated[
         list[str] | None,
@@ -4757,7 +4357,6 @@ def eval_significance(
             help="A tuning variant to compare against the headline. Dev only. Repeatable.",
         ),
     ] = None,
->>>>>>> source-clean/main
 ) -> None:
     """Paired bootstrap CIs with Holm-Bonferroni adjustment (spec §10.4).
 
@@ -4765,18 +4364,6 @@ def eval_significance(
     the paired count is printed: the 11 capped cells run 90 scenarios against
     the headline's 180, so an unpaired comparison would silently compare two
     different sets.
-<<<<<<< HEAD
-    """
-    settings = _settings(config)
-    split = _frozen_split(settings)
-    comparisons = _build_comparisons(settings, split, headline=headline)
-    if not comparisons:
-        _fail(
-            "no comparison had forecasts on both sides; run `cascade eval grid` first",
-            EXIT_PRECONDITION,
-        )
-    table = Table(title="Ablation significance (spec §10.4)")
-=======
 
     Measures on dev by default, for the reason `eval score` does. Three Holm
     families are adjusted separately and labelled: Appendix C's, the declared
@@ -4804,7 +4391,6 @@ def eval_significance(
     _print_partition(declaration, chosen)
     table = Table(title=f"Significance on {chosen} (spec §10.4) -- Holm within each family")
     table.add_column("family", style="magenta", overflow="fold")
->>>>>>> source-clean/main
     table.add_column("comparison", style="cyan", overflow="fold")
     table.add_column("A - B", justify="right")
     table.add_column("delta Brier", justify="right")
@@ -4814,10 +4400,7 @@ def eval_significance(
     table.add_column("Holm p*", justify="right")
     for item in comparisons:
         table.add_row(
-<<<<<<< HEAD
-=======
             item.family,
->>>>>>> source-clean/main
             item.name,
             f"{item.config_a} - {item.config_b}",
             f"{item.interval.point:+.6f}",
@@ -4834,60 +4417,6 @@ def eval_significance(
     )
 
 
-<<<<<<< HEAD
-def _build_comparisons(settings: Settings, split: Any, *, headline: str = "C01") -> list[Any]:
-    """Pair every comparison in the family on the scenarios both sides scored.
-
-    Pairing is on the intersection, and the intersection size travels with the
-    result: the 11 capped cells run 90 scenarios against the headline's 180, so
-    a comparison that ignored the overlap would be comparing two different sets
-    and calling the difference an effect.
-    """
-    from cascade.eval.ablation import comparison_family
-    from cascade.eval.metrics import brier
-    from cascade.eval.schema import Comparison
-    from cascade.eval.stats import adjust_family, bootstrap_seed, paired_bootstrap
-    from cascade.eval.store import available_configs, scored_forecasts
-
-    cache: dict[str, dict[str, Any]] = {}
-
-    def load(config_id: str) -> dict[str, Any]:
-        if config_id not in cache:
-            cache[config_id] = {
-                item.scenario_id: item for item in scored_forecasts(settings, config_id=config_id)
-            }
-        return cache[config_id]
-
-    built: list[Any] = []
-    stored = [name for name, _ in available_configs(settings)]
-    for spec in comparison_family(available=stored, headline=headline):
-        left, right = load(spec.config_a), load(spec.config_b)
-        shared = sorted(set(left) & set(right))
-        if len(shared) < 2:
-            continue
-        pa = [left[key].p_hat for key in shared]
-        pb = [right[key].p_hat for key in shared]
-        outcomes = [left[key].outcome for key in shared]
-        interval = paired_bootstrap(
-            pa,
-            pb,
-            outcomes,
-            seed=bootstrap_seed(split.study_salt, spec.config_a, spec.config_b),
-            b_resamples=settings.ensemble.bootstrap_b,
-        )
-        built.append(
-            Comparison(
-                name=spec.name,
-                config_a=spec.config_a,
-                config_b=spec.config_b,
-                brier_a=brier(pa, outcomes),
-                brier_b=brier(pb, outcomes),
-                n_paired=len(shared),
-                interval=interval,
-            )
-        )
-    return list(adjust_family(built))
-=======
 def _build_comparisons(
     settings: Settings,
     split: Any,
@@ -5095,7 +4624,6 @@ def eval_tune_guard(
         f"[bold green]dev only[/bold green]: {checked} scenario reference(s) checked against "
         f"split {declaration.sha256[:16]}..., none held out"
     )
->>>>>>> source-clean/main
 
 
 @eval_app.command("status")
@@ -5143,8 +4671,6 @@ def eval_status(config: OverlayOpt = None) -> None:
         )
     console.print(cells)
 
-<<<<<<< HEAD
-=======
     from cascade.eval.supplementary import SUPPLEMENTARY_CELLS
 
     extra = Table(
@@ -5164,7 +4690,6 @@ def eval_status(config: OverlayOpt = None) -> None:
             f"dev only: {', '.join(variants)}"
         )
 
->>>>>>> source-clean/main
     baselines = Table(title="Baselines (spec §10.2)")
     baselines.add_column("baseline", style="cyan")
     baselines.add_column("config", justify="right")
@@ -5190,8 +4715,6 @@ def eval_status(config: OverlayOpt = None) -> None:
         )
 
 
-<<<<<<< HEAD
-=======
 @eval_app.command("blend")
 def eval_blend(
     config: OverlayOpt = None,
@@ -5348,7 +4871,6 @@ def eval_injection(
     )
 
 
->>>>>>> source-clean/main
 @eval_app.command("prompt-audit")
 def eval_prompt_audit(
     config: OverlayOpt = None,
@@ -5356,10 +4878,7 @@ def eval_prompt_audit(
     subsystem: Annotated[str, typer.Option("--subsystem")] = "compiler",
     before: Annotated[float | None, typer.Option("--before")] = None,
     after: Annotated[float | None, typer.Option("--after")] = None,
-<<<<<<< HEAD
-=======
     partition: PartitionOpt = "dev",
->>>>>>> source-clean/main
 ) -> None:
     """Record §1.3's before/after Brier for a prompt revision.
 
@@ -5368,25 +4887,16 @@ def eval_prompt_audit(
     visible in the record rather than hidden." With no `--after`, the headline
     configuration's measured Brier is used -- the number the revision has to be
     judged against, taken from the measurement rather than typed in.
-<<<<<<< HEAD
-=======
 
     That number is the **dev** Brier by default. A prompt revision is a tuning
     decision, and the figure a tuning decision is judged against has to be one
     it was allowed to see: measuring the audit on all scenarios would make
     running the audit the very look at test it exists to expose.
->>>>>>> source-clean/main
     """
     from cascade.eval.store import record_prompt_revision_brier
 
     settings = _settings(config)
     split = _frozen_split(settings)
-<<<<<<< HEAD
-    rev = prompt_rev or settings.llm.prompt_rev
-    measured = after
-    if measured is None:
-        metrics, _ = _metrics_for_config(settings, "C01", split)
-=======
     declaration = _declared_split(settings, split)
     chosen = _partition(partition)
     rev = prompt_rev or settings.llm.prompt_rev
@@ -5395,7 +4905,6 @@ def eval_prompt_audit(
         metrics, _ = _metrics_for_config(
             settings, "C01", split, declaration=declaration, partition=chosen
         )
->>>>>>> source-clean/main
         measured = None if metrics is None else metrics.brier
     updated = record_prompt_revision_brier(
         settings,
@@ -5414,11 +4923,6 @@ def eval_prompt_audit(
         f"recorded prompt revision {rev!r}/{subsystem}: before="
         f"{'null' if before is None else f'{before:.6f}'}, after="
         f"{'null' if measured is None else f'{measured:.6f}'}"
-<<<<<<< HEAD
-    )
-
-
-=======
         + ("" if after is not None else f" (C01 on the {chosen} partition)")
     )
 
@@ -5651,7 +5155,6 @@ def aws_smoke_test(
     console.print("[green]round trip complete[/green]: synthetic events only, not the event export")
 
 
->>>>>>> source-clean/main
 # ---------------------------------------------------------------------------
 # report: the Appendix D artifact (M7)
 # ---------------------------------------------------------------------------
@@ -5667,11 +5170,6 @@ def report(
     out: Annotated[
         str | None, typer.Option("--out", help="Report root; default paths.reports.")
     ] = None,
-<<<<<<< HEAD
-) -> None:
-    """Write `reports/study_{ts}/` from whatever has been measured (Appendix D).
-
-=======
     partition: PartitionOpt = "test",
 ) -> None:
     """Write `reports/study_{ts}/` from whatever has been measured (Appendix D).
@@ -5683,7 +5181,6 @@ def report(
     writes a tuning report, which says on its face that it is one. Stored
     configurations that were never declared are not scored off dev.
 
->>>>>>> source-clean/main
     Writes what exists and names what does not. A quantity that could not be
     produced appears as null in the JSON and in a "Not produced" section in
     `headline.md`; nothing is filled in with the value the spec expects, which
@@ -5704,17 +5201,6 @@ def report(
         grid_replicates,
         missing_cells,
     )
-<<<<<<< HEAD
-    from cascade.eval.baselines import BASELINES
-    from cascade.eval.report import StudyArtifact, git_sha, report_id, write_report
-    from cascade.eval.schema import AblationCell
-    from cascade.eval.score import calibration_of, dispersion_finding, domains_of
-    from cascade.eval.stats import bootstrap_seed
-    from cascade.eval.store import available_configs, write_study_report
-
-    settings = _settings(config)
-    split = _frozen_split(settings)
-=======
     from cascade.eval.baselines import BASELINES, DIRECT_CONFIG_ID
     from cascade.eval.evidence import EVIDENCE_WINDOW_DAYS, evidence_finding
     from cascade.eval.report import StudyArtifact, git_sha, report_id, write_report
@@ -5738,19 +5224,12 @@ def report(
     split = _frozen_split(settings)
     declaration = _declared_split(settings, split)
     chosen = _partition(partition)
->>>>>>> source-clean/main
     stored = dict(available_configs(settings))
     now = datetime.now(UTC)
     identifier = report_id(now=now)
     blocked: list[str] = []
 
     # -- per-config metrics -------------------------------------------------
-<<<<<<< HEAD
-    metrics: list[MetricSet] = []
-    scored_by_config: dict[str, tuple[ScoredForecast, ...]] = {}
-    for config_id in sorted(stored):
-        measured, scored = _metrics_for_config(settings, config_id, split)
-=======
     # A configuration nobody declared is a tuning variant. Off dev it is not
     # scored at all: its held-out forecasts are never joined to a label, so a
     # report cannot become the place variants get compared on test.
@@ -5770,7 +5249,6 @@ def report(
             partition=chosen,
             direct=direct_rows,
         )
->>>>>>> source-clean/main
         if measured is not None:
             metrics.append(measured)
             scored_by_config[config_id] = scored
@@ -5780,11 +5258,6 @@ def report(
     if head_metrics is None:
         blocked.append(
             f"Headline Brier, skill scores, calibration and per-domain table: the "
-<<<<<<< HEAD
-            f"headline configuration {headline!r} has no stored forecasts. Run "
-            "`cascade compile build`, `cascade simulate all` and "
-            "`cascade ensemble collapse`."
-=======
             f"headline configuration {headline!r} has no stored forecasts on the "
             f"{chosen} partition. Run `cascade compile build`, `cascade simulate all` "
             "and `cascade ensemble collapse`."
@@ -5804,7 +5277,6 @@ def report(
                 direct=() if headline == DIRECT_CONFIG_ID else direct_rows,
                 salt=split.study_salt,
             )
->>>>>>> source-clean/main
         )
 
     # -- the twelve cells ---------------------------------------------------
@@ -5857,12 +5329,6 @@ def report(
             blocked.append(f"Baseline {spec.name!r} ({spec.config_id}): no stored forecasts.")
 
     # -- significance -------------------------------------------------------
-<<<<<<< HEAD
-    comparisons = _build_comparisons(settings, split, headline=headline)
-    readings = {
-        spec.name: spec.reading
-        for spec in comparison_family(available=sorted(stored), headline=headline)
-=======
     comparisons = _build_comparisons(
         settings, split, headline=headline, declaration=declaration, partition=chosen
     )
@@ -5874,7 +5340,6 @@ def report(
             ),
             *supplementary_family(available=sorted(stored), headline=headline),
         )
->>>>>>> source-clean/main
     }
     if not comparisons:
         blocked.append(
@@ -5904,8 +5369,6 @@ def report(
             "the first rung."
         )
 
-<<<<<<< HEAD
-=======
     # -- accuracy by evidence quality (declared in advance) ------------------
     evidence = None
     if head_scored:
@@ -5919,7 +5382,6 @@ def report(
         except Exception as exc:  # noqa: BLE001 -- a missing table is reported, never fatal
             blocked.append(f"Accuracy by evidence tier: {type(exc).__name__}: {exc}")
 
->>>>>>> source-clean/main
     # -- per-scenario CSV rows ----------------------------------------------
     baseline_ids = {spec.config_id for spec in BASELINES}
     baseline_rows = tuple(
@@ -5967,8 +5429,6 @@ def report(
         leakage=_leakage_snapshot(settings),
         cost_ledger=_cost_snapshot(settings),
         blocked=tuple(blocked),
-<<<<<<< HEAD
-=======
         split=declaration,
         partition=chosen,
         headline_partitions=headline_partitions,
@@ -5977,7 +5437,6 @@ def report(
         withheld_configs=tuple(withheld),
         market_coverage=_market_coverage(settings),
         provenance=_report_provenance(settings),
->>>>>>> source-clean/main
     )
 
     root = Path(out) if out else repo_root() / settings.paths.reports
@@ -5992,24 +5451,15 @@ def report(
         headline_brier=None if head_metrics is None else head_metrics.brier,
         notes=(
             f"{len(CELLS) - len(absent)}/{len(CELLS)} cells scored; "
-<<<<<<< HEAD
-            f"{len(blocked)} quantities not produced"
-=======
             f"{len(blocked)} quantities not produced; headline_brier is the {chosen} "
             f"partition of split {declaration.sha256[:16]}"
->>>>>>> source-clean/main
         ),
     )
 
     console.print(f"report written to [bold]{directory}[/bold]")
-<<<<<<< HEAD
-    if head_metrics is not None:
-        _print_metrics(head_metrics, title=f"Headline -- {headline}")
-=======
     _print_partition(declaration, chosen)
     if head_metrics is not None:
         _print_metrics(head_metrics, title=f"Headline -- {headline} on {chosen}")
->>>>>>> source-clean/main
     if blocked:
         console.print(f"[yellow]{len(blocked)} quantity/quantities not produced:[/yellow]")
         for message in blocked:
@@ -6028,11 +5478,7 @@ def _replicate_policy_sentence(policy: str, settings: Settings) -> str:
         "Appendix C's D is read as the design factor and "
         f"§10.3/§12.3's {settings.ensemble.ablation_replicates} replicates as a budget "
         "cap on the 11 non-headline cells; the headline cell runs at the full D. "
-<<<<<<< HEAD
-        "This resolves the Q1 ambiguity in CLAUDE.md. The ensemble contribution "
-=======
         "This resolves the Q1 replicate-count ambiguity. The ensemble contribution "
->>>>>>> source-clean/main
         "estimated from a capped cell is an estimate at the capped count, not at D."
     )
 
@@ -6055,8 +5501,6 @@ def _report_config_snapshot(settings: Settings) -> dict[str, Any]:
     }
 
 
-<<<<<<< HEAD
-=======
 def _market_coverage(settings: Settings) -> CoverageSummary:
     """What the market benchmark covers, read from the stored prices.
 
@@ -6143,7 +5587,6 @@ def _report_provenance(settings: Settings) -> dict[str, Any]:
     }
 
 
->>>>>>> source-clean/main
 def _leakage_snapshot(settings: Settings) -> dict[str, Any]:
     """Appendix D's leakage_report.json, from what is actually verifiable here.
 
@@ -6291,10 +5734,6 @@ def trace_replay(
         str | None, typer.Option("--config-id", help="Restrict to one configuration.")
     ] = None,
     workers: Annotated[int, typer.Option("--workers", help="Concurrent child processes.")] = 4,
-<<<<<<< HEAD
-) -> None:
-    """Re-run stored runs in fresh processes and compare the event-log hashes.
-=======
     policy: Annotated[
         str | None,
         typer.Option(
@@ -6304,7 +5743,6 @@ def trace_replay(
     ] = None,
 ) -> None:
     """Re-run stored runs in fresh processes and compare them with the stored event log.
->>>>>>> source-clean/main
 
     M8's first criterion. Each replay runs in its own interpreter under a
     different `PYTHONHASHSEED`: within one process a dependency on dict
@@ -6312,11 +5750,6 @@ def trace_replay(
     one. Nothing is written -- a verification pass that inserted its own copy
     of the log would make the M6 event count drift every time someone checked.
 
-<<<<<<< HEAD
-    Exits **3** on any divergence, naming the first step whose state hash
-    differs (§8.4: the bisect names the first divergent field, and the fix is
-    the source, never a tolerance).
-=======
     The comparison is against the stored events hashed under the current hash
     domain, not against the cached `runs.event_log_hash` (M17): a digest from
     an older domain is reported as *stale*, and `cascade trace rehash`
@@ -6328,25 +5761,16 @@ def trace_replay(
     differs (§8.4: the bisect names the first divergent field, and the fix is
     the source, never a tolerance) -- and on any run it could not verify,
     because a pass must mean every requested run was checked.
->>>>>>> source-clean/main
     """
     from cascade.trace.replay import load_replay_targets, verify_replays
 
     settings = _settings(config)
-<<<<<<< HEAD
-    targets = load_replay_targets(settings, limit=runs, config_id=config_id)
-    if not targets:
-        _fail(
-            "no stored runs to replay; run `cascade simulate all` first"
-            + (f" (config {config_id})" if config_id else ""),
-=======
     targets = load_replay_targets(settings, limit=runs, config_id=config_id, policy=policy)
     if not targets:
         _fail(
             "no stored runs to replay; run `cascade simulate all` first"
             + (f" (config {config_id})" if config_id else "")
             + (f" (policy {policy})" if policy else ""),
->>>>>>> source-clean/main
             EXIT_PRECONDITION,
         )
 
@@ -6358,12 +5782,6 @@ def trace_replay(
     table.add_column("Criterion", justify="right")
     table.add_row("runs replayed", f"{report.attempted:,}", f"{runs:,}")
     table.add_row(
-<<<<<<< HEAD
-        "byte-identical event-log hash",
-        f"{report.matched:,}/{report.attempted:,}",
-        f"{report.attempted:,}/{report.attempted:,}",
-    )
-=======
         "byte-identical event log",
         f"{report.matched:,}/{report.attempted:,}",
         f"{report.attempted:,}/{report.attempted:,}",
@@ -6379,20 +5797,14 @@ def trace_replay(
         f"{report.stale_digests:,}",
         "0 -- `cascade trace rehash --apply` refreshes them",
     )
->>>>>>> source-clean/main
     table.add_row("child hash seed", CHILD_HASH_SEED, "differs from the parent's")
     table.add_row("elapsed", f"{report.elapsed_s:.1f}s", "-")
     console.print(table)
 
     if report.diverged:
-<<<<<<< HEAD
-        detail = Table(title="Divergences")
-        detail.add_column("run", style="cyan", overflow="fold")
-=======
         detail = Table(title="Not reproduced")
         detail.add_column("run", style="cyan", overflow="fold")
         detail.add_column("kind")
->>>>>>> source-clean/main
         detail.add_column("first divergent step", justify="right")
         detail.add_column("stored state hash")
         detail.add_column("replayed state hash")
@@ -6400,20 +5812,6 @@ def trace_replay(
         for outcome in report.diverged:
             detail.add_row(
                 outcome.run_id,
-<<<<<<< HEAD
-                "-" if outcome.first_divergent_step is None else str(outcome.first_divergent_step),
-                (outcome.expected_state_hash or "-")[:16],
-                (outcome.actual_state_hash or "-")[:16],
-                outcome.error or "",
-            )
-        console.print(detail)
-        _fail(
-            f"{len(report.diverged)} of {report.attempted} run(s) did not replay identically; "
-            "fix the source of the nondeterminism, never add a tolerance",
-            EXIT_PRECONDITION,
-        )
-    console.print("[bold green]every replayed run reproduced its event-log hash[/bold green]")
-=======
                 outcome.kind,
                 "-" if outcome.first_divergent_step is None else str(outcome.first_divergent_step),
                 (outcome.expected_state_hash or "-")[:16],
@@ -6511,7 +5909,6 @@ def trace_rehash(
             "between the plan and the apply. Re-run to re-plan.",
             EXIT_PRECONDITION,
         )
->>>>>>> source-clean/main
 
 
 @trace_app.command("cost")
@@ -6520,28 +5917,6 @@ def trace_cost(
     config_id: Annotated[
         str | None, typer.Option("--config-id", help="Restrict to one configuration.")
     ] = None,
-<<<<<<< HEAD
-) -> None:
-    """Reconcile the run ledger against Langfuse (spec §12.4, M8).
-
-    Two independent records of the same spend: the meter prices every call from
-    the pinned table and writes the total to `runs.cost_usd`; the tracer emits
-    one Langfuse generation per call carrying the same cost. §12.4 blocks the
-    report on a discrepancy above 2%, so this exits **3** there.
-
-    An *unreachable* Langfuse is reported as unreconciled rather than as a
-    discrepancy: `tracing.py` is allowed to degrade to a no-op because
-    observability must never fail a run, and "we could not check" is not
-    "we checked".
-    """
-    from cascade.trace.ledger import reconcile
-
-    settings = _settings(config)
-    result = reconcile(settings, config_id=config_id)
-
-    table = Table(title="Cost ledger reconciliation (spec §12.4)")
-    table.add_column("Source", style="cyan")
-=======
     since: Annotated[
         str | None,
         typer.Option(
@@ -6590,53 +5965,18 @@ def trace_cost(
     table = Table(title="Cost ledger reconciliation (spec §12.4)")
     table.add_column("Source", style="cyan")
     table.add_column("written by")
->>>>>>> source-clean/main
     table.add_column("USD", justify="right")
     table.add_column("calls", justify="right")
     table.add_column("tokens in / out", justify="right")
     table.add_column("detail", overflow="fold")
     table.add_row(
         result.local.source,
-<<<<<<< HEAD
-=======
         "this process",
->>>>>>> source-clean/main
         f"${result.local.total_usd:.6f}",
         f"{result.local.calls:,}",
         f"{result.local.input_tokens:,} / {result.local.output_tokens:,}",
         result.local.detail,
     )
-<<<<<<< HEAD
-    if result.remote is None:
-        table.add_row("langfuse", "not measured", "-", "-", "unreachable or not configured")
-    else:
-        table.add_row(
-            result.remote.source,
-            f"${result.remote.total_usd:.6f}",
-            f"{result.remote.calls:,}",
-            f"{result.remote.input_tokens:,} / {result.remote.output_tokens:,}",
-            result.remote.detail,
-        )
-    console.print(table)
-
-    relative = result.relative_difference
-    if result.vacuous:
-        console.print("[yellow]no spend recorded on either side[/yellow]")
-    console.print(
-        "difference: "
-        + (
-            "[yellow]not measured[/yellow]"
-            if relative is None
-            else f"[bold]{relative:.4%}[/bold] against a {result.tolerance:.0%} tolerance"
-        )
-    )
-
-    if result.remote is None:
-        _fail(
-            "Langfuse reported no total, so the ledger is unreconciled. §12.4 makes "
-            "reconciliation a gate on the report; bring Langfuse up (`make up`) and "
-            "re-run, or record the phase as unreconciled in the report.",
-=======
     for comparison in result.comparisons:
         reading = comparison.reading
         spend = reading.spend
@@ -6663,27 +6003,18 @@ def trace_cost(
             f"{', '.join(result.unreachable)} could not be read, so the ledger is "
             "unreconciled. §12.4 makes reconciliation a gate on the report, and a "
             "source that was asked and did not answer is not a source that agreed.",
->>>>>>> source-clean/main
             EXIT_PRECONDITION,
         )
     if result.vacuous:
         _fail(
-<<<<<<< HEAD
-            "neither record holds any spend, so there is nothing to reconcile. Zero "
-=======
             "no record holds any spend, so there is nothing to reconcile. Zero "
->>>>>>> source-clean/main
             "agrees with zero to 0.0000% and passing on that would be a gate that "
             "cannot fail -- run a phase that reaches the model first.",
             EXIT_PRECONDITION,
         )
     if not result.within_tolerance:
         _fail(
-<<<<<<< HEAD
-            f"ledger and Langfuse differ by {relative:.4%}, above the "
-=======
             f"the meter disagrees with {', '.join(result.compared)} by more than the "
->>>>>>> source-clean/main
             f"{result.tolerance:.0%} tolerance; §12.4 calls that a bug in the meter",
             EXIT_PRECONDITION,
         )
@@ -6820,8 +6151,6 @@ def main() -> int:
     except PromptTooShortToCache as exc:
         err_console.print(f"[bold red]prompt cache misconfigured[/bold red] {exc}")
         return EXIT_PRECONDITION
-<<<<<<< HEAD
-=======
     except ProviderNotReady as exc:
         err_console.print(f"[bold red]model provider not ready[/bold red] {exc}")
         return EXIT_PRECONDITION
@@ -6832,7 +6161,6 @@ def main() -> int:
         # that did not think to catch it.
         err_console.print(f"[bold red]dev/test split[/bold red] {exc}")
         return EXIT_PRECONDITION
->>>>>>> source-clean/main
     except KeyboardInterrupt:  # pragma: no cover
         err_console.print("[yellow]interrupted[/yellow]")
         return EXIT_ERROR

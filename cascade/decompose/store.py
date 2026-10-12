@@ -90,14 +90,9 @@ def write_graph(settings: Settings, outcome: CompileOutcome) -> None:
             """
             INSERT INTO causal_graphs (
                 scenario_id, graph_sha256, graph, n_actors, n_factors, n_edges,
-<<<<<<< HEAD
-                repair_retries, llm_calls, evidence_chunks, compiler_model, prompt_rev
-            ) VALUES (%s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s, %s, %s)
-=======
                 repair_retries, llm_calls, evidence_chunks, compiler_model, prompt_rev,
                 dossier_sha256
             ) VALUES (%s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s, %s, %s, %s)
->>>>>>> source-clean/main
             ON CONFLICT (scenario_id) DO UPDATE SET
                 graph_sha256 = EXCLUDED.graph_sha256,
                 graph = EXCLUDED.graph,
@@ -109,10 +104,7 @@ def write_graph(settings: Settings, outcome: CompileOutcome) -> None:
                 evidence_chunks = EXCLUDED.evidence_chunks,
                 compiler_model = EXCLUDED.compiler_model,
                 prompt_rev = EXCLUDED.prompt_rev,
-<<<<<<< HEAD
-=======
                 dossier_sha256 = EXCLUDED.dossier_sha256,
->>>>>>> source-clean/main
                 compiled_at = now()
             """,
             (
@@ -127,10 +119,7 @@ def write_graph(settings: Settings, outcome: CompileOutcome) -> None:
                 outcome.evidence_chunks,
                 settings.models.compiler,
                 settings.llm.prompt_rev,
-<<<<<<< HEAD
-=======
                 outcome.dossier_sha256,
->>>>>>> source-clean/main
             ),
         )
         # A scenario that previously failed and now compiles must not keep its

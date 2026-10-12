@@ -299,8 +299,6 @@ def test_estimate_refuses_a_zero_unit_sample() -> None:
             total_units=36_000,
             ceiling_usd=Decimal("240.0"),
         )
-<<<<<<< HEAD
-=======
 
 
 # ---------------------------------------------------------------------------
@@ -400,4 +398,3 @@ def test_exact_spend_survives_the_round_trip(settings: Settings) -> None:
     with pytest.raises(BudgetExceeded):
         first.record(model=HAIKU, usage=cached, batch=False)
     assert CostMeter(settings, "simulate").carried_usd == Decimal("0.0000007")
->>>>>>> source-clean/main

@@ -9,42 +9,28 @@ replay divergence rather than here as a validation error.
 
 from __future__ import annotations
 
-<<<<<<< HEAD
-from decimal import Decimal
-from typing import Any, Literal
-=======
 from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any, Literal, Protocol
->>>>>>> source-clean/main
 
 from pydantic import BaseModel, ConfigDict, Field
 
 __all__ = [
-<<<<<<< HEAD
-=======
     "SOURCE",
->>>>>>> source-clean/main
     "BatchFailed",
     "BatchItem",
     "BudgetExceeded",
     "CacheMiss",
     "CachedCall",
-<<<<<<< HEAD
-=======
     "GuardrailAction",
     "GuardrailScreen",
->>>>>>> source-clean/main
     "LLMError",
     "LLMRequest",
     "LLMResult",
     "PromptTooShortToCache",
-<<<<<<< HEAD
-=======
     "ProviderNotReady",
     "ProviderResponse",
     "ScreenResult",
->>>>>>> source-clean/main
     "Usage",
 ]
 
@@ -126,8 +112,6 @@ class PromptTooShortToCache(LLMError):
         )
 
 
-<<<<<<< HEAD
-=======
 class ProviderNotReady(LLMError):
     """The selected provider cannot serve this request as configured (ADR-0028).
 
@@ -151,7 +135,6 @@ class ProviderNotReady(LLMError):
         super().__init__(f"provider {provider!r} is not ready: {listed}")
 
 
->>>>>>> source-clean/main
 # ---------------------------------------------------------------------------
 # Wire types
 # ---------------------------------------------------------------------------
@@ -257,8 +240,6 @@ class LLMResult(_Frozen):
     latency_ms: float
     served_from_cache: bool
     tool_calls: list[dict[str, Any]] = Field(default_factory=list)
-<<<<<<< HEAD
-=======
     # The provider's own identifier for the call -- the Messages API's
     # `request-id` header, AWS's `x-amzn-requestid`, the CLI's session id --
     # so a result can be matched to the provider's logs (ADR-0053). None when
@@ -280,7 +261,6 @@ class ProviderResponse:
     body: dict[str, Any]
     request_id: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
->>>>>>> source-clean/main
 
 
 class BatchItem(_Frozen):
@@ -311,8 +291,6 @@ class CachedCall(_Frozen):
     latency_ms: float
     recorded_at: str
     cache_format: Literal[1] = 1
-<<<<<<< HEAD
-=======
     # Who served the call and under which request id (ADR-0053): the provider's
     # name, the wire model id, the endpoint or region, and the request id the
     # provider's own logs (CloudTrail, model-invocation logs, the CLI session)
@@ -320,7 +298,6 @@ class CachedCall(_Frozen):
     # existed still validates; never part of the key, because it describes
     # the call and not the request.
     provider_metadata: dict[str, Any] | None = None
->>>>>>> source-clean/main
 
 
 def _strip_cache_control(value: Any) -> Any:
@@ -340,8 +317,6 @@ def _strip_cache_control(value: Any) -> Any:
     if isinstance(value, list):
         return [_strip_cache_control(item) for item in value]
     return value
-<<<<<<< HEAD
-=======
 
 
 # -- Bedrock Guardrails (M15, ADR-0050) --------------------------------------
@@ -392,4 +367,3 @@ class GuardrailScreen(Protocol):
         default -- an unreachable guardrail must reach the audit as *not
         assessed*, never as *nothing flagged*."""
         ...  # pragma: no cover -- protocol
->>>>>>> source-clean/main

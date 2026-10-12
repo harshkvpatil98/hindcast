@@ -24,16 +24,11 @@ __all__ = [
     "CalibrationBin",
     "CalibrationReport",
     "Comparison",
-<<<<<<< HEAD
-    "DispersionFinding",
-    "DomainMetrics",
-=======
     "ComparisonFamily",
     "DispersionFinding",
     "DomainMetrics",
     "EvidenceFinding",
     "EvidenceTierMetrics",
->>>>>>> source-clean/main
     "Grounding",
     "MetricSet",
     "MurphyTerms",
@@ -42,8 +37,6 @@ __all__ = [
 
 Unit = Annotated[float, Field(ge=0.0, le=1.0)]
 Grounding = Literal["chronofence", "parametric_only"]
-<<<<<<< HEAD
-=======
 ComparisonFamily = Literal["appendix_c", "supplementary", "exploratory_dev"]
 """Which Holm family a comparison was adjusted in.
 
@@ -52,7 +45,6 @@ ComparisonFamily = Literal["appendix_c", "supplementary", "exploratory_dev"]
 ``exploratory_dev`` holds ad-hoc comparisons of tuning variants, which exist
 only on the dev partition. Each family is adjusted on its own, so a row's
 adjusted p-value means nothing without this field beside it."""
->>>>>>> source-clean/main
 
 
 class _Frozen(BaseModel):
@@ -153,12 +145,9 @@ class MetricSet(_Frozen):
 
     bss_vs_climatology: float | None = None
     bss_vs_direct: float | None = None
-<<<<<<< HEAD
-=======
     climatology_brier: float | None = None
     """The reference ``bss_vs_climatology`` was computed against, so the report
     prints the floor that was actually used rather than one it assumes."""
->>>>>>> source-clean/main
     brier_recalibrated: float | None = None
     """Isotonic recalibration fitted on a held-out half (§10.5). Secondary,
     never the headline."""
@@ -174,8 +163,6 @@ class DomainMetrics(_Frozen):
     brier: float
 
 
-<<<<<<< HEAD
-=======
 class EvidenceTierMetrics(_Frozen):
     """One row of the accuracy-by-evidence table. Same shape as a domain row.
 
@@ -211,7 +198,6 @@ class EvidenceFinding(_Frozen):
     spearman_p: float | None
 
 
->>>>>>> source-clean/main
 class BootstrapInterval(_Frozen):
     """A paired percentile-bootstrap interval on a Brier difference."""
 
@@ -237,10 +223,7 @@ class Comparison(_Frozen):
     n_paired: int
     interval: BootstrapInterval
     p_adjusted: float | None = None
-<<<<<<< HEAD
-=======
     family: ComparisonFamily = "appendix_c"
->>>>>>> source-clean/main
 
     @property
     def delta(self) -> float:
@@ -251,11 +234,7 @@ class AblationCell(_Frozen):
     """One of Appendix C's 12 cells, as designed and as executed.
 
     ``replicates_design`` is Appendix C's D factor; ``replicates_executed`` is
-<<<<<<< HEAD
-    what the grid driver actually ran. CLAUDE.md Q1 turns on these being
-=======
     what the grid driver actually ran. Open question Q1 turns on these being
->>>>>>> source-clean/main
     different numbers for the 11 non-headline cells, so the report carries
     both and never reconciles them silently.
     """

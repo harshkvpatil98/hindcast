@@ -208,8 +208,6 @@ class TestThemeAndAccessibility:
         svg = reliability_svg(_report(), title="Reliability diagram")
         assert 'role="img"' in svg
         assert "<title>Reliability diagram</title>" in svg
-<<<<<<< HEAD
-=======
 
 
 def _texts(svg: str) -> list[tuple[float, str]]:
@@ -307,4 +305,3 @@ class TestTickLabelsCarryTheAxisRange:
     def test_a_unit_axis_still_prints_two_decimals(self) -> None:
         svg = scatter_svg([0.0, 1.0], [0.0, 1.0], title="s", x_label="x", y_label="y")
         assert "0.20" in svg
->>>>>>> source-clean/main

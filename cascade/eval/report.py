@@ -25,24 +25,11 @@ from pathlib import Path
 from typing import Any
 
 from cascade.eval.ablation import HEADLINE_CELL
-<<<<<<< HEAD
-=======
 from cascade.eval.market import MARKET_CONFIG_ID, CoverageSummary
->>>>>>> source-clean/main
 from cascade.eval.schema import (
     AblationCell,
     CalibrationReport,
     Comparison,
-<<<<<<< HEAD
-    DispersionFinding,
-    DomainMetrics,
-    MetricSet,
-    ScoredForecast,
-)
-
-__all__ = [
-    "FIGURE_FORMAT",
-=======
     ComparisonFamily,
     DispersionFinding,
     DomainMetrics,
@@ -56,7 +43,6 @@ __all__ = [
     "FIGURE_FORMAT",
     "WITHHELD_RULE",
     "FigureNote",
->>>>>>> source-clean/main
     "StudyArtifact",
     "git_sha",
     "report_id",
@@ -65,8 +51,6 @@ __all__ = [
 
 FIGURE_FORMAT = "svg"
 
-<<<<<<< HEAD
-=======
 WITHHELD_RULE = (
     "A stored configuration that is not a declared study configuration is a "
     "tuning variant. It is scored on dev only, so that a report cannot become "
@@ -90,7 +74,6 @@ class FigureNote:
     written: bool
     note: str
 
->>>>>>> source-clean/main
 
 def report_id(*, now: datetime | None = None) -> str:
     """``study_YYYYMMDDTHHMMZ`` -- Appendix D's directory name.
@@ -170,8 +153,6 @@ class StudyArtifact:
     blocked: tuple[str, ...] = ()
     """Quantities that could not be produced, and why. Printed prominently."""
 
-<<<<<<< HEAD
-=======
     split: SplitDeclaration | None = None
     """The declared dev/test split. ``None`` only for an artifact assembled
     without one, which the report then says in so many words."""
@@ -203,7 +184,6 @@ class StudyArtifact:
     report whose numbers cannot be tied to the evidence and the code that
     produced them is a report nobody can reproduce."""
 
->>>>>>> source-clean/main
     def headline_metrics(self) -> MetricSet | None:
         for item in self.metrics:
             if item.config_id == self.headline_config:
@@ -228,9 +208,6 @@ def _json(payload: Any) -> str:
     return json.dumps(payload, indent=2, sort_keys=True, default=str) + "\n"
 
 
-<<<<<<< HEAD
-def _metric_payload(item: MetricSet) -> dict[str, Any]:
-=======
 def _coverage_payload(coverage: CoverageSummary | None) -> Any:
     """The market benchmark's coverage as primitive data, or a stated absence."""
     if coverage is None:
@@ -266,7 +243,6 @@ def _metric_payload(item: MetricSet, *, coverage: CoverageSummary | None = None)
 
 
 def _metric_body(item: MetricSet) -> dict[str, Any]:
->>>>>>> source-clean/main
     return {
         "config_id": item.config_id,
         "n": item.n,
@@ -279,10 +255,7 @@ def _metric_body(item: MetricSet) -> dict[str, Any]:
         "ece": item.ece,
         "mce": item.mce,
         "bss_vs_climatology": item.bss_vs_climatology,
-<<<<<<< HEAD
-=======
         "climatology_brier_on_these_scenarios": item.climatology_brier,
->>>>>>> source-clean/main
         "bss_vs_single_direct": item.bss_vs_direct,
         "brier_recalibrated_holdout": item.brier_recalibrated,
         "murphy": {
@@ -296,11 +269,7 @@ def _metric_body(item: MetricSet) -> dict[str, Any]:
     }
 
 
-<<<<<<< HEAD
-def _headline_markdown(artifact: StudyArtifact) -> str:
-=======
 def _headline_markdown(artifact: StudyArtifact, figures: Sequence[FigureNote] = ()) -> str:
->>>>>>> source-clean/main
     """Appendix D's ``headline.md``: the numbers, each with its paragraph.
 
     Written so that a blocked study reads as blocked. If the headline
@@ -320,34 +289,24 @@ def _headline_markdown(artifact: StudyArtifact, figures: Sequence[FigureNote] = 
         f"{artifact.climatology_brier:.6f}",
         f"- Agent model: `{artifact.models.get('agent', 'unknown')}` · "
         f"compiler: `{artifact.models.get('compiler', 'unknown')}`",
-<<<<<<< HEAD
-=======
         f"- Dev/test split: {_split_bullet(artifact)}",
->>>>>>> source-clean/main
         "",
         "Every number in this report is measured. Where a quantity could not be "
         "produced it is absent and named below, never substituted.",
         "",
     ]
 
-<<<<<<< HEAD
-=======
     lines += _standin_banner(artifact)
 
->>>>>>> source-clean/main
     if artifact.blocked:
         lines += ["## Not produced", ""]
         lines += [f"- {item}" for item in artifact.blocked]
         lines += [""]
 
-<<<<<<< HEAD
-    lines += ["## Headline", ""]
-=======
     lines += _split_section(artifact)
 
     lines += ["## Headline", ""]
     lines += _partition_banner(artifact)
->>>>>>> source-clean/main
     if head is not None and head.provisional:
         lines += [
             f"> **These forecasts were produced by "
@@ -367,15 +326,6 @@ def _headline_markdown(artifact: StudyArtifact, figures: Sequence[FigureNote] = 
     else:
         lines += [
             f"**Brier {head.brier:.6f}** over {head.n} scenarios "
-<<<<<<< HEAD
-            f"(`{head.config_id}`). Mean forecast {head.mean_p_hat:.4f} against a "
-            f"base rate of {head.base_rate:.4f}.",
-            "",
-            f"**Brier skill score vs climatology: "
-            f"{_fmt(head.bss_vs_climatology, '{:.4f}')}** — climatology scores "
-            f"{artifact.climatology_brier:.6f} on this set. Beating it is necessary, "
-            "not impressive.",
-=======
             f"{_PARTITION_PHRASE[artifact.partition]} "
             f"(`{head.config_id}`). Mean forecast {head.mean_p_hat:.4f} against a "
             f"base rate of {head.base_rate:.4f}.",
@@ -388,7 +338,6 @@ def _headline_markdown(artifact: StudyArtifact, figures: Sequence[FigureNote] = 
             "base rate issued as a constant forecast, scores "
             f"{_fmt(head.climatology_brier, '{:.6f}')} on these scenarios. Beating it "
             "is necessary, not impressive.",
->>>>>>> source-clean/main
             "",
             f"**Brier skill score vs the single-model baseline: "
             f"{_fmt(head.bss_vs_direct, '{:.4f}')}** — the reference §10.2 asks the "
@@ -414,20 +363,15 @@ def _headline_markdown(artifact: StudyArtifact, figures: Sequence[FigureNote] = 
                 "",
             ]
 
-<<<<<<< HEAD
-=======
     lines += _baselines_section(artifact)
     lines += _cells_section(artifact)
 
->>>>>>> source-clean/main
     lines += ["## Replicate policy", ""]
     lines += [
         artifact.replicate_policy
         or "No replicate policy was recorded, because no ablation cell was executed.",
         "",
     ]
-<<<<<<< HEAD
-=======
     if artifact.headline_config != HEADLINE_CELL:
         lines += [
             f"The notes below call `{HEADLINE_CELL}` the headline cell because that is "
@@ -437,37 +381,11 @@ def _headline_markdown(artifact: StudyArtifact, figures: Sequence[FigureNote] = 
             "the table above says.",
             "",
         ]
->>>>>>> source-clean/main
     lines += [f"- {note}" for note in artifact.replicate_notes]
     lines += [""]
 
     lines += ["## Reading the deltas", ""]
     lines += [
-<<<<<<< HEAD
-        "Deltas are leave-one-out against the full configuration. Information "
-        "asymmetry is nested inside causal decomposition — the visibility policy "
-        "is derived from the compiled graph — so **the two leave-one-out deltas "
-        "do not sum**, and the decomposition-net-of-asymmetry figure is published "
-        "here rather than left for a reader to compute.",
-        "",
-    ]
-    if artifact.comparisons:
-        lines += ["| Comparison | delta Brier | 95% CI | p | Holm p* |", "|---|---|---|---|---|"]
-        for item in artifact.comparisons:
-            lines.append(
-                f"| {item.name} | {item.interval.point:+.6f} | "
-                f"[{item.interval.lo:+.6f}, {item.interval.hi:+.6f}] | "
-                f"{item.interval.p_value:.4g} | {_fmt(item.p_adjusted, '{:.4g}')} |"
-            )
-        lines += [""]
-        for item in artifact.comparisons:
-            reading = artifact.comparison_readings.get(item.name)
-            if reading:
-                lines += [f"- **{item.name}** — {reading}", ""]
-    else:
-        lines += ["No cell pair had forecasts on both sides, so no delta was computed.", ""]
-
-=======
         f"Every delta below is against `{artifact.headline_config}`, the configuration "
         "this report leads with. Information asymmetry is nested inside causal "
         "decomposition — the visibility policy is derived from the compiled graph — so "
@@ -527,7 +445,6 @@ def _headline_markdown(artifact: StudyArtifact, figures: Sequence[FigureNote] = 
 
     lines += _evidence_section(artifact)
 
->>>>>>> source-clean/main
     if artifact.dispersion is not None:
         finding = artifact.dispersion
         lines += [
@@ -541,34 +458,6 @@ def _headline_markdown(artifact: StudyArtifact, figures: Sequence[FigureNote] = 
             f"(p {_fmt(finding.pearson_p, '{:.4g}')}).",
             "",
             f"{finding.flagged} of {finding.n} forecasts were flagged multi-modal "
-<<<<<<< HEAD
-            f"(sigma > {finding.sigma_threshold} or dip p < 0.05). Brier on the flagged "
-            f"subset {_fmt(finding.brier_flagged, '{:.6f}')} against "
-            f"{_fmt(finding.brier_unflagged, '{:.6f}')} on the rest. The claim under "
-            "test is that the flag identifies the forecasts to distrust; the numbers "
-            "above are what it measured, whichever way they fell.",
-            "",
-        ]
-
-    lines += [
-        "## Artifact",
-        "",
-        "| File | Contents |",
-        "|---|---|",
-        "| `manifest.json` | scenario hash, git sha, model versions, config |",
-        "| `metrics.json` | every metric, every cell, machine-readable |",
-        "| `baselines.csv` | the five §10.2 baselines, per scenario |",
-        "| `ablation_grid.csv` | the twelve Appendix C cells, per scenario |",
-        "| `calibration.csv` | 10 bins: count, mean_pred, obs_freq, Wilson bounds |",
-        "| `per_domain.csv` | Brier by domain with counts |",
-        "| `significance.json` | paired bootstrap CIs, Holm-adjusted p-values |",
-        "| `leakage_report.json` | poison-pill hits and memorisation scores |",
-        "| `cost_ledger.json` | per-phase spend |",
-        f"| `figures/*.{FIGURE_FORMAT}` | reliability, forest, convergence, sigma vs error |",
-        "",
-    ]
-    return "\n".join(lines)
-=======
             f"(sigma > {finding.sigma_threshold} or dip p < 0.05). Brier on the "
             f"{finding.flagged} flagged {_fmt(finding.brier_flagged, '{:.6f}')} against "
             f"{_fmt(finding.brier_unflagged, '{:.6f}')} on the "
@@ -639,7 +528,6 @@ def _artifact_section(artifact: StudyArtifact, figures: Sequence[FigureNote]) ->
         for note in figures
     ]
     return [*lines, ""]
->>>>>>> source-clean/main
 
 
 def _fmt(value: float | None, pattern: str) -> str:
@@ -647,8 +535,6 @@ def _fmt(value: float | None, pattern: str) -> str:
     return "not measured" if value is None else pattern.format(value)
 
 
-<<<<<<< HEAD
-=======
 def _standin_banner(artifact: StudyArtifact) -> list[str]:
     """Name every stand-in configuration in the artifact, above everything else.
 
@@ -1108,7 +994,6 @@ def _withheld_payload(artifact: StudyArtifact) -> dict[str, Any]:
     }
 
 
->>>>>>> source-clean/main
 def write_report(artifact: StudyArtifact, *, root: Path) -> Path:
     """Write the Appendix D directory and return its path.
 
@@ -1120,12 +1005,9 @@ def write_report(artifact: StudyArtifact, *, root: Path) -> Path:
     directory = Path(root) / artifact.report_id
     figures = directory / "figures"
     figures.mkdir(parents=True, exist_ok=True)
-<<<<<<< HEAD
-=======
     # Drawn first, so `headline.md` indexes the directory that exists rather
     # than the one the writer intended.
     drawn = _write_figures(artifact, figures)
->>>>>>> source-clean/main
 
     (directory / "manifest.json").write_text(
         _json(
@@ -1150,8 +1032,6 @@ def write_report(artifact: StudyArtifact, *, root: Path) -> Path:
                 ),
                 "replicate_policy": artifact.replicate_policy,
                 "not_produced": list(artifact.blocked),
-<<<<<<< HEAD
-=======
                 "partition": artifact.partition,
                 "split": _split_payload(artifact),
                 "provenance": dict(artifact.provenance),
@@ -1159,24 +1039,16 @@ def write_report(artifact: StudyArtifact, *, root: Path) -> Path:
                     {"filename": note.filename, "written": note.written, "note": note.note}
                     for note in drawn
                 ],
->>>>>>> source-clean/main
             }
         ),
         encoding="utf-8",
     )
 
-<<<<<<< HEAD
-    (directory / "headline.md").write_text(_headline_markdown(artifact), encoding="utf-8")
-=======
     (directory / "headline.md").write_text(_headline_markdown(artifact, drawn), encoding="utf-8")
->>>>>>> source-clean/main
 
     (directory / "metrics.json").write_text(
         _json(
             {
-<<<<<<< HEAD
-                "configs": [_metric_payload(item) for item in artifact.metrics],
-=======
                 "partition": artifact.partition,
                 "withheld": _withheld_payload(artifact),
                 "headline_by_partition": [
@@ -1198,21 +1070,16 @@ def write_report(artifact: StudyArtifact, *, root: Path) -> Path:
                     _metric_payload(item, coverage=artifact.market_coverage)
                     for item in artifact.metrics
                 ],
->>>>>>> source-clean/main
                 "baselines": [
                     {
                         "baseline_id": baseline_id,
                         "name": name,
                         "config_id": config_id,
-<<<<<<< HEAD
-                        "metrics": None if metrics is None else _metric_payload(metrics),
-=======
                         "metrics": (
                             None
                             if metrics is None
                             else _metric_payload(metrics, coverage=artifact.market_coverage)
                         ),
->>>>>>> source-clean/main
                     }
                     for baseline_id, name, config_id, metrics in artifact.baselines
                 ],
@@ -1300,8 +1167,6 @@ def write_report(artifact: StudyArtifact, *, root: Path) -> Path:
         encoding="utf-8",
     )
 
-<<<<<<< HEAD
-=======
     (directory / "per_evidence_tier.csv").write_text(
         _csv(
             [
@@ -1320,17 +1185,12 @@ def write_report(artifact: StudyArtifact, *, root: Path) -> Path:
         encoding="utf-8",
     )
 
->>>>>>> source-clean/main
     (directory / "significance.json").write_text(
         _json(
             {
                 "method": {
                     "bootstrap": "paired percentile over scenarios",
                     "resample_unit": "scenario",
-<<<<<<< HEAD
-                    "multiple_comparison": "Holm-Bonferroni across the reported family",
-                    "family_size": len(artifact.comparisons),
-=======
                     "multiple_comparison": (
                         "Holm-Bonferroni within each family; families are adjusted "
                         "separately and every comparison names its own"
@@ -1341,7 +1201,6 @@ def write_report(artifact: StudyArtifact, *, root: Path) -> Path:
                         for family in ("appendix_c", "exploratory_dev", "supplementary")
                     },
                     "partition": artifact.partition,
->>>>>>> source-clean/main
                 },
                 "comparisons": [
                     {
@@ -1358,36 +1217,6 @@ def write_report(artifact: StudyArtifact, *, root: Path) -> Path:
     (directory / "leakage_report.json").write_text(_json(dict(artifact.leakage)), encoding="utf-8")
     (directory / "cost_ledger.json").write_text(_json(dict(artifact.cost_ledger)), encoding="utf-8")
 
-<<<<<<< HEAD
-    _write_figures(artifact, figures)
-    return directory
-
-
-def _write_figures(artifact: StudyArtifact, figures: Path) -> None:
-    """Write whatever figures the measured data supports, and only those.
-
-    A figure with no data is not written. An empty axis in a report reads as a
-    result -- "we looked and found nothing" -- when the truth is that the
-    measurement did not happen, and `headline.md` already says which.
-    """
-    from cascade.eval.figures import convergence_svg, forest_svg, reliability_svg, scatter_svg
-
-    if artifact.calibration is not None and artifact.calibration.n:
-        (figures / f"reliability.{FIGURE_FORMAT}").write_text(
-            reliability_svg(
-                artifact.calibration,
-                title=f"Reliability — {artifact.headline_config} ({artifact.calibration.n} scenarios)",
-            ),
-            encoding="utf-8",
-        )
-    if artifact.comparisons:
-        (figures / f"ablation_forest.{FIGURE_FORMAT}").write_text(
-            forest_svg(artifact.comparisons, title="Ablation effect sizes (paired bootstrap)"),
-            encoding="utf-8",
-        )
-    if artifact.convergence:
-        (figures / f"convergence.{FIGURE_FORMAT}").write_text(
-=======
     return directory
 
 
@@ -1459,16 +1288,12 @@ def _write_figures(artifact: StudyArtifact, figures: Path) -> tuple[FigureNote, 
     name = f"convergence.{FIGURE_FORMAT}"
     if len(artifact.convergence) > 1:
         (figures / name).write_text(
->>>>>>> source-clean/main
             convergence_svg(
                 [(n, change) for n, change, _, _ in artifact.convergence],
                 title="Ensemble convergence (§9.3)",
             ),
             encoding="utf-8",
         )
-<<<<<<< HEAD
-    if artifact.scored and artifact.dispersion is not None:
-=======
         notes.append(FigureNote(name, True, f"{len(artifact.convergence)} rungs on the ladder"))
     elif artifact.convergence:
         notes.append(
@@ -1487,33 +1312,22 @@ def _write_figures(artifact: StudyArtifact, figures: Path) -> tuple[FigureNote, 
     name = f"sigma_vs_error.{FIGURE_FORMAT}"
     sigmas = [item.sigma for item in artifact.scored]
     if artifact.scored and artifact.dispersion is not None and has_spread(sigmas):
->>>>>>> source-clean/main
         finding = artifact.dispersion
         annotation = (
             f"Spearman rho = {_fmt(finding.spearman_rho, '{:.4f}')}, "
             f"p = {_fmt(finding.spearman_p, '{:.4g}')}"
         )
-<<<<<<< HEAD
-        (figures / f"sigma_vs_error.{FIGURE_FORMAT}").write_text(
-            scatter_svg(
-                [item.sigma for item in artifact.scored],
-                [item.abs_error for item in artifact.scored],
-                title="Is sigma informative? (§9.2)",
-=======
         (figures / name).write_text(
             scatter_svg(
                 sigmas,
                 [item.abs_error for item in artifact.scored],
                 title=f"Is sigma informative? (§9.2, {artifact.partition})",
->>>>>>> source-clean/main
                 x_label="sigma across replicates",
                 y_label="absolute forecast error",
                 annotation=annotation,
             ),
             encoding="utf-8",
         )
-<<<<<<< HEAD
-=======
         notes.append(FigureNote(name, True, f"{len(sigmas)} scenarios"))
     elif artifact.scored and artifact.dispersion is not None:
         notes.append(
@@ -1534,4 +1348,3 @@ def _write_figures(artifact: StudyArtifact, figures: Path) -> tuple[FigureNote, 
             )
         )
     return tuple(notes)
->>>>>>> source-clean/main

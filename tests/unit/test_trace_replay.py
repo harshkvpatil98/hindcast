@@ -97,8 +97,6 @@ class TestChildIsolation:
 
     def test_the_base_configuration_needs_no_overlay(self) -> None:
         assert load_settings_for("base").flags.causal_decomposition is True
-<<<<<<< HEAD
-=======
 
 
 class TestKinds:
@@ -173,4 +171,3 @@ class TestRehash:
         source = Path("cascade/trace/replay_child.py").read_text(encoding="utf-8")
         assert EXIT_CACHE_MISS == 4
         assert "except CacheMiss" in source and "return EXIT_CACHE_MISS" in source
->>>>>>> source-clean/main

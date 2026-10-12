@@ -31,11 +31,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 
 from cascade.config import Settings
-<<<<<<< HEAD
-from cascade.ledger.schema import ScenarioRecord
-=======
 from cascade.ledger.schema import Scenario, ScenarioRecord
->>>>>>> source-clean/main
 from cascade.llm.types import LLMRequest
 
 __all__ = [
@@ -43,11 +39,8 @@ __all__ = [
     "MemorizationScore",
     "parse_probability",
     "probe_prompt",
-<<<<<<< HEAD
-=======
     "probe_request",
     "question_prompt",
->>>>>>> source-clean/main
     "run_probe",
     "summarise",
 ]
@@ -70,9 +63,6 @@ def probe_prompt(record: ScenarioRecord) -> str:
     is ambiguous enough that a low confidence would measure the ambiguity
     rather than the absence of memorised knowledge.
     """
-<<<<<<< HEAD
-    scenario = record.scenario
-=======
     return question_prompt(record.scenario)
 
 
@@ -84,7 +74,6 @@ def question_prompt(scenario: Scenario) -> str:
     never with the outcome, so it takes a ``Scenario`` loaded as
     ``cascade_sim`` and cannot be handed a label by mistake.
     """
->>>>>>> source-clean/main
     return (
         f"Question: {scenario.question}\n"
         f"Resolution criterion: {scenario.resolution_criterion}\n"
@@ -226,8 +215,6 @@ def summarise(scores: Sequence[MemorizationScore]) -> MemorizationReport:
     )
 
 
-<<<<<<< HEAD
-=======
 def probe_request(settings: Settings, scenario: Scenario) -> LLMRequest:
     """The request the probe sends for ``scenario``. Pure.
 
@@ -247,7 +234,6 @@ def probe_request(settings: Settings, scenario: Scenario) -> LLMRequest:
     )
 
 
->>>>>>> source-clean/main
 def run_probe(
     settings: Settings, records: Sequence[ScenarioRecord], *, client: object = None
 ) -> MemorizationReport:
@@ -265,20 +251,7 @@ def run_probe(
 
     scores: list[MemorizationScore] = []
     for record in sorted(records, key=lambda item: item.scenario.scenario_id):
-<<<<<<< HEAD
-        request = LLMRequest(
-            model=settings.models.agent,
-            system=_SYSTEM,
-            messages=[{"role": "user", "content": probe_prompt(record)}],
-            max_tokens=64,
-            # Zero temperature: this measures what the weights hold, and
-            # sampling noise would be indistinguishable from uncertainty.
-            temperature=0.0,
-            prompt_rev=settings.llm.prompt_rev,
-        )
-=======
         request = probe_request(settings, record.scenario)
->>>>>>> source-clean/main
         result = llm.complete(request, trace_name="memorization.probe")  # type: ignore[attr-defined]
         scores.append(
             MemorizationScore(

@@ -258,8 +258,6 @@ def test_timezone_representation_does_not_affect_validation() -> None:
     result = validate(raw(published_at=shifted), now=NOW)
     assert not isinstance(result, str)
     assert result.published_at == shifted
-<<<<<<< HEAD
-=======
 
 
 # ---------------------------------------------------------------------------
@@ -311,4 +309,3 @@ def test_the_earlier_copy_keeps_its_own_text_not_only_its_date() -> None:
     assert kept[0].document_id == early.document_id
     assert kept[0].body == early.body
     assert kept[0].published_at == early.published_at
->>>>>>> source-clean/main

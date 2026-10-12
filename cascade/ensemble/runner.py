@@ -10,8 +10,6 @@ can be assembled before any of them is decided -- and then resolved in one
 batch at the 50% rate §12.1 assumes. Deciding run-by-run instead would submit
 one request at a time to an API whose SLA is measured in hours.
 
-<<<<<<< HEAD
-=======
 The wave is still assembled and still resolved before any decision when the
 provider has no batch endpoint *and* charges nothing per call (ADR-0052): the
 lockstep is what makes preparation possible, the batch is what makes it cheap,
@@ -19,7 +17,6 @@ and only the second has a ceiling behind it. The report counts the two shapes
 in separate columns, because a count of submissions and a count of single
 calls are different facts about what happened.
 
->>>>>>> source-clean/main
 **The cache.** Replicates of one scenario share their early steps exactly:
 until the seeded noise pushes them apart, the same actor sees the same rounded
 observation and produces the same request bytes. Those are served from disk and
@@ -104,8 +101,6 @@ class FanoutReport(BaseModel):
     cache_hits: int
     batches: int
     batched_turns: int
-<<<<<<< HEAD
-=======
     unbatched_turns: int = 0
     """Turns resolved one call at a time because the provider charges none.
 
@@ -116,7 +111,6 @@ class FanoutReport(BaseModel):
     batched would put a submission count in the phase report that no provider
     ever served."""
 
->>>>>>> source-clean/main
     waves: int
     steps: int
     elapsed_s: float
@@ -205,10 +199,7 @@ class EnsembleRunner:
             cache_hits=report.cache_hits,
             batches=report.batches,
             batched_turns=report.batched_turns,
-<<<<<<< HEAD
-=======
             unbatched_turns=report.unbatched_turns,
->>>>>>> source-clean/main
             waves=report.waves,
             steps=report.steps,
             elapsed_s=time.perf_counter() - started,
@@ -243,12 +234,6 @@ class EnsembleRunner:
                     bucket[1].extend(turn for turn in turns if turn.run_id == handle.spec.run_id)
                 for key in sorted(by_decider):
                     decider, owned = by_decider[key]
-<<<<<<< HEAD
-                    prepared = _prepare(decider, owned)
-                    if prepared:
-                        report.batches += 1
-                        report.batched_turns += prepared
-=======
                     resolved, submitted = _prepare(decider, owned)
                     if not resolved:
                         continue
@@ -257,7 +242,6 @@ class EnsembleRunner:
                         report.batched_turns += resolved
                     else:
                         report.unbatched_turns += resolved
->>>>>>> source-clean/main
 
             for loom, handle in live:
                 loom.complete_step(handle)
@@ -273,21 +257,6 @@ class EnsembleRunner:
                 self.on_complete(result)
 
 
-<<<<<<< HEAD
-def _prepare(decider: Any, turns: Sequence[PendingTurn]) -> int:
-    """Resolve a group of turns up front where the decider supports it.
-
-    Grouped by decider rather than assumed shared: one model-backed decider
-    serving every scenario batches a whole wave in one submission, while the
-    per-scenario stand-in has no ``prepare`` and simply decides turn by turn.
-    Both are correct; only the first is cheap.
-    """
-    prepare = getattr(decider, "prepare", None)
-    if prepare is None or not turns:
-        return 0
-    count = prepare(turns)
-    return int(count) if count else 0
-=======
 def _prepare(decider: Any, turns: Sequence[PendingTurn]) -> tuple[int, bool]:
     """Resolve a group of turns up front, and report how they were resolved.
 
@@ -310,7 +279,6 @@ def _prepare(decider: Any, turns: Sequence[PendingTurn]) -> tuple[int, bool]:
     count = prepare(turns)
     resolved = int(count) if count else 0
     return resolved, bool(getattr(decider, "submits_batches", True))
->>>>>>> source-clean/main
 
 
 @dataclass
@@ -321,10 +289,7 @@ class _Tally:
     cache_hits: int = 0
     batches: int = 0
     batched_turns: int = 0
-<<<<<<< HEAD
-=======
     unbatched_turns: int = 0
->>>>>>> source-clean/main
     waves: int = 0
     steps: int = 0
 

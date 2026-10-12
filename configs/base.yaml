@@ -122,8 +122,6 @@ retrieval:
   # signature scan reports a reviewed count, it does not silently drop rows.
   signature_similarity_threshold: 0.80
 
-<<<<<<< HEAD
-=======
   # -- Hybrid retrieval (M14, migration 018) ---------------------------------
   # `vector` ranks by embedding distance alone. `hybrid` adds a time-locked
   # keyword pool, fuses the two with a recency ranking, and suppresses
@@ -220,7 +218,6 @@ retrieval:
     # written as a string so it reaches the meter as an exact Decimal.
     price_per_1k_queries: "0.00"
 
->>>>>>> source-clean/main
 ensemble:
   replicates: 200
   ablation_replicates: 30
@@ -233,11 +230,6 @@ ensemble:
   bootstrap_b: 10000
   sigma_multimodal_threshold: 0.30
 
-<<<<<<< HEAD
-budget:
-  phase_ceiling_usd:
-    compile: 40.0
-=======
 dossier: # the per-scenario situation report (ADR-0037)
   # Off until measured on the development partition; see the ADR for the
   # decision rule, which was written down before any forecast existed.
@@ -292,7 +284,6 @@ budget:
     # One compiler-model call per scenario over ~30k input tokens. Its own
     # phase so the compile ceiling keeps meaning what M4 sized it for.
     dossier: 30.0
->>>>>>> source-clean/main
     simulate: 240.0
     baseline: 30.0
     corpus: 15.0
@@ -311,17 +302,6 @@ flags: # ablation switches
 
 llm:
   mode: replay # record | replay | live -- replay is the safe default
-<<<<<<< HEAD
-  cache_dir: .cache/llm
-  # Bumped to r2 with migration 010: the compiler prompt gained a scale anchor
-  # for `volatility`. prompt_rev is part of the LLM cache key (spec §8.3), so a
-  # changed prompt under an unchanged rev would serve recordings made against
-  # text the model never saw. Every revision is logged in `prompt_revisions`.
-  prompt_rev: "r2"
-  max_retries: 2
-  timeout_s: 600.0
-
-=======
   # Who serves the model (ADR-0028, ADR-0031, ADR-0053), by canonical name:
   #   anthropic            the Anthropic API, with a pay-as-you-go key
   #   claude_platform_aws  Claude Platform on AWS (IAM; batches); account pending
@@ -417,7 +397,6 @@ observability:
   aws_region: us-west-2 # routing explicit, as everywhere else (ADR-0028)
   call_log: null
 
->>>>>>> source-clean/main
 ledger: # scenario registry (spec §3.1)
   target_scenarios: 180
   # Base-rate control, enforced by construction. Outside this band a model
@@ -446,10 +425,6 @@ ledger: # scenario registry (spec §3.1)
   # CASCADE_METACULUS_TOKEN carries the Metaculus credential (single
   # underscore: it is a top-level Settings field, see `database` below).
 
-<<<<<<< HEAD
-corpus: # evidence corpus (spec §3.2)
-  target_chunks: 1300000
-=======
 market_baseline: # the market's own probability at each cutoff (M14)
   # The benchmark price is the last observation strictly before `cutoff_ts`.
   # One older than this is stored and reported but never scored. 24 hours,
@@ -501,7 +476,6 @@ corpus: # evidence corpus (spec §3.2)
   anchor_plan_files: 60
   # ...and below this much free disk. See CorpusConfig for the incident.
   min_free_disk_gb: 8
->>>>>>> source-clean/main
   # SEC EDGAR returns 403 unless the User-Agent carries a contact address in
   # "Name email@domain" form. Replace with a real address before a long run.
   contact: "Cascade Research cascade-research@example.com"
@@ -523,8 +497,6 @@ corpus: # evidence corpus (spec §3.2)
   # CC-NEWS ingest is I/O bound -- a single WARC stream leaves the CPU idle
   # ~75% of the time. Files are independent, so they are streamed in parallel.
   fetch_workers: 6
-<<<<<<< HEAD
-=======
   # Threads that chunk a write batch while the previous batch is being
   # embedded and written; the lookahead is fixed at one batch, so this does
   # not set how much is held in memory. 1 is the serial loop exactly. Any
@@ -540,7 +512,6 @@ corpus: # evidence corpus (spec §3.2)
   # knob stays for hardware where the GPU stage dominates; the default is what
   # was measured to be no worse.
   chunk_workers: 1
->>>>>>> source-clean/main
   # A CC-NEWS unit is one WARC file (ADR-0023); this is how many files per
   # month the queue generates, i.e. the maximum depth a month can reach. The
   # queue sweeps depth-major, so raising it adds a later pass rather than
@@ -558,9 +529,6 @@ corpus: # evidence corpus (spec §3.2)
   # it, so a corpus that is over its chunk target but covers the wrong years
   # cannot pass silently.
   coverage_min_chunks: 200
-<<<<<<< HEAD
-  wikipedia_max_articles_per_scenario: 6
-=======
   # Wikipedia, as each article read strictly before the scenario's cutoff. Depth
   # 1 asks for what the question and its parties name; depth 2 adds one window
   # (12) of the links in those articles' as-of leads, and each further depth
@@ -569,7 +537,6 @@ corpus: # evidence corpus (spec §3.2)
   wikipedia_depth: 2
   # Serial and slow, as Wikimedia asks of bots; `maxlag` is always sent.
   wikipedia_requests_per_second: 2.0
->>>>>>> source-clean/main
 
 database:
   host: localhost
@@ -582,8 +549,6 @@ database:
   admin_user: cascade_admin
   sim_user: cascade_sim
   eval_user: cascade_eval
-<<<<<<< HEAD
-=======
   # TLS and authentication (ADR-0034). The local container speaks no TLS, so
   # the default is libpq's own `prefer`. Aurora refuses plaintext
   # (rds.force_ssl), and a deployment sets:
@@ -595,7 +560,6 @@ database:
   sslrootcert: null
   auth: stored # the role secret from the environment; `iam` = short-lived RDS tokens
   iam_region: null
->>>>>>> source-clean/main
 
 langfuse:
   enabled: true

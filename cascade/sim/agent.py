@@ -26,19 +26,6 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
-<<<<<<< HEAD
-from pydantic import BaseModel, ConfigDict, Field
-
-from cascade.aperture.projection import Observation
-from cascade.config import Settings
-from cascade.llm.client import estimate_tokens
-from cascade.llm.types import BatchItem, LLMRequest
-from cascade.sim.actions import Action, ActionSpace, Wait, admit
-from cascade.sim.prompts import ACTION_TOOL, ACTION_TOOL_NAME, RULES, ActorBrief, persona_block
-from cascade.sim.prompts import turn_message as render_turn
-
-__all__ = ["Decision", "DecisionPolicy", "LLMAgents", "PreparedActor"]
-=======
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from cascade.aperture.projection import Observation
@@ -69,7 +56,6 @@ __all__ = [
     "prepare_tool_actor",
     "tool_policy",
 ]
->>>>>>> source-clean/main
 
 
 class Decision(BaseModel):
@@ -92,8 +78,6 @@ class Decision(BaseModel):
     the column as *calls* -- so counting decisions made a heuristic run report
     452,328 model calls costing nothing, which is a discrepancy the gate would
     have been unable to see because both sides were zero."""
-<<<<<<< HEAD
-=======
     model_turns: int = Field(default=0, ge=0)
     """Model calls this one decision cost.
 
@@ -132,7 +116,6 @@ class Decision(BaseModel):
                 "inflate the ledger against a provider record that shows none"
             )
         return self
->>>>>>> source-clean/main
 
 
 class DecisionPolicy(Protocol):
@@ -161,10 +144,6 @@ class BatchingPolicy(Protocol):
     This is the seam the 50% batch discount lives in (§12.2) -- the kernel
     still asks for one decision at a time, and by then every answer is already
     on disk.
-<<<<<<< HEAD
-    """
-
-=======
 
     ``prepare`` returns how many turns it resolved; ``submits_batches`` says
     whether it did so by submitting a batch. The runner needs both because it
@@ -176,7 +155,6 @@ class BatchingPolicy(Protocol):
 
     submits_batches: bool
 
->>>>>>> source-clean/main
     def prepare(self, turns: Sequence[Any]) -> int: ...
 
 
@@ -275,10 +253,6 @@ class LLMAgents:
             prompt_rev=self.settings.llm.prompt_rev,
         )
 
-<<<<<<< HEAD
-    def prepare(self, turns: Sequence[Any]) -> int:
-        """Resolve a whole wave of turns up front, batching the cache misses.
-=======
     @property
     def submits_batches(self) -> bool:
         """Whether :meth:`prepare` resolves a wave by submitting a batch.
@@ -298,15 +272,12 @@ class LLMAgents:
 
     def prepare(self, turns: Sequence[Any]) -> int:
         """Resolve a whole wave of turns up front, filling the cache.
->>>>>>> source-clean/main
 
         Returns the number of turns whose answers are now available locally.
         Nothing is decided here: this only fills the cache, so the decisions
         that follow are byte-identical to the ones an unbatched run would make.
         That equivalence is what lets M6 take the 50% discount without M8's
         replay hash changing.
-<<<<<<< HEAD
-=======
 
         **Filling the cache is the contract; the batch is one way to honour
         it.** Where :attr:`submits_batches` is false the wave is resolved one
@@ -322,7 +293,6 @@ class LLMAgents:
         content-addressed, so the second identical request is a hit. The batch
         path deduplicates explicitly and this path deduplicates by arriving
         second, which is the same saving by a slower route.
->>>>>>> source-clean/main
         """
         if not turns:
             return 0
@@ -338,9 +308,6 @@ class LLMAgents:
             )
             for turn in sorted(turns, key=lambda t: (t.scenario_id, t.run_id, t.actor_id))
         ]
-<<<<<<< HEAD
-        self.client.complete_batch(items, trace_name="loom.decide.batch")
-=======
         if self.submits_batches:
             self.client.complete_batch(items, trace_name="loom.decide.batch")
             return len(items)
@@ -357,7 +324,6 @@ class LLMAgents:
             )
         for item in items:
             self.client.complete(item.request, trace_name="loom.decide.serial")
->>>>>>> source-clean/main
         return len(items)
 
     def decide(
@@ -393,10 +359,7 @@ class LLMAgents:
                 tokens_out=result.usage.output_tokens,
                 latency_ms=int(result.latency_ms),
                 from_model=True,
-<<<<<<< HEAD
-=======
                 model_turns=1,
->>>>>>> source-clean/main
             )
         action, coercion = admit(payload, space)
         return Decision(
@@ -407,10 +370,7 @@ class LLMAgents:
             tokens_out=result.usage.output_tokens,
             latency_ms=int(result.latency_ms),
             from_model=True,
-<<<<<<< HEAD
-=======
             model_turns=1,
->>>>>>> source-clean/main
         )
 
     @property
@@ -429,8 +389,6 @@ def _tool_input(result: Any) -> Any:
             inner = payload.get("action")
             return inner if isinstance(inner, dict) else payload
     return None
-<<<<<<< HEAD
-=======
 
 
 # ---------------------------------------------------------------------------
@@ -830,4 +788,3 @@ class _Turns:
             from_model=True,
             model_turns=self.turns,
         )
->>>>>>> source-clean/main

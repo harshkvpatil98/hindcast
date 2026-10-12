@@ -6,13 +6,8 @@ document is usable lives in ``normalize.py``, everything that decides how it is
 split lives in ``chunker.py``, and neither can reach a network or a clock.
 
 Resumability is per unit (invariant 8). A unit is an EDGAR quarter, a Federal
-<<<<<<< HEAD
-Register month, a CC-NEWS WARC file, a GDELT month-query, or one scenario's
-Wikipedia snapshots. Units are marked done only after their rows are
-=======
 Register month, a CC-NEWS WARC file, a GDELT month-query, or one depth of one
 scenario's Wikipedia snapshots. Units are marked done only after their rows are
->>>>>>> source-clean/main
 committed, so a crash mid-unit re-does that unit and nothing else.
 
 Rate limits are **per source**, because they are properties of the upstream:
@@ -23,15 +18,6 @@ nothing for reasons that look like an empty archive.
 
 from __future__ import annotations
 
-<<<<<<< HEAD
-from collections import deque
-from collections.abc import Callable, Iterator, Sequence
-from concurrent.futures import Future, ThreadPoolExecutor
-from dataclasses import dataclass, field
-from datetime import datetime
-
-from cascade.config import Settings
-=======
 import shutil
 from collections import deque
 from collections.abc import Callable, Generator, Iterable, Iterator, Sequence
@@ -43,7 +29,6 @@ from functools import partial
 
 from cascade.config import Settings, repo_root
 from cascade.corpus.anchored import CrawlFile, parse_listing, plan_anchored
->>>>>>> source-clean/main
 from cascade.corpus.chunker import chunk_text
 from cascade.corpus.coverage import demand_profile, order_units
 from cascade.corpus.embed import Embedder
@@ -56,10 +41,7 @@ from cascade.corpus.store import (
     existing_document_ids,
     mark_unit,
     seen_simhashes,
-<<<<<<< HEAD
-=======
     stored_chunk_count,
->>>>>>> source-clean/main
     write_batch,
 )
 
@@ -94,13 +76,10 @@ class IngestReport:
     """The whole run, in the shape the acceptance criteria are stated in."""
 
     sources: list[SourceReport] = field(default_factory=list)
-<<<<<<< HEAD
-=======
     # Why the run stopped before exhausting its queue, if it did. `disk` is a
     # precondition failure (exit 3); `ceiling` is the build finishing its work.
     stopped: str | None = None
     stop_detail: str = ""
->>>>>>> source-clean/main
 
     @property
     def documents_written(self) -> int:
@@ -125,35 +104,14 @@ class IngestReport:
         return self.collapsed / total if total else 0.0
 
 
-<<<<<<< HEAD
-def _wikipedia_requests(settings: Settings) -> dict[str, list[wikipedia.SnapshotRequest]]:
-    """Build one snapshot unit per scenario, anchored at that scenario's cutoff.
-=======
 def _wikipedia_requests(settings: Settings) -> dict[str, wikipedia.SnapshotUnit]:
     """Plan ``corpus.wikipedia_depth`` snapshot units per scenario, each anchored at its cutoff.
->>>>>>> source-clean/main
 
     This is the source's whole point: the article as it stood at the cutoff.
     Anchoring to the scenario that will be forecast from it is what makes the
     snapshot honest -- a single global "as of" would be too late for early
     scenarios and needlessly early for late ones.
 
-<<<<<<< HEAD
-    Reads ``scenarios`` only. The parties come from the registry's own
-    ``party_names``, and no outcome is touched (invariant 2).
-    """
-    from cascade.ledger.store import load_scenarios
-
-    limit = settings.corpus.wikipedia_max_articles_per_scenario
-    units: dict[str, list[wikipedia.SnapshotRequest]] = {}
-    for scenario in load_scenarios(settings, role="admin"):
-        titles = [name for name in scenario.party_names if len(name) > 2][:limit]
-        if not titles:
-            continue
-        units[scenario.scenario_id] = [
-            wikipedia.SnapshotRequest(title, scenario.cutoff_ts) for title in titles
-        ]
-=======
     Preserves additivity (ADR-0023's lesson, applied here): depth is part of
     the unit key, so raising ``wikipedia_depth`` adds keys and never changes
     what an existing key means. A unit keyed by the bare scenario id is the
@@ -189,7 +147,6 @@ def _wikipedia_requests(settings: Settings) -> dict[str, wikipedia.SnapshotUnit]
             if unit.titles or unit.hop_sources:
                 key = wikipedia.unit_key(scenario.scenario_id, scenario.cutoff_ts, depth)
                 units[key] = unit
->>>>>>> source-clean/main
     return units
 
 
@@ -231,11 +188,7 @@ def _documents_for(
     source: str,
     unit_key: str,
     fetchers: dict[str, Fetcher],
-<<<<<<< HEAD
-    wiki_units: dict[str, list[wikipedia.SnapshotRequest]],
-=======
     wiki_units: dict[str, wikipedia.SnapshotUnit],
->>>>>>> source-clean/main
 ) -> Iterator[RawDocument]:
     corpus = settings.corpus
     limit = corpus.max_documents_per_unit
@@ -251,11 +204,7 @@ def _documents_for(
             max_records=corpus.gdelt_max_records,
         )
     if source == "wikipedia":
-<<<<<<< HEAD
-        return wikipedia.load_snapshots(fetchers["wikipedia"], wiki_units.get(unit_key, []))
-=======
         return wikipedia.load_snapshots(fetchers["wikipedia"], wiki_units[unit_key])
->>>>>>> source-clean/main
     if source == "ccnews":
         return _ccnews_unit(settings, unit_key, fetchers["ccnews"])
     raise ValueError(f"unknown corpus source: {source}")
@@ -346,11 +295,7 @@ def _unit_loader(
     settings: Settings,
     source: str,
     fetchers: dict[str, Fetcher],
-<<<<<<< HEAD
-    wiki_units: dict[str, list[wikipedia.SnapshotRequest]],
-=======
     wiki_units: dict[str, wikipedia.SnapshotUnit],
->>>>>>> source-clean/main
 ) -> tuple[Callable[[str], list[RawDocument]], int]:
     """Return a thread-safe loader for ``source`` and how many may run at once.
 
@@ -381,8 +326,6 @@ def _unit_loader(
     return concurrent, max(1, corpus.fetch_workers)
 
 
-<<<<<<< HEAD
-=======
 def _listing_months(cutoffs: Sequence[datetime], done: Iterable[str]) -> list[str]:
     """Months whose listings the anchored planner needs. Pure.
 
@@ -431,7 +374,6 @@ def _free_disk_gb() -> float:
     return shutil.disk_usage(repo_root()).free / 1_000_000_000
 
 
->>>>>>> source-clean/main
 def _chunks_for(document: DatedDocument, settings: Settings, embedder: Embedder) -> list[Chunk]:
     """Split one document, counting tokens the way the model does."""
     corpus = settings.corpus
@@ -455,8 +397,6 @@ def _chunks_for(document: DatedDocument, settings: Settings, embedder: Embedder)
     ]
 
 
-<<<<<<< HEAD
-=======
 def _chunk_ahead(
     batches: Sequence[Sequence[DatedDocument]],
     *,
@@ -527,7 +467,6 @@ def _chunk_ahead(
                     future.cancel()
 
 
->>>>>>> source-clean/main
 def run_ingest(
     settings: Settings,
     *,
@@ -535,20 +474,13 @@ def run_ingest(
     sources: tuple[str, ...] | None = None,
     max_units_per_source: int | None = None,
     embedder: Embedder | None = None,
-<<<<<<< HEAD
-=======
     free_disk_gb: Callable[[], float] | None = None,
->>>>>>> source-clean/main
 ) -> IngestReport:
     """Run the pipeline for each enabled source.
 
     ``now`` is required rather than read from the clock, for the same reason
     ``as_of`` is (invariant 1): a future-date check that consults the wall
     clock gives different answers on different runs.
-<<<<<<< HEAD
-    """
-    corpus = settings.corpus
-=======
 
     Preserves invariant 8 under both stop rules: a unit is only ever skipped
     whole, never abandoned half-written, so a stopped build resumes exactly
@@ -562,7 +494,6 @@ def run_ingest(
     """
     corpus = settings.corpus
     measure_disk = free_disk_gb if free_disk_gb is not None else _free_disk_gb
->>>>>>> source-clean/main
     selected = sources if sources is not None else corpus.enabled_sources
     report = IngestReport()
 
@@ -570,28 +501,19 @@ def run_ingest(
         model_name=settings.models.embedding, batch_size=corpus.embed_batch_size
     )
     model.load()
-<<<<<<< HEAD
-=======
     # Bound once, outside every loop: the workers call it, and a closure over
     # a loop variable is how a pool ends up chunking for the wrong iteration.
     chunk = partial(_chunks_for, settings=settings, embedder=model)
->>>>>>> source-clean/main
 
     index = DedupeIndex()
     index.seed(seen_simhashes(settings))
     known_ids = existing_document_ids(settings)
-<<<<<<< HEAD
-=======
     stored_at_start = stored_chunk_count(settings)
->>>>>>> source-clean/main
 
     fetchers = {
         "govpr": Fetcher(requests_per_second=corpus.requests_per_second, user_agent=corpus.contact),
         "edgar": Fetcher(requests_per_second=corpus.requests_per_second, user_agent=corpus.contact),
         "wikipedia": Fetcher(
-<<<<<<< HEAD
-            requests_per_second=corpus.requests_per_second, user_agent=corpus.contact
-=======
             # Its own, slower budget: Wikimedia asks automated readers to go
             # serially and gently, and the whole pass is a few thousand requests.
             requests_per_second=corpus.wikipedia_requests_per_second,
@@ -600,7 +522,6 @@ def run_ingest(
             # as answers they say "no such article", and the unit is marked
             # done -- for good -- with nothing in it.
             classify_body=wikipedia.classify_body,
->>>>>>> source-clean/main
         ),
         "ccnews": Fetcher(
             requests_per_second=corpus.requests_per_second, user_agent=corpus.contact
@@ -648,9 +569,6 @@ def run_ingest(
                 }
             pending = [unit for unit in units if unit not in done]
             source_report.units_skipped = len(units) - len(pending)
-<<<<<<< HEAD
-            pending = [plan.unit_key for plan in order_units(pending, demand=demand)]
-=======
             if source == "ccnews" and corpus.ccnews_planning == "anchored":
                 # The plan is already ordered, and already excludes what is
                 # held; the swept unit list above is kept only for the skipped
@@ -662,14 +580,11 @@ def run_ingest(
                     continue
             else:
                 pending = [plan.unit_key for plan in order_units(pending, demand=demand)]
->>>>>>> source-clean/main
             if max_units_per_source is not None:
                 pending = pending[:max_units_per_source]
 
             load, workers = _unit_loader(settings, source, fetchers, wiki_units)
             for unit_key, fetched in _prefetch(pending, workers=workers, load=load):
-<<<<<<< HEAD
-=======
                 # Checked before a unit is *processed*, so a stop never leaves
                 # one half-written. The unit in hand was already fetched by the
                 # lookahead and is dropped unmarked; the next run fetches it
@@ -691,7 +606,6 @@ def run_ingest(
                             f"({corpus.min_free_disk_gb:g})"
                         )
                         break
->>>>>>> source-clean/main
                 if isinstance(fetched, Exception):
                     source_report.units_failed += 1
                     mark_unit(
@@ -736,21 +650,6 @@ def run_ingest(
                 # it goes; the unit is still only marked done at the end, so a
                 # crash mid-unit re-does the unit and never skips it.
                 batch_size = max(1, settings.corpus.write_batch_size)
-<<<<<<< HEAD
-                for start in range(0, len(documents), batch_size):
-                    batch = documents[start : start + batch_size]
-                    chunks: list[Chunk] = []
-                    for document in batch:
-                        chunks.extend(_chunks_for(document, settings, model))
-                    if not chunks:
-                        continue
-                    vectors = model.encode([chunk.body for chunk in chunks])
-                    written_documents, written_chunks = write_batch(
-                        settings, batch, chunks, vectors
-                    )
-                    source_report.documents_written += written_documents
-                    source_report.chunks_written += written_chunks
-=======
                 batches = [
                     documents[start : start + batch_size]
                     for start in range(0, len(documents), batch_size)
@@ -773,7 +672,6 @@ def run_ingest(
                         source_report.documents_written += written_documents
                         source_report.chunks_written += written_chunks
                         unit_chunks += written_chunks
->>>>>>> source-clean/main
 
                 source_report.units_done += 1
                 mark_unit(
@@ -782,17 +680,12 @@ def run_ingest(
                     unit_key=unit_key,
                     state="done",
                     n_documents=len(documents),
-<<<<<<< HEAD
-                    n_chunks=source_report.chunks_written,
-                )
-=======
                     # This unit's own chunks. It used to record the source's
                     # running total, so every row after the first overstated.
                     n_chunks=unit_chunks,
                 )
             if report.stopped is not None:
                 break
->>>>>>> source-clean/main
     finally:
         # Sorted (invariant 7). Close order does not matter today, but the
         # rule is that no mapping is ever walked in insertion order -- and the

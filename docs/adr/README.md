@@ -1,10 +1,6 @@
 # Architecture decision records
 
-<<<<<<< HEAD
-Twenty-seven records. Each states the decision, the evidence behind it, and
-=======
 Fifty-four records, 0001 to 0054 (0032 is a proposal the owner parked). Each states the decision, the evidence behind it, and
->>>>>>> source-clean/main
 what it costs. They exist because this project's specification is detailed
 enough to be wrong in specific, checkable ways — and when it was, the record
 says so with the measurement that showed it.
@@ -41,8 +37,6 @@ this build. The rest record a choice the specification left open.
 | [0025](0025-ablation-factors-a-and-c.md) | **Found here.** Two of four ablation factors were configuration fields nothing read | M7 |
 | [0026](0026-hnsw-and-bounded-candidate-pool.md) | **Found here.** HNSW replaces IVFFlat, and a parameterised `LIMIT` in a non-inlinable function cost 4× | M8 |
 | [0027](0027-provenance-chain-is-a-path.md) | The provenance walk is a path, not an ancestor set: the spec's CTE expands 6^depth and does not return | M8 |
-<<<<<<< HEAD
-=======
 | [0028](0028-model-providers-behind-one-door.md) | Four model providers behind the one call site; Bedrock has no Message Batches, so it cannot carry a batched phase | M10 |
 | [0029](0029-api-providers-share-one-cache-namespace.md) | The API providers share one cache namespace — conditional on a measured equivalence probe | M10 |
 | [0030](0030-knowledge-bases-rejected-guardrails-deferred.md) | Bedrock Knowledge Bases rejected: a managed KB cannot enforce the time lock. Guardrails deferred: no path through the one door | M10 |
@@ -70,4 +64,3 @@ this build. The rest record a choice the specification left open.
 | [0052](0052-batching-is-a-cost-requirement.md) | Batching is a cost requirement, so it binds only providers that charge: a subscription bills nothing per call, so the M16 fan-out ran unbatched through the CLI. *Amends 0020* | M16 |
 | [0053](0053-portfolio-completion-provider-interface-and-region.md) | **The project finishes as a portfolio.** Four provider classes behind one interface in the one call site, named as the deployment names them (`claude_cli`, `claude_platform_aws`; the old spellings stay aliases, the CLI's cache namespace keeps its old name); `LLM_PROVIDER` and three AWS-side variables as plain aliases read by `config.py`; everything regional in us-west-2; request ids and a structured call log; the Terraform roots completed; `cascade aws check`; the M16 null stands and nothing is spent to move it | M17 |
 | [0054](0054-a-portfolio-deployment-profile.md) | A portfolio deployment profile: recovery, Object Lock, GuardDuty, Config and the reports bucket are switches at the platform root, on by default, and `portfolio.tfvars` turns them off. 74 planned resources become 21; the lake keeps the writer's Deny and gives up the lock, and says so | after M17 |
->>>>>>> source-clean/main

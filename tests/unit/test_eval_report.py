@@ -19,20 +19,13 @@ from cascade.eval.report import StudyArtifact, report_id, write_report
 from cascade.eval.schema import (
     CalibrationBin,
     CalibrationReport,
-<<<<<<< HEAD
-=======
     DispersionFinding,
->>>>>>> source-clean/main
     MetricSet,
     MurphyTerms,
     ScoredForecast,
 )
 
-<<<<<<< HEAD
-# Every headline figure from CLAUDE.md §1's measurement contract. None of these
-=======
 # Every headline figure from the measurement contract. None of these
->>>>>>> source-clean/main
 # may appear as a literal anywhere on a report code path.
 TARGET_LITERALS = (
     0.141,
@@ -56,15 +49,12 @@ REPORT_PATH_MODULES = (
     "cascade/eval/score.py",
     "cascade/eval/ablation.py",
     "cascade/eval/figures.py",
-<<<<<<< HEAD
-=======
     # Decides which market prices are scored, so it is on the path to a
     # reported Brier like everything above.
     "cascade/eval/market.py",
     "cascade/eval/split.py",
     "cascade/eval/evidence.py",
     "cascade/eval/supplementary.py",
->>>>>>> source-clean/main
 )
 
 
@@ -104,8 +94,6 @@ def _scored(count: int = 6) -> tuple[ScoredForecast, ...]:
     )
 
 
-<<<<<<< HEAD
-=======
 def _dispersion() -> DispersionFinding:
     return DispersionFinding(
         n=6,
@@ -120,7 +108,6 @@ def _dispersion() -> DispersionFinding:
     )
 
 
->>>>>>> source-clean/main
 def _artifact(tmp_path: Path, **overrides: object) -> StudyArtifact:
     base = {
         "report_id": report_id(now=datetime(2026, 8, 11, 14, 40, tzinfo=UTC)),
@@ -315,8 +302,6 @@ class TestCsvRows:
         directory = write_report(_artifact(tmp_path), root=tmp_path)
         text = (directory / "calibration.csv").read_text()
         assert text.strip() == "bin,lo,hi,count,mean_pred,obs_freq,wilson_lo,wilson_hi"
-<<<<<<< HEAD
-=======
 
 
 class TestTheIndexDescribesTheDirectoryThatExists:
@@ -447,4 +432,3 @@ class TestWithheldAndProvenanceAreRecorded:
             (write_report(_artifact(tmp_path), root=tmp_path) / "manifest.json").read_text()
         )
         assert payload["provenance"] == {}
->>>>>>> source-clean/main

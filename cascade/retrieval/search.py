@@ -22,18 +22,12 @@ from typing import Any, Literal
 
 from cascade.config import Settings
 from cascade.corpus.embed import EMBEDDING_DIM
-<<<<<<< HEAD
-from cascade.retrieval.schema import RetrievedChunk, SearchResult
-
-__all__ = ["Chronofence", "Role", "vector_literal"]
-=======
 from cascade.retrieval.fusion import FusionParams, select
 from cascade.retrieval.keywords import entity_terms
 from cascade.retrieval.rerank import LexicalReranker, Reranker, apply_scores
 from cascade.retrieval.schema import HybridCandidate, RetrievedChunk, SearchResult
 
 __all__ = ["Chronofence", "Role", "TimeLockViolation", "fusion_params", "vector_literal"]
->>>>>>> source-clean/main
 
 Role = Literal["sim", "eval", "admin"]
 
@@ -59,8 +53,6 @@ _QUERY_TEMPLATE = (
 )
 
 
-<<<<<<< HEAD
-=======
 # The hybrid function takes no `k`: it returns the candidate union and the
 # caller's k is applied after fusion, so no caller-supplied number can enter
 # the plan at all (ADR-0026). `::text[]` is explicit because an empty Python
@@ -101,7 +93,6 @@ def fusion_params(settings: Settings) -> FusionParams:
     )
 
 
->>>>>>> source-clean/main
 def vector_literal(values: Sequence[float]) -> str:
     """Render a query vector in pgvector's text input format.
 
@@ -122,12 +113,6 @@ class Chronofence:
     class cannot quietly give it a second.
     """
 
-<<<<<<< HEAD
-    def __init__(self, settings: Settings, *, role: Role = "sim") -> None:
-        self._settings = settings
-        self._role = role
-        self._conn: Any = None
-=======
     def __init__(
         self,
         settings: Settings,
@@ -144,7 +129,6 @@ class Chronofence:
         # deterministic one. None means "resolve from config", which for the
         # local provider is a pure object this module may build itself.
         self._reranker = reranker
->>>>>>> source-clean/main
 
     def __enter__(self) -> Chronofence:
         import psycopg
@@ -187,8 +171,6 @@ class Chronofence:
         than every row -- ``published_at < NULL`` is NULL, never true -- so the
         failure mode of this boundary is empty, not leaky.
         """
-<<<<<<< HEAD
-=======
         self._validate(vector, as_of=as_of, k=k)
 
         conn = self._require_connection()
@@ -224,7 +206,6 @@ class Chronofence:
         a check the vector one makes -- above all the naive-``as_of`` refusal,
         which is part of the time lock.
         """
->>>>>>> source-clean/main
         if k <= 0:
             raise ValueError(f"k must be positive, got {k}")
         max_k = self._settings.retrieval.max_k
@@ -254,35 +235,6 @@ class Chronofence:
                 "interpreted in the server's timezone and silently shifts the time lock"
             )
 
-<<<<<<< HEAD
-        conn = self._require_connection()
-        started = time.perf_counter()
-        with conn.cursor() as cur:
-            cur.execute(
-                _QUERY_TEMPLATE.format(function=function),
-                (vector_literal(vector), as_of, k),
-            )
-            rows = cur.fetchall()
-        elapsed_ms = (time.perf_counter() - started) * 1000.0
-
-        chunks = tuple(
-            RetrievedChunk(
-                chunk_id=str(row[0]),
-                document_id=str(row[1]),
-                ordinal=int(row[2]),
-                body=str(row[3]),
-                published_at=row[4],
-                source=str(row[5]),
-                url=str(row[6]),
-                title=str(row[7]),
-                distance=float(row[8]),
-            )
-            for row in rows
-        )
-        return SearchResult(as_of=as_of, k=k, chunks=chunks, elapsed_ms=elapsed_ms)
-
-=======
->>>>>>> source-clean/main
     def search(self, vector: Sequence[float], *, as_of: datetime, k: int) -> SearchResult:
         """The k nearest chunks published strictly before ``as_of``.
 
@@ -301,10 +253,6 @@ class Chronofence:
         """
         return self._call("chronofence_search_exact", vector, as_of=as_of, k=k)
 
-<<<<<<< HEAD
-    def ef_search(self) -> int:
-        """The ``hnsw.ef_search`` actually pinned into the deployed function.
-=======
     def search_hybrid(
         self,
         vector: Sequence[float],
@@ -498,7 +446,6 @@ class Chronofence:
 
     def ef_search(self, function: str = "chronofence_search") -> int:
         """The ``hnsw.ef_search`` actually pinned into a deployed function.
->>>>>>> source-clean/main
 
         Read from ``pg_proc.proconfig`` rather than from config, so
         `cascade retrieval verify` compares the *deployed* value against the
@@ -508,21 +455,13 @@ class Chronofence:
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT proconfig FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace "
-<<<<<<< HEAD
-                "WHERE n.nspname = 'public' AND p.proname = 'chronofence_search'"
-=======
                 "WHERE n.nspname = 'public' AND p.proname = %s",
                 (function,),
->>>>>>> source-clean/main
             )
             row = cur.fetchone()
         if row is None or not row[0]:
             raise RuntimeError(
-<<<<<<< HEAD
-                "chronofence_search has no pinned configuration; migration 014 "
-=======
                 f"{function} has no pinned configuration; the migration that defines it "
->>>>>>> source-clean/main
                 "has not been applied to this database"
             )
         for entry in row[0]:
@@ -530,11 +469,6 @@ class Chronofence:
             if key == "hnsw.ef_search":
                 return int(value)
         raise RuntimeError(
-<<<<<<< HEAD
-            "chronofence_search does not pin hnsw.ef_search; callers would silently "
-            "get pgvector's default of 40 and a recall profile nothing asserts"
-        )
-=======
             f"{function} does not pin hnsw.ef_search; callers would silently "
             "get pgvector's default of 40 and a recall profile nothing asserts"
         )
@@ -549,4 +483,3 @@ class Chronofence:
             )
             row = cur.fetchone()
         return bool(row and row[0])
->>>>>>> source-clean/main

@@ -12,12 +12,6 @@ crossing out of this package is a bug.
 from __future__ import annotations
 
 from datetime import datetime
-<<<<<<< HEAD
-
-from pydantic import BaseModel, ConfigDict, Field
-
-__all__ = [
-=======
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -26,25 +20,18 @@ __all__ = [
     "FtsIndexPlan",
     "FtsIndexReport",
     "HybridCandidate",
->>>>>>> source-clean/main
     "IndexAction",
     "IndexPlan",
     "IndexReport",
     "LatencySummary",
     "PartitionIndex",
-<<<<<<< HEAD
-=======
     "RetrievalMode",
->>>>>>> source-clean/main
     "RetrievedChunk",
     "SearchResult",
 ]
 
-<<<<<<< HEAD
-=======
 RetrievalMode = Literal["vector", "hybrid"]
 
->>>>>>> source-clean/main
 
 class _Frozen(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -69,8 +56,6 @@ class RetrievedChunk(_Frozen):
     url: str
     title: str
     distance: float
-<<<<<<< HEAD
-=======
     # Why this chunk was chosen, on the hybrid path; all None on the vector
     # path, where `distance` is the whole story. Carried for the same reason
     # `published_at` is: §11.2 walks from an outcome back to its evidence, and
@@ -129,7 +114,6 @@ class HybridCandidate(_Frozen):
                 "be ranked across naive and aware timestamps"
             )
         return self
->>>>>>> source-clean/main
 
 
 class SearchResult(_Frozen):
@@ -139,8 +123,6 @@ class SearchResult(_Frozen):
     k: int
     chunks: tuple[RetrievedChunk, ...]
     elapsed_ms: float
-<<<<<<< HEAD
-=======
     mode: RetrievalMode = "vector"
     # Hybrid only: the entity terms the keyword pool was asked for, and how
     # many candidates the two pools supplied between them. A result that says
@@ -154,7 +136,6 @@ class SearchResult(_Frozen):
     # two retrieval modes when they are one retrieval and two rankings.
     rerank_model: str | None = None
     reranked_pool: int | None = None
->>>>>>> source-clean/main
 
     @property
     def chunk_ids(self) -> tuple[str, ...]:
@@ -181,13 +162,10 @@ class PartitionIndex(_Frozen):
     index_name: str | None
     m: int | None
     ef_construction: int | None
-<<<<<<< HEAD
-=======
     # The full-text GIN index the hybrid keyword pool needs (migration 018).
     # Defaulted so the HNSW planning rule, which does not read it, can be
     # exercised without restating it.
     fts_index_name: str | None = None
->>>>>>> source-clean/main
 
 
 IndexAction = str  # one of: "create", "rebuild", "keep", "skip-empty"
@@ -221,8 +199,6 @@ class IndexReport(_Frozen):
     elapsed_s: float
 
 
-<<<<<<< HEAD
-=======
 class FtsIndexPlan(_Frozen):
     """What ``cascade retrieval index --fts`` intends for one partition.
 
@@ -250,7 +226,6 @@ class FtsIndexReport(_Frozen):
     elapsed_s: float
 
 
->>>>>>> source-clean/main
 class LatencySummary(_Frozen):
     """Latency percentiles over a bench run, in milliseconds.
 

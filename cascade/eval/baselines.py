@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-"""The five baselines (spec §10.2). Prompt construction is pure; the calls are not.
-=======
 """The five baselines (spec §10.2), and the market. Prompt construction is pure.
->>>>>>> source-clean/main
 
 "Five, and all five appear in the report. Omitting the fair-compute baseline is
 the most common way a multi-agent result gets dismissed."
@@ -26,8 +22,6 @@ The three that are not cells are built here:
   averaged. §10.2 calls it critical, and it is: it matches Cascade's sample
   budget, so a gain over it cannot be dismissed as "you just sampled more".
 
-<<<<<<< HEAD
-=======
 A sixth stands outside the spec's five (M14): **the market at the cutoff**,
 the YES probability each scenario's own prediction market quoted strictly
 before ``cutoff_ts``. §10.2's five are all models or arithmetic; this is the
@@ -37,7 +31,6 @@ covers only the scenarios whose market had a usable price, and -- unlike every
 other row here -- is scored from its own table rather than from ``forecasts``,
 because ``cascade_sim`` can read ``forecasts`` and must not read a market price.
 
->>>>>>> source-clean/main
 The self-consistency draws are distinguished by ``LLMRequest.sample_index``.
 The call cache is content-addressed, so without it 200 identical requests would
 be one recording replayed 200 times -- an ensemble with sigma exactly zero,
@@ -52,25 +45,17 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
 from cascade.config import Settings
-<<<<<<< HEAD
-from cascade.ledger.schema import Scenario
-from cascade.llm.types import BatchItem, LLMRequest
-=======
 from cascade.eval.market import MARKET_CONFIG_ID
 from cascade.ledger.schema import Scenario
 from cascade.llm.providers import charges_per_call
 from cascade.llm.types import BatchItem, LLMRequest
 from cascade.quoting import EVIDENCE_RULE, quote_documents
->>>>>>> source-clean/main
 
 __all__ = [
     "BASELINES",
     "CLIMATOLOGY_CONFIG_ID",
     "DIRECT_CONFIG_ID",
-<<<<<<< HEAD
-=======
     "MARKET_CONFIG_ID",
->>>>>>> source-clean/main
     "SELF_CONSISTENCY_CONFIG_ID",
     "BaselineRun",
     "BaselineSpec",
@@ -100,13 +85,10 @@ class BaselineSpec:
     purpose: str
     from_grid: bool
     """True when the baseline *is* an ablation cell and is scored from it."""
-<<<<<<< HEAD
-=======
     in_spec: bool = True
     """False for a benchmark added beyond §10.2's five. The spec's list stays
     checkable as a list -- "all five appear in the report" -- while the report
     is free to carry more than the spec asked for."""
->>>>>>> source-clean/main
 
 
 BASELINES: tuple[BaselineSpec, ...] = (
@@ -153,8 +135,6 @@ BASELINES: tuple[BaselineSpec, ...] = (
         purpose="The system under test.",
         from_grid=True,
     ),
-<<<<<<< HEAD
-=======
     BaselineSpec(
         baseline_id="market",
         config_id=MARKET_CONFIG_ID,
@@ -170,7 +150,6 @@ BASELINES: tuple[BaselineSpec, ...] = (
         from_grid=False,
         in_spec=False,
     ),
->>>>>>> source-clean/main
 )
 
 
@@ -202,11 +181,7 @@ def system_prompt() -> str:
         "resolution criterion, and evidence published strictly before the "
         "forecast cutoff. Estimate the probability that the question resolved "
         'YES. Answer with a JSON object of the form {"p": <number between 0 '
-<<<<<<< HEAD
-        "and 1>} and nothing else. Do not explain."
-=======
         "and 1>} and nothing else. Do not explain.\n\n" + EVIDENCE_RULE
->>>>>>> source-clean/main
     )
 
 
@@ -215,11 +190,6 @@ def baseline_prompt(
     evidence: Sequence[tuple[str, str, str]],
     *,
     evidence_chars: int,
-<<<<<<< HEAD
-) -> str:
-    """Render the user turn: question, criterion, cutoff, and the evidence. Pure.
-
-=======
     situation: str = "",
 ) -> str:
     """Render the user turn: question, criterion, cutoff, and the evidence. Pure.
@@ -228,7 +198,6 @@ def baseline_prompt(
     whenever the agents do: otherwise "Cascade beats a single model" would
     partly mean "a model given a briefing beats one that was not".
 
->>>>>>> source-clean/main
     ``evidence`` is ``(published_iso, source, excerpt)`` -- the same triple the
     agent prefix carries, truncated to the same width, so the only difference
     between this baseline and the system under test is the architecture.
@@ -246,18 +215,6 @@ def baseline_prompt(
         "",
         "Reason only from what was knowable at the cutoff.",
         "",
-<<<<<<< HEAD
-        "# Evidence published before the cutoff",
-        "",
-    ]
-    if evidence:
-        lines.extend(
-            f"[{published}] {source}\n{excerpt[:evidence_chars]}\n"
-            for published, source, excerpt in evidence
-        )
-    else:
-        lines.append("(no admissible evidence was found before the cutoff)\n")
-=======
     ]
     if situation:
         lines.extend(["# Situation report (public record before the cutoff)", "", situation, ""])
@@ -270,7 +227,6 @@ def baseline_prompt(
         )
     )
     lines.append("")
->>>>>>> source-clean/main
     lines.append("Respond with JSON only.")
     return "\n".join(lines)
 
@@ -283,10 +239,7 @@ def sample_requests(
     samples: int,
     temperature: float,
     config_id: str,
-<<<<<<< HEAD
-=======
     situation: str = "",
->>>>>>> source-clean/main
 ) -> list[BatchItem]:
     """Build ``samples`` independent draws of one scenario's prompt. Pure.
 
@@ -298,16 +251,12 @@ def sample_requests(
     if samples <= 0:
         raise ValueError(f"samples must be positive, got {samples}")
     system = system_prompt()
-<<<<<<< HEAD
-    user = baseline_prompt(scenario, evidence, evidence_chars=settings.kernel.evidence_chars)
-=======
     user = baseline_prompt(
         scenario,
         evidence,
         evidence_chars=settings.kernel.evidence_chars,
         situation=situation,
     )
->>>>>>> source-clean/main
     return [
         BatchItem(
             custom_id=f"{config_id}|{scenario.scenario_id}|{index}",
@@ -412,10 +361,7 @@ def run_single_model(
     temperature: float,
     client: object = None,
     batch_size: int = 2000,
-<<<<<<< HEAD
-=======
     situations: Mapping[str, tuple[str, str | None]] | None = None,
->>>>>>> source-clean/main
 ) -> BaselineRun:
     """Draw ``samples`` forecasts per scenario and collapse them.
 
@@ -448,15 +394,6 @@ def run_single_model(
                 samples=samples,
                 temperature=temperature,
                 config_id=config_id,
-<<<<<<< HEAD
-            )
-        )
-
-    answers: dict[str, str] = {}
-    for start in range(0, len(items), max(1, batch_size)):
-        group = items[start : start + max(1, batch_size)]
-        results = llm.complete_batch(group, trace_name=f"baseline.{config_id}")  # type: ignore[attr-defined]
-=======
                 situation=(situations or {}).get(scenario.scenario_id, ("", None))[0],
             )
         )
@@ -486,7 +423,6 @@ def run_single_model(
             }
         else:
             results = llm.complete_batch(group, trace_name=f"baseline.{config_id}")  # type: ignore[attr-defined]
->>>>>>> source-clean/main
         for custom_id in sorted(results):
             answers[custom_id] = results[custom_id].text
 

@@ -26,19 +26,11 @@ install: ## Create the venv and install what the demo and the test suite need
 	# imports it, so `make demo`, `cascade simulate` and `cascade trace replay`
 	# all need it. `embed` is left out -- it is a multi-gigabyte download that
 	# only the corpus and retrieval paths use.
-<<<<<<< HEAD
-	$(UV) sync --extra dev --extra kernel
-
-.PHONY: install-full
-install-full: ## Everything, including the embedding stack (torch, ~2GB)
-	$(UV) sync --extra dev --extra kernel --extra embed --extra analytics
-=======
 	$(UV) sync --extra dev --extra kernel --extra aws
 
 .PHONY: install-full
 install-full: ## Everything, including the embedding stack (torch, ~2GB)
 	$(UV) sync --extra dev --extra kernel --extra aws --extra embed --extra analytics
->>>>>>> source-clean/main
 
 .PHONY: env
 env: ## Write a .env with local development defaults if none exists
@@ -109,8 +101,6 @@ test-leakage: ## The M3 time-lock probes alone (requires `make up` and a built c
 ci: lint typecheck test ## Everything CI runs
 
 # ---------------------------------------------------------------------------
-<<<<<<< HEAD
-=======
 # Infrastructure (M11) -- every gate runs offline, with no AWS account.
 # Toolchain versions are pinned and run in Docker, the same versions CI pins,
 # so a developer's system Terraform never decides what "valid" means.
@@ -147,7 +137,6 @@ infra-check: ## Terraform fmt/validate, offline tests (mock providers), tflint, 
 	docker buildx build --check -f infra/docker/bench.Dockerfile .
 
 # ---------------------------------------------------------------------------
->>>>>>> source-clean/main
 # Study
 # ---------------------------------------------------------------------------
 
@@ -171,13 +160,8 @@ demo: ## The 90-second path: four ablation cells -> replay -> trace -> report
 	@echo "==> 2/5  running the four cells that need no compiled graph"
 	$(RUN) cascade eval grid --policy heuristic \
 		--cell C09 --cell C10 --cell C11 --cell C12 --limit 40
-<<<<<<< HEAD
-	@echo "==> 3/5  proving the runs replay byte-identically in fresh processes"
-	$(RUN) cascade trace replay --runs 25
-=======
 	@echo "==> 3/5  proving the stand-in runs replay byte-identically in fresh processes"
 	$(RUN) cascade trace replay --runs 25 --policy heuristic
->>>>>>> source-clean/main
 	@echo "==> 4/5  walking one outcome back to its root cause"
 	$(RUN) cascade trace explain
 	@echo "==> 5/5  writing the report artifact"

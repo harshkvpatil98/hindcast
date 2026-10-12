@@ -292,8 +292,6 @@ def test_tracing_actually_contains_the_sanctioned_guards() -> None:
     handlers = _broad_handlers(SANCTIONED_GUARD_MODULE)
     assert len(handlers) >= 4, "tracing.py must guard trace, span, generation and flush"
     assert all(annotated for _, annotated, _ in handlers)
-<<<<<<< HEAD
-=======
 
 
 # ---------------------------------------------------------------------------
@@ -388,4 +386,3 @@ def test_the_composite_fans_out_and_reports_every_members_degradation() -> None:
     assert len(recording.generations) == 1
     assert recording.generations[0]["metadata"]["request_id"] == "req_1"
     assert composite.degraded_reason is not None and "failed" in composite.degraded_reason
->>>>>>> source-clean/main

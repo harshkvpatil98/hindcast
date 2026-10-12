@@ -236,11 +236,6 @@ def _check_edge_sanity(graph: CausalGraph) -> list[Violation]:
             )
         )
 
-<<<<<<< HEAD
-    inbound: dict[str, float] = {factor.id: 0.0 for factor in graph.factors}
-    for edge in graph.edges:
-        inbound[edge.dst] += edge.weight
-=======
     # Exactly rounded, because the verdict must not depend on the order the
     # edges arrive in. A graph whose inbound weights sum to exactly the cap --
     # 0.9 + 0.8 + 0.7 + 0.6, which models emit often -- adds to
@@ -252,7 +247,6 @@ def _check_edge_sanity(graph: CausalGraph) -> list[Violation]:
         factor.id: math.fsum(edge.weight for edge in graph.edges if edge.dst == factor.id)
         for factor in graph.factors
     }
->>>>>>> source-clean/main
     overloaded = sorted(
         f"{factor}={total:.2f}"
         for factor, total in sorted(inbound.items())

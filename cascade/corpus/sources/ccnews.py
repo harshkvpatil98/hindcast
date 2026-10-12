@@ -7,16 +7,6 @@ often refuse.
 
 Two decisions here are load-bearing.
 
-<<<<<<< HEAD
-**The date is extracted from the page, never from the crawl.** A WARC record
-carries ``WARC-Date``, which is when Common Crawl fetched the page -- typically
-hours to days after publication, and occasionally much longer. Using it would
-be exactly the "inferred date" §3.2 forbids, and it errs in the unsafe
-direction: an article would be dated *later* than it was knowable, so a
-cutoff that should have excluded it might not. Instead the publication date is
-read from the document's own metadata, and a page that does not state one is
-dropped.
-=======
 **A document is dated by when its text was knowable** (ADR-0044): the later
 of the publication date the page states and ``WARC-Date``, when Common Crawl
 fetched it. The stated date is read from the page's own metadata, and a page
@@ -28,7 +18,6 @@ The first version of this module argued the reverse -- that the crawl date
 "errs in the unsafe direction" -- which was wrong: a later date excludes a
 document from more cutoffs and can never leak; an earlier date on later text
 is what leaks.
->>>>>>> source-clean/main
 
 **WARC parsing is stdlib-only.** The pinned stack (spec §2.3) has no WARC
 library, and adding one would be a substitution requiring an ADR. The format
@@ -56,10 +45,7 @@ __all__ = [
     "month_paths",
     "split_unit",
     "unit_keys",
-<<<<<<< HEAD
-=======
     "warc_date",
->>>>>>> source-clean/main
 ]
 
 DATA_URL = "https://data.commoncrawl.org"
@@ -84,8 +70,6 @@ _DATE_PATTERNS: tuple[re.Pattern[bytes], ...] = (
 )
 
 _WARC_TARGET = re.compile(rb"^WARC-Target-URI:\s*(.+?)\s*$", re.I | re.M)
-<<<<<<< HEAD
-=======
 _WARC_DATE = re.compile(rb"^WARC-Date:\s*(\S+)\s*$", re.I | re.M)
 
 
@@ -106,7 +90,6 @@ def warc_date(header: bytes) -> datetime | None:
     return parsed if parsed.tzinfo is not None else None
 
 
->>>>>>> source-clean/main
 _WARC_TYPE = re.compile(rb"^WARC-Type:\s*(.+?)\s*$", re.I | re.M)
 _CONTENT_LENGTH = re.compile(rb"^Content-Length:\s*(\d+)\s*$", re.I | re.M)
 
@@ -300,9 +283,6 @@ def load_warc(fetcher: Fetcher, *, path: str, max_records: int) -> Iterator[RawD
                 title="",
                 body=body,
                 published_at=published,
-<<<<<<< HEAD
-=======
                 crawled_at=warc_date(header),
->>>>>>> source-clean/main
             )
             seen += 1

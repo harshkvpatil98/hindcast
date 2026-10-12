@@ -19,18 +19,11 @@ number a careful reader will compute anyway".
 from __future__ import annotations
 
 import hashlib
-<<<<<<< HEAD
-from collections.abc import Sequence
-from dataclasses import dataclass
-from typing import Literal
-
-=======
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from typing import Literal
 
 from cascade.eval.market import MARKET_CONFIG_ID
->>>>>>> source-clean/main
 from cascade.eval.schema import Grounding
 
 __all__ = [
@@ -102,11 +95,7 @@ def grid_replicates(
 ) -> tuple[int, str]:
     """How many replicates this cell runs at, and the sentence that says why.
 
-<<<<<<< HEAD
-    **This is CLAUDE.md's open question Q1, resolved explicitly rather than
-=======
     **This is open question Q1, resolved explicitly rather than
->>>>>>> source-clean/main
     silently.** Appendix C gives the D factor as ``n in {200, 1}`` per cell,
     while §10.3 and §12.3 describe the 11 non-headline cells as "90 scenarios x
     30 replicates". Both cannot be literally true of a D=200 ablation cell.
@@ -269,14 +258,10 @@ def grid_scenarios(
 
 
 def comparison_family(
-<<<<<<< HEAD
-    *, available: Sequence[str], headline: str = HEADLINE_CELL
-=======
     *,
     available: Sequence[str],
     headline: str = HEADLINE_CELL,
     eligible: Collection[str] | None = None,
->>>>>>> source-clean/main
 ) -> tuple[ComparisonSpec, ...]:
     """The family Holm-Bonferroni is applied across (spec §10.4).
 
@@ -295,10 +280,6 @@ def comparison_family(
     ``headline`` is a parameter rather than the constant so the family can be
     built against whichever configuration is actually being reported. A partial
     grid has a headline too.
-<<<<<<< HEAD
-    """
-    have = set(available)
-=======
 
     ``eligible`` closes the family. §10.4's family is "twelve cells plus five
     baselines" -- a list, not "whatever has forecasts". Without it, every
@@ -311,7 +292,6 @@ def comparison_family(
     have = set(available)
     if eligible is not None:
         have &= set(eligible) | {headline}
->>>>>>> source-clean/main
     out: list[ComparisonSpec] = []
     named = {
         (spec.config_a, spec.config_b)
@@ -324,8 +304,6 @@ def comparison_family(
             continue
         if headline not in have:
             continue
-<<<<<<< HEAD
-=======
         reading = (
             f"Brier({config_id}) - Brier({headline}). Positive means "
             f"{config_id} is worse than the reported configuration. Included "
@@ -345,22 +323,12 @@ def comparison_family(
                 f"beat {headline} on those scenarios. In the Holm family like every "
                 "other comparison (§10.4)."
             )
->>>>>>> source-clean/main
         out.append(
             ComparisonSpec(
                 name=f"{config_id} vs {headline}",
                 config_a=config_id,
                 config_b=headline,
-<<<<<<< HEAD
-                reading=(
-                    f"Brier({config_id}) - Brier({headline}). Positive means "
-                    f"{config_id} is worse than the reported configuration. Included "
-                    "in the Holm family so the adjustment covers every comparison the "
-                    "report prints (§10.4)."
-                ),
-=======
                 reading=reading,
->>>>>>> source-clean/main
             )
         )
     return tuple(out)

@@ -43,10 +43,6 @@ transitive bump to v3 fails a check instead of failing a run.
 
 ## Interaction with the sanctioned broad guard
 
-<<<<<<< HEAD
-`tracing.py` degrades to a no-op on any Langfuse failure (CLAUDE.md §4). That
-=======
 `tracing.py` degrades to a no-op on any Langfuse failure (the engineering standards). That
->>>>>>> source-clean/main
 guard is what makes this pin low-risk: if v2 proves inadequate mid-study, the
 run continues untraced rather than aborting, and the ledger is unaffected.

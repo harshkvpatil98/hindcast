@@ -21,19 +21,6 @@ encode into every sample would measure the model, not the index.
 from __future__ import annotations
 
 import time
-<<<<<<< HEAD
-from collections.abc import Sequence
-from dataclasses import dataclass
-
-from cascade.config import Settings
-from cascade.corpus.embed import Embedder
-from cascade.retrieval.metrics import RecallSummary, recall_at_k, summarise_latency
-from cascade.retrieval.queries import BenchQuery, build_queries
-from cascade.retrieval.schema import LatencySummary
-from cascade.retrieval.search import Chronofence
-
-__all__ = ["MIN_RECALL_SAMPLE", "BenchResult", "run_bench"]
-=======
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
@@ -93,7 +80,6 @@ __all__ = [
     "summarise_relevance",
     "vector_arm",
 ]
->>>>>>> source-clean/main
 
 # Below this many scored queries, recall@k is too noisy to decide a criterion
 # stated to two decimal places. At `--queries 100` the 5% sample is 5 queries,
@@ -256,8 +242,6 @@ def run_bench(
         ef_search=ef_search,
         elapsed_s=time.monotonic() - started,
     )
-<<<<<<< HEAD
-=======
 
 
 # ---------------------------------------------------------------------------
@@ -935,4 +919,3 @@ def run_relevance(
         graphs=len(graphs),
         elapsed_s=time.monotonic() - started,
     )
->>>>>>> source-clean/main
