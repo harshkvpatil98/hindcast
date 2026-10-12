@@ -304,6 +304,10 @@ The complete record, including every measured figure and its boundaries, is in
 | [Threat model](docs/architecture/threat-model.md) · [Well-Architected review](docs/architecture/well-architected.md) | Security and operations in depth |
 | [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) | The milestone-by-milestone record, and how to work on the project |
 
+## Authors
+
+Harshwardhan Patil and Utkarsh Singh.
+
 ## License
 
 [MIT](LICENSE)
