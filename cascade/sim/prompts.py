@@ -39,6 +39,10 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from cascade.aperture.projection import Observation
+<<<<<<< HEAD
+=======
+from cascade.quoting import EVIDENCE_RULE, quote_documents
+>>>>>>> source-clean/main
 from cascade.sim.actions import (
     RATIONALE_MAX_CHARS,
     Ally,
@@ -56,8 +60,21 @@ from cascade.sim.arbiter import (
     ESCALATE_GAIN,
     WAIT_REFUND,
 )
+<<<<<<< HEAD
 
 __all__ = ["ACTION_TOOL", "ACTION_TOOL_NAME", "RULES", "persona_block", "turn_message"]
+=======
+from cascade.sim.tools import LOOKUP_EVIDENCE, RECALL
+
+__all__ = [
+    "ACTION_TOOL",
+    "ACTION_TOOL_NAME",
+    "RULES",
+    "persona_block",
+    "tool_rules",
+    "turn_message",
+]
+>>>>>>> source-clean/main
 
 ACTION_TOOL_NAME = "emit_action"
 
@@ -95,6 +112,13 @@ You are one party in a multi-party situation that is being simulated forward, \
 one step at a time, to a horizon. You are not a forecaster and you are not an \
 assistant. You act in your own interest, given what you can see.
 
+<<<<<<< HEAD
+=======
+# Quoted documents
+
+{EVIDENCE_RULE}
+
+>>>>>>> source-clean/main
 # The world
 
 The situation is described by a small set of *factors*, each a number in \
@@ -190,6 +214,61 @@ view is poor, that is part of your situation.\
 """
 
 
+<<<<<<< HEAD
+=======
+def tool_rules(*, max_turns: int, k: int, allow: Sequence[str]) -> str:
+    """The extra system block the tool arm carries, and only that arm (ADR-0049).
+
+    A separate block rather than an edit to :data:`RULES`, because ``RULES`` is
+    the study-wide text every one of the ~4.2M decisions in the headline arm is
+    made against: appending to it would change the cached prefix of an arm that
+    has no tools, invalidate every recording made against it, and make the two
+    arms differ in their instructions as well as in their capability. The
+    measured difference has to be the tools.
+
+    The budget is stated because it is real and the agent spends it. An agent
+    told it may look things up, and not told how often, either never looks or
+    looks until the loop cuts it off on the last turn -- and the second is
+    charged for.
+
+    Only the tools ``allow`` actually carries are described. A cell that enables
+    one tool and describes two would produce agents reaching for something the
+    executor refuses, and the refusals would be counted against the arm as
+    though the agents had chosen badly.
+    """
+    names = ", ".join(f"`{name}`" for name in allow)
+    blocks = [f"""\
+# Looking things up
+
+Before you act you may call {names}. You have at most {max_turns} turn(s) per \
+step in total, and the last of them must be your action -- so a step in which \
+you look something up is a step in which you act on what you found, not a step \
+you spend deliberating. Look something up when you have a question whose answer \
+would change which action you take; otherwise act.\
+"""]
+    if LOOKUP_EVIDENCE in allow:
+        blocks.append(f"""\
+`{LOOKUP_EVIDENCE}` searches the record of what was published before this \
+situation's cutoff and returns at most {k} document(s). The cutoff is fixed for \
+the whole simulation. It is not an argument to the tool, you cannot set it, \
+move it or find out what it is, and no wording of a query reaches anything \
+published after it. Asking for later material returns what was available \
+before the cutoff, or nothing.\
+""")
+    if RECALL in allow:
+        blocks.append(f"""\
+`{RECALL}` searches your own record -- the steps you observed and the actions \
+you took. It holds nothing about any other party's private record, and there is \
+no argument through which you could ask for one.\
+""")
+    blocks.append(
+        "Every tool call takes exactly one field, `query`, and nothing else. A call "
+        "carrying any other field is refused and costs you the turn."
+    )
+    return "\n\n".join(blocks)
+
+
+>>>>>>> source-clean/main
 class ActorBrief(BaseModel):
     """The static, per-(scenario, actor) half of the prompt."""
 
@@ -208,6 +287,13 @@ class ActorBrief(BaseModel):
     question_context: str
     evidence: tuple[tuple[str, str, str], ...]
     """(published_iso, source, excerpt) -- pre-cutoff, retrieved once per run."""
+<<<<<<< HEAD
+=======
+    situation: str = ""
+    """The rendered scenario dossier (ADR-0037), shared by every actor in the
+    scenario. Empty with the dossier off, and the block it would occupy is then
+    omitted entirely, so the prefix is byte-identical to the pre-dossier one."""
+>>>>>>> source-clean/main
     grounded: bool = True
     """False under Appendix C's `grounding: parametric_only`. Distinguishes
     "retrieval ran and found nothing admissible" from "retrieval was switched
@@ -226,6 +312,7 @@ def persona_block(brief: ActorBrief, *, evidence_chars: int) -> str:
     utility = ", ".join(f"{factor} {weight:+.2f}" for factor, weight in brief.utility)
     levers = ", ".join(f"{factor} (leverage {weight:.2f})" for factor, weight in brief.levers)
     constraints = "\n".join(f"- {item}" for item in brief.constraints) or "- none stated"
+<<<<<<< HEAD
     if brief.evidence:
         evidence = "\n\n".join(
             f"[{published}] {source}\n{excerpt[:evidence_chars]}"
@@ -235,11 +322,29 @@ def persona_block(brief: ActorBrief, *, evidence_chars: int) -> str:
         evidence = "(no admissible evidence was found before the cutoff)"
     else:
         evidence = (
+=======
+    if brief.grounded:
+        empty = "(no admissible evidence was found before the cutoff)"
+    else:
+        empty = (
+>>>>>>> source-clean/main
             "(evidence retrieval is disabled in this configuration; reason from "
             "what you already know, and treat the absence of documents as a "
             "property of this exercise rather than as a fact about the world)"
         )
+<<<<<<< HEAD
     counterparties = ", ".join(brief.counterparties) or "(none reachable)"
+=======
+    evidence = quote_documents(brief.evidence, excerpt_chars=evidence_chars, empty=empty)
+    counterparties = ", ".join(brief.counterparties) or "(none reachable)"
+    report = (
+        "# Situation report\n\nA summary of the public record before the cutoff, the same for "
+        "every party. Each line was checked against the documents it came from.\n\n"
+        f"{brief.situation}\n\n"
+        if brief.situation
+        else ""
+    )
+>>>>>>> source-clean/main
     return f"""\
 # You
 
@@ -260,7 +365,11 @@ Constraints you operate under:
 
 The simulation runs {brief.horizon} steps.
 
+<<<<<<< HEAD
 # What was known before the cutoff
+=======
+{report}# What was known before the cutoff
+>>>>>>> source-clean/main
 
 Everything below was published before the situation's cutoff date. It is the \
 only outside information you have, it does not update as the simulation runs, \
@@ -327,6 +436,10 @@ def brief_from(
     question_context: str,
     evidence: Sequence[tuple[str, str, str]],
     grounded: bool = True,
+<<<<<<< HEAD
+=======
+    situation: str = "",
+>>>>>>> source-clean/main
 ) -> ActorBrief:
     """Assemble one actor's brief from the compiled graph and its evidence."""
     return ActorBrief(
@@ -344,5 +457,9 @@ def brief_from(
         horizon=horizon,
         question_context=question_context,
         evidence=tuple(evidence),
+<<<<<<< HEAD
+=======
+        situation=situation,
+>>>>>>> source-clean/main
         grounded=grounded,
     )

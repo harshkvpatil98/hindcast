@@ -72,6 +72,16 @@ class RawDocument(_Frozen):
     title: str = ""
     body: str
     published_at: datetime | None = None
+<<<<<<< HEAD
+=======
+    crawled_at: datetime | None = None
+    """When the text was fetched, for a source that fetched a live page (CC-NEWS
+    records it as ``WARC-Date``). A page's text can change after the date it
+    states -- update notes, a re-crawled old article carrying today's
+    sidebars -- and the text stored is the one fetched, so it was knowable at
+    the later of the two (ADR-0044). ``None`` for sources whose text is fixed
+    at the stated date: a Wikipedia revision, a Federal Register document."""
+>>>>>>> source-clean/main
 
 
 class DatedDocument(_Frozen):
@@ -89,7 +99,16 @@ class DatedDocument(_Frozen):
     title: str
     body: str
     published_at: datetime
+<<<<<<< HEAD
     simhash: int
+=======
+    """When the stored text was knowable: the stated date, or the crawl if that
+    is later (ADR-0044). The time lock filters on this and nothing else."""
+    simhash: int
+    stated_published_at: datetime | None = None
+    """The date the document states, kept for provenance when it differs."""
+    crawled_at: datetime | None = None
+>>>>>>> source-clean/main
 
     @field_validator("published_at")
     @classmethod

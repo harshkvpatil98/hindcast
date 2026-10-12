@@ -1,0 +1,8 @@
+# Copy to backend.hcl (gitignored) and fill in from `terraform output` in
+# envs/bootstrap. Then: terraform init -backend-config=backend.hcl
+bucket       = "cascade-tfstate-ACCOUNT_ID-REGION"
+key          = "sandbox/terraform.tfstate"
+region       = "REGION"
+encrypt      = true
+kms_key_id   = "arn:aws:kms:REGION:ACCOUNT_ID:key/KEY_ID"
+use_lockfile = true

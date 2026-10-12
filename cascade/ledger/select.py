@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 """Deterministic selection of the study set (spec §3.1, CLAUDE.md Q2).
+=======
+"""Deterministic selection of the study set (spec §3.1, open question Q2, ADR-0008).
+>>>>>>> source-clean/main
 
 Pure: no I/O, no clock, no global RNG.
 

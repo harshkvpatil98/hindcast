@@ -7,6 +7,27 @@ spare for accumulated representation error over ~378,000 calls.
 
 A breach is never a warning. The meter writes a resumable checkpoint and
 raises :class:`BudgetExceeded`, which the CLI boundary maps to exit code 2.
+<<<<<<< HEAD
+=======
+
+**Not everything in a phase is billed per token.** A managed reranker bills
+per query (ADR-0047), and pricing it through the token table would mean
+inventing a token count -- whose only honest value, zero, prices every query
+at nothing. Per-call work is therefore booked by :meth:`CostMeter.record_units`
+into counters of its own: it spends the same phase ceiling, and it is kept out
+of ``calls`` so the action-cache hit rate the M6 criterion reads keeps meaning
+what it measured.
+
+**The ceiling belongs to the phase, not to the process.** Until M12 a meter
+started every process at zero and nothing read a checkpoint back, so a phase
+that aborted at its ceiling and was re-run got the whole ceiling again -- a
+retry loop around `simulate all` would have spent $240 per attempt. A meter now
+starts from the phase's recorded spend, and records it as it goes (at every
+percent of the ceiling, so a crash loses at most that much accounting). Re-
+running a breached phase therefore breaches again at its first paid call;
+going further takes a deliberate act -- raising the ceiling in configuration,
+or deleting the checkpoint to declare a new study.
+>>>>>>> source-clean/main
 """
 
 from __future__ import annotations
@@ -27,14 +48,47 @@ __all__ = [
     "CostMeter",
     "PhaseEstimate",
     "compute_cost",
+<<<<<<< HEAD
+=======
+    "compute_unit_cost",
+>>>>>>> source-clean/main
     "estimate_phase",
     "quantize_usd",
 ]
 
 _PER_MTOK = Decimal(1_000_000)
+<<<<<<< HEAD
 USD = Decimal("0.000001")
 
 
+=======
+# Per-unit prices are quoted per thousand calls, not per million tokens: a
+# managed reranker bills per query (ADR-0047) and `retrieval.rerank
+# .price_per_1k_queries` is written that way.
+_PER_KILO = Decimal(1_000)
+USD = Decimal("0.000001")
+
+
+def compute_unit_cost(*, units: int, price_per_1k_usd: Decimal) -> Decimal:
+    """Return the exact USD cost of ``units`` calls to a per-call-billed service.
+
+    Preserves the rule that nothing is priced through a table it does not
+    belong to. A managed reranker bills per query rather than per token
+    (ADR-0047), so running it through :func:`compute_cost` would need a token
+    count that does not exist -- and the honest zero, ``Usage(0, 0)``, prices
+    every query at nothing, which is the M8 failure of a gate that compares
+    two zeros.
+
+    The result is exact, not rounded -- see :func:`quantize_usd`.
+    """
+    if units < 0:
+        raise ValueError(f"cannot price {units} units: a negative count is not a call")
+    if price_per_1k_usd < 0:
+        raise ValueError(f"cannot price at {price_per_1k_usd} per 1k: a rate is never negative")
+    return Decimal(units) * price_per_1k_usd / _PER_KILO
+
+
+>>>>>>> source-clean/main
 def quantize_usd(value: Decimal) -> Decimal:
     """Round to the reporting precision, six decimal places.
 
@@ -141,11 +195,61 @@ class CostMeter:
     cached_usage: Usage = field(
         default_factory=lambda: Usage(input_tokens=0, output_tokens=0), init=False
     )
+<<<<<<< HEAD
     _resume_state: dict[str, Any] = field(default_factory=dict, init=False)
+=======
+    # Services billed per call rather than per token, counted by kind and kept
+    # out of `calls`. Folding a rerank query into `calls` would change the
+    # denominator of `hit_rate`, and the M6 acceptance criterion (action-cache
+    # hit rate >= 88%) is read straight off it -- a second kind of call
+    # entering that ratio would move a measured criterion without touching the
+    # thing it measures.
+    units: dict[str, int] = field(default_factory=dict, init=False)
+    cached_units: dict[str, int] = field(default_factory=dict, init=False)
+    units_usd: Decimal = field(default=Decimal(0), init=False)
+    _resume_state: dict[str, Any] = field(default_factory=dict, init=False)
+    # What earlier processes already spent on this phase, read from its
+    # checkpoint. `total_usd` stays this process's own spend, so per-run
+    # reporting is unchanged; the ceiling is enforced on the sum.
+    carried_usd: Decimal = field(default=Decimal(0), init=False)
+    _recorded_usd: Decimal = field(default=Decimal(0), init=False)
+>>>>>>> source-clean/main
 
     def __post_init__(self) -> None:
         if self.ceiling_usd is None:
             self.ceiling_usd = self.settings.phase_ceiling(self.phase)
+<<<<<<< HEAD
+=======
+        self.carried_usd = self._read_carried()
+        self._recorded_usd = self.carried_usd
+
+    def _read_carried(self) -> Decimal:
+        """The phase's recorded spend, or zero when it has none.
+
+        A checkpoint that exists and cannot be read is an error, not a zero:
+        treating it as zero is exactly the re-granted ceiling this exists to
+        prevent, and it would happen silently.
+        """
+        path = self.checkpoint_path()
+        if not path.is_file():
+            return Decimal(0)
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            # The exact figure when present; checkpoints written before it
+            # existed carry only the six-decimal one.
+            return Decimal(str(payload.get("spent_usd_exact", payload["spent_usd"])))
+        except (OSError, ValueError, KeyError, ArithmeticError) as exc:
+            raise ValueError(
+                f"cannot read the recorded spend for phase {self.phase!r} from {path}: "
+                f"{type(exc).__name__}: {exc}. Refusing to start the phase at zero -- repair or "
+                "delete the checkpoint deliberately."
+            ) from exc
+
+    @property
+    def phase_usd(self) -> Decimal:
+        """Everything spent on this phase, by this process and those before it."""
+        return self.carried_usd + self.total_usd
+>>>>>>> source-clean/main
 
     # -- resumability -------------------------------------------------------
 
@@ -168,7 +272,14 @@ class CostMeter:
         body = json.dumps(
             {
                 "phase": self.phase,
+<<<<<<< HEAD
                 "spent_usd": str(quantize_usd(self.total_usd)),
+=======
+                # Cumulative for the phase: this is what the next process
+                # starts from.
+                "spent_usd": str(quantize_usd(self.phase_usd)),
+                "spent_usd_exact": str(self.phase_usd),
+>>>>>>> source-clean/main
                 "ceiling_usd": str(quantize_usd(self._ceiling())),
                 "calls": self.calls,
                 "cached_calls": self.cached_calls,
@@ -221,8 +332,71 @@ class CostMeter:
         self.calls += 1
         self.usage = self.usage + usage
         self._enforce()
+<<<<<<< HEAD
         return cost
 
+=======
+        self._record_progress()
+        return cost
+
+    def _record_progress(self) -> None:
+        """Checkpoint whenever spend has advanced by a percent of the ceiling.
+
+        Bounds what a crash can lose to one percent of the ceiling without an
+        fsync per call: at most a hundred writes per phase, against hundreds of
+        thousands of calls.
+        """
+        step = self._ceiling() / Decimal(100)
+        if step > 0 and self.phase_usd - self._recorded_usd >= step:
+            self.write_checkpoint()
+            self._recorded_usd = self.phase_usd
+
+    def price_of_units(self, *, units: int, price_per_1k_usd: Decimal) -> Decimal:
+        """Price per-call-billed work without booking it."""
+        return compute_unit_cost(units=units, price_per_1k_usd=price_per_1k_usd)
+
+    def record_units(self, *, kind: str, units: int, price_per_1k_usd: Decimal) -> Decimal:
+        """Book ``units`` calls to a per-call-billed service, then enforce the ceiling.
+
+        The same contract as :meth:`record`, one level away from tokens: the
+        spend is added before the ceiling is checked, so the figure reported on
+        a breach is what was actually spent rather than what would have been
+        spent had the call been refused. Returns the cost.
+
+        ``units`` must be positive. A booking of zero would record a call that
+        was never made -- the caller with an empty pool does not reach a
+        provider at all -- and it is the one shape that makes the per-query
+        count disagree with the provider's invoice for a reason nothing
+        downstream could see.
+        """
+        if units <= 0:
+            raise ValueError(
+                f"cannot book {units} {kind!r} unit(s): a call that billed nothing was not made"
+            )
+        cost = self.price_of_units(units=units, price_per_1k_usd=price_per_1k_usd)
+        self.total_usd += cost
+        self.units_usd += cost
+        self.units[kind] = self.units.get(kind, 0) + units
+        self._enforce()
+        self._record_progress()
+        return cost
+
+    def record_unit_cache_hit(self, *, kind: str, units: int = 1) -> None:
+        """Book per-call-billed work served from a recording, at zero.
+
+        The mirror of :meth:`record_cache_hit` for a service that is not
+        token-billed, and kept in its own counter for the same reason
+        :attr:`units` is: the rerank cache and the action cache are different
+        caches with different hit rates, and one ratio reported for both would
+        describe neither.
+        """
+        if units <= 0:
+            raise ValueError(
+                f"cannot book {units} cached {kind!r} unit(s): a hit serves at least one call"
+            )
+        self.cached_units[kind] = self.cached_units.get(kind, 0) + units
+
+>>>>>>> source-clean/main
     def record_cache_hit(self, *, model: str, usage: Usage) -> None:
         """Book a cache hit as a zero-cost call.
 
@@ -238,12 +412,20 @@ class CostMeter:
         if not self.settings.budget.abort_on_breach:
             return
         ceiling = self._ceiling()
+<<<<<<< HEAD
         if self.total_usd <= ceiling:
+=======
+        if self.phase_usd <= ceiling:
+>>>>>>> source-clean/main
             return
         path = self.write_checkpoint()
         raise BudgetExceeded(
             phase=self.phase,
+<<<<<<< HEAD
             spent=quantize_usd(self.total_usd),
+=======
+            spent=quantize_usd(self.phase_usd),
+>>>>>>> source-clean/main
             ceiling=quantize_usd(ceiling),
             checkpoint=str(path),
         )
@@ -267,6 +449,18 @@ class CostMeter:
             "output_tokens": self.usage.output_tokens,
             "cache_read_input_tokens": self.usage.cache_read_input_tokens,
             "cache_creation_input_tokens": self.usage.cache_creation_input_tokens,
+<<<<<<< HEAD
             "total_usd": str(quantize_usd(self.total_usd)),
+=======
+            # Sorted (invariant 7): the ledger is compared between runs, and a
+            # key order that followed first use would diff with nothing behind
+            # it.
+            "units": {kind: self.units[kind] for kind in sorted(self.units)},
+            "cached_units": {kind: self.cached_units[kind] for kind in sorted(self.cached_units)},
+            "units_usd": str(quantize_usd(self.units_usd)),
+            "total_usd": str(quantize_usd(self.total_usd)),
+            "carried_usd": str(quantize_usd(self.carried_usd)),
+            "phase_usd": str(quantize_usd(self.phase_usd)),
+>>>>>>> source-clean/main
             "ceiling_usd": str(quantize_usd(self._ceiling())),
         }

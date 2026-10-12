@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="748" height="659" viewBox="0 0 748 659" role="img" aria-label="Terraform - 21 resources applied, zero drift">
+<rect width="748" height="659" rx="10" fill="#0d1117"/>
+<rect width="748" height="34" rx="10" fill="#161b22"/>
+<rect y="24" width="748" height="10" fill="#161b22"/>
+<circle cx="20" cy="17" r="5.5" fill="#ff5f56"/><circle cx="38" cy="17" r="5.5" fill="#ffbd2e"/><circle cx="56" cy="17" r="5.5" fill="#27c93f"/>
+<text x="374.0" y="22" text-anchor="middle" fill="#8b949e" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5">Terraform - 21 resources applied, zero drift</text>
+<g font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace" font-size="13" fill="#c9d1d9" xml:space="preserve">
+<text x="18" y="56" xml:space="preserve" style="white-space:pre"><tspan fill="#79c0ff">$ terraform apply platform.tfplan</tspan>                 <tspan fill="#8b949e"># Terraform v1.16.3, saved plan from main</tspan></text>
+<text x="18" y="75" xml:space="preserve" style="white-space:pre"><tspan fill="#3fb950">Apply complete! Resources: 21 added, 0 changed, 0 destroyed.</tspan></text>
+<text x="18" y="94" xml:space="preserve" style="white-space:pre"></text>
+<text x="18" y="113" xml:space="preserve" style="white-space:pre"><tspan fill="#79c0ff">$ terraform plan -var-file=portfolio.tfvars</tspan>       <tspan fill="#8b949e"># 2026-10-02, after both applies</tspan></text>
+<text x="18" y="132" xml:space="preserve" style="white-space:pre"><tspan fill="#3fb950">No changes. Your infrastructure matches the configuration.</tspan></text>
+<text x="18" y="151" xml:space="preserve" style="white-space:pre"></text>
+<text x="18" y="170" xml:space="preserve" style="white-space:pre"><tspan fill="#79c0ff">$ terraform state list</tspan>                            <tspan fill="#8b949e"># 21 managed resources, all us-west-2</tspan></text>
+<text x="18" y="189" xml:space="preserve" style="white-space:pre"><tspan fill="#f0f6fc">root</tspan> (1)</text>
+<text x="18" y="208" xml:space="preserve" style="white-space:pre">  aws_kms_key.platform</text>
+<text x="18" y="227" xml:space="preserve" style="white-space:pre"><tspan fill="#f0f6fc">eventlake</tspan> (18)</text>
+<text x="18" y="246" xml:space="preserve" style="white-space:pre">  aws_athena_workgroup.this</text>
+<text x="18" y="265" xml:space="preserve" style="white-space:pre">  aws_glue_catalog_database.this</text>
+<text x="18" y="284" xml:space="preserve" style="white-space:pre">  aws_glue_catalog_table.events</text>
+<text x="18" y="303" xml:space="preserve" style="white-space:pre">  aws_iam_role.analyst</text>
+<text x="18" y="322" xml:space="preserve" style="white-space:pre">  aws_iam_role.writer</text>
+<text x="18" y="341" xml:space="preserve" style="white-space:pre">  aws_iam_role_policy.analyst</text>
+<text x="18" y="360" xml:space="preserve" style="white-space:pre">  aws_iam_role_policy.writer</text>
+<text x="18" y="379" xml:space="preserve" style="white-space:pre">  aws_s3_bucket.events</text>
+<text x="18" y="398" xml:space="preserve" style="white-space:pre">  aws_s3_bucket.results</text>
+<text x="18" y="417" xml:space="preserve" style="white-space:pre">  aws_s3_bucket_lifecycle_configuration.results</text>
+<text x="18" y="436" xml:space="preserve" style="white-space:pre">  aws_s3_bucket_ownership_controls.events</text>
+<text x="18" y="455" xml:space="preserve" style="white-space:pre">  aws_s3_bucket_ownership_controls.results</text>
+<text x="18" y="474" xml:space="preserve" style="white-space:pre">  aws_s3_bucket_policy.events</text>
+<text x="18" y="493" xml:space="preserve" style="white-space:pre">  aws_s3_bucket_public_access_block.events</text>
+<text x="18" y="512" xml:space="preserve" style="white-space:pre">  aws_s3_bucket_public_access_block.results</text>
+<text x="18" y="531" xml:space="preserve" style="white-space:pre">  aws_s3_bucket_server_side_encryption_configuration.events</text>
+<text x="18" y="550" xml:space="preserve" style="white-space:pre">  aws_s3_bucket_server_side_encryption_configuration.results</text>
+<text x="18" y="569" xml:space="preserve" style="white-space:pre">  aws_s3_bucket_versioning.events</text>
+<text x="18" y="588" xml:space="preserve" style="white-space:pre"><tspan fill="#f0f6fc">governance</tspan> (2)</text>
+<text x="18" y="607" xml:space="preserve" style="white-space:pre">  aws_sns_topic.alerts</text>
+<text x="18" y="626" xml:space="preserve" style="white-space:pre">  aws_sns_topic_policy.alerts</text>
+</g></svg>

@@ -1,14 +1,278 @@
 # Changelog
 
 One entry per milestone, recording what shipped and what the acceptance numbers
+<<<<<<< HEAD
 **actually were**. The full record, including every defect found and fixed
 along the way, is the build log in [`CLAUDE.md`](CLAUDE.md).
+=======
+**actually were**. The decisions behind them are in the
+[decision records](docs/adr/README.md).
+>>>>>>> source-clean/main
 
 Versions track milestones rather than releases; nothing here is published to a
 package index.
 
 ---
 
+<<<<<<< HEAD
+=======
+## After M17 — A portfolio deployment profile
+
+The platform root planned 74 resources against the owner's account. The owner
+asked for a minimal live deployment that proves the architecture, with the
+production-grade modules kept
+([ADR-0054](docs/adr/0054-a-portfolio-deployment-profile.md)).
+
+- **Switches for what an account already has**: `create_audit_trail`,
+  `create_budget`, `create_cost_anomaly_detection`, each true by default.
+- **The production tiers are switches too**: `enable_recovery`,
+  `enable_reports`, `enable_object_lock`, `enable_guardduty`, `enable_config`,
+  each true by default, and `disposable`, false by default and refused while
+  Object Lock is on.
+- **`infra/terraform/envs/platform/portfolio.tfvars`** turns the tiers off:
+  **21 resources** in one region -- the CMK, the event lake, the alerts topic.
+- **Applied on 2026-10-01**: 21 added, 0 changed, 0 destroyed; the next plan
+  showed no changes; the account's own trail, budget, anomaly monitor and
+  guardrail are untouched.
+- **`cascade aws smoke-test`**: three synthetic events to S3 as the writer
+  role, registered in Glue, read back through Athena as the analyst role,
+  rows compared. The writer's delete must be refused, and is.
+- **A defect only the live run could find**: the analyst role had no
+  `glue:GetPartition`, so it could not run a query filtered on `config_id`.
+  Fixed with one in-place change.
+- **`boto3[crt]` in the `aws` extra**, so a profile made by `aws login` works.
+- Still not built: the export of the real event log to the lake.
+- **A presentation pass over the repository.** The README now leads with what
+  is built, deployed and verified; the full measured record and its
+  boundaries moved, intact, to [docs/RESULTS.md](docs/RESULTS.md). New:
+  [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), a five-minute
+  [demo script](docs/DEMO.md), and an [evidence pack](docs/evidence/README.md)
+  of sanitized captures from the live account and from `main`. The front-page
+  metrics were re-measured on 2026-10-02.
+
+## M17 — Portfolio completion
+
+The project owner changed the objective on 2026-09-30: finish Cascade as an
+engineering portfolio project, on the Claude Code CLI under a subscription,
+with Claude Platform on AWS supported but not enabled, everything regional in
+us-west-2, and no further paid workloads
+([ADR-0053](docs/adr/0053-portfolio-completion-provider-interface-and-region.md)).
+
+- **One provider interface, four classes, inside the one call site.**
+  `ModelProvider` in `cascade/llm/providers.py`; `AnthropicApiProvider`,
+  `ClaudePlatformAwsProvider`, `BedrockProvider` and `ClaudeCliProvider` in
+  `cascade/llm/client.py`, built by `build_provider`. `LLMClient` talks to
+  the provider through the interface alone, so the cache, the meter, the
+  tracer and replay are written once.
+- **The names the deployment uses.** `claude_cli` and `claude_platform_aws`
+  are canonical; `claude_code` and `aws` are accepted aliases, normalised at
+  the configuration boundary. The CLI provider's cache namespace keeps its old
+  spelling, so no recording made since M10 is orphaned.
+- **Plain environment aliases.** `LLM_PROVIDER`, `ANTHROPIC_AWS_WORKSPACE_ID`,
+  `CASCADE_GUARDRAIL_ID` and `CASCADE_GUARDRAIL_VERSION`, read by
+  `config.py` -- the only module that may -- with the nested `CASCADE_`
+  spelling outranking each, and `.env` supplying either. Switching to Claude
+  Platform on AWS is two variables and a price table. The region has no alias.
+- **One region.** `us-west-2` in `configs/base.yaml` for Bedrock, Claude
+  Platform on AWS and the invocation-log reader; both Terraform roots'
+  `terraform.tfvars.example`; the runbook.
+- **Request ids and a call log.** Every call keeps the provider's request id
+  (`request-id`, `x-amzn-requestid`, the CLI's session) on the result, the
+  recording and the trace; the Bedrock reranker books one search unit per 100
+  documents, the service's own rule; `observability.call_log` appends one
+  JSON object per call.
+- **The Terraform roots completed.** The platform root exposes the Bedrock
+  guardrail (`model_guardrail`, `publish_guardrail_version`, the `guardrail`
+  and `guardrail_environment` outputs) and makes the two SCPs optional for a
+  standalone account. The guardrail tests ADR-0050 recorded as never having
+  executed ran for the first time under Terraform 1.16.3 in Docker; three
+  needed `apply` rather than `plan`.
+- **`cascade aws check`**: identity, guardrail and reranker resolved with
+  three control-plane reads and no spend; exit 3 on a failure.
+- **A stale derived digest, found by the live replay check and refreshed.**
+  M16 dropped `cache_hit` from the event hash domain and did not re-hash the
+  2,480 runs stored before it, so `runs.event_log_hash` no longer matched
+  what their untouched events hash to. Replay targets are now re-hashed from
+  the stored events under the current domain, the cached column is reported
+  as *stale* rather than as a divergence, `cascade trace rehash --apply`
+  refreshes it (events never touched, replaced values archived), and a run
+  whose model recordings are not on this machine is reported as
+  *unverified here*, never as nondeterministic.
+- **Documentation says what runs where.** Claude inference runs through the
+  locally authenticated Claude Code CLI; Bedrock Rerank and Guardrails are the
+  AWS-native integrations; infrastructure is Terraform; Claude Platform on AWS
+  is supported by the provider layer and not enabled. The M16 null result is
+  on the front page as measured.
+
+## M16 — The first measured study
+
+Nothing new shipped. What M4-M15 built ran end to end with a real model
+deciding every turn: 36 of the 40 development scenarios, 10 replicates each,
+360 runs and 66,231 model calls through `claude -p` under a subscription.
+
+- **The headline is a null.** Cascade Brier **0.219709**; climatology
+  **0.250000** (difference -0.030291, 95% CI [-0.09714, +0.04265], p 0.3912);
+  single model given the same evidence **0.206903** (Cascade minus single
+  +0.012806, CI [-0.08526, +0.11007], p 0.7950). At 36 scenarios no pairwise
+  comparison is distinguishable from zero.
+- **The power arithmetic.** Per-scenario differences have SD ~0.30: detecting
+  the hoped-for advantage needed n ~180, which the registry was built to;
+  detecting the measured one would need n ~2,000.
+- **Two acceptance criteria failed for one measured reason.** Median compiled
+  factor volatility 0.06 pins activation at **0.6301** (criterion 0.347 +/-
+  0.04) and the action-cache hit rate at **0.0746** (criterion >= 0.88) --
+  exactly what the M5 entry predicted. Neither was tuned toward.
+- The 125 test scenarios are deliberately unspent; the report artifact is
+  written and, carrying the labels, stays out of the repository.
+
+## M15 — AWS Gen AI surfaces
+
+- **Bedrock Rerank** as a second ranking stage over the time-locked pool
+  ([ADR-0047](docs/adr/0047-reranking-is-a-permutation.md)): admissible
+  because a reranker permutes a set the database already filtered; handed
+  bodies, returns numbers; recorded and replayed like a model call; the
+  poison-pill probe runs through it (0 of 500).
+- **Bedrock Guardrails as a post-hoc audit**
+  ([ADR-0050](docs/adr/0050-guardrails-measured-not-applied.md)): `cascade
+  eval guardrails` asks the configured guardrail what it *would* have done to
+  each compiled graph and keeps *not assessed* apart from *clear*; a flagged
+  graph is a confound, never a safety win.
+- **Agent tool access as a measured factor**
+  ([ADR-0049](docs/adr/0049-agent-tool-access.md)), **a second record of
+  spend** ([ADR-0048](docs/adr/0048-a-second-record-of-spend.md)) and
+  **Bedrock Agents rejected** for the loop
+  ([ADR-0051](docs/adr/0051-bedrock-agents-rejected.md)).
+- **Invariant 5 had a second door**: nothing refused a `boto3` client for a
+  model-serving service outside the call site. Now refused.
+
+## M14 — Forecast quality: a benchmark, a held-out split, better evidence
+
+In progress. The corpus, retrieval and evaluation mechanisms are done and
+measured; the study numbers still need a batch-capable model provider.
+
+- **The market's own price at each cutoff is now the benchmark**
+  ([ADR-0039](docs/adr/0039-market-price-benchmark.md)). 143 usable prices of
+  180: stale, missing and non-market scenarios are excluded and counted, never
+  imputed, and `cascade_sim` cannot read the table.
+- **A dev/test split declared before any forecast existed**
+  ([ADR-0038](docs/adr/0038-dev-test-split-and-declared-analyses.md)): 40 dev /
+  125 test, pinned and re-checked on every evaluation path, with the headline
+  computed on test alone. Two analyses were declared with it: accuracy by
+  evidence quality, and 12 evidence chunks per agent instead of 6, in its own
+  Holm family. Three ways a tuned number could have reached the headline were
+  closed, including a Holm family open to any stored configuration.
+- **Two time-lock leaks found, both with honest dates and later text.** The
+  Wikipedia adapter rendered old revisions through today's templates — a 2025
+  article carried the 2026 final standings
+  ([ADR-0041](docs/adr/0041-wikipedia-as-of-wikitext.md)) — and CC-NEWS pages
+  were dated by what they state while the stored text is the later fetch, which
+  for 5.5% of documents was more than 180 days later
+  ([ADR-0044](docs/adr/0044-date-text-by-when-it-was-knowable.md)). The stored
+  corpus was repaired in place: 200,122 documents re-dated, 340 Wikipedia
+  documents purged, and a new scan for update stamps later than a document's
+  date went from 381 flagged chunks to 4 — all four publisher typos.
+- **Hybrid retrieval** — a time-locked keyword pool fused with vector distance
+  and recency, and near-duplicate suppression
+  ([ADR-0040](docs/adr/0040-hybrid-retrieval.md)). Switched on after measuring
+  it: chunks naming a scenario's own parties rose from 0.55 to 0.65 for the
+  compiler and 0.77 to 0.83 for the baselines, and median evidence age at the
+  cutoff fell from 183 to 139 days and 141 to 70 days.
+- **Deeper, time-locked Wikipedia evidence**: titles chosen from the question
+  rather than from party names used as page titles, revisions read as they
+  stood before the cutoff, redirects and page moves followed as they read then.
+  Scenarios with at least one on-topic article rose from 127 to 147.
+- **A cited situation report per scenario**
+  ([ADR-0037](docs/adr/0037-scenario-dossier.md)), built from ~100 pre-cutoff
+  chunks, every claim machine-checked against the excerpts it cites so the
+  writer's memory of the outcome cannot reach the agents as evidence. Off until
+  it can be judged on the dev partition.
+- **15 sealed scenarios are exchange placeholder legs** and are excluded from
+  scoring and counted ([ADR-0043](docs/adr/0043-registry-placeholder-legs.md));
+  the sealed set itself is unchanged.
+- **Prompt injection through the corpus was measured, and then closed.**
+  `cascade eval injection` plants one document that asserts nothing about the
+  world and instructs the model to report a contradicting probability. A
+  document that closed the evidence section and spoke as the operator was
+  obeyed on **20 of 30** scenarios (mean shift +0.491); a plain "ignore all
+  previous instructions" on **none**. Documents are now quoted in numbered
+  markers that the renderer strips from their own text, with the rule in the
+  system prompt ([ADR-0045](docs/adr/0045-quoted-evidence.md), prompt revision
+  r4): the same probe now measures **0 of 30**, with disjoint intervals.
+- **A blend** whose weight is fitted on dev and scored on test.
+- **Platform follow-ups**: an opt-in egress tier for the ingest, model access
+  and a durable LLM cache for the study task, GuardDuty findings routed to the
+  alerts topic, and both caches in the recovery plan
+  ([ADR-0042](docs/adr/0042-ingest-egress-model-access-and-durable-caches.md)).
+
+## M10 — Model providers on AWS
+
+Four providers behind the one call site, and the first model-produced number
+since M3. Built and tested; the live AWS criteria are blocked.
+
+- **Four providers, one door.** `llm.provider` selects the Anthropic API,
+  Claude Platform on AWS, Amazon Bedrock, or the Claude Code CLI. The three
+  SDK clients ship in the one `anthropic` package, so invariant 5 needs no
+  exemption ([ADR-0028](docs/adr/0028-model-providers-behind-one-door.md)).
+- **Bedrock cannot carry the simulate phase.** It has no Message Batches API,
+  and the phase fits its $240 ceiling only at the batch rate. A batch with
+  anything to submit is refused before any spend (exit 3).
+- **Routing explicit, identity ambient.** Both AWS clients read
+  `AWS_REGION` and base-URL variables from the shell before the region; the
+  seam passes every routing value from config, verified against decoys.
+- **Priced by the logical model, per provider**, with empty AWS price tables
+  that refuse to record rather than guess a rate.
+- **The API providers share one cache namespace — conditionally.**
+  `cascade eval equivalence` bootstraps cross-provider against within-provider
+  disagreement; divergence makes the provider join the key
+  ([ADR-0029](docs/adr/0029-api-providers-share-one-cache-namespace.md)).
+  Not yet run: no two API providers were available.
+- **Bedrock Knowledge Bases rejected** — they cannot enforce the time lock the
+  leakage suite verifies. **Guardrails deferred** — no path through the one
+  door ([ADR-0030](docs/adr/0030-knowledge-bases-rejected-guardrails-deferred.md)).
+- **`claude_code`: a local provider on a Claude subscription**, keyed apart
+  because the CLI cannot set `temperature` or `max_tokens`. Measured before it
+  was trusted: 448 tokens of harness context per call, thinking on by default
+  (235 → 0 output tokens once disabled), and a ~27k-token project instruction
+  file one working directory away from every call — now refused
+  ([ADR-0031](docs/adr/0031-claude-code-cli-provider.md)).
+- **Parametric memorization, measured for the first time** (through
+  `claude_code`, not the pinned configuration): 180/180 parsed, median
+  confidence 0.70, direction correct on 97/180 — not distinguishable from
+  chance — and a probe Brier of 0.2616 against climatology's 0.2500.
+- **The README stated three cost targets as the study's price.** `$290`,
+  `$0.0035/run` and `$0.008/run` are §1 targets; they are now described as the
+  cost model they are. M9 recorded that a grep for contract literals over the
+  README returned nothing; it did not.
+- **The environment was rebuilt.** The database volume was lost; the registry
+  was re-fetched and re-sealed at `91ccd314…`, a new frozen split. The corpus
+  was not rebuilt, so compile remains blocked.
+
+## M9 — Presentation
+
+The repository made readable and runnable from a clean clone. 2 of 3 criteria
+met; the optional dashboard deferred.
+
+- **`README.md`** applies the measured-values contract to the front page, with
+  six stated limitations including the two criteria still missed. (M10 found
+  that it also stated three §1 cost targets as the study's price, and corrected
+  it.)
+- **`make demo`** — registry → four ablation cells → 25-run replay →
+  provenance chain → report artifact, entirely on the stand-in decider, with no
+  credential and no spend. `make verify` and `make install-full` are new.
+- **CI**: a gates job and a separate invariants job, a pull-request template
+  carrying the gate checklist, two issue templates; `CONTRIBUTING.md`,
+  `LICENSE` (MIT) and an index of the 27 ADRs.
+- **The CI workflow was run in a CI-equivalent environment first, and it
+  failed**: without the `embed` extra, mypy could not resolve the lazily
+  imported `torch` and `sentence_transformers`. Fixed with the same override the
+  other optional imports use; re-measured at 1,193 passed, 1 skipped.
+- **The quickstart did not work**: `make install` omitted the `kernel` extra
+  the demo needs. `cascade trace explain` now defaults to the first stored run,
+  so the documented demo line needs no `psql`.
+- **Deferred:** the read-only dashboard — optional in the spec, and there were
+  no study numbers to put in it.
+
+>>>>>>> source-clean/main
 ## M8 — Strata: determinism and provenance
 
 Replay verification, provenance chains, and the cost-ledger gate.

@@ -1,0 +1,30 @@
+$ aws s3api get-bucket-encryption | get-public-access-block | get-bucket-versioning
+cascade-events-<account-id>-us-west-2
+  encryption        aws:kms, customer managed key, bucket key on
+  public access     blocked (all four settings)
+  versioning        Enabled
+  object lock       none (portfolio profile)
+  objects           events/config_id=SMOKE/smoke-b129c6125ef39d6a.parquet, 4,384 bytes, aws:kms
+                    2 versions kept, 0 delete markers
+cascade-athena-results-<account-id>-us-west-2
+  encryption        aws:kms, customer managed key, bucket key on
+  public access     blocked (all four settings)
+  versioning        not versioned
+  object lock       none (portfolio profile)
+
+$ aws kms describe-key | get-key-rotation-status
+  platform key      Enabled, SYMMETRIC_DEFAULT, customer managed, rotation on
+
+$ aws glue get-table --database-name cascade --name events
+  table             cascade.events, EXTERNAL_TABLE, Parquet, 13 columns
+  partition key     config_id   registered: SMOKE
+  location          s3://cascade-events-<account-id>-us-west-2/events/
+
+$ aws athena get-work-group --work-group cascade
+  state             ENABLED, settings enforced: true
+  scan limit        10 GiB per query
+  results           SSE_KMS
+
+$ aws iam get-role | aws sns get-topic-attributes
+  roles             cascade-lake-writer, cascade-lake-analyst
+  alerts topic      cascade-cost-alerts, encrypted with the platform key

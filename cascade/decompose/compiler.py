@@ -26,7 +26,11 @@ at M5 are called 36,000 times and are where caching actually pays.
 from __future__ import annotations
 
 import time
+<<<<<<< HEAD
 from collections.abc import Sequence
+=======
+from collections.abc import Mapping, Sequence
+>>>>>>> source-clean/main
 from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any, Literal
@@ -87,6 +91,11 @@ class CompileOutcome:
     violations: tuple[str, ...]
     """Outstanding violations. Empty on success, the reason on failure."""
     elapsed_s: float
+<<<<<<< HEAD
+=======
+    dossier_sha256: str | None = None
+    """The dossier the draft read, or None with the dossier off (ADR-0037)."""
+>>>>>>> source-clean/main
 
     @property
     def ok(self) -> bool:
@@ -118,6 +127,11 @@ class Lathe:
     embed: EmbedFn
     retrieve: Any
     """Callable(question, as_of, k) -> list[(published_iso, source, body)]."""
+<<<<<<< HEAD
+=======
+    situations: Mapping[str, tuple[str, str | None]] = field(default_factory=dict)
+    """scenario_id -> (rendered dossier, its hash). Empty with the dossier off."""
+>>>>>>> source-clean/main
 
     _budget: _Budget = field(default_factory=_Budget)
 
@@ -182,6 +196,10 @@ class Lathe:
             cutoff_iso=canonical_timestamp(scenario.cutoff_ts),
             party_names=scenario.party_names,
             chunks=chunks,
+<<<<<<< HEAD
+=======
+            situation=self.situations.get(scenario.scenario_id, ("", None))[0],
+>>>>>>> source-clean/main
         )
         return self._call(
             messages=[{"role": "user", "content": prompt}],
@@ -312,6 +330,10 @@ class Lathe:
                         defects=defects,
                         violations=(),
                         elapsed_s=time.monotonic() - started,
+<<<<<<< HEAD
+=======
+                        dossier_sha256=self.situations.get(scenario.scenario_id, ("", None))[1],
+>>>>>>> source-clean/main
                     )
             # Only the first repair is free; `retries` counts the rest.
             if retries >= MAX_REPAIR_RETRIES:
@@ -326,6 +348,10 @@ class Lathe:
                     defects=defects,
                     violations=violations,
                     elapsed_s=time.monotonic() - started,
+<<<<<<< HEAD
+=======
+                    dossier_sha256=self.situations.get(scenario.scenario_id, ("", None))[1],
+>>>>>>> source-clean/main
                 )
             # Defects were addressed by the first repair; subsequent rounds are
             # driven by the validator alone. Re-sending the original critique

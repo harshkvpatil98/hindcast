@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="725" height="526" viewBox="0 0 725 526" role="img" aria-label="Least privilege - the writer&#x27;s delete is refused, live">
+<rect width="725" height="526" rx="10" fill="#0d1117"/>
+<rect width="725" height="34" rx="10" fill="#161b22"/>
+<rect y="24" width="725" height="10" fill="#161b22"/>
+<circle cx="20" cy="17" r="5.5" fill="#ff5f56"/><circle cx="38" cy="17" r="5.5" fill="#ffbd2e"/><circle cx="56" cy="17" r="5.5" fill="#27c93f"/>
+<text x="362.5" y="22" text-anchor="middle" fill="#8b949e" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5">Least privilege - the writer&#x27;s delete is refused, live</text>
+<g font-family="ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace" font-size="13" fill="#c9d1d9" xml:space="preserve">
+<text x="18" y="56" xml:space="preserve" style="white-space:pre"><tspan fill="#79c0ff">$ aws iam get-role-policy --role-name cascade-lake-writer --policy-name append-only</tspan></text>
+<text x="18" y="75" xml:space="preserve" style="white-space:pre"><tspan fill="#3fb950">Allow</tspan>  s3:PutObject</text>
+<text x="18" y="94" xml:space="preserve" style="white-space:pre">       on events/* only, plus kms:GenerateDataKey on the platform key</text>
+<text x="18" y="113" xml:space="preserve" style="white-space:pre"><tspan fill="#ff7b72">Deny</tspan>   s3:BypassGovernanceRetention, s3:DeleteObject, s3:DeleteObjectVersion,</text>
+<text x="18" y="132" xml:space="preserve" style="white-space:pre">       s3:PutBucketObjectLockConfiguration, s3:PutObjectLegalHold, s3:PutObjectRetention</text>
+<text x="18" y="151" xml:space="preserve" style="white-space:pre">       on the bucket and every object in it</text>
+<text x="18" y="170" xml:space="preserve" style="white-space:pre"></text>
+<text x="18" y="189" xml:space="preserve" style="white-space:pre"><tspan fill="#79c0ff">$ cascade aws smoke-test</tspan>   <tspan fill="#8b949e"># the writer role, asked to delete the object it just wrote</tspan></text>
+<text x="18" y="208" xml:space="preserve" style="white-space:pre"><tspan fill="#3fb950">OK</tspan>  writer cannot delete   DeleteObject refused with <tspan fill="#f0f6fc">AccessDenied</tspan></text>
+<text x="18" y="227" xml:space="preserve" style="white-space:pre">    <tspan fill="#8b949e">request id HFDRQ6P1FJZQEX2K</tspan></text>
+<text x="18" y="246" xml:space="preserve" style="white-space:pre"></text>
+<text x="18" y="265" xml:space="preserve" style="white-space:pre"><tspan fill="#79c0ff">$ aws iam get-role-policy --role-name cascade-lake-analyst --policy-name query</tspan></text>
+<text x="18" y="284" xml:space="preserve" style="white-space:pre"><tspan fill="#3fb950">Allow</tspan>  QueryThroughTheWorkgroupOnly</text>
+<text x="18" y="303" xml:space="preserve" style="white-space:pre">       <tspan fill="#8b949e">GetQueryExecution, GetQueryResults, StartQueryExecution, StopQueryExecution</tspan></text>
+<text x="18" y="322" xml:space="preserve" style="white-space:pre"><tspan fill="#3fb950">Allow</tspan>  ReadThisTableOnly</text>
+<text x="18" y="341" xml:space="preserve" style="white-space:pre">       <tspan fill="#8b949e">GetDatabase, GetPartition, GetPartitions, GetTable</tspan></text>
+<text x="18" y="360" xml:space="preserve" style="white-space:pre"><tspan fill="#3fb950">Allow</tspan>  ReadEvents</text>
+<text x="18" y="379" xml:space="preserve" style="white-space:pre">       <tspan fill="#8b949e">GetObject, ListBucket</tspan></text>
+<text x="18" y="398" xml:space="preserve" style="white-space:pre"><tspan fill="#3fb950">Allow</tspan>  ResultsReadWrite</text>
+<text x="18" y="417" xml:space="preserve" style="white-space:pre">       <tspan fill="#8b949e">GetBucketLocation, GetObject, ListBucket, PutObject</tspan></text>
+<text x="18" y="436" xml:space="preserve" style="white-space:pre"><tspan fill="#3fb950">Allow</tspan>  Keys</text>
+<text x="18" y="455" xml:space="preserve" style="white-space:pre">       <tspan fill="#8b949e">Decrypt, GenerateDataKey</tspan></text>
+<text x="18" y="474" xml:space="preserve" style="white-space:pre"><tspan fill="#8b949e"># Athena only through workgroup cascade; Glue read-only on one table;</tspan></text>
+<text x="18" y="493" xml:space="preserve" style="white-space:pre"><tspan fill="#8b949e"># no delete, no catalog write, no workgroup change</tspan></text>
+</g></svg>

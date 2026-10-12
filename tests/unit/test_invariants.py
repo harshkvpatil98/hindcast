@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 """Static enforcement of invariants 1, 5 and 7 (CLAUDE.md §2).
+=======
+"""Static enforcement of invariants 1, 5 and 7.
+>>>>>>> source-clean/main
 
 These three are checkable without running the system, which means they can be
 checked over code that does not exist yet. That is the point: they are the
@@ -178,6 +182,89 @@ def test_only_one_module_imports_the_provider_sdk() -> None:
     )
 
 
+<<<<<<< HEAD
+=======
+# AWS services that serve or screen a model. A boto3 client for one of these
+# is a model-adjacent egress and belongs behind the one door, exactly as the
+# Anthropic SDK does. Observability and database services are not here on
+# purpose: `trace/aws_spend.py` reads CloudWatch Logs and `config.py` mints an
+# RDS auth token, and neither reaches a model.
+MODEL_SERVING_AWS_SERVICES = frozenset(
+    {
+        "bedrock",
+        "bedrock-runtime",
+        "bedrock-agent-runtime",
+        "sagemaker-runtime",
+    }
+)
+
+
+def _model_service_clients(tree: ast.Module) -> list[int]:
+    """Return line numbers constructing a boto3 client for a model service.
+
+    Matches any ``...client("bedrock-runtime", ...)`` call regardless of what
+    it is called on, because the receiver varies -- ``boto3.client(...)`` and
+    ``session.client(...)`` are both in use here -- while the service name is
+    the thing that decides whether a model is reached.
+    """
+    lines: list[int] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        if not (isinstance(func, ast.Attribute) and func.attr == "client"):
+            continue
+        for argument in node.args[:1]:
+            if (
+                isinstance(argument, ast.Constant)
+                and isinstance(argument.value, str)
+                and argument.value in MODEL_SERVING_AWS_SERVICES
+            ):
+                lines.append(node.lineno)
+    return lines
+
+
+def test_only_one_module_reaches_a_model_serving_aws_service() -> None:
+    """Invariant 5, for the door the SDK check cannot see.
+
+    The check above greps for the Anthropic SDK, which is what invariant 5 was
+    written against. It says nothing about `boto3`, so any module could import
+    it and call `ApplyGuardrail`, `Rerank` or `InvokeModel` while CI stayed
+    green -- and that is exactly the second model-adjacent path ADR-0030
+    refused a guardrail over. Found at M15, once a guardrail audit and a
+    managed reranker both needed one.
+
+    Scoped to services that serve or screen a model. CloudWatch Logs and RDS
+    are reached elsewhere and are not model-adjacent; widening this to every
+    boto3 client would fail on them and say nothing about determinism,
+    caching, metering or tracing, which are what the invariant protects.
+    """
+    reachers = sorted(rel(path) for path in python_sources() if _model_service_clients(parse(path)))
+    assert reachers == [rel(SOLE_LLM_CALL_SITE)], (
+        f"a boto3 client for a model-serving AWS service may only be built by "
+        f"{rel(SOLE_LLM_CALL_SITE)} (invariant 5, ADR-0030). Found: {reachers}"
+    )
+
+
+def test_the_model_service_check_is_not_vacuous() -> None:
+    """Guard the guard, twice over.
+
+    The positive half: the one call site really does build such a client, so
+    the assertion above is comparing a found list against a real entry rather
+    than two empty ones. The negative half: the detector fires on a synthetic
+    violation, so it is not simply blind.
+    """
+    assert _model_service_clients(parse(SOLE_LLM_CALL_SITE)), (
+        f"{rel(SOLE_LLM_CALL_SITE)} builds no model-service client, so the check "
+        "above compares an empty list with an empty list"
+    )
+    synthetic = ast.parse('import boto3\nboto3.client("bedrock-runtime")\n')
+    assert _model_service_clients(synthetic) == [2]
+    benign = ast.parse('import boto3\nboto3.client("logs")\n')
+    assert _model_service_clients(benign) == []
+
+
+>>>>>>> source-clean/main
 def test_the_sole_call_site_actually_imports_the_sdk() -> None:
     """Guard the guard: a client that stopped importing the SDK would pass above."""
     assert _imports_provider_sdk(parse(SOLE_LLM_CALL_SITE)), (
@@ -295,6 +382,14 @@ PURE_MODULES = (
     PACKAGE_ROOT / "sim" / "dynamics.py",
     PACKAGE_ROOT / "decompose" / "validator.py",
     PACKAGE_ROOT / "retrieval" / "metrics.py",
+<<<<<<< HEAD
+=======
+    # M14: what ranks the hybrid candidates, and what chooses the keyword
+    # terms. Both decide which evidence an agent sees, so both must be a
+    # function of their arguments or a replayed run retrieves differently.
+    PACKAGE_ROOT / "retrieval" / "fusion.py",
+    PACKAGE_ROOT / "retrieval" / "keywords.py",
+>>>>>>> source-clean/main
 )
 
 # Roots that can only be there to do something impure.

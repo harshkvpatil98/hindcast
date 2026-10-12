@@ -1,0 +1,854 @@
+{
+ "exchanges": [
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2022–23 Twitter season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2022–23 Elon Musk season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2022 in Twitter"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2022 in Elon Musk"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2022 Twitter season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2022 Twitter"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2022 Elon Musk season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2022 Elon Musk"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2021–22 Twitter season"
+      },
+      {
+       "missing": true,
+       "ns": 0,
+       "title": "2021–22 Elon Musk season"
+      },
+      {
+       "lastrevid": 1375317508,
+       "length": 352144,
+       "ns": 0,
+       "pageid": 909036,
+       "title": "Elon Musk"
+      },
+      {
+       "lastrevid": 1375440060,
+       "length": 363,
+       "ns": 0,
+       "pageid": 74434175,
+       "redirect": true,
+       "title": "Twitter"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "info",
+    "titles": "2021–22 Elon Musk season|2021–22 Twitter season|2022 Elon Musk|2022 Elon Musk season|2022 Twitter|2022 Twitter season|2022 in Elon Musk|2022 in Twitter|2022–23 Elon Musk season|2022–23 Twitter season|Elon Musk|Twitter"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220707231536|1096982842"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 909036,
+       "revisions": [
+        {
+         "parentid": 1096982842,
+         "revid": 1096986923,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Business magnate (born 1971)}}\n{{pp-vandalism|small=yes}}\n{{Pp-move-indef}}\n{{Good article}}\n{{Use American English|date=June 2021}}\n{{Use mdy dates|date=June 2022}}\n{{Infobox person\n| name               = Elon Musk\n| honorific_suffix   = {{post-nominals|FRS|size=100%}}\n| image              = Elon Musk Royal Society (crop2).jpg\n| alt                = \n| caption            = Musk in 2018\n| birth_name         = Elon Reeve Musk\n| birth_date         = {{Birth date and age|1971|6|28}}\n| birth_place        = [[Pretoria]], [[Transvaal (province)|Transvaal]], South Africa\n| death_date         = \n| death_place        = \n| occupation         = \n| years_active       = \n| citizenship        = <!--Do NOT add South Africa or Canada - see talk page-->United States<ref>{{cite web |title=90184L102 (CUSIP Number)|url=https://www.sec.gov/Archives/edgar/data/1418091/000110465922041911/tm2211482d1_sc13g.htm |website=www.sec.gov |publisher=[[US Securities and Exchange Commission]] | access-date=April 4, 2022 |date=March 14, 2022 |quote=Item 2. (c) Citizenship United States}}</ref>\n| education          = {{Plainlist|\n* [[Queen's University at Kingston|Queens University]]\n* [[University of Pennsylvania]] ([[Bachelor of Science|BS]], [[Bachelor of Arts|BA]])\n* [[Stanford University]] ([[PhD]], dropped out)}}\n| title              = {{Unbulleted list\n  <!-- Do not add any of Musk's self-appointed titles without first reaching a consensus on the talk page. -->\n   | Founder, CEO, and Chief Engineer of [[SpaceX]]\n   | CEO and product architect of [[Tesla, Inc.]]\n   | Founder of [[The Boring Company]] and [[X.com]] (now part of [[PayPal]])\n   | Co-founder of [[Neuralink]], [[OpenAI]], and [[Zip2]]\n   | President of [[#Philanthropy|Musk Foundation]]\n  }}\n| spouse             = {{plainlist|\n* {{marriage|[[Justine Musk|Justine Wilson]]|2000|2008|end=div.}}\n* {{marriage|[[Talulah Riley]]|2010|2012|end=div.}} {{marriage|<!--Talulah Riley-->|2013|2016|end=div.}}\n}}\n| partner            = [[Grimes]] (2018–2022)<ref name=\"GrimesVanityFair2022\" />\n[[Shivon Zilis]] (?) <ref https://www.businessinsider.com/elon-musk-shivon-zilis-secret-twins-neuralink-tesla />\n| children           = 10<!--Do not remove the note. You have to verify the accuracy of 10 children.-->{{efn|One child is deceased.<ref>{{cite news|last=Petter|first=Olivia|date=July 26, 2020|title='There's Not Much I Can Do': Elon Musk Admits Grimes Does Majority Of Childcare For Two-month Old Son|url=https://www.independent.co.uk/life-style/elon-musk-son-grimes-childcare-interview-a9638321.html|work=[[The Independent]] | access-date=January 8, 2021|archive-url=https://web.archive.org/web/20201116002628/https://www.independent.co.uk/life-style/elon-musk-son-grimes-childcare-interview-a9638321.html|archive-date=November 16, 2020|url-status=live}}</ref><ref name=Times220707/>}}\n| mother             = [[Maye Musk]]\n| father             = Errol Musk\n| relatives          = {{plainlist|\n* [[Tosca Musk]] (sister)\n* [[Kimbal Musk]] (brother)\n* [[Lyndon Rive]] (cousin)\n}}\n| family             = [[Musk family]]\n| website            = \n| awards             = [[List of awards and honors received by Elon Musk|List of honors and awards]]\n| signature          = Elon Musk Signature.svg\n| signature_alt      = \n}}\n{{Elon Musk series}}\n'''Elon Reeve Musk''' {{postnominals|FRS}} ({{IPAc-en|ˈ|iː|l|ɒ|n}} {{Respell|EE|lon}}; born June 28, 1971) is a <!--Talk page consensus is that \"South African-born\" or \"Canadian\" should not be placed in this first sentence; please leave citizenship and place of birth for later in the lead, per MOS:BLPLEAD-->[[business magnate]] and [[investor]].<!-- Talk page consensus to not describe Musk as an engineer but mention his title at SpaceX --> He is the founder, CEO, and [[Chief technology officer|Chief Engineer]] at [[SpaceX]]; [[angel investor]]<!-- Talk page consensus is that \"founder\" or \"co-founder\" should not be placed here; see [[Talk:Elon Musk#Musk is Tesla's retroactive co-founder 🤦‍♂️]] -->, CEO, and Product Architect of [[Tesla, Inc.]]; founder of [[The Boring Company]]; and co-founder of [[Neuralink]] and [[OpenAI]]. With an estimated net worth of around US$221.4<!-- Do not update his net worth every day – stick to once a week at most. Last updated: 4 July 2022 -->&nbsp;billion as of July 2022,<ref>{{Cite web|title=Elon Musk|website=[[Forbes]] | url=https://www.forbes.com/profile/elon-musk/}}</ref> Musk is the wealthiest person in the world according to both the ''[[Bloomberg Billionaires Index]]'' and ''[[Forbes]]''{{'}} real-time billionaires list.<ref>{{cite news |title=Bloomberg Billionaires Index |url=https://www.bloomberg.com/billionaires/ |work=Bloomberg|access-date=June 5, 2022}}</ref><ref>{{cite web |title=Real Time Billionaires |url=https://www.forbes.com/real-time-billionaires/ |website=Forbes |access-date=June 5, 2022}}</ref>\n\nMusk was born to [[White South Africans|White South African]] parents in [[Pretoria]], where he grew up. He briefly attended the [[University of Pretoria]] before moving to Canada at age 17, acquiring citizenship through his Canadian-born mother. Two years later, he matriculated at [[Queen's University at Kingston|Queen's University]] and transferred to the [[University of Pennsylvania]], where he received bachelor's degrees in Economics and Physics. He moved to California in 1995 to attend [[Stanford University]] but decided instead to pursue a business career, co-founding the web software company [[Zip2]] with his brother [[Kimbal Musk|Kimbal]]. The startup was acquired by [[Compaq]] for $307&nbsp;million in 1999. The same year, Musk co-founded online bank [[X.com]], which merged with [[Confinity]] in 2000 to form [[PayPal]]. The company was bought by [[eBay]] in 2002 for $1.5&nbsp;billion.\n\nIn 2002, Musk founded SpaceX, an [[aerospace]] manufacturer and space transport services company, of which he serves as CEO and Chief Engineer. In 2004, he was an early investor in electric vehicle manufacturer Tesla Motors, Inc. (now Tesla, Inc.). He became its chairman and product architect, eventually assuming the position of CEO in 2008. In 2006, he helped create [[SolarCity]], a solar energy company that was later acquired by Tesla and became [[Tesla Energy]]. In 2015, he co-founded OpenAI, a nonprofit research company promoting [[friendly artificial intelligence]] (AI). In 2016, he co-founded Neuralink, a [[neurotechnology]] company focused on developing [[brain–computer interfaces]], and founded The Boring Company, a [[tunnel construction]] company. He  [[Acquisition of Twitter by Elon Musk|agreed to purchase]] the major American social networking service [[Twitter]] in 2022 for $44&nbsp;billion. Musk has proposed the [[Hyperloop]], a high-speed [[vactrain]] transportation system, and is the president of the [[#Musk Foundation|Musk Foundation]], an organization which donates to scientific research and education.\n\nMusk has been criticized for making unscientific<!-- Musk's views on both COVID and AI are unscientific, his AI views informed by science fiction --> and controversial statements, such as spreading [[COVID-19 misinformation|misinformation about the COVID-19 pandemic]]. In 2018, he was sued by the [[US Securities and Exchange Commission]] (SEC) for falsely tweeting that he had secured funding for a private takeover of Tesla; he settled with the SEC but did not admit guilt, and he temporarily stepped down from his Tesla chairmanship. In 2019, he won a defamation case brought against him by a British caver who had advised in the [[Tham Luang cave rescue]].\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-07-07T23:55:26Z"
+        }
+       ],
+       "title": "Elon Musk"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "Elon Musk"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 74434175,
+       "title": "Twitter"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "Twitter"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "batchcomplete": true,
+    "continue": {
+     "continue": "-||",
+     "lecontinue": "20260311022728|178379338"
+    },
+    "query": {
+     "logevents": [
+      {
+       "logid": 177838394,
+       "logpage": 9988187,
+       "ns": 0,
+       "pageid": 74434175,
+       "params": {
+        "suppressredirect": true,
+        "target_ns": 0,
+        "target_title": "X (social network)"
+       },
+       "revid": 1340432192,
+       "timestamp": "2026-02-25T18:17:19Z",
+       "title": "Twitter"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "ledir": "newer",
+    "lelimit": "1",
+    "leprop": "ids|title|timestamp|details",
+    "lestart": "2022-07-08T00:00:00Z",
+    "letitle": "Twitter",
+    "letype": "move",
+    "list": "logevents",
+    "maxlag": "5"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220702092151|1096102492"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 9988187,
+       "revisions": [
+        {
+         "parentid": 1096102492,
+         "revid": 1096445922,
+         "slots": {
+          "main": {
+           "content": "{{Short description|American social networking service}}\n{{About|the social networking service|the company which owns and operates it|Twitter, Inc.}}\n{{Redirect2|Tweeting|Tweeted|the animal behavior|Bird vocalization||Tweet (disambiguation)}}\n{{pp-semi-indef}}\n{{pp-move-indef}}\n{{Good article}}\n{{Use American English|date=June 2015}}\n{{Use mdy dates|date=June 2022}}\n{{Infobox website\n| name = Twitter\n| logo = Twitter-logo.svg\n| screenshot = Twitter Home Page (Moments version, countries without dedicated feed).png\n| caption = The default page shown to logged-out users\n| collapsible = no\n| company_type =  <!-- Go to Twitter Inc for the main page --> \n| website_type = [[Social networking service]]\n| native_clients = {{hlist|[[iOS]]|[[Android (operating system)|Android]]|[[Windows Phone]]|[[Microsoft Windows]]|[[macOS]]|[[Internet|web]]}}\n| language = Multilingual\n| foundation = {{Start date and age|2006|03|21}}\n| location = \n| area_served = Worldwide, except [[Censorship of Twitter|blocking countries]]\n| founder = {{Unbulleted list|class=nowrap|[[Jack Dorsey]]|[[Noah Glass]]|[[Biz Stone]]|[[Evan Williams (Internet entrepreneur)|Evan Williams]]}}\n| CEO = [[Parag Agrawal]] ([[Chief executive officer|CEO]])<ref>{{cite web|url=https://www.cnbc.com/2021/11/29/twitter-ceo-jack-dorsey-is-expected-to-step-down-sources-say.html|title=Twitter CTO Parag Agrawal will replace Jack Dorsey as CEO|date= November 29, 2021|publisher=cnbc.com}}</ref>\n| owner = [[Twitter, Inc.]]<!-- DO NOT ADD ELON MUSK HERE -->\n| parent = \n| industry = \n| url = {{Official URL}}\n| registration = Required\n| num_users = 229&nbsp;million monetizable [[daily active users|DAU]] (Q1 2022)\n| launch_date = {{Start date and age|2006|07|15}}\n| current_status = Active\n| programming_language = {{hlist|[[Java (programming language)|Java]]|[[Ruby (programming language)|Ruby]]|[[Scala (programming language)|Scala]]|[[JavaScript]]}}\n| footnotes = <ref name=Dorsey2006/><ref name=10K>{{cite web|url=https://www.sec.gov/ix?doc=/Archives/edgar/data/1418091/000141809122000029/twtr-20211231.htm|title=US SEC: FY2021 Form 10-K Twitter, Inc.|publisher=[[U.S. Securities and Exchange Commission]]|access-date=March 27, 2022}}</ref><ref>{{Cite web|url=https://about.twitter.com/en_us/company.html|title=Twitter – Company|website=about.twitter.com|access-date=July 30, 2019}}</ref><ref name=\"Twitter coding\"/><ref name=\"infoq-jvm\">{{cite web|first=Charles|last=Humble|title=Twitter Shifting More Code to JVM, Citing Performance and Encapsulation As Primary Drivers|date=July 4, 2011|work=InfoQ|access-date=January 15, 2013|url=http://www.infoq.com/articles/twitter-java-use}}</ref><ref name=launch/><ref>{{Cite web|url=https://www.cnbc.com/2022/04/28/twitter-twtr-earnings-q1-2022.html|title=Twitter reports user bump, revenue miss for Q1, days after accepting Musk's takeover bid|work=CNBC|author=Lauren Feiner|date=April 28, 2022}}</ref>\n}}\n\n'''Twitter''' is a [[microblogging]] and [[social networking service]] on which users post and interact with messages known as \"tweets\", owned by American company [[Twitter, Inc.]] [[Registered user]]s can post, like, and retweet tweets, however, unregistered users have the ability to only read tweets that are publicly available. Users interact with Twitter through browser or mobile [[Frontend and backend|frontend]] software, or programmatically via its [[API]]s. Prior to April 2020, services were accessible via [[SMS]].<ref>[https://www.theverge.com/2020/4/27/21238131/twitter-sms-notifications-disabled-jack-dorsey-hack \"Twitter turns off its original SMS service in most countries\"] Retrieved January 14, 2021.</ref> Tweets were originally restricted to 140 [[character (computing)|characters]], but the limit was doubled to 280 for non-[[CJK characters|CJK languages]] in November 2017.<ref>[https://blog.twitter.com/official/en_us/topics/product/2017/tweetingmadeeasier.html \"Tweeting Made Easier\"] Retrieved November 7, 2017.</ref> Audio and video tweets remain limited to 140 seconds for most accounts.\n\nTwitter was created by [[Jack Dorsey]], [[Noah Glass]], [[Biz Stone]], and [[Evan Williams (Internet entrepreneur)|Evan Williams]] in March 2006 and launched in July of that year. Twitter, Inc. is based in [[San Francisco, California]] and has more than 25 offices around the world.<ref>[https://about.twitter.com/company \"About Twitter\"] {{Webarchive|url=https://web.archive.org/web/20160403002854/https://about.twitter.com/company |date=April 3, 2016 }} Retrieved April 24, 2014.</ref> {{As of|2012|alt=By 2012}}, more than 100 million users posted 340 million tweets a day,<ref>{{cite web|url= https://blog.twitter.com/2012/twitter-turns-six |title=Twitter turns six |date=March 21, 2012 |publisher=Twitter}}</ref> and the service handled an average of 1.6 billion [[Web search query|search queries]] per day.<ref name=\"Twitter_500\" /><ref>{{cite web |url=https://blog.twitter.com/2011/engineering-behind-twitter%E2%80%99s-new-search-experience |title=The Engineering Behind Twitter's New Search Experience |date=May 31, 2011 |access-date=June 7, 2014 |work=Twitter Engineering Blog |publisher=Twitter |url-status=dead |archive-url=https://web.archive.org/web/20140325080255/https://blog.twitter.com/2011/engineering-behind-twitter%E2%80%99s-new-search-experience |archive-date=March 25, 2014 }}</ref><ref>[http://blog.twitter.com/2012/03/twitter-turns-six.html \"Twitter turns six\"] Twitter.com, March 21, 2012. Retrieved December 18, 2012.</ref> In 2013, it was one of the ten [[List of most popular websites|most-visited websites]] and has been described as \"the SMS of the Internet\".<ref>{{cite news |url=http://www.business-standard.com/india/news/swine-flu%5Cs-tweet-tweet-causes-online-flutter/356604/ |title=Swine Flu's Tweet Tweet Causes Online Flutter |date=April 29, 2009 |first=Leslie |last=D'Monte |work=[[Business Standard]] |quote=Also known as the 'SMS of the internet', Twitter is a free social networking service |access-date=February 4, 2011}}</ref> {{As of|2019||alt= By the start of 2019}}, Twitter had more than 330 million monthly active users.<ref name=\"Twitter\">{{cite news|url=https://www.usatoday.com/story/tech/news/2017/10/26/twitter-overcounted-active-users-since-2014-shares-surge/801968001/|title=Twitter overcounted active users since 2014, shares surge on profit hopes|newspaper=USA Today}}</ref> In practice, the vast majority of tweets are written by a minority of users.<ref>Carlson, Nicholas. \"[https://www.cbsnews.com/news/stunning-new-numbers-on-who-uses-twitter/ 10% Of Twitter Users Account For 90% Of Twitter Activity]\", [[Business Insider]] (June 2, 2009).</ref><ref>Wojcik, Stefan and Hughes, Adam.  \"[https://www.pewresearch.org/internet/2019/04/24/sizing-up-twitter-users/ Sizing Up Twitter Users]\", [[Pew Research Center]] (April 25, 2019).</ref>\n\nOn April 25, 2022, the Twitter board of directors agreed to [[Acquisition of Twitter by Elon Musk|a $44 billion buyout]] by [[Elon Musk]], the CEO of [[SpaceX]] and [[Tesla, Inc.|Tesla]], potentially making it one of the biggest deals to turn a company private.<ref>{{Cite news |last1=Isaac |first1=Mike |last2=Hirsch |first2=Lauren |date=April 25, 2022 |title=Musk's deal for Twitter is worth about $44 billion. |language=en-US |work=The New York Times |url=https://www.nytimes.com/live/2022/04/25/business/elon-musk-twitter/musks-deal-for-twitter-is-worth-about-44-billion?smid=url-copy |access-date=2022-04-26 |issn=0362-4331}}</ref><ref>{{Cite web |last=Feiner |first=Lauren |date=April 25, 2022 |title=Twitter accepts Elon Musk's buyout deal |url=https://www.cnbc.com/2022/04/25/twitter-accepts-elon-musks-buyout-deal.html |access-date=April 25, 2022 |website=CNBC |language=en}}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-07-04T14:37:24Z"
+        }
+       ],
+       "title": "X (social network)"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "pageids": "9988187",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220706204718|1096818970"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 2041117,
+       "revisions": [
+        {
+         "parentid": 1096818970,
+         "revid": 1096919052,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Online platform that facilitates the building of relations}}\n{{About|the type of service|the social science theoretical concept of relationships between people|Social network|a list of services|List of social networking services}}\n{{Merge|Social media|discuss=Talk:Social networking service#Proposed merge of Social media with Social networking service|date=October 2021}}\n{{Use mdy dates|date=July 2018}}\n<!--Please do not insert external links into the body of this article – they will be removed as link spam.\nPlease do not place references to specific social networking services in the following article lead-in, as consensus of April 19, 2007 agrees that this is not appropriate in establishing the meaning of the article title. They will be removed.-->\nA '''social networking service''' or '''SNS''' (sometimes called a '''social networking site''') is an online platform which people use to build social networks or [[social relation]]ships with other people who share similar personal or career content, interests, activities, backgrounds or real-life connections.<ref name=\"Obar & Wildman 2015\"/><ref name=\"Boyd & Ellison 2007\"/>\n\nSocial networking services vary in format and the number of features. They can incorporate a range of new information and communication tools, operating on [[desktop computer|desktop]]s and on [[laptop]]s, on mobile devices such as [[tablet computer]]s and [[smartphone]]s. This may feature digital photo/video/sharing and diary entries online (blogging).<ref name=\"Boyd & Ellison 2007\">{{cite journal|last1=boyd|first1=danah M.|last2=Ellison|first2=Nicole B.|date=October 2007|title=Social Network Sites: Definition, History, and Scholarship|journal=Journal of Computer-Mediated Communication|volume=13|issue=1|pages=210–230|doi=10.1111/j.1083-6101.2007.00393.x|s2cid=52810295}}</ref> [[Online community]] services are sometimes considered social-network services by developers and users, though in a broader sense, a social-network service usually provides an individual-centered service whereas online community services are groups centered. Generally defined as \"websites that facilitate the building of a network of contacts in order to exchange various types of content online,\" social networking sites provide a space for interaction to continue beyond in-person interactions. These computer mediated interactions link members of various networks and may help to create, sustain and develop new social and professional relationships.<ref>{{cite journal |last1=Mlaïki |first1=Alya |last2=Walsh |first2=Isabelle |last3=Kalika |first3=Michel |title=Why Do We Continue Using Social Networking Sites? The Giving Loop that feeds Computer-Mediated Social Ties |journal=Systèmes d'Information et Management |date=17 February 2017 |volume=22 |issue=2 |pages=5–47 |doi=10.3917/sim.172.0005 }}</ref>\n\nSocial networking sites allow users to share ideas, digital photos and videos, posts, and to inform others about online or real-world activities and events with people within their social network. While in-person social networking – such as gathering in a village market to talk about events – has existed since the earliest development of towns,<ref>{{Citation|last=Joseph|first=R.|title=The Naked Neuron|chapter=Touch Me—Feel Me—Feed Me— Kiss Me!|date=1993|pages=71–98|publisher=Springer US|isbn=978-0-306-44510-1|doi=10.1007/978-1-4899-6008-5_4}}</ref> the web enables people to connect with others who live in different locations across the globe (dependent on access to an [[Internet access|internet connection]] to do so). Depending on the [[social media]] platform, members may be able to contact any other member. In other cases, members can contact anyone they have a connection to, and subsequently anyone that contact has a connection to, and so on. The success of social networking services can be seen in their dominance in society today, with Facebook having a massive 2.13&nbsp;billion active monthly users and an average of 1.4&nbsp;billion [[daily active users]] in 2017.<ref>{{cite web |url=https://newsroom.fb.com/company-info/ |title=Company Info |publisher=Facebook Newsroom |access-date=April 12, 2018 |archive-url=https://web.archive.org/web/20151115110456/https://newsroom.fb.com/company-info/ |archive-date=November 15, 2015 |url-status=live }}</ref> [[LinkedIn]], a career-oriented social-networking service, generally requires that a member personally know another member in [[real life]] before they contact them online. Some services require members to have a preexisting connection to contact other members. With [[COVID-19 pandemic|COVID-19]], [[Zoom (software)|Zoom]], a videoconferencing platform, has taken an integral place to connect people located around the world and facilitate many online environments such as school, university, work and government meetings.\n\nThe main types of social networking services contain [[Psychographics|category places]] (such as age or occupation or religion), means to connect with friends (usually with self-description pages), and a recommendation system linked to trust. One can categorize social-network services into four types:<ref>{{cite book |doi=10.1016/S0065-2458(09)01002-X |chapter=Chapter 2 Social Network Sites |title=Social Networking and the Web |volume=76 |pages=19–73 |series=Advances in Computers |year=2009 |last1=Thelwall |first1=Mike |isbn=9780123748119 }}</ref>\n\n* socialization social network services used primarily for socializing with existing friends (e.g., [[Facebook]], [[Instagram]])\n*online social networks are decentralized and distributed computer networks where users communicate with each other through internet services.\n* networking social network services used primarily for non-social interpersonal communication (e.g., [[LinkedIn]], a career- and employment-oriented site)\n* [[social navigation]] social network services used primarily for helping users to find specific information or resources (e.g., [[Goodreads]] for books, [[Reddit]])\n\nThere have been attempts to standardize these services to avoid the need to duplicate entries of friends and interests (see the [[FOAF (software)|FOAF]] standard). A study reveals that [[India]] recorded world's largest growth in terms of social media users in 2013.<ref>{{cite news \n|title= India records highest social networking growth Rate: Study \n|url= http://news.biharprabha.com/2014/07/india-records-highest-social-networking-growth-study/ \n|access-date= July 26, 2014 \n|agency= IANS \n|publisher= news.biharprabha.com \n|date= July 26, 2014 \n|archive-url= https://web.archive.org/web/20140803062224/http://news.biharprabha.com/2014/07/india-records-highest-social-networking-growth-study/ \n|archive-date= August 3, 2014 \n|url-status= live \n}}</ref> A 2013 survey found that 73% of U.S. adults use social-networking sites.<ref>{{cite web |last= Lunden |first= Ingrid |url= https://techcrunch.com/2013/12/30/pew-social-networking// |title= 73% Of U.S. Adults Use Social Networks, Pinterest Passes Twitter In Popularity, Facebook Stays On Top |work= TechCrunch |date= December 30, 2013 |access-date= October 17, 2015 |archive-url= https://web.archive.org/web/20151027001227/http://techcrunch.com/2013/12/30/pew-social-networking/ |archive-date= October 27, 2015 |url-status= live }}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-07-07T13:51:29Z"
+        }
+       ],
+       "title": "Social networking service"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "Social networking service"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220516115254|1088144082"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 579193,
+       "revisions": [
+        {
+         "parentid": 1088144082,
+         "revid": 1096844842,
+         "slots": {
+          "main": {
+           "content": "{{short description|Executive-level position focusing on scientific and technological advancements}}\n{{more citations needed|date=August 2017}}\n{{Infobox occupation\n| name               = Chief technology officer\n| synonyms           = CTO chief technologist\n| pronounce          = \n| image              = \n| imagesize          = \n| alt                = \n| caption            = \n| official_names     = \n| type               = \n| activity_sector    = \n| competencies       = \n| formation          = \n| employment_field   = \n| related_occupation = \n}}\nA '''chief technology officer''' ('''CTO'''), also known as a '''chief technical officer''' or '''chief technologist''', is an [[senior management|executive-level]] position in a company or other entity whose occupation is focused on the scientific and technological issues within an organization.<ref>{{cite journal|last1=Smith|first1=Roger D.|title=The Chief Technology Officer: Strategic Responsibilities and Relationships|journal=Research-Technology Management|volume=46|issue=4|pages=28–36|doi=10.1080/08956308.2003.11671574|year=2003|s2cid=154123520}}</ref>\n\nA CTO is very similar to a [[chief information officer]] (CIO).<ref name=\":0\">{{Cite web|url=https://searchcio.techtarget.com/definition/Chief-Technology-Officer-CTO|title=What is Chief Technology Officer (CTO)? - Definition from WhatIs.com|last=Margaret|first=Rouse|website=SearchCIO|language=en|access-date=2019-11-08}}</ref> CTOs will make decisions for the overarching technology infrastructure that closely align with the organization's goals, while CIOs work alongside the organization's [[information technology]] (\"IT\") staff members to perform everyday operations.<ref name=\":0\" /> A CTO should be aware of new and existing technologies to guide the company's future endeavors.<ref>{{Cite web|url=https://www.businessnewsdaily.com/11126-what-is-chief-technology-officer.html|title=What is a CTO?|last=D'Angelo|first=Matt|date=November 1, 2018|website=www.businessnewsdaily.com|access-date=2019-11-14}}</ref> The attributes of the roles a CTO holds vary from one company to the next, mainly depending on their organizational structure.<ref name=\":1\">{{Cite web|url=https://www.govtech.com/people/What-Is-a-Chief-Technology-Officer.html|title=What Is a Chief Technology Officer?|website=Business Research Guide|language=en|access-date=2019-11-08}}</ref>   \n\nIn the United States, the average salary for a CTO ranges between $130,000 and $195,000 per annum depending on the company's sector.<ref name=\":0\" /> According to a 2018 report from the InfoSec Institute, CTOs in the financial sector earn around $200,000, while e-commerce CTOs earn around $76,000.<ref name=\":0\" />\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-07-07T00:52:53Z"
+        }
+       ],
+       "title": "Chief technology officer"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "Chief technology officer"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220630105523|1095787188"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 41289288,
+       "revisions": [
+        {
+         "parentid": 1095787188,
+         "revid": 1096490688,
+         "slots": {
+          "main": {
+           "content": "{{Short description|American communications company}}\n{{Use American English|date=May 2022}}\n{{Use mdy dates|date=May 2022}}\n{{Infobox company\n| name = Twitter, Inc.\n| logo = Twitter-logo.svg\n| logo_size = 100px\n| logo_caption = Logo used since 2012\n| type = [[Public company|Public]] <!--[[Private company|Private]]-->  <!-- DO NOT CHANGE TO PRIVATE UNTIL THE DEAL CLOSES -->\n| traded_as = {{Unbulleted list|class=nowrap|{{NYSE|TWTR}} |[[S&P 500|S&P 500 Component]]}}\n| industry = [[Internet]]\n| founded = {{Start date and age|2006|03|21}} in [[San Francisco, California]], U.S.\n| founders = {{Unbulleted list|class=nowrap|[[Jack Dorsey]]|[[Noah Glass]]|[[Biz Stone]]|[[Evan Williams (Internet entrepreneur)|Evan Williams]]}}\n| area_served = Worldwide\n| key_people = {{plainlist|\n* [[Bret Taylor]] (Board Chair)\n* [[Parag Agrawal]] ([[Chief executive officer|CEO]])<ref>{{cite web|url=https://www.cnbc.com/2021/11/29/twitter-ceo-jack-dorsey-is-expected-to-step-down-sources-say.html|title=Twitter CTO Parag Agrawal will replace Jack Dorsey as CEO|date= November 29, 2021|publisher=cnbc.com}}</ref>\n* Ned Segal ([[Chief financial officer|CFO]])<ref>{{cite web|url=https://www.cnbc.com/2017/07/11/twitter-names-ned-segal-new-chief-financial-officer-cfo.html|title=Twitter taps Ned Segal as new chief financial officer|date= July 11, 2017|publisher=cnbc.com}}</ref>}}\n| services = {{Unbulleted list|class=nowrap|[[Twitter]]|[[Vine (service)|Vine]] (discontinued)|[[Periscope (service)|Periscope]] (discontinued)}}\n| revenue = {{nowrap|{{increase}} {{US$|5.08 billion|link=yes}}}}\n| revenue_year = 2021\n| operating_income = {{nowrap|{{increase}} US$272.96 million}}\n| income_year = 2021\n| net_income = {{nowrap|{{increase}} US${{color|red|−221.41}} million}}\n| net_income_year = 2021\n| assets = {{nowrap|{{increase}} US$14.06 billion}}\n| assets_year = 2021\n| equity = {{nowrap|{{decrease}} US$7.31 billion}}\n| equity_year = 2021\n| num_employees = {{nowrap|7,500+}}\n| num_employees_year = December 2021\n| website = {{Official URL}}\n| footnotes = <ref name=Dorsey2006/><ref name=10K>{{cite web|url=https://www.sec.gov/ix?doc=/Archives/edgar/data/1418091/000141809122000029/twtr-20211231.htm|title=US SEC: FY2021 Form 10-K Twitter, Inc.|publisher=[[U.S. Securities and Exchange Commission]]|access-date=March 27, 2022}}</ref><ref>{{Cite web|url=https://about.twitter.com/en_us/company.html|title=Twitter – Company|website=about.twitter.com|access-date=July 30, 2019}}</ref><ref name=\"infoq-jvm\">{{cite web|first=Charles|last=Humble|title=Twitter Shifting More Code to JVM, Citing Performance and Encapsulation As Primary Drivers|date=July 4, 2011|work=InfoQ|access-date=January 15, 2013|url=http://www.infoq.com/articles/twitter-java-use}}</ref><ref name=launch/><ref>{{Cite web|url=https://www.cnbc.com/2022/04/28/twitter-twtr-earnings-q1-2022.html|title=Twitter reports user bump, revenue miss for Q1, days after accepting Musk's takeover bid|work=CNBC|author=Lauren Feiner|date=28 April 2022}}</ref>\n}}\n{{Elon Musk series}}\n'''Twitter, Inc.''' is an American communications company based in [[San Francisco, California]]. The company operates the [[microblogging]] and [[social networking service]] [[Twitter]]. It previously operated the [[Vine (service)|Vine]] short video app and  [[Periscope (service)|Periscope]] livestreaming service.\n\nTwitter was created by [[Jack Dorsey]], [[Noah Glass]], [[Biz Stone]], and [[Evan Williams (Internet entrepreneur)|Evan Williams]] in March 2006 and launched in July of that year. {{As of|2012|alt=By 2012}}, more than 100 million users posted 340 million tweets a day,<ref>{{cite web|url= https://blog.twitter.com/2012/twitter-turns-six |title=Twitter turns six |date=March 21, 2012 |publisher=Twitter}}</ref> and the service handled an average of 1.6 billion [[Web search query|search queries]] per day.<ref name=\"Twitter_500\" /><ref>{{cite web |url=https://blog.twitter.com/2011/engineering-behind-twitter%E2%80%99s-new-search-experience |title=The Engineering Behind Twitter's New Search Experience |date=May 31, 2011 |access-date=June 7, 2014 |work=Twitter Engineering Blog |publisher=Twitter |url-status=dead |archive-url=https://web.archive.org/web/20140325080255/https://blog.twitter.com/2011/engineering-behind-twitter%E2%80%99s-new-search-experience |archive-date=March 25, 2014 }}</ref><ref>[http://blog.twitter.com/2012/03/twitter-turns-six.html \"Twitter turns six\"] Twitter.com, March 21, 2012. Retrieved December 18, 2012.</ref> The company went [[Public company|public]] in November 2013. {{As of|2019||alt= By the start of 2019}}, Twitter had more than 330 million monthly active users.<ref name=\"Twitter\">{{cite news|url=https://www.usatoday.com/story/tech/news/2017/10/26/twitter-overcounted-active-users-since-2014-shares-surge/801968001/|title=Twitter overcounted active users since 2014, shares surge on profit hopes|newspaper=USA Today}}</ref>\n\nOn April 25, 2022, the Twitter board of directors agreed to [[Proposed acquisition of Twitter by Elon Musk|a $44 billion buyout]] by [[Elon Musk]], the CEO of [[SpaceX]] and [[Tesla, Inc.|Tesla]], potentially making it one of the biggest deals to turn a company private.<ref>{{Cite news |last1=Isaac |first1=Mike |last2=Hirsch |first2=Lauren |date=2022-04-25 |title=Musk's deal for Twitter is worth about $44 billion. |language=en-US |work=The New York Times |url=https://www.nytimes.com/live/2022/04/25/business/elon-musk-twitter/musks-deal-for-twitter-is-worth-about-44-billion?smid=url-copy |access-date=2022-04-26 |issn=0362-4331}}</ref><ref>{{Cite web |last=Feiner |first=Lauren |date=April 25, 2022 |title=Twitter accepts Elon Musk's buyout deal |url=https://www.cnbc.com/2022/04/25/twitter-accepts-elon-musks-buyout-deal.html |access-date=April 25, 2022 |website=CNBC |language=en}}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-07-04T20:04:15Z"
+        }
+       ],
+       "title": "Twitter, Inc."
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "Twitter, Inc."
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220702183127|1096161712"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 7801390,
+       "revisions": [
+        {
+         "parentid": 1096161712,
+         "revid": 1096161773,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Signed-in or logged-in user}}\n{{About|users registered to any system|information on registering to Wikipedia|:Wikipedia:Tutorial/Registration}}\n{{More citations needed|date=March 2017}}\n{{Use dmy dates|date=December 2021}}\n{{Internet}}\n\nA '''registered user''' is a [[User (system)|user]] of a [[website]], [[Computer program|program]], or other systems who has previously ''registered.'' Registered users normally provide some sort of [[credential]]s (such as a username or e-mail address, and a password) to the system in order to prove their identity: this is known as [[Login|logging in]]. Systems intended for use by the general public often allow any user to register simply by selecting a ''register'' or ''sign up'' function and providing these credentials for the first time. Registered users may be granted privileges beyond those granted to unregistered users.\n\n==Rationale==\nUser registration and login enables a system to [[personalization|personalize]] itself. For example, a website might display a welcome banner with the user's name and change its [[Theme (computing)|appearance]] or behavior according to preferences indicated by the user. The system may also allow a logged-in user to send and receive messages, and to view and modify personal files or other information.\n\n==Criticism==\n===Privacy concerns===\n{{further|information privacy|Internet privacy}}\nRegistration necessarily provides more personal information to a system than it would otherwise have. Even if the credentials used are otherwise meaningless, the system can distinguish a logged-in user from other users and might use this property to store a history of users' actions or activity, possibly without their knowledge or consent. While many systems have [[privacy policies]], depending on the nature of the system, a user might not have any way of knowing for certain exactly what information is stored, how it is used, and with whom, if anyone, it is shared.\nA system could even sell information it has gathered on its users to third parties for advertising or other purposes{{citation needed|date=May 2018}}. The subject of systems' transparency in this regard is one of ongoing debate{{citation needed|date=May 2018}}.\n\n===User inconvenience===\nRegistration may be seen as an annoyance or hindrance,<ref>{{cite web|url=https://www.wired.com/2004/07/we-dont-need-no-stinkin-login/|title=We don't need no stinkin' login|website=Wired|date=20 July 2004|first=Rachel |last=Metz}}</ref> especially if it is not inherently necessary or important (for example, in the context of a [[search engine]]) or if the system repeatedly prompts users to register.  A system's registration process might also be time-consuming or require that the user provide the information they might be reluctant to, such as a home address or [[social security number]].\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-07-02T18:31:58Z"
+        }
+       ],
+       "title": "Registered user"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "Registered user"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220329003123|1079858885"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 15148069,
+       "revisions": [
+        {
+         "parentid": 1079858885,
+         "revid": 1085486528,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Venture capitalist}}\n{{more citations needed|date=March 2017}}\nAn '''angel investor''' (also known as a '''business angel''', '''informal investor''', '''angel funder''', '''private investor''', or '''seed investor''') is an individual who provides capital for a business or businesses [[Startup company|start-up]], usually in exchange for [[convertible debt]] or [[ownership equity]]. Angel investors usually give support to start-ups at the initial moments (where risks of the start-ups failing are relatively high) and when most investors are not prepared to back them.<ref name=\"McKaskill_Intro_Angle\">{{Cite web|url=https://www.angelcapitalassociation.org/data/Documents/Resources/McKaskill_Intro_to_Angel_Investing.pdf|title=Dr.Tom McKaskill, p.2 p.3 \"An Introduction to Angel Investing: A guide to investing in early stage entrepreneurial ventures\"}}</ref> In a survey of 150 founders conducted by Wilbur Labs, about 70% of entrepreneurs will face potential business failure, and nearly 66% will face this potential failure within 25 months of launching their company.<ref>{{Cite web |last=Kronenberger |first=Craig |date=2021-08-20 |title=The Top 10 Entrepreneurial Mistakes that Startup Studios Help Address |url=https://medium.com/startup-studio-insider/mistakes-startup-studios-help-address-3831d1399347 |access-date=2022-03-09 |website=Startup Studio Insider |language=en}}</ref> A small but increasing number of angel investors invest online through [[equity crowdfunding]] or organize themselves into '''angel groups''' or '''angel networks''' to share  [[investment capital]], as well as to provide advice to their portfolio companies.<ref  name=entrepreneur>{{cite web|title=A Guide to Angel Investors|url=http://www.entrepreneur.com/article/52742|publisher=Entrepreneur|date=2010-08-17}}</ref> Over the last 50 years, the number of angel investors has greatly increased.<ref name=\"McKaskill_Intro_Angle\"/>\n\nEstablished in 2022, the [https://www.naco.global NACO Global Summit] is an online event hosted by the National Angel Capital Organization (Canada) in partnership with the Angel Capital Association (US), European Business Angels Network (EBAN), Global Business Angels Network (GBAN) and more than 20 other organizations. This not-for-profit event grants access to entrepreneurs and the general public. \n\n==Etymology and origin==\nThe application of the term \"angel\" originally comes from [[Broadway theater]], where it was used to describe wealthy individuals who provided money for theatrical productions that would otherwise have had to shut down. In 1978, William Wetzel, a then-professor at the [[University of New Hampshire]] and founder of its Center for Venture Research, completed a pioneering study on how entrepreneurs raised seed capital in the US. He began using the term \"angel\" to describe the investors who supported them. A similar term, \"[[patron]]\", is commonly used in arts.\n\nAngel investors are often retired entrepreneurs or executives, who may be interested in angel investing for reasons that go beyond pure monetary return. These include wanting to keep abreast of current developments in a particular business arena, mentoring another generation of entrepreneurs, and making use of their experience and networks on a less than full-time basis. Because innovations tend to be produced by outsiders and [[Founder CEO|founders]] in [[startups]], rather than existing organizations, angel investors provide (in addition to funds) feedback, advice and contacts. Because there are no public exchanges listing their securities, private companies meet angel investors in several ways, including referrals from the investors' trusted sources and other business contacts; at investor conferences and symposia; and at meetings organized by groups of angels where companies pitch directly to investor in face-to-face meetings.\n\nAccording to the Center for Venture  Research, there were 258,000 active angel investors in the U.S. in 2007.<ref>{{cite web|url=http://www.unh.edu/news/docs/2007AngelMarketAnalysis.pdf |title=Center for Ventura Research: The Angel Investor Market in 2007: Mixed Signs of Growth |publisher=Unh.edu |access-date=2012-12-01}}</ref> According to literature reviewed by the US Small Business Administration, the number of individuals in the US who made an angel investment between 2001 and 2003 is between 300,000 and 600,000.<ref>{{cite web|url=http://www.sba.gov/advo/research/rs331tot.pdf |title=The Importance of Angel Investing in Financing the Growth of Entrepreneurial Ventures |publisher=Sba.gov |access-date=2012-12-01}}</ref> In the late 1980s, angels started to coalesce into informal groups with the goal of sharing [[deal flow]] and [[due diligence]] work, and pooling their funds to make larger investments. Angel groups are generally local organizations made up of 10 to 150 [[accredited investors]] interested in early-stage investing. In 1996 there were about 10 angel groups in the [[United States]]. There were over 200 as of 2006.<ref>{{cite news|publisher=CNN Money|title=How to fund other startups (and get rich)|date=May 31, 2006|first=Jeanne|last=Lee|url=https://money.cnn.com/2006/05/30/smbusiness/angels_wealthbuilders_fsb/|access-date=2012-12-01}}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-04-30T20:37:54Z"
+        }
+       ],
+       "title": "Angel investor"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "Angel investor"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 80813745,
+       "title": "Frontend and backend"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "Frontend and backend"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "logevents": [
+      {
+       "logid": 172020018,
+       "logpage": 428625,
+       "ns": 0,
+       "pageid": 80813745,
+       "params": {
+        "suppressredirect": false,
+        "target_ns": 0,
+        "target_title": "Front end and back end (software development)"
+       },
+       "revid": 1307174338,
+       "timestamp": "2025-08-22T01:08:08Z",
+       "title": "Frontend and backend"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "ledir": "newer",
+    "lelimit": "1",
+    "leprop": "ids|title|timestamp|details",
+    "lestart": "2022-07-08T00:00:00Z",
+    "letitle": "Frontend and backend",
+    "letype": "move",
+    "list": "logevents",
+    "maxlag": "5"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20211220130245|1061230221"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 428625,
+       "revisions": [
+        {
+         "parentid": 1061230221,
+         "revid": 1065999190,
+         "slots": {
+          "main": {
+           "content": "{{short description|Presentation layer of piece of software}}\nIn [[software engineering]], the terms '''frontend''' and '''backend''' (or sometimes referred to as '''back end''' or '''back-end''') refer to the [[separation of concerns]] between the [[presentation layer]] (''frontend''), and the [[data access layer]] (''backend'') of a piece of [[software]], or the physical infrastructure or [[Hardware (computer)|hardware]]. In the [[client–server model]], the [[Client (computing)|client]] is usually considered the frontend and the [[Server (computing)|server]] is usually considered the backend, even when some presentation work is actually done on the server itself.\n\n== Introduction ==\nIn [[software architecture]], there may be many [[Abstraction layer|layers]] between the hardware and [[End-user (computer science)#End user|end user]]. The ''front'' is an abstraction, simplifying the underlying component by providing a [[user-friendly]] interface, while the ''back'' usually handles data storage and [[business logic]].\n\nIn [[telecommunication]], the ''front'' can be considered a device or service, while the ''back'' is the infrastructure that supports provision of service.\n\nA [[rule of thumb]] is that the client-side (or \"frontend\") is any component manipulated by the user. The server-side (or \"backend\") code usually resides on the [[Server (computing)|server]], often far removed physically from the user.\n\n== Software definitions ==\n{{prose|section|date=September 2020}}\n* In [[content management system]]s, the terms ''frontend'' and ''backend'' may refer to the end-user facing views of the CMS and the administrative views, respectively.<ref name=\":0\">{{Cite web|url=http://joomlatuts.net/joomla-2-5/87-how-backend-model-view-controller-mvc-works-in-joomla/98-difference-between-frontend-and-backend-mvc|title=Difference Between Frontend and Backend MVC – Joomlatuts|last=Thapliyal|first=Vimal|website=joomlatuts.net|access-date=2016-12-30|archive-url=https://web.archive.org/web/20161230230237/http://joomlatuts.net/joomla-2-5/87-how-backend-model-view-controller-mvc-works-in-joomla/98-difference-between-frontend-and-backend-mvc|archive-date=2016-12-30|url-status=dead}}</ref>\n* In [[speech synthesis]], the frontend refers to the part of the synthesis system that converts the input text into a [[symbol]]ic [[phonetics|phonetic]] representation, and the backend converts the symbolic phonetic representation into actual sounds.<ref>{{Cite web|url=http://research.cs.tamu.edu/prism/lectures/sp/l18.pdf|title=L18: Speech synthesis (backend)|last=Gutierrez--Osuna|first=Ricardo|website=tamu.edu|publisher=Texas A&M University|access-date=2016-12-29}}</ref>\n* For major computer subsystems, a graphical [[file manager]] is a frontend to the computer's [[file system]], and a [[Shell (computing)|shell]] interfaces with the [[operating system]]. The frontend faces the user, and the backend launches the programs of the operating system in response. {{Citation needed|date=December 2016}}\n* In [[compilers]], the [[Compilers#Frontend|frontend]] [[Translator (computing)|translates]] a computer programming [[source code]] into an [[intermediate representation]], and the backend works with the intermediate representation to produce code in a computer output language. The backend usually [[Program optimization|optimizes]] to produce code that runs faster. The front-end/back-end distinction can separate the [[Parsing|parser]] section that deals with source code and the backend that [[Code generation (compiler)|generates code and optimizes]]. Some designs, such as [[GNU Compiler Collection|GCC]], offer choices between multiple frontends (parsing different source [[Programming language|languages]]) or backends (generating code for different target [[Central processing unit|processors]]).<ref>{{Cite web|url=http://www.personal.kent.edu/~rmuhamma/Compilers/MyCompiler/phase.htm|title=Operating Systems Notes|last=Bin Muhammad|first=Rashid|website=www.personal.kent.edu|publisher=Kent State University|access-date=2016-12-30}}</ref>\n* Using the [[command-line interface]] (CLI) requires the acquisition of special terminology and memorization of [[Command (computing)|commands]], so a [[graphical user interface]] (GUI) acts as a frontend [[desktop environment]] instead.\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-01-16T09:46:38Z"
+        }
+       ],
+       "title": "Front end and back end"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "pageids": "428625",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220629164409|1095666321"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 27697009,
+       "revisions": [
+        {
+         "parentid": 1095666321,
+         "revid": 1096919409,
+         "slots": {
+          "main": {
+           "content": "{{short description|Connection between computers or programs}}\n{{hatnote|\"Api.php\" redirects here. For the Wikipedia API, see {{Plain link|[Special:ApiHelp]}}.|selfref=true}}\n{{other uses}}An '''application programming interface''' ('''API''') is a way for two or more [[computer program]]s to communicate with each other. It is a type of software [[Interface (computing)|interface]], offering a service to other pieces of [[software]].<ref>{{cite book |last=Reddy |first=Marathi |author-link= |date=2011 |title=API Design for C++ |url=https://www.google.com/books/edition/API_Design_for_C++/IY29LylT85wC |publisher=Elsevier Science |page=1 |isbn=9780123850041}}</ref> A document or standard that describes how to build or use such a connection or interface is called an ''API specification''. A computer system that meets this standard is said to ''implement'' or ''expose'' an API. The term API may refer either to the specification or to the implementation.\n\nIn contrast to a [[user interface]], which connects a computer to a person, an application programming interface connects computers or pieces of software to each other. It is not intended to be used directly by a person (the [[end user]]) other than a [[computer programmer]] who is incorporating it into the software. An API is often made up of different parts which act as tools or services that are available to the programmer. A program or a programmer that uses one of these parts is said to ''call'' that portion of the API. The calls that make up the API are also known as [[subroutine]]s, methods, requests, or [[communication endpoint|endpoint]]s. An API specification ''defines'' these calls, meaning that it explains how to use or implement them.\n\nOne purpose of APIs is to [[information hiding|hide the internal details]] of how a system works, exposing only those parts a programmer will find useful and keeping them consistent even if the internal details later change. An API may be custom-built for a particular pair of systems, or it may be a shared standard allowing [[interoperability]] among many systems.\n\nThe term API is often used to refer to [[web API]]s,<ref name=\"Lane2019\"/> which allow communication between computers that are joined by the [[internet]]. There are also APIs for [[programming language]]s, [[library (computing)|software libraries]], computer [[operating system]]s, and [[computer hardware]]. APIs originated in the 1940s, though the term did not emerge until the 1960s and 1970s. Recent developments in utilizing APIs have led to the rise in popularity of [[microservices]], which are ultimately loosely coupled services accessed through public APIs.<ref>{{cite web |url=https://www.businesswire.com/news/home/20210825005630/en/Global-Cloud-Microservices-Market-2021-to-2026---Growth-Trends-COVID-19-Impact-and-Forecasts---ResearchAndMarkets.com |title=Global Cloud Microservices Market (2021 to 2026) |last=Wood |first=Laura |date=2021-08-25 |access-date=2022-03-29}}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-07-07T13:54:49Z"
+        }
+       ],
+       "title": "API"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "API"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220630000227|1095719859"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 53215263,
+       "revisions": [
+        {
+         "parentid": 1095719859,
+         "revid": 1095720440,
+         "slots": {
+          "main": {
+           "content": "{{short description|American infrastructure and tunneling company}}\n{{Distinguish|The Boeing Company}}\n{{Use mdy dates|date=June 2021}}\n{{Infobox company\n| name = The Boring Company\n| type = [[Private company|Private]]\n| logo = The Boring Company Logo.svg\n| founded = {{Start date and age|mf=yes|2016|12|17}}<!-- in [[city]], [[state]], [[country]] --><ref>{{Cite news |date=December 18, 2016 |title=Elon Musk's Next Venture to Tackle Traffic Is Totally 'Boring'|language=en |work=fortune.com |url=https://fortune.com/2016/12/18/elon-musk-traffic-boring/ |access-date=August 26, 2021}}</ref><ref>{{Cite news |date=December 19, 2018|title=Elon Musk's first Boring Company tunnel opens, but the roller-coaster ride has just begun|language=en |work=washingtonpost.com |url=https://www.washingtonpost.com/technology/2018/12/19/elon-musks-boring-company-is-about-open-its-first-tunnel/ |access-date=August 26, 2021}}</ref>\n| founder = [[Elon Musk]]\n| equity_year = April 2022\n| num_employees = <200<ref>{{cite web |title=[Exclusive] Elon Musk: A future worth getting excited about - TED - Tesla Gigafactory interview |url=https://www.youtube.com/watch?v=YRvf00NooN8&t=3370s |website=Youtube |publisher=TED |access-date=19 April 2022}}</ref>\n| num_employees_year = April 2022\n| location_city = [[Pflugerville]], [[Texas]]\n| location_country = [[United States|U.S.]]\n| area_served = <!-- or: | areas_served = -->\n| key_people = Steve Davis (president)\n| industry = [[Geotechnical engineering]] <br /> [[Subterranea (geography)|Subterranean]] [[New product development|product development]]\n| products = {{plainlist|\n* Las Vegas Convention center loop\n* [[Boring Test Tunnel]]\n}}\n| homepage = {{URL|https://boringcompany.com}}\n}}\n{{Elon Musk series}}\n'''The Boring Company''' ('''TBC''')<ref>{{citation |work= Department of State |publisher= State of Delaware |author= Division of Corporations |title= TBC – The Boring Company|id= 6279803 |date= January 11, 2017 }}</ref><ref name=\"Chafkin\">{{cite web|url=https://www.bloomberg.com/news/features/2017-02-16/elon-musk-is-really-boring|title=Elon Musk Is Really Boring|last=Chafkin|first=Max|date=February 16, 2017|publisher=Bloomberg|access-date=February 16, 2017|archive-url=https://web.archive.org/web/20170216113314/https://www.bloomberg.com/news/features/2017-02-16/elon-musk-is-really-boring|archive-date=February 16, 2017|url-status=live|df=mdy-all}}</ref> is an American infrastructure and [[tunnel construction]] services company founded by [[Elon Musk]]. Its ongoing and proposed projects are designed for intra-city (\"loop\") transit systems.<ref name=projects2020>{{Cite news|url=https://www.boringcompany.com/projects/|title=The Boring Company Projects page: 2020 |publisher=The Boring Company |date=11 November 2020 |access-date=November 11, 2020 |archive-url=https://web.archive.org/web/20201111175424/https://www.boringcompany.com/projects/|archive-date=November 11, 2020|url-status=live|df=mdy-all}}</ref><ref name=faq2020>{{Cite news|url=https://www.boringcompany.com/faq/|title=The Boring Company FAQ: 2020 |publisher=The Boring Company |date=12 November 2020 |access-date=November 12, 2020 |archive-url=https://web.archive.org/web/20201112053938/https://www.boringcompany.com/faq/|archive-date=November 12, 2020|url-status=live|df=mdy-all}}</ref>\n\nTBC has completed two tunnels in [[Las Vegas]] for loop travel.  It has also completed [[Boring Test Tunnel|one tunnel for testing]] loop travel in [[Los Angeles County]]. Other tunnels are in various stages of discussion and planning.\n\nMusk cited difficulty with Los Angeles traffic, and what he sees as limitations of its two-dimensional transportation network, as his early inspiration for the project.<ref name=\"Chafkin\"/><ref>{{cite web |url=https://gizmodo.com/elon-musk-on-digging-big-ass-tunnel-we-have-no-idea-wh-1791803837 |title=Elon Musk on Digging Big-Ass Tunnel: 'We Have No Idea What We're Doing' |last=Peyser |first=Eve |date=January 30, 2017 |publisher=Gizmodo |access-date=February 17, 2017 |archive-url=https://web.archive.org/web/20170219045530/http://gizmodo.com/elon-musk-on-digging-big-ass-tunnel-we-have-no-idea-wh-1791803837 |archive-date=February 19, 2017 |url-status=live |df=mdy-all }}</ref> The Boring Company was formed as a [[subsidiary]] of [[SpaceX]], becoming a separate and fully independent company in 2018. As of December 2018, 90% of the [[equity (finance)|equity]] was owned by Musk,<ref>{{Cite web |url=https://www.theverge.com/2018/12/19/18148061/boring-tunnel-test-drive-hawthorne-tesla-elon-musk |title=I took a ride through Elon Musk's new tunnel in California |date=December 19, 2018 |access-date=December 20, 2018 |archive-url=https://web.archive.org/web/20181220231741/https://www.theverge.com/2018/12/19/18148061/boring-tunnel-test-drive-hawthorne-tesla-elon-musk |archive-date=December 20, 2018 |url-status=live |df=mdy-all }}</ref> with 6% held by SpaceX in return for the use of SpaceX resources during the startup of the company.<ref>{{Cite news |url=https://www.wsj.com/articles/elon-musks-new-boring-co-faced-questions-over-spacex-financial-ties-11545078371 |title=Elon Musk's New Boring Co. Faced Questions Over SpaceX Financial Ties |newspaper=Wall Street Journal |date=December 17, 2018 |access-date=December 18, 2018 |archive-url=https://web.archive.org/web/20181218044810/https://www.wsj.com/articles/elon-musks-new-boring-co-faced-questions-over-spacex-financial-ties-11545078371 |archive-date=December 18, 2018 |url-status=live |df=mdy-all |last1=Copeland |first1=Rob }}</ref> Outside investments during 2019 have changed the equity split.\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-06-30T00:06:48Z"
+        }
+       ],
+       "title": "The Boring Company"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "The Boring Company"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220628060437|1095409856"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 28207,
+       "revisions": [
+        {
+         "parentid": 1095409856,
+         "revid": 1096068530,
+         "slots": {
+          "main": {
+           "content": "{{short description|Text messaging service component}}\n{{other uses}}\n{{for|text messaging in general|Text messaging}}\n{{Multiple issues|\n{{refimprove article|date=October 2017}}\n{{Update|date=September 2021}}\n}}\n[[File:SMS test.jpg|thumb|An SMS message written on a [[Motorola RAZR V3]]]]\n[[File:Telephone-keypad.svg|250px|thumb|[[E.161]], a common mobile keypad alphabet layout]]\n'''SMS''' ('''Short Message Service''') is a [[text messaging]] service component of most [[telephone]], [[Internet]], and [[mobile device]] systems. It uses standardized [[communication protocols]] that let mobile devices exchange short text messages. An intermediary service can facilitate a text-to-voice conversion to be sent to landlines.<ref>{{cite web |first=Heather |last=Kelly |url=https://www.cnn.com/2012/12/03/tech/mobile/sms-text-message-20/index.html |title=OMG, The Text Message Turns 20. But has SMS peaked? |work=CNN |date=December 3, 2012}}</ref>\n\nSMS technology originated from [[radio telegraphy]] in radio memo [[pager]]s that used standardized phone protocols. These were defined in 1986 as part of the Global System for Mobile Communications ([[GSM]]) series of standards.<ref name=\"GSM 28/85\">GSM Doc 28/85 \"Services and Facilities to be provided in the GSM System\" rev2, June 1985</ref> The first test SMS message was sent on December 3, 1992, when Neil Papworth, a test engineer for [[Sema Group]], used a personal computer to send \"Merry Christmas\" to the phone of colleague Richard Jarvis.<ref name=\"First SMS\" /> SMS rolled out commercially on many [[cellular network]]s that decade and became hugely popular worldwide as a method of text communication.<ref>{{cite web| url = https://www.telegraph.co.uk/technology/mobile-phones/9718336/Text-messaging-at-20-how-SMS-changed-the-world.html| title = How SMS Changed the World}}</ref> By the end of 2010, SMS was the most widely used data application, with an estimated 3.5 billion active users, or about 80% of all mobile phone subscribers.\n\nThe service allows users to send and receive messages of up to 160 characters (when entirely alpha-numeric) to and from GSM mobiles. Although most SMS messages are sent from one mobile phone to another, support for the service has expanded to include other mobile technologies, such as [[Code-division multiple access|CDMA]] networks and [[Digital AMPS]].<ref name=\"Play GK Quiz:When First SMS Was Sent\">{{cite web|url=http://playgkquiz.com/first/when-first-sms-was-sent|title=When First SMS Was Sent|publisher=Play GK Quiz|access-date=November 27, 2017|archive-url=https://web.archive.org/web/20171201034924/http://playgkquiz.com/first/when-first-sms-was-sent|archive-date=December 1, 2017}}</ref>\n\n[[Mobile marketing]], a type of [[direct marketing]], uses SMS.<ref>{{cite web\n|work=wiseGEEK |first=Ken |last=Black\n|title=What is SMS Marketing? |url=http://www.wisegeek.com/what-is-sms-marketing.htm |date=September 13, 2016 |access-date=September 28, 2016}}</ref> The global SMS messaging business was estimated to be worth over [[US$]]240 billion in 2013, accounting for almost half of all revenue generated by mobile messaging.<ref>{{cite web\n|url=http://www.portioresearch.com/en/messaging-reports/mobile-messaging-research/mobile-messaging-futures-2014-2018.aspx |url-status=dead |archive-url=https://web.archive.org/web/20151208180248/http://www.portioresearch.com/en/messaging-reports/mobile-messaging-research/mobile-messaging-futures-2014-2018.aspx |archive-date=December 8, 2015 |title=Mobile Messaging Futures 2014-20148 |author=Portio Research\n|access-date=September 28, 2016}}</ref>\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-07-02T03:00:15Z"
+        }
+       ],
+       "title": "SMS"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "SMS"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220707130610|1096913994"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 53615490,
+       "revisions": [
+        {
+         "parentid": 1096913994,
+         "revid": 1096914104,
+         "slots": {
+          "main": {
+           "content": "{{Short description|American brain-computer interface company}}\n{{Use mdy dates|date=March 2017}}\n{{Infobox company\n| name = Neuralink Corporation\n| logo = Neuralink logo.svg\n| type = [[Privately held company|Private]]\n| founded = {{start date and age|2016|07}}<ref name=\"WSJ\"/>\n| founders = [[Elon Musk]]<br>Max Hodak<br>Ben Rapoport<br>Dongjin Seo<br>Paul Merolla<br>Philip Sabes<br>Tim Gardner<br>Tim Hanson<br>Vanessa Tolosa<ref name=\"Verge\" /><ref name=\"Strickland 2017\">{{Cite web|last=Strickland|first=Eliza|date=2017-04-12|title=5 Neuroscience Experts Weigh in on Elon Musk's Mysterious \"Neural Lace\" Company|url=https://spectrum.ieee.org/5-neuroscience-experts-weigh-in-on-elon-musks-mysterious-neural-lace-company|url-status=live|access-date=2021-09-08|website=IEEE Spectrum|language=en}}</ref>\n| area_served = \n| key_people = [[Elon Musk]] (CEO)\n| industry = [[Brain-computer interface]]<br />[[Neuroprosthetics]]\n| products = \n| owner = [[Elon Musk]]\n| num_employees = <200<ref>{{cite web |title=[Exclusive] Elon Musk: A future worth getting excited about - TED - Tesla Gigafactory interview |url=https://www.youtube.com/watch?v=YRvf00NooN8&t=3370s |website=Youtube |publisher=TED |access-date=19 April 2022}}</ref>\n| num_employees_year = April 2022\n| parent = \n| website = {{URL|https://neuralink.com}}\n| hq_location = [[Pioneer Building (San Francisco)|Pioneer Building]], [[San Francisco]], [[California]], [[U.S.]] (as of 2020)<ref name=\":03\" />\n}}\n{{coord|37.7623|N|122.4148|W|display=title}}\n{{Elon Musk series}}\n'''Neuralink Corporation''' is a [[neurotechnology]] company that develops [[brain implant|implantable]] [[brain–machine interface]]s (BMIs). Co-founded by [[Elon Musk]], the company's headquarters is in the [[Pioneer Building (San Francisco)|Pioneer Building]] in [[San Francisco]] sharing offices with [[OpenAI]].<ref name=\"LAT2017-04\">{{cite web|url=http://www.latimes.com/business/technology/la-fi-tn-elon-musk-neuralink-20170421-htmlstory.html|title=A quick guide to Elon Musk's new brain-implant company, Neuralink|last=Masunaga|first=Samantha|date=21 April 2017|work=[[Los Angeles Times]]|access-date=May 4, 2017|archive-url=https://web.archive.org/web/20170505040212/http://www.latimes.com/business/technology/la-fi-tn-elon-musk-neuralink-20170421-htmlstory.html|archive-date=May 5, 2017|url-status=live}}</ref> Neuralink was launched in 2016 and was first publicly reported in March 2017.<ref name=\"WSJ\">{{Cite news |last=Winkler |first=Rolfe |title=Elon Musk Launches Neuralink to Connect Brains With Computers |work=Wall Street Journal |date=March 27, 2017 |url=https://www.wsj.com/articles/elon-musk-launches-neuralink-to-connect-brains-with-computers-1490642652 |df=mdy-all |access-date=May 4, 2017 |archive-url=https://web.archive.org/web/20170505075109/https://www.wsj.com/articles/elon-musk-launches-neuralink-to-connect-brains-with-computers-1490642652 |archive-date=May 5, 2017 |url-status=live }}</ref><ref name=\"Verge\">{{Cite news |last1=Statt |first1=Nick |title=Elon Musk launches Neuralink, a venture to merge the human brain with AI |work=[[The Verge]] |date=March 27, 2017 |url=https://www.theverge.com/2017/3/27/15077864/elon-musk-neuralink-brain-computer-interface-ai-cyborgs |df=mdy-all |access-date=September 6, 2017 |archive-url=https://web.archive.org/web/20180206050357/https://www.theverge.com/2017/3/27/15077864/elon-musk-neuralink-brain-computer-interface-ai-cyborgs |archive-date=February 6, 2018 |url-status=live }}</ref>\n\nSince its founding, the company has hired several high-profile [[neuroscientist]]s from various universities.<ref>{{Cite news|url=https://www.bloomberg.com/news/articles/2019-05-10/elon-musk-s-brain-tech-startup-is-raising-more-cash|title=Elon Musk's Brain Tech Startup Is Raising More Cash|date=2019-05-11|access-date=2019-05-12|language=en|archive-url=https://web.archive.org/web/20190511092933/https://www.bloomberg.com/news/articles/2019-05-10/elon-musk-s-brain-tech-startup-is-raising-more-cash|archive-date=May 11, 2019|url-status=live|quote=The company has hired away several high-profile neuroscientists}}</ref> By July 2019, it had received $158 million in funding (of which $100 million was from Musk) and was employing a staff of 90 employees.<ref name=markoff>{{Cite news|url=https://www.nytimes.com/2019/07/16/technology/neuralink-elon-musk.html|title=Elon Musk's Company Takes Baby Steps to Wiring Brains to the Internet|last=Markoff|first=John|date=2019-07-16|work=The New York Times|access-date=2019-07-17|language=en-US|issn=0362-4331|archive-url=https://web.archive.org/web/20190717083429/https://www.nytimes.com/2019/07/16/technology/neuralink-elon-musk.html|archive-date=July 17, 2019|url-status=live}}</ref> At that time, Neuralink announced that it was working on a \"sewing machine-like\" device capable of implanting very thin (4 to 6 [[Micrometre|μm]] in width<ref name=\"Lopatto 2019\">[https://www.theverge.com/2019/7/16/20697123/elon-musk-neuralink-brain-reading-thread-robot Elon Musk unveils Neuralink’s plans for brain-reading ‘threads’ and a robot to insert them.] {{Webarchive|url=https://web.archive.org/web/20190717163112/https://www.theverge.com/2019/7/16/20697123/elon-musk-neuralink-brain-reading-thread-robot|date=July 17, 2019}} Elizabeth Lopatto, ''The Verge''. 16 July 2019.</ref>) threads into the brain, and demonstrated a system that read information from a lab rat via 1,500 electrodes. They had anticipated starting experiments with humans in 2020;<ref name=markoff /> but have since moved that projection to 2022.<ref name=\":1\">{{Cite web|title=Inside Neuralink, Elon Musk’s mysterious brain chip startup: A culture of blame, impossible deadlines, and a missing CEO|url=https://fortune.com/longform/neuralink-brain-computer-interface-chip-implant-elon-musk/|access-date=2022-01-31|website=Fortune|language=en}}</ref>\n\nSeveral neuroscientists and publications, including the ''[[MIT Technology Review]]'', have criticized claims made by Musk about Neuralink and its technology.<ref name=\"mit\" /><ref name=\"cjrory\" />\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-07-07T13:07:18Z"
+        }
+       ],
+       "title": "Neuralink"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "Neuralink"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220629161044|1095659671"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 73443,
+       "revisions": [
+        {
+         "parentid": 1095659671,
+         "revid": 1095659861,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Primitive data type}}\n{{Use dmy dates|date=March 2020|cs1-dates=y}}\n{{SpecialChars}}\nIn [[computer]] and machine-based [[telecommunications]] terminology, a '''character''' is a unit of [[information]] that roughly corresponds to a [[grapheme]], grapheme-like unit, or [[symbol]], such as in an [[alphabet]] or [[syllabary]] in the [[written language|written]] form of a [[natural language]].<ref name=\"MW_Definition\"/>\n\nExamples of characters include [[letter (alphabet)|letters]], [[numerical digit]]s, common [[punctuation]] marks (such as \".\" or \"-\"), and [[whitespace character|whitespace]]. The concept also includes [[control character]]s, which do not correspond to visible symbols but rather to instructions to format or process the text. Examples of control characters include [[carriage return]] or [[tab key|tab]], as well as instructions to [[computer printer|printer]]s or other devices that display or otherwise process text.\n\nCharacters are typically combined into [[string (computer science)|string]]s.\n\nHistorically, the term ''character'' was also used to just denote a specific number of contiguous [[bit]]s. While a character is most commonly assumed to refer to 8 bits (one [[byte]]) today, other definitions, like [[six-bit_character_code|6-bit character code]] was once popular (using only [[upper case]], while enough bits to also represent [[lower case]], not with numbers and punctuation allowed for),<ref name=\"Dreyfus_1958_Gamma60\"/><ref name=\"Buchholz_1962\"/> and even [[Baudot code|5-bit Baudot code]] have been used in the past as well, and while the term has also been applied to 4 bits<ref name=\"Intel_1973_MCS-4\"/> with only 16 possible values, it wasn't meant to, nor can, represent the full English alphabet.<!-- Careful here to not state for any alphabet, as would do for the smallest 12-letters [[Rotokas alphabet]].--> See also [[Universal Character Set characters]], where 8 bits are not enough to represent, while all can be represented with one or more 8-bit [[code unit]]s with [[UTF-8]].\n\n==Encoding==\n{{Main|Character encoding}}\nComputers and communication equipment represent characters using a [[character encoding]] that assigns each character to something{{snd}} an [[integer]] quantity represented by a sequence of [[numerical digit|digits]]<!-- binary or decimal, depending on the particular computer -->, typically{{snd}} that can be [[computer storage|stored]] or transmitted through a [[computer network|network]]. Two examples of usual encodings are [[ASCII]] and the [[UTF-8]] encoding for [[Unicode]]. While most character encodings map characters to numbers and/or bit sequences, [[Morse code]] instead represents characters using a series of electrical impulses of varying length.\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-06-29T16:11:19Z"
+        }
+       ],
+       "title": "Character (computing)"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "Character (computing)"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20220626132300|1095118301"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 48795986,
+       "revisions": [
+        {
+         "parentid": 1095118301,
+         "revid": 1096949364,
+         "slots": {
+          "main": {
+           "content": "{{Short description|Artificial intelligence research laboratory}}\n{{distinguish|OpenAL}}\n<!-- this hatnote exists b/c User:Maths314 appears concerned people looking for OpenAL will come here since OpenAI looks like OpenAl in many fonts? Feel free to open thread in Talk if you want to remove hatnote. -->\n{{coord|37.7623|N|122.4148|W|region:US-CA_type:landmark|display=title}}\n{{Infobox company\n| name               = OpenAI\n| logo               = OpenAI Logo.svg\n| caption            = \n| industry           = [[Artificial intelligence]]\n| founders           = {{hlist|[[Elon Musk]]|[[Sam Altman]]|[[Ilya Sutskever]]|Greg Brockman|[[Wojciech Zaremba]]|John Schulman}}\n| type               = \n| tax_id             = \n| registration_id    = \n| founded            = {{Start date and age|2015|12|11}}\n| hq_location        = [[Pioneer Building (San Francisco)|Pioneer Building, San Francisco]], California, US<ref>{{cite news |url=https://www.nytimes.com/2015/12/12/science/artificial-intelligence-research-center-is-founded-by-silicon-valley-investors.html |title=Artificial-Intelligence Research Center Is Founded by Silicon Valley Investors |first1=John |last1=Markoff |date=December 11, 2015 |newspaper=[[The New York Times]] |access-date=December 12, 2015 }}</ref><ref name=technologyreview/>\n| origins            = \n| key_people         = {{hlist|[[Ilya Sutskever]]|Greg Brockman|[[Sam Altman]]|}}\n| area_served        = \n| products           = [[DALL-E]], [[GPT-3]], [[GPT-2]], OpenAI Gym\n| services           = \n| focus              = \n| method             = \n| revenue            = \n| equity             = \n| equity_year = \n| num_employees      = >120 ({{as of|2020|lc=on}})<ref name=technologyreview/>\n| subsid             = \n| owner              = \n| motto              = \n| former name        = \n| homepage           ={{url|https://openai.com}}\n| dissolved          = \n| footnotes          = \n| board_of_directors = \n| leader_title       = \n}}\n'''OpenAI''' is an [[artificial intelligence]] (AI) research laboratory consisting of the for-profit corporation '''OpenAI LP''' and its [[parent company]], the non-profit '''OpenAI Inc.''' The company, considered a competitor to [[DeepMind]], conducts research in the field of AI with the stated goal of promoting and developing [[friendly AI]] in a way that benefits humanity as a whole. The organization was founded in [[San Francisco]] in late 2015 by [[Elon Musk]], [[Sam Altman]], and others, who collectively pledged US$1 billion. Musk resigned from the board in February 2018 but remained a donor. In 2019, OpenAI LP received a {{USD}}1 billion investment from [[Microsoft]].\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2022-07-07T18:14:19Z"
+        }
+       ],
+       "title": "OpenAI"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2022-07-07T23:59:59Z",
+    "titles": "OpenAI"
+   },
+   "status": 200
+  }
+ ],
+ "note": "The same scenario at depth 2: the next window of links from the as-of leads.",
+ "recorded": "2026-09-19",
+ "source": "https://en.wikipedia.org/w/api.php"
+}

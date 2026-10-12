@@ -9,21 +9,42 @@ replay divergence rather than here as a validation error.
 
 from __future__ import annotations
 
+<<<<<<< HEAD
 from decimal import Decimal
 from typing import Any, Literal
+=======
+from dataclasses import dataclass, field
+from decimal import Decimal
+from typing import Any, Literal, Protocol
+>>>>>>> source-clean/main
 
 from pydantic import BaseModel, ConfigDict, Field
 
 __all__ = [
+<<<<<<< HEAD
+=======
+    "SOURCE",
+>>>>>>> source-clean/main
     "BatchFailed",
     "BatchItem",
     "BudgetExceeded",
     "CacheMiss",
     "CachedCall",
+<<<<<<< HEAD
+=======
+    "GuardrailAction",
+    "GuardrailScreen",
+>>>>>>> source-clean/main
     "LLMError",
     "LLMRequest",
     "LLMResult",
     "PromptTooShortToCache",
+<<<<<<< HEAD
+=======
+    "ProviderNotReady",
+    "ProviderResponse",
+    "ScreenResult",
+>>>>>>> source-clean/main
     "Usage",
 ]
 
@@ -105,6 +126,32 @@ class PromptTooShortToCache(LLMError):
         )
 
 
+<<<<<<< HEAD
+=======
+class ProviderNotReady(LLMError):
+    """The selected provider cannot serve this request as configured (ADR-0028).
+
+    Raised *before* any spend, for two reasons that share a remedy -- change
+    the configuration, not the code:
+
+    * the provider is missing routing or pricing it needs, so a call would
+      either go somewhere nobody chose or be booked at a rate nobody checked;
+    * the provider lacks a capability the caller requires. Bedrock has no
+      Message Batches API, and the simulate phase is only inside its ceiling
+      at the batch rate (ADR-0020): run unbatched it costs roughly twice as
+      much, so the right response is to refuse, not to fall back.
+
+    Exit code 3.
+    """
+
+    def __init__(self, provider: str, problems: list[str]) -> None:
+        self.provider = provider
+        self.problems = list(problems)
+        listed = "; ".join(self.problems)
+        super().__init__(f"provider {provider!r} is not ready: {listed}")
+
+
+>>>>>>> source-clean/main
 # ---------------------------------------------------------------------------
 # Wire types
 # ---------------------------------------------------------------------------
@@ -210,6 +257,30 @@ class LLMResult(_Frozen):
     latency_ms: float
     served_from_cache: bool
     tool_calls: list[dict[str, Any]] = Field(default_factory=list)
+<<<<<<< HEAD
+=======
+    # The provider's own identifier for the call -- the Messages API's
+    # `request-id` header, AWS's `x-amzn-requestid`, the CLI's session id --
+    # so a result can be matched to the provider's logs (ADR-0053). None when
+    # the provider sent none, or the recording predates the field.
+    request_id: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class ProviderResponse:
+    """What a provider hands back through :class:`~cascade.llm.providers.ModelProvider`.
+
+    ``body`` is the provider's own Messages JSON, untouched, because replay
+    reconstructs the result from it. ``request_id`` and ``metadata`` are the
+    provider's identifiers for the call and are kept *beside* the body: they
+    describe how the call was made, never what was asked, so they stay out of
+    the cache key (ADR-0007's rule, applied to response metadata).
+    """
+
+    body: dict[str, Any]
+    request_id: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+>>>>>>> source-clean/main
 
 
 class BatchItem(_Frozen):
@@ -240,6 +311,16 @@ class CachedCall(_Frozen):
     latency_ms: float
     recorded_at: str
     cache_format: Literal[1] = 1
+<<<<<<< HEAD
+=======
+    # Who served the call and under which request id (ADR-0053): the provider's
+    # name, the wire model id, the endpoint or region, and the request id the
+    # provider's own logs (CloudTrail, model-invocation logs, the CLI session)
+    # file it under. Optional, so every recording made before this field
+    # existed still validates; never part of the key, because it describes
+    # the call and not the request.
+    provider_metadata: dict[str, Any] | None = None
+>>>>>>> source-clean/main
 
 
 def _strip_cache_control(value: Any) -> Any:
@@ -259,3 +340,56 @@ def _strip_cache_control(value: Any) -> Any:
     if isinstance(value, list):
         return [_strip_cache_control(item) for item in value]
     return value
+<<<<<<< HEAD
+=======
+
+
+# -- Bedrock Guardrails (M15, ADR-0050) --------------------------------------
+#
+# These live beside the other provider-boundary types rather than in
+# `cascade/eval/`, so that the audit imports them from `llm` and not the other
+# way round. ADR-0030 refused guardrails partly because `ApplyGuardrail` would
+# be a second model-adjacent egress outside `llm/client.py`; keeping the types
+# here is what lets the egress live there without the audit importing the
+# client at module scope.
+#
+# Which text is screened, and why it is OUTPUT: a compiled graph is text the
+SOURCE = "OUTPUT"
+
+GuardrailAction = Literal["NONE", "GUARDRAIL_INTERVENED"]
+
+
+@dataclass(frozen=True, slots=True)
+class ScreenResult:
+    """What a guardrail said about one graph's text.
+
+    ``action`` is the service's own vocabulary rather than a boolean, so a
+    third action added by the provider later cannot be silently folded into
+    "not flagged" -- which is the direction that would quietly turn an
+    unmeasured confound back into a clean result.
+    """
+
+    action: GuardrailAction
+    reason: str = ""
+    policies: tuple[str, ...] = ()
+    # AWS's request id for the `ApplyGuardrail` call, so an assessment can be
+    # matched to the CloudTrail record of the call that produced it.
+    request_id: str = ""
+
+
+class GuardrailScreen(Protocol):
+    """The one seam that reaches a guardrail service.
+
+    Narrow on purpose. ADR-0030 refused guardrails partly because
+    ``ApplyGuardrail`` would be a second model-adjacent egress outside
+    ``cascade/llm/client.py``, and a single-method protocol is what lets that
+    egress move there without touching the audit or its tests. Everything
+    above this line is pure and screens nothing itself.
+    """
+
+    def screen(self, *, text: str) -> ScreenResult:
+        """Screen one payload. Raises on a service failure; never returns a
+        default -- an unreachable guardrail must reach the audit as *not
+        assessed*, never as *nothing flagged*."""
+        ...  # pragma: no cover -- protocol
+>>>>>>> source-clean/main

@@ -1,0 +1,24 @@
+$ aws iam get-role-policy --role-name cascade-lake-writer --policy-name append-only
+Allow  s3:PutObject
+       on events/* only, plus kms:GenerateDataKey on the platform key
+Deny   s3:BypassGovernanceRetention, s3:DeleteObject, s3:DeleteObjectVersion,
+       s3:PutBucketObjectLockConfiguration, s3:PutObjectLegalHold, s3:PutObjectRetention
+       on the bucket and every object in it
+
+$ cascade aws smoke-test   # the writer role, asked to delete the object it just wrote
+OK  writer cannot delete   DeleteObject refused with AccessDenied
+    request id HFDRQ6P1FJZQEX2K
+
+$ aws iam get-role-policy --role-name cascade-lake-analyst --policy-name query
+Allow  QueryThroughTheWorkgroupOnly
+       GetQueryExecution, GetQueryResults, StartQueryExecution, StopQueryExecution
+Allow  ReadThisTableOnly
+       GetDatabase, GetPartition, GetPartitions, GetTable
+Allow  ReadEvents
+       GetObject, ListBucket
+Allow  ResultsReadWrite
+       GetBucketLocation, GetObject, ListBucket, PutObject
+Allow  Keys
+       Decrypt, GenerateDataKey
+# Athena only through workgroup cascade; Glue read-only on one table;
+# no delete, no catalog write, no workgroup change

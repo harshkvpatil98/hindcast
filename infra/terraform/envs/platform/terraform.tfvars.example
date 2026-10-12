@@ -1,0 +1,78 @@
+# Copy to terraform.tfvars (gitignored). Every routing value is explicit
+# (ADR-0028), and the whole AWS footprint is us-west-2 (ADR-0053).
+region = "us-west-2"
+# The tier-0 recovery replica is the one deliberate second region: a replica
+# in the same region is not a replica. Nearest to the primary.
+replica_region = "us-west-1"
+
+# --- Decisions. None has a default; each is a number somebody chose. ------------
+
+# Monthly allowance for everything that is not a model call, on top of the
+# phase ceilings modules/governance reads from configs/base.yaml.
+infrastructure_allowance_usd = 50
+# GuardDuty findings at or above this severity go to the alerts topic.
+guardduty_min_severity = 7
+# How long a published study report cannot be withdrawn (ADR-0046).
+report_lock_retention_days = 365
+# How often the tier-0 archive is listed: "Daily" or "Weekly".
+inventory_schedule = "Weekly"
+alert_emails       = ["you@example.com"]
+
+# --- Service control policies ----------------------------------------------------
+# They can only be created from an AWS Organizations management account. In a
+# standalone account set this false; nothing else in the root depends on it.
+create_service_control_policies = false
+# guardrail_target_ids = ["ou-xxxx-xxxxxxxx"]   # when there is an organization
+
+# --- What the account already has ------------------------------------------------
+# Each defaults to true (create). Check first, read-only (README.md), and set
+# false for what exists, so nothing made by hand gets a second copy:
+#   aws cloudtrail describe-trails / aws budgets describe-budgets / aws ce get-anomaly-monitors
+# create_audit_trail            = false   # a multi-region trail exists; costs the S3 data-event record
+# create_budget                 = false   # an existing budget stays the only one
+# create_cost_anomaly_detection = false   # Default-Services-Monitor exists: one per account
+
+# --- Tiers (ADR-0054) ------------------------------------------------------------
+# Each is on by default, which is the platform as designed. For a minimal live
+# deployment do not edit these one by one: copy portfolio.tfvars instead, which
+# turns all of them off and is checked by the test suite.
+# enable_recovery    = false   # no replica region, replication, inventory, restore role
+# enable_reports     = false   # no reports bucket
+# enable_object_lock = false   # no Object Lock on the lake or the reports bucket
+# enable_guardduty   = false
+# enable_config      = false
+# disposable         = true    # a destroy may empty the buckets; needs the lock off
+
+# --- The Bedrock guardrail (ADR-0050) --------------------------------------------
+# What `cascade eval guardrails` measures the compiled graphs against -- never
+# a filter in the compile path.
+#
+# The account's `cascade-audit-guardrail` ALREADY EXISTS (published version 1).
+# The default here is therefore to leave it out of Terraform: `model_guardrail`
+# stays null, nothing about the guardrail is planned or changed, and the id and
+# version from the console go straight into .env --
+#   CASCADE_GUARDRAIL_ID=<guardrail-id>
+#   CASCADE_GUARDRAIL_VERSION=1
+# -- after which `cascade aws check` confirms they resolve.
+#
+# To bring the existing guardrail UNDER Terraform instead, uncomment the block
+# below, make every field match what the console shows, and import BEFORE the
+# first plan. The import ids are comma-delimited (AWS provider docs):
+#   terraform import 'module.guardrails.aws_bedrock_guardrail.model[0]' '<guardrail-id>,DRAFT'
+#   terraform import 'module.guardrails.aws_bedrock_guardrail_version.model[0]' '<guardrail-arn>,1'
+# Then `terraform plan` must show NO change to either resource. If it shows an
+# update, the block below does not match the real guardrail, and applying
+# would rewrite its DRAFT; fix the block, do not apply. Without the import,
+# apply would try to create a second guardrail with the same name.
+#
+# model_guardrail = {
+#   name                      = "cascade-audit-guardrail"
+#   description               = "<as in the console>"
+#   blocked_input_messaging   = "<as in the console>"
+#   blocked_outputs_messaging = "<as in the console>"
+#   content_filters = [
+#     { type = "PROMPT_ATTACK", input_strength = "HIGH", output_strength = "NONE" },
+#   ]
+#   denied_topics = []
+# }
+# publish_guardrail_version = true   # only with the version import above

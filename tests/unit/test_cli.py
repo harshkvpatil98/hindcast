@@ -54,6 +54,10 @@ IMPLEMENTED_SUBAPPS = [
     "ensemble",
     "eval",
     "trace",
+<<<<<<< HEAD
+=======
+    "aws",
+>>>>>>> source-clean/main
 ]
 
 
@@ -244,6 +248,14 @@ def test_budget_ceiling_aborts_with_exit_code_two(tmp_path: Path) -> None:
         "HOME": str(tmp_path),
         "CASCADE_PATHS__CHECKPOINTS": str(tmp_path / "checkpoints"),
         "CASCADE_LLM__CACHE_DIR": str(tmp_path / "llm-cache"),
+<<<<<<< HEAD
+=======
+        # Detached from the repository's .env, as every in-process test is
+        # (conftest): a machine whose .env selects the subscription provider
+        # prices every call at zero, and a ceiling nothing can reach measures
+        # that machine rather than the meter.
+        "CASCADE_ENV_FILE": str(tmp_path / "absent.env"),
+>>>>>>> source-clean/main
     }
     result = subprocess.run(
         [str(CONSOLE_SCRIPT), "dev", "budget-probe", "--ceiling", "0.01", "--phase", "simulate"],
@@ -312,6 +324,10 @@ def test_exit_codes_are_distinct() -> None:
         ("BudgetExceeded", EXIT_BUDGET_BREACH),
         ("CacheMiss", 4),
         ("PromptTooShortToCache", EXIT_PRECONDITION),
+<<<<<<< HEAD
+=======
+        ("ProviderNotReady", EXIT_PRECONDITION),
+>>>>>>> source-clean/main
     ],
 )
 def test_error_boundary_maps_each_failure_to_its_code(
@@ -328,6 +344,11 @@ def test_error_boundary_maps_each_failure_to_its_code(
         raised = llm_types.BudgetExceeded("simulate", D("1"), D("0.5"), "checkpoints/cp.json")
     elif exception == "CacheMiss":
         raised = llm_types.CacheMiss("no recording")
+<<<<<<< HEAD
+=======
+    elif exception == "ProviderNotReady":
+        raised = llm_types.ProviderNotReady("bedrock", ["providers.bedrock.region is not set"])
+>>>>>>> source-clean/main
     else:
         raised = llm_types.PromptTooShortToCache(1900, 4096)
 
@@ -349,3 +370,27 @@ def test_typer_exit_codes_survive_the_boundary(monkeypatch: pytest.MonkeyPatch) 
 
     monkeypatch.setattr(sys, "argv", ["cascade", "evaluate"])
     assert cli_module.main() == EXIT_PRECONDITION
+<<<<<<< HEAD
+=======
+
+
+def test_compile_build_shards_the_pending_work_without_overlap() -> None:
+    """Several processes compile at once on a subscription; two of them paying
+    for the same scenario would waste the budget the shard exists to spread."""
+    pending = [f"s{index:03d}" for index in range(17)]
+    shards = [pending[k::3] for k in range(3)]
+    assert sorted(item for shard in shards for item in shard) == pending
+    assert len({item for shard in shards for item in shard}) == len(pending)
+    assert all(shard for shard in shards)
+
+
+def test_compile_build_rejects_a_malformed_shard() -> None:
+    from typer.testing import CliRunner
+
+    from cascade.cli import app
+    from cascade.version import EXIT_PRECONDITION
+
+    for bad in ("3/3", "x/2", "1", "-1/2"):
+        result = CliRunner().invoke(app, ["compile", "build", "--shard", bad])
+        assert result.exit_code == EXIT_PRECONDITION, (bad, result.output)
+>>>>>>> source-clean/main

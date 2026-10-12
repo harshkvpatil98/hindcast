@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="236" viewBox="0 0 1200 236" role="img" aria-label="The live smoke test: three synthetic events, written by the writer role to S3 as Parquet, catalogued by Glue, queried through Athena by the analyst role, three matching rows returned; the writer role's delete is refused">
+<defs><marker id="a-3fb950" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3fb950"/></marker><marker id="a-ff7b72" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#ff7b72"/></marker></defs>
+<rect width="1200" height="236" rx="12" fill="#0d1117"/>
+<rect x="26" y="34" width="140" height="66" rx="9" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="96.0" y="63" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="14" fill="#e6edf3" font-weight="600" text-anchor="middle">3 synthetic</text>
+<text x="96.0" y="82" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" fill="#8b949e" font-weight="400" text-anchor="middle">events</text>
+<line x1="168" y1="67.0" x2="191" y2="67.0" stroke="#3fb950" stroke-width="1.6" marker-end="url(#a-3fb950)"/>
+<rect x="194" y="34" width="140" height="66" rx="9" fill="#161b22" stroke="#3fb950" stroke-width="1.5"/>
+<text x="264.0" y="63" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="14" fill="#e6edf3" font-weight="600" text-anchor="middle">Writer</text>
+<text x="264.0" y="82" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" fill="#8b949e" font-weight="400" text-anchor="middle">IAM role</text>
+<line x1="336" y1="67.0" x2="359" y2="67.0" stroke="#3fb950" stroke-width="1.6" marker-end="url(#a-3fb950)"/>
+<rect x="362" y="34" width="140" height="66" rx="9" fill="#161b22" stroke="#3fb950" stroke-width="1.5"/>
+<text x="432.0" y="63" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="14" fill="#e6edf3" font-weight="600" text-anchor="middle">S3, Parquet</text>
+<text x="432.0" y="82" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" fill="#8b949e" font-weight="400" text-anchor="middle">KMS-encrypted</text>
+<line x1="504" y1="67.0" x2="527" y2="67.0" stroke="#3fb950" stroke-width="1.6" marker-end="url(#a-3fb950)"/>
+<rect x="530" y="34" width="140" height="66" rx="9" fill="#161b22" stroke="#3fb950" stroke-width="1.5"/>
+<text x="600.0" y="63" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="14" fill="#e6edf3" font-weight="600" text-anchor="middle">Glue</text>
+<text x="600.0" y="82" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" fill="#8b949e" font-weight="400" text-anchor="middle">Data Catalog</text>
+<line x1="672" y1="67.0" x2="695" y2="67.0" stroke="#3fb950" stroke-width="1.6" marker-end="url(#a-3fb950)"/>
+<rect x="698" y="34" width="140" height="66" rx="9" fill="#161b22" stroke="#3fb950" stroke-width="1.5"/>
+<text x="768.0" y="63" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="14" fill="#e6edf3" font-weight="600" text-anchor="middle">Athena</text>
+<text x="768.0" y="82" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" fill="#8b949e" font-weight="400" text-anchor="middle">workgroup</text>
+<line x1="840" y1="67.0" x2="863" y2="67.0" stroke="#3fb950" stroke-width="1.6" marker-end="url(#a-3fb950)"/>
+<rect x="866" y="34" width="140" height="66" rx="9" fill="#161b22" stroke="#3fb950" stroke-width="1.5"/>
+<text x="936.0" y="63" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="14" fill="#e6edf3" font-weight="600" text-anchor="middle">Analyst</text>
+<text x="936.0" y="82" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" fill="#8b949e" font-weight="400" text-anchor="middle">IAM role</text>
+<line x1="1008" y1="67.0" x2="1031" y2="67.0" stroke="#3fb950" stroke-width="1.6" marker-end="url(#a-3fb950)"/>
+<rect x="1034" y="34" width="140" height="66" rx="33" fill="#12261e" stroke="#3fb950" stroke-width="2"/>
+<text x="1104.0" y="63" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="14" fill="#3fb950" font-weight="600" text-anchor="middle">3 matching</text>
+<text x="1104.0" y="82" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" fill="#3fb950" font-weight="600" text-anchor="middle">rows returned</text>
+<line x1="264.0" y1="100" x2="264.0" y2="142" stroke="#ff7b72" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#a-ff7b72)"/>
+<text x="276.0" y="127" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#ff7b72" font-weight="600" text-anchor="start">DELETE</text>
+<rect x="184.0" y="146" width="160" height="40" rx="20" fill="#161b22" stroke="#ff7b72" stroke-width="1.5"/>
+<text x="264.0" y="171" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="14" fill="#ff7b72" font-weight="600" text-anchor="middle">AccessDenied</text>
+<text x="364.0" y="164" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" fill="#8b949e" font-weight="400" text-anchor="start">least privilege, enforced by the live policy</text>
+<text x="364.0" y="182" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12.5" fill="#8b949e" font-weight="400" text-anchor="start">and checked on every run</text>
+<text x="1174" y="220" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="12" fill="#8b949e" font-weight="400" text-anchor="end">cascade aws smoke-test  -  us-west-2  -  953 bytes scanned</text>
+</svg>

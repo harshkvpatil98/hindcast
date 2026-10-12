@@ -9,15 +9,24 @@ reads the way it does. Read this before opening a pull request.
 with a diagnosis.** Do not relax the criterion. Do not add a tolerance. Do not
 mark it "approximately passing".
 
+<<<<<<< HEAD
 Every milestone in `CLAUDE.md` has a row that says a criterion was missed, with
 the number it missed by and why. That is what the build log is for. A run of
+=======
+The changelog has rows that say a criterion was missed, with the number it
+missed by and why. That is what the record is for. A run of
+>>>>>>> source-clean/main
 green checkmarks that was achieved by moving the line is worth less than a red
 one with an explanation.
 
 ## Setting up
 
 ```bash
+<<<<<<< HEAD
 make install      # uv sync --extra dev
+=======
+make install      # uv sync --extra dev --extra kernel --extra aws
+>>>>>>> source-clean/main
 make env          # writes .env from .env.example
 make up           # Postgres 16 + pgvector 0.8, Langfuse; waits for healthy
 make migrate      # forward-only SQL migrations
@@ -27,7 +36,11 @@ cascade doctor    # asserts the pinned stack; exits 0 or tells you what drifted
 For the corpus and retrieval paths you also need the embedding stack:
 
 ```bash
+<<<<<<< HEAD
 uv sync --extra dev --extra embed --extra kernel
+=======
+make install-full   # adds the embedding stack (torch) and analytics
+>>>>>>> source-clean/main
 ```
 
 ## Before you push
@@ -57,7 +70,14 @@ wanting an exemption, the exemption is the bug.
 4. **One RNG per run**, seeded once, drawn in a fixed documented order. Never
    re-seeded mid-run.
 5. **One LLM call site**: `cascade/llm/client.py`. A grep for the Anthropic SDK
+<<<<<<< HEAD
    import anywhere else fails CI.
+=======
+   import anywhere else fails CI, and so does a `boto3` client for a
+   model-serving AWS service built anywhere else. The four provider classes
+   (`AnthropicApiProvider`, `ClaudePlatformAwsProvider`, `BedrockProvider`,
+   `ClaudeCliProvider`) live there, behind one interface (ADR-0053).
+>>>>>>> source-clean/main
 6. **The event log is append-only.** No `UPDATE`, no `DELETE`, ever.
 7. **All iteration over collections is sorted.** Dict and set order is a
    nondeterminism vector, and the static check is deliberately blunt — uniform
@@ -131,4 +151,8 @@ of its documentation — `git log` should read as an engineering record.
 
 Pull requests should state which milestone they belong to, which acceptance
 criteria they move, and the measured values. If you changed a number that
+<<<<<<< HEAD
 appears in `README.md` or `CLAUDE.md`, update it there too.
+=======
+appears in `README.md` or `docs/RESULTS.md`, update it there too.
+>>>>>>> source-clean/main

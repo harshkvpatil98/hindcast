@@ -9,7 +9,11 @@ labels: measurement
 <!-- e.g. "retrieval p95", "recall@20", "replay hash for run <id>" -->
 
 **Reported**
+<<<<<<< HEAD
 <!-- What README.md, CLAUDE.md or a command printed. -->
+=======
+<!-- What README.md, docs/RESULTS.md or a command printed. -->
+>>>>>>> source-clean/main
 
 **Measured**
 <!-- What you got, with the exact command. -->

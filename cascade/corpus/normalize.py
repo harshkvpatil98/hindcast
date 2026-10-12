@@ -110,6 +110,7 @@ def validate(
     if len(body) < MIN_BODY_CHARS:
         return "too_short"
 
+<<<<<<< HEAD
     published = document.published_at
     if published is None:
         return "missing_date"
@@ -117,6 +118,25 @@ def validate(
         # Never coerced to UTC: an assumed offset is an invented instant, and
         # a document an hour on the wrong side of a cutoff is a leak.
         return "naive_date"
+=======
+    stated = document.published_at
+    if stated is None:
+        return "missing_date"
+    if stated.tzinfo is None or stated.utcoffset() is None:
+        # Never coerced to UTC: an assumed offset is an invented instant, and
+        # a document an hour on the wrong side of a cutoff is a leak.
+        return "naive_date"
+    crawled = document.crawled_at
+    if crawled is not None and (crawled.tzinfo is None or crawled.utcoffset() is None):
+        return "naive_date"
+    # The text stored is the text fetched. A page can change after the date it
+    # states, so the text is knowable only from the later of the two: measured
+    # on one 2026 CC-NEWS file, 3.7% of dated pages were re-crawls of articles
+    # over 180 days old, carrying the crawl's update notes and sidebars
+    # (ADR-0044). Dating them by the stated date alone let that text through
+    # every cutoff in between.
+    published = max(stated, crawled) if crawled is not None else stated
+>>>>>>> source-clean/main
     if published > now + _FUTURE_TOLERANCE:
         return "future_date"
     if published.replace(tzinfo=None) < _EARLIEST_PLAUSIBLE:
@@ -136,6 +156,11 @@ def validate(
         body=body,
         published_at=published,
         simhash=simhash(f"{document.title}\n{body}"),
+<<<<<<< HEAD
+=======
+        stated_published_at=stated,
+        crawled_at=crawled,
+>>>>>>> source-clean/main
     )
 
 
@@ -240,11 +265,21 @@ def deduplicate(
             continue
         existing = canonical[local]
         if document.published_at < existing.published_at:
+<<<<<<< HEAD
             # The earlier copy arrived second. Keep the earlier instant --
             # otherwise the corpus would date this evidence later than it
             # actually became public, which is a cutoff error in the unsafe
             # direction.
             canonical[local] = existing.model_copy(update={"published_at": document.published_at})
+=======
+            # The earlier copy arrived second: keep *it*, text and date
+            # together. Moving only the date back would pair the later copy's
+            # text -- fetched later, possibly updated -- with the earlier
+            # copy's date, which is the leak ADR-0044 closes. (The rule once
+            # read "keep the earlier instant"; the instant has to stay with the
+            # text it dates.)
+            canonical[local] = document
+>>>>>>> source-clean/main
 
     result.kept = canonical
     return result

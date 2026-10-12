@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-label="Cascade">
+<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d1117"/><stop offset="1" stop-color="#111b2e"/></linearGradient></defs>
+<rect width="1280" height="640" fill="url(#g)"/>
+<circle cx="820" cy="70" r="5" fill="#58a6ff" fill-opacity="0.42"/>
+<line x1="820" y1="70" x2="882" y2="79" stroke="#58a6ff" stroke-opacity="0.25" stroke-width="1"/>
+<circle cx="840" cy="116" r="5" fill="#58a6ff" fill-opacity="0.38"/>
+<line x1="840" y1="116" x2="882" y2="125" stroke="#58a6ff" stroke-opacity="0.23" stroke-width="1"/>
+<circle cx="820" cy="162" r="5" fill="#58a6ff" fill-opacity="0.34"/>
+<line x1="820" y1="162" x2="882" y2="171" stroke="#58a6ff" stroke-opacity="0.20" stroke-width="1"/>
+<circle cx="840" cy="208" r="5" fill="#58a6ff" fill-opacity="0.30"/>
+<line x1="840" y1="208" x2="882" y2="217" stroke="#58a6ff" stroke-opacity="0.18" stroke-width="1"/>
+<circle cx="820" cy="254" r="5" fill="#58a6ff" fill-opacity="0.26"/>
+<line x1="820" y1="254" x2="882" y2="263" stroke="#58a6ff" stroke-opacity="0.16" stroke-width="1"/>
+<circle cx="882" cy="79" r="5" fill="#58a6ff" fill-opacity="0.37"/>
+<line x1="882" y1="79" x2="944" y2="88" stroke="#58a6ff" stroke-opacity="0.22" stroke-width="1"/>
+<circle cx="902" cy="125" r="5" fill="#58a6ff" fill-opacity="0.33"/>
+<line x1="902" y1="125" x2="944" y2="134" stroke="#58a6ff" stroke-opacity="0.20" stroke-width="1"/>
+<circle cx="882" cy="171" r="5" fill="#58a6ff" fill-opacity="0.29"/>
+<line x1="882" y1="171" x2="944" y2="180" stroke="#58a6ff" stroke-opacity="0.17" stroke-width="1"/>
+<circle cx="902" cy="217" r="5" fill="#58a6ff" fill-opacity="0.25"/>
+<line x1="902" y1="217" x2="944" y2="226" stroke="#58a6ff" stroke-opacity="0.15" stroke-width="1"/>
+<circle cx="882" cy="263" r="5" fill="#58a6ff" fill-opacity="0.21"/>
+<line x1="882" y1="263" x2="944" y2="272" stroke="#58a6ff" stroke-opacity="0.13" stroke-width="1"/>
+<circle cx="944" cy="88" r="5" fill="#58a6ff" fill-opacity="0.32"/>
+<line x1="944" y1="88" x2="1006" y2="97" stroke="#58a6ff" stroke-opacity="0.19" stroke-width="1"/>
+<circle cx="964" cy="134" r="5" fill="#58a6ff" fill-opacity="0.28"/>
+<line x1="964" y1="134" x2="1006" y2="143" stroke="#58a6ff" stroke-opacity="0.17" stroke-width="1"/>
+<circle cx="944" cy="180" r="5" fill="#58a6ff" fill-opacity="0.24"/>
+<line x1="944" y1="180" x2="1006" y2="189" stroke="#58a6ff" stroke-opacity="0.14" stroke-width="1"/>
+<circle cx="964" cy="226" r="5" fill="#58a6ff" fill-opacity="0.20"/>
+<line x1="964" y1="226" x2="1006" y2="235" stroke="#58a6ff" stroke-opacity="0.12" stroke-width="1"/>
+<circle cx="944" cy="272" r="5" fill="#58a6ff" fill-opacity="0.16"/>
+<line x1="944" y1="272" x2="1006" y2="281" stroke="#58a6ff" stroke-opacity="0.10" stroke-width="1"/>
+<circle cx="1006" cy="97" r="5" fill="#58a6ff" fill-opacity="0.27"/>
+<line x1="1006" y1="97" x2="1068" y2="106" stroke="#58a6ff" stroke-opacity="0.16" stroke-width="1"/>
+<circle cx="1026" cy="143" r="5" fill="#58a6ff" fill-opacity="0.23"/>
+<line x1="1026" y1="143" x2="1068" y2="152" stroke="#58a6ff" stroke-opacity="0.14" stroke-width="1"/>
+<circle cx="1006" cy="189" r="5" fill="#58a6ff" fill-opacity="0.19"/>
+<line x1="1006" y1="189" x2="1068" y2="198" stroke="#58a6ff" stroke-opacity="0.11" stroke-width="1"/>
+<circle cx="1026" cy="235" r="5" fill="#58a6ff" fill-opacity="0.15"/>
+<line x1="1026" y1="235" x2="1068" y2="244" stroke="#58a6ff" stroke-opacity="0.09" stroke-width="1"/>
+<circle cx="1006" cy="281" r="5" fill="#58a6ff" fill-opacity="0.11"/>
+<line x1="1006" y1="281" x2="1068" y2="290" stroke="#58a6ff" stroke-opacity="0.07" stroke-width="1"/>
+<circle cx="1068" cy="106" r="5" fill="#58a6ff" fill-opacity="0.22"/>
+<line x1="1068" y1="106" x2="1130" y2="115" stroke="#58a6ff" stroke-opacity="0.13" stroke-width="1"/>
+<circle cx="1088" cy="152" r="5" fill="#58a6ff" fill-opacity="0.18"/>
+<line x1="1088" y1="152" x2="1130" y2="161" stroke="#58a6ff" stroke-opacity="0.11" stroke-width="1"/>
+<circle cx="1068" cy="198" r="5" fill="#58a6ff" fill-opacity="0.14"/>
+<line x1="1068" y1="198" x2="1130" y2="207" stroke="#58a6ff" stroke-opacity="0.08" stroke-width="1"/>
+<circle cx="1088" cy="244" r="5" fill="#58a6ff" fill-opacity="0.10"/>
+<line x1="1088" y1="244" x2="1130" y2="253" stroke="#58a6ff" stroke-opacity="0.06" stroke-width="1"/>
+<circle cx="1068" cy="290" r="5" fill="#58a6ff" fill-opacity="0.06"/>
+<line x1="1068" y1="290" x2="1130" y2="299" stroke="#58a6ff" stroke-opacity="0.04" stroke-width="1"/>
+<circle cx="1130" cy="115" r="5" fill="#58a6ff" fill-opacity="0.17"/>
+<line x1="1130" y1="115" x2="1192" y2="124" stroke="#58a6ff" stroke-opacity="0.10" stroke-width="1"/>
+<circle cx="1150" cy="161" r="5" fill="#58a6ff" fill-opacity="0.13"/>
+<line x1="1150" y1="161" x2="1192" y2="170" stroke="#58a6ff" stroke-opacity="0.08" stroke-width="1"/>
+<circle cx="1130" cy="207" r="5" fill="#58a6ff" fill-opacity="0.09"/>
+<line x1="1130" y1="207" x2="1192" y2="216" stroke="#58a6ff" stroke-opacity="0.05" stroke-width="1"/>
+<circle cx="1150" cy="253" r="5" fill="#58a6ff" fill-opacity="0.06"/>
+<line x1="1150" y1="253" x2="1192" y2="262" stroke="#58a6ff" stroke-opacity="0.04" stroke-width="1"/>
+<circle cx="1130" cy="299" r="5" fill="#58a6ff" fill-opacity="0.06"/>
+<line x1="1130" y1="299" x2="1192" y2="308" stroke="#58a6ff" stroke-opacity="0.04" stroke-width="1"/>
+<circle cx="1192" cy="124" r="5" fill="#58a6ff" fill-opacity="0.12"/>
+<circle cx="1212" cy="170" r="5" fill="#58a6ff" fill-opacity="0.08"/>
+<circle cx="1192" cy="216" r="5" fill="#58a6ff" fill-opacity="0.06"/>
+<circle cx="1212" cy="262" r="5" fill="#58a6ff" fill-opacity="0.06"/>
+<circle cx="1192" cy="308" r="5" fill="#58a6ff" fill-opacity="0.06"/>
+<text x="80" y="215" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="96" fill="#e6edf3" font-weight="800" text-anchor="start">Cascade</text>
+<text x="84" y="272" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="30" fill="#e6edf3" font-weight="500" text-anchor="start">Multi-agent causal simulation for strategic forecasting</text>
+<text x="84" y="314" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="21" fill="#8b949e" font-weight="400" text-anchor="start">Time-locked evidence, byte-exact replay, and a Terraform-managed AWS analytics plane</text>
+<rect x="84" y="398" width="262" height="118" rx="12" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="104" y="452" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="38" fill="#3fb950" font-weight="700" text-anchor="start">2,533</text>
+<text x="104" y="486" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="13.5" fill="#8b949e" font-weight="400" text-anchor="start">automated tests passing</text>
+<rect x="368" y="398" width="262" height="118" rx="12" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="388" y="452" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="38" fill="#3fb950" font-weight="700" text-anchor="start">21</text>
+<text x="388" y="486" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="13.5" fill="#8b949e" font-weight="400" text-anchor="start">live AWS resources, zero drift</text>
+<rect x="652" y="398" width="262" height="118" rx="12" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="672" y="452" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="38" fill="#3fb950" font-weight="700" text-anchor="start">3 / 3</text>
+<text x="672" y="486" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="13.5" fill="#8b949e" font-weight="400" text-anchor="start">rows through S3, Glue, Athena</text>
+<rect x="936" y="398" width="262" height="118" rx="12" fill="#161b22" stroke="#30363d" stroke-width="1.5"/>
+<text x="956" y="452" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="38" fill="#3fb950" font-weight="700" text-anchor="start">1,027</text>
+<text x="956" y="486" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="13.5" fill="#8b949e" font-weight="400" text-anchor="start">security checks passed, 0 failed</text>
+<text x="84" y="578" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" font-size="16" fill="#8b949e" font-weight="500" text-anchor="start">Python 3.12  -  PostgreSQL + pgvector  -  Claude  -  Amazon Bedrock  -  S3  -  Glue  -  Athena  -  KMS  -  Terraform</text>
+</svg>

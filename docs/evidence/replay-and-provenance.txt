@@ -1,0 +1,23 @@
+$ cascade trace replay --runs 25 --policy heuristic   # each run in a fresh interpreter, new hash seed
+runs replayed               25
+byte-identical event log    25/25
+diverged                    0
+elapsed                     5.4s
+every replayed run reproduced its stored event log
+
+$ cascade trace explain                              # one outcome, walked back to its root cause
+outcome_score 0.53  <- factor 'momentum' moved last at step 23
+  d0  step 23  actor=panelist_forecaster      COMMIT    +0.0007 on momentum
+  d1  step 19  actor=panelist_advocate        COMMIT    +0.0007 on momentum
+  d2  step 16  actor=panelist_advocate        COMMIT    +0.0008 on momentum
+  d3  step 15  actor=panelist_contrarian      COMMIT    -0.0012 on momentum
+  d4  step 13  actor=panelist_devils_advocate COMMIT    -0.0009 on resistance
+  d5  step 11  actor=panelist_contrarian      COMMIT    -0.0014 on momentum
+  d6  step  9  actor=panelist_contrarian      COMMIT    -0.0020 on momentum
+  d7  step  7  actor=panelist_devils_advocate COMMIT    -0.0022 on resistance
+  d8  step  5  actor=panelist_devils_advocate COMMIT    -0.0028 on resistance
+  d9  step  3  actor=panelist_devils_advocate COMMIT    -0.0038 on resistance
+  d10 step  1  actor=panelist_contrarian      COMMIT    -0.0079 on momentum
+  d11 step  0  actor=panelist_forecaster      COMMIT    +0.0061 on momentum
+  root  step  0  exogenous shock on 'resistance' +0.04
+complete chain: 12 decision(s) to an exogenous shock at step 0

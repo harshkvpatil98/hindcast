@@ -72,7 +72,11 @@ def write_batch(
     with _connect(settings) as conn, conn.cursor() as cur:
         with cur.copy(
             "COPY documents (document_id, source, source_ref, url, title, "
+<<<<<<< HEAD
             "published_at, simhash, n_chunks) FROM STDIN"
+=======
+            "published_at, simhash, n_chunks, stated_published_at, crawled_at) FROM STDIN"
+>>>>>>> source-clean/main
         ) as copy:
             for document in documents:
                 copy.write_row(
@@ -85,6 +89,11 @@ def write_batch(
                         document.published_at,
                         to_signed(document.simhash),
                         counts.get(document.document_id, 0),
+<<<<<<< HEAD
+=======
+                        document.stated_published_at,
+                        document.crawled_at,
+>>>>>>> source-clean/main
                     )
                 )
 
@@ -118,6 +127,20 @@ def completed_units(settings: Settings, source: str) -> set[str]:
         return {str(row[0]) for row in cur.fetchall()}
 
 
+<<<<<<< HEAD
+=======
+def stored_chunk_count(settings: Settings) -> int:
+    """Chunks already stored, from the denormalised per-document counts.
+
+    Read once at the start of a build to seed the work ceiling; the pipeline
+    adds what it writes, so the count is never re-queried per unit.
+    """
+    with _connect(settings) as conn, conn.cursor() as cur:
+        cur.execute("SELECT COALESCE(sum(n_chunks), 0) FROM documents")
+        return int((cur.fetchone() or [0])[0])
+
+
+>>>>>>> source-clean/main
 def mark_unit(
     settings: Settings,
     *,

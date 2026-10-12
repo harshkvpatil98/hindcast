@@ -1,0 +1,379 @@
+{
+ "exchanges": [
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "lastrevid": 1358688908,
+       "length": 140,
+       "ns": 0,
+       "pageid": 80199921,
+       "redirect": true,
+       "title": "June 2025 Israeli strikes on Iran"
+      },
+      {
+       "lastrevid": 1375310571,
+       "length": 313178,
+       "ns": 0,
+       "pageid": 80208996,
+       "title": "Twelve-Day War"
+      },
+      {
+       "lastrevid": 1355468267,
+       "length": 161,
+       "ns": 0,
+       "pageid": 80275879,
+       "redirect": true,
+       "title": "Iran–Israel war"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "info",
+    "titles": "Iran–Israel war|June 2025 Israeli strikes on Iran|Twelve-Day War"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 80208996,
+       "title": "Twelve-Day War"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-05-11T03:53:19Z",
+    "titles": "Twelve-Day War"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "logevents": [
+      {
+       "logid": 177952991,
+       "logpage": 80275879,
+       "ns": 0,
+       "pageid": 80208996,
+       "params": {
+        "suppressredirect": true,
+        "target_ns": 118,
+        "target_title": "Draft:Move/Twelve-Day War"
+       },
+       "revid": 1340914981,
+       "timestamp": "2026-02-28T12:34:18Z",
+       "title": "Twelve-Day War"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "ledir": "newer",
+    "lelimit": "1",
+    "leprop": "ids|title|timestamp|details",
+    "lestart": "2025-05-11T03:53:19Z",
+    "letitle": "Twelve-Day War",
+    "letype": "move",
+    "list": "logevents",
+    "maxlag": "5"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 80275879,
+       "title": "Iran–Israel war"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "pageids": "80275879",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-05-11T03:53:19Z"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 80199921,
+       "title": "June 2025 Israeli strikes on Iran"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-05-11T03:53:19Z",
+    "titles": "June 2025 Israeli strikes on Iran"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "batchcomplete": true,
+    "continue": {
+     "continue": "-||",
+     "lecontinue": "20250616161544|170430021"
+    },
+    "query": {
+     "logevents": [
+      {
+       "logid": 170367709,
+       "logpage": 80199945,
+       "ns": 0,
+       "pageid": 80199921,
+       "params": {
+        "suppressredirect": true,
+        "target_ns": 118,
+        "target_title": "Draft:Move/June 2025 Israeli strikes on Iran"
+       },
+       "revid": 1295328560,
+       "timestamp": "2025-06-13T03:24:27Z",
+       "title": "June 2025 Israeli strikes on Iran"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "ledir": "newer",
+    "lelimit": "1",
+    "leprop": "ids|title|timestamp|details",
+    "lestart": "2025-05-11T03:53:19Z",
+    "letitle": "June 2025 Israeli strikes on Iran",
+    "letype": "move",
+    "list": "logevents",
+    "maxlag": "5"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 80199945,
+       "title": "June 2025 Israeli strikes in Iran"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "pageids": "80199945",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-05-11T03:53:19Z"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 80275879,
+       "title": "Iran–Israel war"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-05-11T03:53:19Z",
+    "titles": "Iran–Israel war"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "batchcomplete": true,
+    "continue": {
+     "continue": "-||",
+     "lecontinue": "20260228123426|177952992"
+    },
+    "query": {
+     "logevents": [
+      {
+       "logid": 170488234,
+       "logpage": 80208996,
+       "ns": 0,
+       "pageid": 80275879,
+       "params": {
+        "suppressredirect": false,
+        "target_ns": 0,
+        "target_title": "Israel-Iran"
+       },
+       "revid": 1296398722,
+       "timestamp": "2025-06-19T19:48:53Z",
+       "title": "Iran–Israel war"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "ledir": "newer",
+    "lelimit": "1",
+    "leprop": "ids|title|timestamp|details",
+    "lestart": "2025-05-11T03:53:19Z",
+    "letitle": "Iran–Israel war",
+    "letype": "move",
+    "list": "logevents",
+    "maxlag": "5"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "batchcomplete": true,
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 80208996,
+       "title": "Twelve-Day War"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "pageids": "80208996",
+    "prop": "revisions",
+    "rvdir": "older",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "rvstart": "2025-05-11T03:53:19Z"
+   },
+   "status": 200
+  },
+  {
+   "body": {
+    "continue": {
+     "continue": "||",
+     "rvcontinue": "20250614103709|1295536565"
+    },
+    "query": {
+     "pages": [
+      {
+       "ns": 0,
+       "pageid": 80208996,
+       "revisions": [
+        {
+         "parentid": 0,
+         "revid": 1295536542,
+         "slots": {
+          "main": {
+           "content": "\nThe '''Israel Iran war''', also known as '''Operation Rising Lion''', is a conflict fought between [[Israel]] and the [[Islamic Republic of Iran]]. The war was launched on 13 June 2025 in a preemptive strike by Israel the day after the [[International Atomic Energy Agency]] (IAEA) declared that Iran had violated its nuclear nonprofilitation obligations. Following the Israeli surprise attack, Iran declared it was at a state of war and would take vengeance against Israel, the [[United Kingdom]] and the [[United States]].<ref name=\":0\">{{Cite news |last=Wintour |first=Patrick |last2=editor |first2=Patrick Wintour Diplomatic |date=2025-06-13 |title=Iran vows revenge for Israeli strikes, saying it will write ‘end of this story’ |url=https://www.theguardian.com/world/2025/jun/13/iran-vows-revenge-for-israeli-strikes-saying-it-will-write-end-of-this-story |access-date=2025-06-14 |work=The Guardian |language=en-GB |issn=0261-3077}}</ref><ref name=\":1\">{{Cite news |last=Langford |first=Antonia |last2=Hallows |first2=Ruth |last3=White |first3=Josh |last4=Hamblin |first4=Andrea |last5=Bodkin |first5=Henry |date=2025-06-14 |title=Iran-Israel latest: Iran threatens to attack British and American bases |url=https://www.telegraph.co.uk/world-news/2025/06/14/israel-iran-war-middle-east-latest-news/ |access-date=2025-06-14 |work=The Telegraph |language=en-GB |issn=0307-1235}}</ref> The Israeli attack took place the day after the end of the American 60 day deadline of nuclear negotiations.\n\nThe Israelis targeted military and nuclear infrastructure and personnel, killing the military leadership of the Islamic Revolutionary Guards as well as leading nuclear scientists. Israel destroyed several airbases and damaged nuclear facilities, including Nantanz and Fordow. Iran targeted and hit Israeli towns and cities in response.\n\nOn October 7 2023, the Iranian proxy Hamas launched a surprise attack on southern Israel, the day after, [[Hezbollah]], a Shiite proxy of Iran in [[Lebanon]] attacked Israel’s north. The Houthis, an Iranian proxy based in Yemen launched attacks on international shipping in the Red Sea. In the ensuing conflict, Israel decimated Hezbollah and Hamas. Iran and Israel traded strikes in April 2024 and in October 2024, during which Israel severely weakened Iran’s air defenses. \n\n== Background ==\nIsrael and Iran used to enjoy warm relations until the 1979 Islamic revolution in Iran.<ref name=\"Hein2\">{{cite news |last1=von Hein |first1=Shabnam |date=13 June 2025 |title=Why are Iran and Israel sworn enemies? |url=https://www.dw.com/en/iran-israel-attacks-hezbollah-ayatollah-ali-khamenei-islamic-revolution/a-68780605 |access-date=13 June 2025 |work=Deutsche Welle}}</ref> Since then, relations turned increasingly hostile with Iranian leadership using [[Antisemitism|antisemitic]] rhetoric against Jews, denying the holocaust and publically states its intent to destroy Israel or wipe it off the map.<ref>{{Cite news |title=Iranian nuclear threat meant Israelis had no choice |url=https://www.theaustralian.com.au/subscribe/news/1/?sourceCode=TAWEB_WRE170_a_GGL&dest=https%3A%2F%2Fwww.theaustralian.com.au%2Fworld%2Firanian-nuclear-threat-meant-israelis-had-nochoice-but-to-strike%2Fnews-story%2F008feb9df6f5253574dae7ed1c897f4e&memtype=anonymous&mode=premium&v21=GROUPA-Segment-2-NOSCORE&V21spcbehaviour=append |url-access=subscription |work=The Australian}}</ref><ref>{{Cite news |last=Boxerman |first=Aaron |date=2025-06-12 |title=Why Israel May Be Considering an Attack on Iran |url=https://www.nytimes.com/article/israel-iran-attack-why.html |access-date=2025-06-14 |work=The New York Times |language=en-US |issn=0362-4331}}</ref><ref>{{Cite web |date=13 June 2025 |title=Why are Iran and Israel sworn enemies? |url=https://www.tbsnews.net/features/panorama/why-are-iran-and-israel-sworn-enemies-1164451 |access-date=13 June 2025 |website=The Business Standard |language=en}}</ref><ref name=\"Hein\">{{cite news |last1=von Hein |first1=Shabnam |date=13 June 2025 |title=Why are Iran and Israel sworn enemies? |url=https://www.dw.com/en/iran-israel-attacks-hezbollah-ayatollah-ali-khamenei-islamic-revolution/a-68780605 |access-date=13 June 2025 |work=Deutsche Welle}}</ref><ref>{{Cite web |last=Hjelmgaard |first=Kim |date=13 June 2025 |title=What we know about Israel's attacks on Iran's nuclear sites − and Iran's drone response |url=https://www.usatoday.com/story/news/world/2025/06/13/israel-iran-attacks-nuclear-sites/84180887007/ |access-date=13 June 2025 |website=USA TODAY |language=en-US}}</ref> The Combat Antisemitism Movement says Iranian rhetoric is [[Antisemitism in Iran|antisemitic]], and has [[genocidal intent]].<ref>{{Cite web |last=Breen-Portnoy |first=Barney |date=13 June 2025 |title='This Is The Time to Stand With Israel': IDF Launches Pre-Emptive Strike on Iran's Nuclear Program |url=https://combatantisemitism.org/cam-news/this-is-the-time-to-stand-with-israel-cam-statement-on-idf-pre-emptive-strike-on-irans-nuclear-program/ |access-date=13 June 2025 |website=Combat Antisemitism Movement |language=en-US}}</ref> \n\nFor decades, Iran has developed and supported the so-called \"Axis of Resistance\", a regional alliance of proxy groups including Hezbollah in Lebanon, Hamas in Gaza, the Houthis in Yemen, and various militias in Iraq.<ref name=\"NYTimes20250613a2\">{{Cite news |last=Goldbaum |first=Christina |date=2025-06-13 |title=Israel's Strike on Iran Comes at a Moment of Weakness for Iran's Proxies |url=https://www.nytimes.com/2025/06/13/world/middleeast/iran-proxies-axis-hezbollah-israel.html |access-date=2025-06-14 |work=The New York Times |language=en-US |issn=0362-4331}}</ref><ref name=\"Sykes3\">{{cite news |last1=Sykes |first1=Patrick |last2=Bronner |first2=Ethan |last3=Capaccio |first3=Anthony |date=13 June 2025 |title=Israel and Iran Have Been Enemies for Decades. What Next? |url=https://www.bloomberg.com/news/articles/2025-06-13/israel-iran-tensions-escalate-how-proxies-nuclear-ambitions-are-fueling-crisis |url-status=live |archive-url=https://archive.is/daPUc |archive-date=13 June 2025 |access-date=13 June 2025 |work=[[Bloomberg]]}}</ref> These groups have frequently engaged in hostilities with Israel, often acting with Iranian financial, logistical, or military backing. Israel considers Iran to be its foremost strategic threat, citing Tehran's persistent anti-Israel rhetoric, its arming and funding of hostile non-state actors, and its continued advancement of nuclear technology. Israeli leadership has consistently maintained that the emergence of a nuclear-armed Iran would constitute an existential danger, asserting that Israel reserves the right to take preemptive military action if Iran's nuclear program nears weapons-grade capability.<ref name=\"Hein3\">{{cite news |last1=von Hein |first1=Shabnam |date=13 June 2025 |title=Why are Iran and Israel sworn enemies? |url=https://www.dw.com/en/iran-israel-attacks-hezbollah-ayatollah-ali-khamenei-islamic-revolution/a-68780605 |access-date=13 June 2025 |work=Deutsche Welle}}</ref><ref name=\"Sykes2\">{{cite news |last1=Sykes |first1=Patrick |last2=Bronner |first2=Ethan |last3=Capaccio |first3=Anthony |date=13 June 2025 |title=Israel and Iran Have Been Enemies for Decades. What Next? |url=https://www.bloomberg.com/news/articles/2025-06-13/israel-iran-tensions-escalate-how-proxies-nuclear-ambitions-are-fueling-crisis |url-status=live |archive-url=https://archive.is/daPUc |archive-date=13 June 2025 |access-date=13 June 2025 |work=[[Bloomberg]]}}</ref> \n\nOn 13 June 2025, Iran announced the construction and planned activation of a third nuclear enrichment site in response to a declaration by the [[International Atomic Energy Agency]] (IAEA) for failing to meet nonproliferation obligations.<ref name=\"AP202506132\">{{cite news |author=Associated Press |date=13 June 2025 |title=Iran says it built new enrichment site after UN nuclear censure; Israel launches strikes |url=https://apnews.com/article/iran-iaea-nuclear-israel-strike-censure}}</ref> The IAEA resolution, backed by 19 nations including the U.S. and European powers, criticized Iran's lack of cooperation and suggested further international action could follow. Iran responded by pledging to upgrade enrichment capacity at existing sites and begin operations at the new underground facility, described as secure and fortified.<ref name=\"AP202506132\" />\n\n<!-- cassette: revision text cut here -->",
+           "contentformat": "text/x-wiki",
+           "contentmodel": "wikitext"
+          }
+         },
+         "timestamp": "2025-06-14T10:36:50Z"
+        }
+       ],
+       "title": "Twelve-Day War"
+      }
+     ]
+    }
+   },
+   "params": {
+    "action": "query",
+    "format": "json",
+    "formatversion": "2",
+    "maxlag": "5",
+    "prop": "revisions",
+    "rvdir": "newer",
+    "rvlimit": "1",
+    "rvprop": "ids|timestamp|content",
+    "rvslots": "main",
+    "titles": "Twelve-Day War"
+   },
+   "status": 200
+  }
+ ],
+ "note": "The Natanz scenario's cutoff is 2025-05-11T03:53:19.001Z. Its war began a month later: 'Twelve-Day War' (first revision 2025-06-14), and the titles 'June 2025 Israeli strikes on Iran' and 'Iran–Israel war', which the article was moved away from after the cutoff (the move log names the page). None of the three has a revision before the cutoff. The first revision of 'Twelve-Day War' is recorded too, so an adapter that fell back to it gets an answer instead of an unrecorded request.",
+ "recorded": "2026-09-19",
+ "source": "https://en.wikipedia.org/w/api.php"
+}

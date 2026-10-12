@@ -1,0 +1,9 @@
+# Copy to backend.hcl (gitignored) and fill in from `terraform output` in
+# envs/bootstrap. Then: terraform init -backend-config=backend.hcl
+# The key matches the one .github/workflows/infra-plan.yml plans against.
+bucket       = "cascade-tfstate-ACCOUNT_ID-us-west-2"
+key          = "platform/terraform.tfstate"
+region       = "us-west-2"
+encrypt      = true
+kms_key_id   = "arn:aws:kms:us-west-2:ACCOUNT_ID:key/KEY_ID"
+use_lockfile = true

@@ -8,6 +8,10 @@ assume shows up as a failure rather than passing against a parallel fixture.
 from __future__ import annotations
 
 import json
+<<<<<<< HEAD
+=======
+import os
+>>>>>>> source-clean/main
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +23,19 @@ from cascade.config import Settings
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
+<<<<<<< HEAD
+=======
+# The CLI's Rich consoles decide on colour when `cascade.cli` is first imported,
+# from the terminal they find. A colour-capable one (CI's, or FORCE_COLOR=1)
+# threads escape codes through option names and numbers, and tests that read
+# the output as text then fail for a reason that is not about the code. Set
+# before any test module imports the CLI, so the suite reads the same text on
+# every machine.
+os.environ.pop("FORCE_COLOR", None)
+os.environ["NO_COLOR"] = "1"
+os.environ["TERM"] = "dumb"
+
+>>>>>>> source-clean/main
 
 @pytest.fixture(autouse=True)
 def _clear_settings_cache(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Any:
@@ -37,10 +54,21 @@ def _clear_settings_cache(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> An
     """
     import os
 
+<<<<<<< HEAD
     from cascade.config import _cached_settings
 
     for name in sorted(os.environ):
         if name.startswith("CASCADE_"):
+=======
+    from cascade.config import ENV_ALIASES, _cached_settings
+
+    for name in sorted(os.environ):
+        if name.startswith("CASCADE_") or name in ENV_ALIASES:
+            # The plain aliases (LLM_PROVIDER, ANTHROPIC_AWS_WORKSPACE_ID, ...)
+            # bind to settings too, and `make test` exports the repo's .env --
+            # whose LLM_PROVIDER=claude_cli would route every provider test
+            # built against an HTTP mock at the CLI instead (ADR-0053).
+>>>>>>> source-clean/main
             monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("CASCADE_ENV_FILE", str(tmp_path / "absent.env"))
     _cached_settings.cache_clear()

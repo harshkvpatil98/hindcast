@@ -1,0 +1,23 @@
+$ aws athena get-query-execution / get-query-results   # the analyst role's query, read back
+
+SELECT run_id, step, seq, actor_id, action, cache_hit, tokens_in, coercion
+FROM   "cascade"."events"
+WHERE  config_id = 'SMOKE' AND run_id = 'smoke-test-synthetic-run'
+ORDER BY step, seq
+
+state            SUCCEEDED
+workgroup        cascade   (Athena engine version 3)
+run as           role/cascade-lake-analyst
+data scanned     953 bytes
+engine time      427 ms
+results          encrypted, SSE_KMS
+
+step seq actor_id           cache_hit tokens_in coercion
+0    0   synthetic-actor-a  false     0         (null)
+         {"kind": "WAIT", "note": "smoke test, not a decision", "synthetic": true}
+1    0   synthetic-actor-b  true      0         (null)
+         {"kind": "INFLUENCE", "note": "smoke test, not a decision", "synthetic": true}
+1    1   synthetic-actor-a  false     0         synthetic: smoke test
+         {"kind": "WAIT", "note": "smoke test, not a decision", "synthetic": true}
+
+3 rows returned - equal, value for value, to the 3 rows written by the writer role
