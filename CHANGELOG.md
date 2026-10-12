@@ -9,6 +9,36 @@ package index.
 
 ---
 
+## After M17 — The project is named Hindcast
+
+The owner asked for a better name on 2026-10-12
+([ADR-0055](docs/adr/0055-the-project-is-named-hindcast.md)).
+
+- **Hindcast** is the project: a forecast for a period already past, made
+  from evidence published before it and scored against the record, which is
+  the method the code enforces. **Cascade** stays the name of the engine.
+- **Renamed**: the GitHub repository (`harshkvpatil98/hindcast`; the old URL
+  redirects), the README, the contributor guide, the architecture pages, the
+  demo script, the infrastructure runbook, and the diagram and banner, now
+  `docs/assets/hindcast-*.svg` with their PNGs re-rendered from the SVGs.
+- **Not renamed, deliberately**: the `cascade` package and CLI, `CASCADE_*`,
+  the database and its roles, the Terraform `name` every live AWS resource is
+  derived from, and the history before this entry. ADR-0055 lists each one
+  and what renaming it would break.
+- **`docker-compose.yml` pins the Compose project as `cascade`**, so a
+  checkout in a folder with any other name reuses the running containers and
+  the `cascade-pgdata` volume rather than clashing with them.
+- **What a public repository needs**: [SECURITY.md](SECURITY.md), which
+  treats a way around the time lock as a vulnerability and routes it to
+  private reporting; a [code of conduct](CODE_OF_CONDUCT.md) (Contributor
+  Covenant 2.1); [CITATION.cff](CITATION.cff), validated against CFF 1.2.0; a
+  proposal issue template, with the issue chooser sending security reports to
+  private reporting; `.editorconfig` matching the formatters; and package
+  metadata (authors, licence, URLs, classifiers) in `pyproject.toml`.
+- No code changed: nothing in `cascade/`, `tests/` or `migrations/`, and in
+  `infra/` only the runbook's title. The offline gates are as before: ruff,
+  black and mypy strict clean, 2,533 tests passing.
+
 ## After M17 — A portfolio deployment profile
 
 The platform root planned 74 resources against the owner's account. The owner

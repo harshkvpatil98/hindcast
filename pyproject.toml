@@ -1,7 +1,25 @@
 [project]
+# The distribution keeps the engine's name: the project is Hindcast, the package
+# it builds is `cascade` (ADR-0055). Nothing is published to an index.
 name = "cascade"
 version = "0.1.0"
-description = "Multi-agent causal simulation for strategic forecasting"
+description = "Cascade, the engine of Hindcast: multi-agent causal simulation for strategic forecasting on time-locked evidence"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Harshwardhan Patil" },
+    { name = "Utkarsh Singh" },
+]
+keywords = ["forecasting", "hindcasting", "multi-agent", "simulation", "llm", "causal-graph", "backtesting"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "anthropic>=0.40",
@@ -54,6 +72,12 @@ dev = [
     "black>=24.4",
     "types-PyYAML>=6.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/harshkvpatil98/hindcast"
+Documentation = "https://github.com/harshkvpatil98/hindcast/tree/main/docs"
+Changelog = "https://github.com/harshkvpatil98/hindcast/blob/main/CHANGELOG.md"
+Issues = "https://github.com/harshkvpatil98/hindcast/issues"
 
 [project.scripts]
 # Points at main(), not app(), so the process-wide error boundary is what maps

@@ -1,7 +1,14 @@
-# Contributing to Cascade
+# Contributing to Hindcast
 
 This project has an unusual working method, and it is the reason the build log
 reads the way it does. Read this before opening a pull request.
+
+The code you will be working in is the Cascade engine: the `cascade` package,
+the `cascade` CLI and the `CASCADE_*` settings keep the engine's name
+([ADR-0055](docs/adr/0055-the-project-is-named-hindcast.md)). Everyone taking
+part is expected to follow the [code of conduct](CODE_OF_CONDUCT.md), and a
+security problem — a time-lock leak included — goes through the
+[security policy](SECURITY.md), not a public issue.
 
 ## The one rule
 

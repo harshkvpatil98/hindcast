@@ -1,4 +1,4 @@
-# Demo script: Cascade in five minutes
+# Demo script: Hindcast in five minutes
 
 A timed walkthrough for a live presentation. Every command below was run
 against `main` and the deployed account on 2026-10-02. If the network or AWS
@@ -32,7 +32,7 @@ The smoke test needs the Parquet writer:
 
 > "Ask an AI model whether a merger will be approved and you get a number,
 > with no way to see why, replay it, or prove it didn't peek at the answer.
-> Cascade models the situation instead: it compiles the question into a
+> Hindcast models the situation instead: it compiles the question into a
 > causal graph of actors and forces, simulates those actors with LLM agents,
 > and scores the forecast against what really happened. Three things make it
 > trustworthy: the evidence is time-locked, every run replays byte for byte,
@@ -154,7 +154,7 @@ Tell the same story from the committed evidence, in this order:
 | Minute | Show | Say |
 |---|---|---|
 | 0:00 | README, top | The problem and the metrics row |
-| 0:45 | [assets/cascade-architecture.svg](assets/cascade-architecture.svg) | The three columns |
+| 0:45 | [assets/hindcast-architecture.svg](assets/hindcast-architecture.svg) | The three columns |
 | 1:30 | [evidence/quality-gates.svg](evidence/quality-gates.svg) | 2,533 tests, strict typing, 25 of 25 replays |
 | 2:30 | [evidence/aws-smoke-test.svg](evidence/aws-smoke-test.svg) | The live run, step by step, with request IDs |
 | 3:15 | [evidence/athena-roundtrip.svg](evidence/athena-roundtrip.svg) | The query, 953 bytes scanned, the three rows |

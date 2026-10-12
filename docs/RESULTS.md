@@ -54,6 +54,10 @@ The whole pipeline ran with a model deciding every turn: 36 development
 scenarios, 10 replicates each, **360 runs and 66,231 model calls**, through
 the Claude Code CLI provider.
 
+*Cascade* below is the multi-agent forecaster under test, the engine at the
+centre of this project
+([ADR-0055](adr/0055-the-project-is-named-hindcast.md)).
+
 | | Brier | Cascade minus this row, 95% CI | p |
 |---|---|---|---|
 | Base rate (climatology) | 0.2500 | [−0.097, +0.043] | 0.39 |

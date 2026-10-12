@@ -1,19 +1,26 @@
-<h1 align="center">Cascade</h1>
+<h1 align="center">Hindcast</h1>
 
 <p align="center">
   <strong>Multi-agent causal simulation for strategic forecasting, built on time-locked evidence, byte-exact replay, and a live, Terraform-managed AWS analytics plane.</strong>
 </p>
 
 <p align="center">
-  Cascade turns a real-world question into a causal graph of actors and forces, simulates it with
+  Hindcast turns a real-world question into a causal graph of actors and forces, simulates it with
   LLM agents that can only see evidence published before the question's cutoff date, and scores the
   forecast against what actually happened. Every model call is recorded, every run replays to the
   same hash, and every decision traces back to its cause. Its event log has a home on AWS: an
   encrypted S3 lake behind Glue and Athena, deployed with Terraform and proven end to end by one command.
 </p>
 
+<p align="center"><sub>
+  A <i>hindcast</i> is a forecast made for a period that has already happened, using only what was
+  known before it, then checked against the record. The simulation engine inside is
+  <b>Cascade</b>: the <code>cascade</code> Python package and CLI keep that name
+  (<a href="docs/adr/0055-the-project-is-named-hindcast.md">ADR-0055</a>).
+</sub></p>
+
 <p align="center">
-  <a href="https://github.com/harshkvpatil98/cascade/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/harshkvpatil98/cascade/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="https://github.com/harshkvpatil98/hindcast/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/harshkvpatil98/hindcast/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <img alt="Python 3.12" src="https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white">
   <img alt="Terraform 1.16.3" src="https://img.shields.io/badge/terraform-1.16.3-7B42BC?logo=terraform&logoColor=white">
   <img alt="AWS us-west-2" src="https://img.shields.io/badge/AWS-us--west--2-FF9900">
@@ -37,15 +44,15 @@
 
 ---
 
-## What is Cascade?
+## What is Hindcast?
 
-Most AI forecasting asks a model for a probability. Cascade models **why** an outcome would
+Most AI forecasting asks a model for a probability. Hindcast models **why** an outcome would
 happen: who has to act, what each of them wants, and what each of them can see.
 
 - **The problem.** Strategic questions — *will the regulator clear this merger before the
   deadline?* — turn on several actors reacting to each other. A single prompt hides that structure,
   cannot be replayed, and can quietly use knowledge from after the fact.
-- **The system.** Cascade compiles a question into a typed causal graph (actors, objectives,
+- **The system.** Hindcast compiles a question into a typed causal graph (actors, objectives,
   world factors), runs a 24-step multi-agent simulation over it from many seeds, and turns the
   spread of outcomes into a forecast that is scored against the real resolution.
 - **The intelligence layer.** LLM agents make the decisions; a deterministic arbiter applies them.
@@ -73,12 +80,12 @@ happen: who has to act, what each of them wants, and what each of them can see.
 - **Amazon Bedrock integrated where it is safe** — Rerank as a permutation of the time-locked
   pool, Guardrails as a post-hoc audit, both with AWS request-ID observability.
 - **Engineering rigor you can check** — 2,533 tests, `mypy --strict` over 124 modules, 193
-  Terraform tests, 1,027 passing security checks, 54 architecture decision records, green CI.
+  Terraform tests, 1,027 passing security checks, 55 architecture decision records, green CI.
 
 ## Architecture
 
 <p align="center">
-  <img src="docs/assets/cascade-architecture.svg" alt="Cascade architecture: the application, the single model door, and the live AWS analytics plane" width="100%">
+  <img src="docs/assets/hindcast-architecture.svg" alt="Hindcast architecture: the application, the single model door, and the live AWS analytics plane" width="100%">
 </p>
 
 Solid green is running today; dashed is implemented and switched on by configuration. Inference
@@ -90,7 +97,7 @@ The deeper walkthrough is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ```mermaid
 flowchart TB
-  subgraph APP["Cascade application - Python 3.12"]
+  subgraph APP["Cascade engine - Python 3.12"]
     Q["Question + cutoff date"] --> R["Time-locked retrieval<br/>Postgres 16 + pgvector"]
     R --> G["Causal-graph compiler"]
     G --> SIM["24-step multi-agent simulation<br/>deterministic arbiter"]
@@ -235,7 +242,7 @@ A timed five-minute walkthrough, with a fallback that needs no network, is in
 Prerequisites: Docker, [uv](https://docs.astral.sh/uv/) and Python 3.12.
 
 ```bash
-git clone https://github.com/harshkvpatil98/cascade.git && cd cascade
+git clone https://github.com/harshkvpatil98/hindcast.git && cd hindcast
 
 make install      # uv sync --extra dev --extra kernel --extra aws
 make env          # writes .env from .env.example
@@ -253,8 +260,8 @@ To deploy the lake to your own account, follow the
 ## Repository map
 
 ```
-cascade/
-├─ cascade/                 # the application package, mypy strict
+hindcast/
+├─ cascade/                 # the Cascade engine: the application package, mypy strict
 │  ├─ retrieval/            # time-locked hybrid retrieval and reranking
 │  ├─ decompose/            # the causal-graph compiler and validator
 │  ├─ sim/  aperture/       # the simulation kernel, the arbiter, who can see what
@@ -262,10 +269,11 @@ cascade/
 │  ├─ trace/                # event log, replay, provenance, the AWS lake smoke test
 │  └─ llm/                  # the single model door: four providers, Bedrock services
 ├─ infra/terraform/         # 3 roots, 15 modules, mock-provider tests
-├─ docs/                    # architecture, demo script, evidence, results, 54 ADRs
+├─ docs/                    # architecture, demo script, evidence, results, 55 ADRs
 ├─ migrations/              # forward-only SQL
 ├─ configs/                 # base configuration and experiment overlays
-└─ tests/                   # unit · property · integration · leakage · determinism
+├─ tests/                   # unit · property · integration · leakage · determinism
+└─ Documents/               # the original technical specification, cited in code as "spec §"
 ```
 
 ## Current validated scope
@@ -279,7 +287,7 @@ What exists and has been verified today:
 | **Bedrock services** | Rerank and Guardrails integrated and tested against the service models; the account's guardrail and the rerank model resolve live |
 | **Evidence engine** | 1,998,127 chunks from 317,780 documents, fully embedded, time-locked at the database |
 | **Simulation platform** | 180 sealed backtest scenarios; 2,850 stored runs and 520,455 logged decisions; 25 of 25 replays byte-identical |
-| **Evaluation harness** | The first full study ran end to end — 360 simulations, 66,231 model calls — and reports what it measured: on 36 development scenarios Cascade (Brier 0.2197), a single model (0.2069) and the base rate (0.2500) are statistically indistinguishable. The held-out test set is untouched |
+| **Evaluation harness** | The first full study ran end to end — 360 simulations, 66,231 model calls — and reports what it measured: on 36 development scenarios the Cascade engine (Brier 0.2197), a single model (0.2069) and the base rate (0.2500) are statistically indistinguishable. The held-out test set is untouched |
 
 The complete record, including every measured figure and its boundaries, is in
 [docs/RESULTS.md](docs/RESULTS.md).
@@ -300,13 +308,21 @@ The complete record, including every measured figure and its boundaries, is in
 | [Evidence pack](docs/evidence/README.md) | Every proof artifact, what produced it and what it shows |
 | [Results](docs/RESULTS.md) | Every measured number, and the boundaries of what was measured |
 | [Infrastructure runbook](infra/terraform/README.md) | Deploying, the two profiles, cost |
-| [Decision records](docs/adr/README.md) | 54 ADRs: each decision, its evidence and its cost |
+| [Decision records](docs/adr/README.md) | 55 ADRs: each decision, its evidence and its cost |
 | [Threat model](docs/architecture/threat-model.md) · [Well-Architected review](docs/architecture/well-architected.md) | Security and operations in depth |
+| [Technical specification](Documents/Cascade_Technical_Specification.docx) | The original specification; code comments cite it as "spec §" |
 | [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) | The milestone-by-milestone record, and how to work on the project |
+| [Security policy](SECURITY.md) · [Code of conduct](CODE_OF_CONDUCT.md) | How to report a vulnerability or a time-lock leak, and how contributors treat one another |
 
 ## Authors
 
-Harshwardhan Patil and Utkarsh Singh.
+Harshwardhan Patil ([@harshkvpatil98](https://github.com/harshkvpatil98)) and
+Utkarsh Singh ([@utkarsh430](https://github.com/utkarsh430)).
+
+## Citing
+
+If you use Hindcast or its results, cite it with the metadata in
+[CITATION.cff](CITATION.cff); GitHub's *Cite this repository* button reads it.
 
 ## License
 

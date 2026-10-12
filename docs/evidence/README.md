@@ -34,9 +34,9 @@ Athena, IAM and KMS.
 | 9 | [account-governance](#9-account-governance-and-bedrock) | CloudTrail, budget, anomaly detection and the Bedrock surfaces |
 
 Diagrams are in [`../assets`](../assets): the
-[architecture diagram](../assets/cascade-architecture.svg), the
+[architecture diagram](../assets/hindcast-architecture.svg), the
 [smoke-test flow](../assets/aws-proof-flow.svg) and the
-[repository banner](../assets/cascade-github-banner.png).
+[repository banner](../assets/hindcast-github-banner.png).
 
 ---
 

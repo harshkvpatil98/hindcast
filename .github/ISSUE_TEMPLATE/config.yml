@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a vulnerability or a time-lock leak
+    url: https://github.com/harshkvpatil98/hindcast/security/advisories/new
+    about: Privately, never as a public issue. What counts is in SECURITY.md.

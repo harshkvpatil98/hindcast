@@ -4,6 +4,12 @@
 # 5432 instance -- a study that silently wrote into the wrong database would be
 # discovered at M7, not now.
 
+# Pinned rather than taken from the checkout's folder name, so a clone in a
+# folder called `hindcast` (or anything else) attaches to the same containers
+# and the same corpus volume instead of failing on a container-name clash
+# (ADR-0055).
+name: cascade
+
 services:
   postgres:
     image: pgvector/pgvector:0.8.0-pg16

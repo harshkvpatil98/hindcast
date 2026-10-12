@@ -1,6 +1,6 @@
 # Architecture decision records
 
-Fifty-four records, 0001 to 0054 (0032 is a proposal the owner parked). Each states the decision, the evidence behind it, and
+Fifty-five records, 0001 to 0055 (0032 is a proposal the owner parked). Each states the decision, the evidence behind it, and
 what it costs. They exist because this project's specification is detailed
 enough to be wrong in specific, checkable ways — and when it was, the record
 says so with the measurement that showed it.
@@ -64,3 +64,4 @@ this build. The rest record a choice the specification left open.
 | [0052](0052-batching-is-a-cost-requirement.md) | Batching is a cost requirement, so it binds only providers that charge: a subscription bills nothing per call, so the M16 fan-out ran unbatched through the CLI. *Amends 0020* | M16 |
 | [0053](0053-portfolio-completion-provider-interface-and-region.md) | **The project finishes as a portfolio.** Four provider classes behind one interface in the one call site, named as the deployment names them (`claude_cli`, `claude_platform_aws`; the old spellings stay aliases, the CLI's cache namespace keeps its old name); `LLM_PROVIDER` and three AWS-side variables as plain aliases read by `config.py`; everything regional in us-west-2; request ids and a structured call log; the Terraform roots completed; `cascade aws check`; the M16 null stands and nothing is spent to move it | M17 |
 | [0054](0054-a-portfolio-deployment-profile.md) | A portfolio deployment profile: recovery, Object Lock, GuardDuty, Config and the reports bucket are switches at the platform root, on by default, and `portfolio.tfvars` turns them off. 74 planned resources become 21; the lake keeps the writer's Deny and gives up the lock, and says so | after M17 |
+| [0055](0055-the-project-is-named-hindcast.md) | The project is named **Hindcast**, for the method it enforces: a forecast for a period already past, from evidence published before it, scored against the record. The engine keeps the name Cascade, and so does every identifier that addresses it — the package and CLI, `CASCADE_*`, the database roles, the Terraform `name` the live lake is derived from — because renaming those would replace the lake, break every `.env` and contradict the captured evidence | after M17 |

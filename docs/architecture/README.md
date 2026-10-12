@@ -1,4 +1,4 @@
-# Cascade on AWS — architecture
+# Hindcast on AWS — architecture
 
 How the study runs on AWS, and why each piece is there. Decisions:
 [ADR-0028](../adr/0028-model-providers-behind-one-door.md) (model access),
@@ -25,7 +25,7 @@ How the study runs on AWS, and why each piece is there. Decisions:
 | Observability | request ids on every call; `observability.call_log` (JSON lines); Langfuse when configured; CloudTrail in the account | the local parts run today; `cascade trace cost` reconciles when a paid phase exists |
 
 **Claude inference does not run through AWS today.** The provider layer is
-built so that it can, without a change to Cascade's core.
+built so that it can, without a change to the Cascade engine's core.
 
 ## The shape
 

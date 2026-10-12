@@ -1,22 +1,22 @@
 # Architecture
 
-Cascade has three parts: an application that turns a question into a scored
+Hindcast has three parts: an application that turns a question into a scored
 forecast, a single audited door through which every model is reached, and an
 AWS analytics plane where the simulation's event log lands.
 
 <p align="center">
-  <img src="assets/cascade-architecture.svg" alt="Cascade architecture" width="100%">
+  <img src="assets/hindcast-architecture.svg" alt="Hindcast architecture" width="100%">
 </p>
 
 Solid green is running today. Dashed is implemented and switched on by
 configuration. A PNG of the same diagram, for slides, is at
-[assets/cascade-architecture.png](assets/cascade-architecture.png).
+[assets/hindcast-architecture.png](assets/hindcast-architecture.png).
 
 The same structure as a Mermaid diagram, which GitHub renders from text:
 
 ```mermaid
 flowchart TB
-  subgraph APP["Cascade application - Python 3.12"]
+  subgraph APP["Cascade engine - Python 3.12"]
     Q["Question + cutoff date"] --> R["Time-locked retrieval<br/>Postgres 16 + pgvector"]
     R --> G["Causal-graph compiler"]
     G --> SIM["24-step multi-agent simulation<br/>deterministic arbiter"]

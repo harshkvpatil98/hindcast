@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: "If you use Hindcast or its results, please cite it using these metadata."
+type: software
+title: "Hindcast: multi-agent causal simulation for strategic forecasting on time-locked evidence"
+abstract: >-
+  Hindcast compiles a strategic forecasting question into a typed causal graph
+  of actors, objectives and world factors, simulates it with LLM agents that can
+  only retrieve evidence published before the question's cutoff date, and scores
+  the resulting forecast against the real resolution. Retrieval over 1,998,127
+  evidence chunks is time-locked inside PostgreSQL, every model call is recorded,
+  every run replays to an identical event-log hash, and the event log has a
+  Terraform-managed analytics plane on AWS (S3, KMS, Glue, Athena). The
+  simulation engine is distributed as the `cascade` Python package.
+authors:
+  - given-names: Harshwardhan
+    family-names: Patil
+  - given-names: Utkarsh
+    family-names: Singh
+repository-code: "https://github.com/harshkvpatil98/hindcast"
+url: "https://github.com/harshkvpatil98/hindcast"
+license: MIT
+version: 0.1.0
+keywords:
+  - forecasting
+  - hindcasting
+  - backtesting
+  - multi-agent simulation
+  - causal graphs
+  - large language models
+  - retrieval-augmented generation
+  - reproducibility
+  - aws
+  - terraform

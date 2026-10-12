@@ -1,4 +1,4 @@
-# Cascade infrastructure (M11–M17)
+# Hindcast infrastructure (M11–M17)
 
 Aurora PostgreSQL 16 + pgvector 0.8.0 in an isolated VPC, with the retrieval
 bench running as a Fargate task beside it. Built to be **created, measured and
